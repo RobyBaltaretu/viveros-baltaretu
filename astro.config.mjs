@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
+import { defineConfig, fontProviders } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import react from '@astrojs/react';
 import keystatic from '@keystatic/astro';
@@ -31,6 +31,42 @@ export default defineConfig({
       }),
   // Keystatic añade /keystatic y /api/keystatic como rutas del Worker.
   integrations: [react(), keystatic()],
+  // Fuentes servidas desde el propio dominio (subconjunto latino de Fontsource,
+  // instalado con npm): sin peticiones a terceros y con fallbacks ajustados.
+  fonts: [
+    {
+      provider: fontProviders.local(),
+      name: 'Bricolage Grotesque',
+      cssVariable: '--font-bricolage',
+      fallbacks: ['ui-sans-serif', 'system-ui', 'sans-serif'],
+      display: 'swap',
+      options: {
+        variants: [
+          {
+            src: ['./node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2'],
+            weight: '200 800',
+            style: 'normal',
+          },
+        ],
+      },
+    },
+    {
+      provider: fontProviders.local(),
+      name: 'DM Sans',
+      cssVariable: '--font-dm-sans',
+      fallbacks: ['ui-sans-serif', 'system-ui', 'sans-serif'],
+      display: 'swap',
+      options: {
+        variants: [
+          {
+            src: ['./node_modules/@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2'],
+            weight: '100 1000',
+            style: 'normal',
+          },
+        ],
+      },
+    },
+  ],
   i18n: {
     locales: ['es', 'en'],
     defaultLocale: 'es',

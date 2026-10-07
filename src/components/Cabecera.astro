@@ -1,0 +1,119 @@
+---
+import Silueta from './ilustraciones/Silueta.astro';
+import Contenedor from './ui/Contenedor.astro';
+import { navegacion, nombresIdioma, rutas, textos, type Idioma } from '../i18n/ui';
+import { obtenerEmpresa } from '../lib/empresa';
+
+interface Props {
+  idioma: Idioma;
+  alternativas: Record<Idioma, string>;
+}
+
+const { idioma, alternativas } = Astro.props;
+const t = textos[idioma];
+const empresa = await obtenerEmpresa();
+const otroIdioma: Idioma = idioma === 'es' ? 'en' : 'es';
+const actual = Astro.url.pathname;
+const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idioma] && actual.startsWith(ruta));
+---
+
+<header class="sticky top-0 z-40 border-b border-linea-oscura bg-bosque/85 backdrop-blur-md supports-[backdrop-filter]:bg-bosque/70">
+  <Contenedor class="flex h-18 items-center gap-6">
+    <a href={rutas.inicio[idioma]} class="flex min-w-0 items-center gap-2.5 font-titular text-lg font-bold" aria-label={t.irAInicio}>
+      <Silueta tipo="palmera" quieta class="h-9 w-auto shrink-0 text-lima" style="--tono-tronco: var(--color-salvia)" />
+      <span class="truncate">{empresa.nombre}</span>
+    </a>
+
+    <nav aria-label={t.navegacionPrincipal} class="ml-auto hidden md:block">
+      <ul class="flex items-center gap-1">
+        {
+          navegacion.map((clave) => (
+            <li>
+              <a
+                href={rutas[clave][idioma]}
+                aria-current={esActual(rutas[clave][idioma]) ? 'page' : undefined}
+                class="rounded-full px-4 py-2 font-medium transition-colors hover:text-lima aria-[current=page]:text-lima"
+              >
+                {t[clave]}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <a
+      href={alternativas[otroIdioma]}
+      hreflang={otroIdioma}
+      lang={otroIdioma}
+      class="hidden items-center rounded-full border border-linea-oscura px-3 py-1.5 text-sm font-semibold uppercase tracking-wider hover:border-lima md:inline-flex"
+    >
+      <span aria-hidden="true">{otroIdioma}</span>
+      <span class="sr-only">{nombresIdioma[otroIdioma]}</span>
+    </a>
+
+    <button
+      type="button"
+      class="ml-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-linea-oscura px-4 font-semibold md:hidden"
+      aria-expanded="false"
+      aria-controls="menu-movil"
+      data-boton-menu
+      data-texto-abrir={t.menu}
+      data-texto-cerrar={t.cerrarMenu}
+    >
+      <svg class="size-5" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M3 6h14v1.6H3zm0 6.4h14V14H3z" />
+      </svg>
+      <span data-texto-menu>{t.menu}</span>
+    </button>
+  </Contenedor>
+
+  <div id="menu-movil" class="border-t border-linea-oscura md:hidden" hidden data-menu-movil>
+    <Contenedor class="py-6">
+      <nav aria-label={t.navegacionPrincipal}>
+        <ul class="flex flex-col gap-1">
+          {
+            navegacion.map((clave) => (
+              <li>
+                <a
+                  href={rutas[clave][idioma]}
+                  aria-current={esActual(rutas[clave][idioma]) ? 'page' : undefined}
+                  class="titular-medio block py-2 aria-[current=page]:text-lima"
+                >
+                  {t[clave]}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+      <p class="mt-6 border-t border-linea-oscura pt-6">
+        <a href={alternativas[otroIdioma]} hreflang={otroIdioma} lang={otroIdioma} class="font-semibold underline underline-offset-4">
+          {nombresIdioma[otroIdioma]}
+        </a>
+      </p>
+    </Contenedor>
+  </div>
+</header>
+
+<script>
+  // Menú móvil: botón con aria-expanded; Esc cierra y devuelve el foco al botón.
+  const boton = document.querySelector<HTMLButtonElement>('[data-boton-menu]');
+  const menu = document.querySelector<HTMLElement>('[data-menu-movil]');
+  const texto = boton?.querySelector<HTMLElement>('[data-texto-menu]');
+  if (boton && menu && texto) {
+    const cambiar = (abrir: boolean) => {
+      boton.setAttribute('aria-expanded', String(abrir));
+      menu.hidden = !abrir;
+      texto.textContent = (abrir ? boton.dataset.textoCerrar : boton.dataset.textoAbrir) ?? '';
+    };
+    boton.addEventListener('click', () => cambiar(boton.getAttribute('aria-expanded') !== 'true'));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && boton.getAttribute('aria-expanded') === 'true') {
+        cambiar(false);
+        boton.focus();
+      }
+    });
+    matchMedia('(min-width: 48rem)').addEventListener('change', (e) => e.matches && cambiar(false));
+  }
+</script>

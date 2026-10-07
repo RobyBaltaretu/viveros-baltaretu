@@ -1,0 +1,17 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+type Props = HTMLAttributes<'span'> & { resaltada?: boolean };
+const { resaltada = false, class: clase, ...resto } = Astro.props;
+---
+
+<span
+  class:list={[
+    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium',
+    resaltada ? 'border-(--boton-fondo) bg-(--boton-fondo) text-(--boton-texto)' : 'border-(--color-linea) text-(--color-secundario)',
+    clase,
+  ]}
+  {...resto}
+>
+  <slot />
+</span>

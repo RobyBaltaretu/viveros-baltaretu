@@ -1,11 +1,23 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Silueta from '../components/ilustraciones/Silueta.astro';
+import Boton from '../components/ui/Boton.astro';
+import Contenedor from '../components/ui/Contenedor.astro';
+import Seccion from '../components/ui/Seccion.astro';
 import { rutas } from '../i18n/ui';
 ---
 
 <!-- Página estática: Cloudflare la sirve con not_found_handling "404-page" sin ejecutar el Worker. -->
 <BaseLayout idioma="es" titulo="Página no encontrada" descripcion="Página no encontrada" alternativas={rutas.inicio} noIndexar>
-  <h1 class="mb-4 text-2xl font-bold">Página no encontrada</h1>
-  <p class="mb-2"><a href={rutas.inicio.es} class="underline">Volver al inicio</a></p>
-  <p lang="en"><a href={rutas.inicio.en} class="underline">Page not found. Go to the English home page</a></p>
+  <Seccion espacio="amplio">
+    <Contenedor class="grid items-end gap-10 md:grid-cols-[1fr_auto]">
+      <div class="min-w-0">
+        <p class="antetitulo text-salvia">Error 404</p>
+        <h1 class="titular-grande mt-4">Esta página no ha echado raíces</h1>
+        <p class="mt-8"><Boton href={rutas.inicio.es} flecha>Volver al inicio</Boton></p>
+        <p class="mt-6" lang="en"><a href={rutas.inicio.en} class="underline underline-offset-4">Page not found. Go to the English home page</a></p>
+      </div>
+      <Silueta tipo="cica" class="h-40 w-auto text-lima" style="--tono-tronco: var(--color-salvia)" />
+    </Contenedor>
+  </Seccion>
 </BaseLayout>

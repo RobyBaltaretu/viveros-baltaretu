@@ -28,3 +28,20 @@ describe('configuración de Keystatic', () => {
     expect(opciones('unidadPrecio')).toEqual([...UNIDADES_PRECIO]);
   });
 });
+
+describe('singleton Empresa', () => {
+  it('escribe en src/content/ajustes/empresa.yaml con los campos del esquema', async () => {
+    const { esquemaEmpresa } = await import('../src/lib/empresa/schema');
+    const empresa = keystaticConfig.singletons!.empresa!;
+    expect(empresa.path).toBe('src/content/ajustes/empresa');
+    expect(Object.keys(empresa.schema).sort()).toEqual(Object.keys(esquemaEmpresa.shape).sort());
+  });
+
+  it('el archivo actual cumple el esquema', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { parse } = await import('yaml');
+    const { esquemaEmpresa } = await import('../src/lib/empresa/schema');
+    const datos = parse(readFileSync(new URL('../src/content/ajustes/empresa.yaml', import.meta.url), 'utf8'));
+    expect(esquemaEmpresa.safeParse(datos).success).toBe(true);
+  });
+});

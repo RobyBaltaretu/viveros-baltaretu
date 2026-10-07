@@ -28,6 +28,13 @@ Español en la raíz (`/`) e inglés bajo `/en/`. Cada texto se escribe en los d
 ## Esquema de cada especie
 `slug`, `familia` (palmeras, olivos, higueras, otras-ornamentales), `nombre {es,en}`, `nombreCientifico`, `descripcion {es,en}`, `alturaMin/Max` (m), `perimetroTroncoCm` (opcional), `formatos`, `disponibilidad` (disponible, bajo-pedido, agotado), `precioDesde` y `unidadPrecio`, `origen`, `destacada`, `seo {es,en}`, `revisado`.
 
+## Diseño
+- Tokens en `src/styles/global.css` (`@theme` de Tailwind 4): bosque, superficie, lima, claro, texto, salvia y musgo. Los contrastes se comprueban en `tests/tokens.test.ts`.
+- El lima es el único acento. Solo va sobre fondos oscuros (texto o borde) o como relleno con texto bosque, nunca como texto sobre claro. Las superficies (`superficie-oscura`, `superficie-media`, `superficie-clara`) ajustan el foco, el acento y el botón principal.
+- Componentes base en `src/components/ui/`, siluetas SVG a escala en `src/components/ilustraciones/`. Las fotos van con `FotoOPlaceholder`: muestra la foto optimizada o "[FOTO: …]" ocupando el mismo hueco.
+- Movimiento solo con CSS y dentro de `prefers-reduced-motion: no-preference`. Las transiciones entre páginas son View Transitions nativas.
+- Revisión visual: `/estilo-interno/` (solo en dev y ramas que no son `main`).
+
 ## Comandos
 Requiere Node 22 (22.12 o superior, ver `.nvmrc`).
 - `npm install`: instala dependencias.

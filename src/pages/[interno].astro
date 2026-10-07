@@ -1,0 +1,119 @@
+---
+/**
+ * Página interna para revisar el sistema de diseño: /estilo-interno/.
+ * Solo existe en desarrollo y en builds de ramas que no son la de producción
+ * (misma regla que las fichas sin revisar). No se enlaza ni se indexa.
+ */
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Silueta from '../components/ilustraciones/Silueta.astro';
+import Boton from '../components/ui/Boton.astro';
+import CintaMetrica from '../components/ui/CintaMetrica.astro';
+import Contenedor from '../components/ui/Contenedor.astro';
+import Etiqueta from '../components/ui/Etiqueta.astro';
+import FotoOPlaceholder from '../components/ui/FotoOPlaceholder.astro';
+import Seccion from '../components/ui/Seccion.astro';
+import { mostrarNoRevisadas } from '../lib/catalogo/publicacion';
+
+export const getStaticPaths = (() => {
+  const visible = mostrarNoRevisadas({
+    dev: import.meta.env.DEV,
+    ramaCi: import.meta.env.WORKERS_CI_BRANCH,
+    ramaProduccion: import.meta.env.PRODUCTION_BRANCH,
+  });
+  return visible ? [{ params: { interno: 'estilo-interno' } }] : [];
+}) satisfies GetStaticPaths;
+
+const colores = [
+  ['bosque', '#0E2519', 'bg-bosque text-texto'],
+  ['superficie', '#143323', 'bg-superficie text-texto'],
+  ['lima', '#D4F25A', 'bg-lima text-bosque'],
+  ['claro', '#F2F5EC', 'bg-claro text-bosque'],
+  ['texto', '#EEF3E6', 'bg-texto text-bosque'],
+  ['salvia', '#A9BBA6', 'bg-salvia text-bosque'],
+  ['musgo', '#4A5E51', 'bg-musgo text-claro'],
+] as const;
+const alturaEscena = 4;
+---
+
+<BaseLayout idioma="es" titulo="Sistema de diseño (interno)" descripcion="Página interna" alternativas={{ es: '/estilo-interno/', en: '/estilo-interno/' }} noIndexar>
+  <Seccion>
+    <Contenedor>
+      <p class="antetitulo text-salvia">Interno · no indexado</p>
+      <h1 class="titular-gigante mt-4">Sistema de diseño</h1>
+      <p class="mt-6 max-w-2xl texto-entrada text-salvia">Estudio botánico contemporáneo: verde bosque, un único acento lima, titulares enormes y la cinta métrica como motivo.</p>
+
+      <h2 class="titular-medio mt-20">Color</h2>
+      <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
+        {colores.map(([nombre, hex, clases]) => (
+          <li class:list={['flex aspect-square flex-col justify-end rounded-(--radius-organico) border border-linea-oscura p-4', clases]}>
+            <span class="font-semibold">{nombre}</span>
+            <span class="font-mono text-xs">{hex}</span>
+          </li>
+        ))}
+      </ul>
+
+      <h2 class="titular-medio mt-20">Tipografía</h2>
+      <div class="mt-6 space-y-6">
+        <p class="titular-gigante">Gigante 800</p>
+        <p class="titular-grande">Grande <span class="titular-ligero">con contraste 300</span></p>
+        <p class="titular-medio">Medio · Bricolage Grotesque</p>
+        <p class="texto-entrada max-w-2xl">Entrada en DM Sans. Ejemplares de gran porte con su altura real, preparados para proyectos de paisajismo.</p>
+        <p class="max-w-2xl">Texto normal en DM Sans con <a href="#" class="underline underline-offset-4 hover:text-lima">un enlace</a>.</p>
+        <p class="antetitulo text-salvia">Antetítulo</p>
+      </div>
+
+      <h2 class="titular-medio mt-20">Botones y etiquetas (oscuro)</h2>
+      <div class="mt-6 flex flex-wrap items-center gap-4">
+        <Boton href="#" flecha>Pedir presupuesto</Boton>
+        <Boton href="#" variante="secundario">Ver catálogo</Boton>
+        <Boton href="#" variante="texto">Enlace de texto</Boton>
+        <Boton type="button" disabled>Desactivado</Boton>
+        <Etiqueta>Palmeras</Etiqueta>
+        <Etiqueta resaltada>Disponible</Etiqueta>
+      </div>
+    </Contenedor>
+  </Seccion>
+
+  <Seccion tono="claro" bordeOrganico>
+    <Contenedor>
+      <h2 class="titular-grande">Sección <span class="subrayado-lima">clara</span></h2>
+      <p class="mt-4 max-w-2xl text-musgo">En superficies claras el acento es el bosque y el lima solo aparece como subrayado decorativo.</p>
+      <div class="mt-8 flex flex-wrap items-center gap-4">
+        <Boton href="#" flecha>Pedir presupuesto</Boton>
+        <Boton href="#" variante="secundario">Ver catálogo</Boton>
+        <Etiqueta>Olivos</Etiqueta>
+        <Etiqueta resaltada>Bajo pedido</Etiqueta>
+      </div>
+    </Contenedor>
+  </Seccion>
+
+  <Seccion tono="medio" bordeOrganico>
+    <Contenedor>
+      <h2 class="titular-grande">Siluetas a escala</h2>
+      <p class="mt-4 max-w-2xl text-salvia">Persona de 1,8 m junto a ejemplares de altura máxima de su ficha de ejemplo. Escena de {alturaEscena} m.</p>
+      <div class="mt-10 flex h-[26rem] items-end gap-6 overflow-x-auto border-b border-linea-oscura pt-4 pb-px text-lima" style="--tono-tronco: var(--color-salvia)">
+        <CintaMetrica alturaMax={alturaEscena} idioma="es" class="h-full shrink-0 text-salvia" />
+        <Silueta tipo="persona" titulo="Persona de 1,8 m" class="shrink-0 text-texto" style={`height: ${(1.8 / alturaEscena) * 100}%`} />
+        <Silueta tipo="palmera" titulo="Palmera de 4 m" class="shrink-0" style="height: 100%" />
+        <Silueta tipo="olivo" titulo="Olivo de 3,5 m" class="shrink-0" style={`height: ${(3.5 / alturaEscena) * 100}%`} />
+        <Silueta tipo="higuera" titulo="Higuera de 3 m" class="shrink-0" style={`height: ${(3 / alturaEscena) * 100}%`} />
+        <Silueta tipo="cica" titulo="Cica de 1,2 m" class="shrink-0" style={`height: ${(1.2 / alturaEscena) * 100}%`} />
+      </div>
+
+      <h2 class="titular-medio mt-20">Foto o marcador</h2>
+      <div class="mt-6 grid gap-6 sm:grid-cols-3">
+        <FotoOPlaceholder pendiente="Palmera canaria en contenedor" silueta="palmera" />
+        <FotoOPlaceholder pendiente="Olivo de gran perímetro en cepellón" silueta="olivo" />
+        <FotoOPlaceholder pendiente="Detalle de hoja de higuera" silueta="higuera" proporcion="1 / 1" />
+      </div>
+    </Contenedor>
+  </Seccion>
+
+  <Seccion bordeOrganico>
+    <Contenedor>
+      <h2 class="titular-medio aparecer">Aparición al hacer scroll</h2>
+      <p class="aparecer mt-4 max-w-2xl text-salvia">Solo con CSS (animation-timeline). Desactivada con prefers-reduced-motion.</p>
+    </Contenedor>
+  </Seccion>
+</BaseLayout>

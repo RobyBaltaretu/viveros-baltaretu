@@ -12,6 +12,11 @@ export const rutas = {
   presupuestoEnviado: { es: '/presupuesto/enviado/', en: '/en/quote/sent/' },
 } as const satisfies Record<string, Record<Idioma, string>>;
 
+/** Páginas del menú principal, en orden. Se amplía a medida que existen las páginas. */
+export const navegacion = ['catalogo'] as const satisfies readonly (keyof typeof rutas)[];
+
+export const nombresIdioma: Record<Idioma, string> = { es: 'Español', en: 'English' };
+
 export function rutaFicha(idioma: Idioma, slug: string): string {
   return `${rutas.catalogo[idioma]}${slug}/`;
 }
@@ -20,6 +25,17 @@ export const textos = {
   es: {
     saltarAlContenido: 'Saltar al contenido',
     navegacionPrincipal: 'Navegación principal',
+    menu: 'Menú',
+    cerrarMenu: 'Cerrar menú',
+    irAInicio: 'Ir a la página de inicio',
+    lemaEmpresa: 'Vivero mayorista de plantas ornamentales en la provincia de Valencia, con reparto a toda España.',
+    contacto: 'Contacto',
+    navegacion: 'Navegación',
+    idioma: 'Idioma',
+    telefono: 'Teléfono',
+    email: 'Email',
+    direccion: 'Dirección',
+    derechos: 'Todos los derechos reservados.',
     inicio: 'Inicio',
     catalogo: 'Catálogo',
     cambiarIdioma: 'English',
@@ -43,6 +59,17 @@ export const textos = {
   en: {
     saltarAlContenido: 'Skip to content',
     navegacionPrincipal: 'Main navigation',
+    menu: 'Menu',
+    cerrarMenu: 'Close menu',
+    irAInicio: 'Go to the home page',
+    lemaEmpresa: 'Wholesale nursery of ornamental plants in the province of Valencia, delivering across Spain.',
+    contacto: 'Contact',
+    navegacion: 'Navigation',
+    idioma: 'Language',
+    telefono: 'Phone',
+    email: 'Email',
+    direccion: 'Address',
+    derechos: 'All rights reserved.',
     inicio: 'Home',
     catalogo: 'Catalogue',
     cambiarIdioma: 'Español',

@@ -1,1 +1,200 @@
 @import 'tailwindcss';
+
+/*
+ * Sistema de diseño: "estudio botánico contemporáneo".
+ * Los contrastes de cada combinación de color se comprueban en tests/tokens.test.ts.
+ * Regla: el lima solo va sobre fondos oscuros (texto o borde) o como relleno con texto bosque.
+ */
+@theme {
+  --color-bosque: #0e2519;
+  --color-superficie: #143323;
+  --color-lima: #d4f25a;
+  --color-claro: #f2f5ec;
+  --color-texto: #eef3e6;
+  /* Texto secundario sobre fondos oscuros y sobre claro. */
+  --color-salvia: #a9bba6;
+  --color-musgo: #4a5e51;
+  /* Líneas sutiles. */
+  --color-linea-oscura: #2a4a37;
+  --color-linea-clara: #cdd6c6;
+
+  --font-titular: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-organico: 2rem;
+  --radius-amplio: 3rem;
+
+  --ease-suave: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Escala tipográfica fluida (móvil → escritorio). */
+@utility titular-gigante {
+  font-family: var(--font-titular);
+  font-weight: 800;
+  font-size: clamp(3rem, 1.6rem + 7vw, 9rem);
+  line-height: 0.9;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+@utility titular-grande {
+  font-family: var(--font-titular);
+  font-weight: 750;
+  font-size: clamp(2.25rem, 1.4rem + 4vw, 5rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+@utility titular-medio {
+  font-family: var(--font-titular);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+@utility titular-ligero {
+  font-family: var(--font-titular);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+@utility texto-entrada {
+  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+@utility antetitulo {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/*
+ * Superficies. Cada una define el color de foco y de acento para que los
+ * componentes funcionen igual en secciones claras y oscuras.
+ */
+@utility superficie-oscura {
+  --color-foco: var(--color-lima);
+  --color-acento: var(--color-lima);
+  --color-secundario: var(--color-salvia);
+  --color-linea: var(--color-linea-oscura);
+  --boton-fondo: var(--color-lima);
+  --boton-texto: var(--color-bosque);
+  background-color: var(--color-bosque);
+  color: var(--color-texto);
+}
+@utility superficie-media {
+  --color-foco: var(--color-lima);
+  --color-acento: var(--color-lima);
+  --color-secundario: var(--color-salvia);
+  --color-linea: var(--color-linea-oscura);
+  --boton-fondo: var(--color-lima);
+  --boton-texto: var(--color-bosque);
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+}
+@utility superficie-clara {
+  --color-foco: var(--color-bosque);
+  --color-acento: var(--color-bosque);
+  --color-secundario: var(--color-musgo);
+  --color-linea: var(--color-linea-clara);
+  /* Sobre claro el botón principal es bosque: el lima no contrasta con el fondo. */
+  --boton-fondo: var(--color-bosque);
+  --boton-texto: var(--color-claro);
+  background-color: var(--color-claro);
+  color: var(--color-bosque);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 6rem;
+  }
+  body {
+    --color-foco: var(--color-lima);
+    --color-acento: var(--color-lima);
+    --color-secundario: var(--color-salvia);
+    --color-linea: var(--color-linea-oscura);
+    --boton-fondo: var(--color-lima);
+    --boton-texto: var(--color-bosque);
+    background-color: var(--color-bosque);
+    color: var(--color-texto);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-foco);
+    outline-offset: 3px;
+    border-radius: 0.5rem;
+  }
+  ::selection {
+    background-color: var(--color-lima);
+    color: var(--color-bosque);
+  }
+  /* Subrayado de acento en secciones claras: el "guiño" lima sin perder contraste. */
+  .subrayado-lima {
+    text-decoration-line: underline;
+    text-decoration-color: var(--color-lima);
+    text-decoration-thickness: 0.18em;
+    text-underline-offset: 0.12em;
+    text-decoration-skip-ink: none;
+  }
+}
+
+/* Movimiento: solo si la persona no ha pedido reducirlo. */
+@media (prefers-reduced-motion: no-preference) {
+  /* Transiciones entre páginas sin JavaScript (View Transitions entre documentos). */
+  @view-transition {
+    navigation: auto;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 280ms;
+    animation-timing-function: var(--ease-suave);
+  }
+
+  /* Balanceo suave de hojas en las siluetas SVG. */
+  .hoja {
+    transform-box: fill-box;
+    transform-origin: var(--origen-hoja, 0% 50%);
+    animation: balanceo var(--duracion-hoja, 7s) ease-in-out infinite;
+    animation-delay: var(--retraso-hoja, 0s);
+  }
+  @keyframes balanceo {
+    0%,
+    100% {
+      rotate: -1.6deg;
+    }
+    50% {
+      rotate: 1.6deg;
+    }
+  }
+
+  /* Aparición al hacer scroll, solo con CSS. Sin soporte, el contenido se ve sin animar. */
+  @supports (animation-timeline: view()) {
+    .aparecer {
+      animation: aparecer linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+    @keyframes aparecer {
+      from {
+        opacity: 0;
+        translate: 0 2rem;
+      }
+      to {
+        opacity: 1;
+        translate: 0 0;
+      }
+    }
+  }
+}

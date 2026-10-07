@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { crearEsquemaEspecie } from './lib/catalogo/schema';
+import { esquemaEmpresa } from './lib/empresa/schema';
 
 const catalogo = defineCollection({
   // El id de cada entrada es el campo `slug` del frontmatter.
@@ -8,4 +9,10 @@ const catalogo = defineCollection({
   schema: ({ image }) => crearEsquemaEspecie(image()),
 });
 
-export const collections = { catalogo };
+// Singletons editados desde el panel: un archivo YAML por colección (id = nombre del archivo).
+const empresa = defineCollection({
+  loader: glob({ pattern: 'empresa.yaml', base: './src/content/ajustes' }),
+  schema: esquemaEmpresa,
+});
+
+export const collections = { catalogo, empresa };

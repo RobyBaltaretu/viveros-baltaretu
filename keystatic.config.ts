@@ -1,5 +1,6 @@
-import { collection, config, fields } from '@keystatic/core';
+import { collection, config, fields, singleton } from '@keystatic/core';
 import { SLUG_REGEX } from './src/lib/catalogo/schema';
+import { WHATSAPP_REGEX } from './src/lib/empresa/schema';
 
 /**
  * Panel del catálogo en /keystatic.
@@ -57,6 +58,29 @@ export default config({
   locale: 'es-ES',
   ui: {
     brand: { name: 'Catálogo del vivero' },
+  },
+  singletons: {
+    empresa: singleton({
+      label: 'Empresa',
+      path: 'src/content/ajustes/empresa',
+      format: { data: 'yaml' },
+      schema: {
+        nombre: fields.text({
+          label: 'Nombre de la empresa',
+          description: 'Tal como debe aparecer en la web.',
+          validation: { isRequired: true },
+        }),
+        telefono: fields.text({ label: 'Teléfono', description: 'Con prefijo, ej. +34 600 000 000.' }),
+        whatsapp: fields.text({
+          label: 'WhatsApp',
+          description:
+            'Número con prefijo de país, solo dígitos, sin "+" ni espacios (ej. 34600000000). Si se deja vacío, no se muestra el botón de WhatsApp.',
+          validation: { pattern: { regex: WHATSAPP_REGEX, message: 'Solo dígitos con prefijo de país, ej. 34600000000' } },
+        }),
+        email: fields.text({ label: 'Email de contacto' }),
+        direccion: fields.text({ label: 'Dirección', multiline: true }),
+      },
+    }),
   },
   collections: {
     catalogo: collection({

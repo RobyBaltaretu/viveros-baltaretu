@@ -1,7 +1,10 @@
 ---
+// Provisional: el diseño final llega con el bloque de presupuesto.
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Contenedor from './ui/Contenedor.astro';
+import Seccion from './ui/Seccion.astro';
 import { rutas, textos, type Idioma } from '../i18n/ui';
-import { empresa } from '../lib/empresa';
+import { obtenerEmpresa } from '../lib/empresa';
 
 interface Props {
   idioma: Idioma;
@@ -9,9 +12,9 @@ interface Props {
 
 const { idioma } = Astro.props;
 const t = textos[idioma];
+const empresa = await obtenerEmpresa();
 ---
 
-<!-- Provisional: el diseño final llega con el bloque de presupuesto. -->
 <BaseLayout
   idioma={idioma}
   titulo={`${t.presupuestoEnviadoTitulo} | ${empresa.nombre}`}
@@ -19,6 +22,10 @@ const t = textos[idioma];
   alternativas={rutas.presupuestoEnviado}
   noIndexar
 >
-  <h1 class="mb-4 text-2xl font-bold">{t.presupuestoEnviadoTitulo}</h1>
-  <p>{t.presupuestoEnviadoTexto}</p>
+  <Seccion espacio="amplio">
+    <Contenedor ancho="estrecho">
+      <h1 class="titular-grande">{t.presupuestoEnviadoTitulo}</h1>
+      <p class="mt-6 texto-entrada">{t.presupuestoEnviadoTexto}</p>
+    </Contenedor>
+  </Seccion>
 </BaseLayout>
