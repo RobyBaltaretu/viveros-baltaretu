@@ -8,12 +8,13 @@ import FiltrosCatalogo from './FiltrosCatalogo.astro';
 import TarjetaEspecie from './TarjetaEspecie.astro';
 import Contenedor from '../ui/Contenedor.astro';
 import Seccion from '../ui/Seccion.astro';
-import { familias, rutaFamilia, rutas, textos, type Idioma } from '../../i18n/ui';
+import { familias, rutaFamilia, rutaFicha, rutas, textos, type Idioma } from '../../i18n/ui';
 import { obtenerEspecies } from '../../lib/catalogo';
 import { FAMILIAS } from '../../lib/catalogo/schema';
 import { obtenerTextosCatalogo } from '../../lib/catalogo/textos';
 import type { Familia } from '../../lib/catalogo/tipos';
 import { obtenerEmpresa } from '../../lib/empresa';
+import { listaElementos, migas } from '../../lib/seo/datos-estructurados';
 
 interface Props {
   idioma: Idioma;
@@ -33,6 +34,16 @@ const alternativas = familia
   ? { es: rutaFamilia('es', familia), en: rutaFamilia('en', familia) }
   : rutas.catalogo;
 const idLista = 'lista-especies';
+const abs = (ruta: string) => new URL(ruta, Astro.site).href;
+const datos = [
+  listaElementos(especies.map((e) => ({ nombre: e.data.nombre[idioma], url: abs(rutaFicha(idioma, e.data.slug)) }))),
+  familia
+    ? migas([
+        { nombre: t.catalogo, url: abs(rutas.catalogo[idioma]) },
+        { nombre: tituloH1, url: abs(rutaFamilia(idioma, familia)) },
+      ])
+    : null,
+];
 const idVacio = 'sin-resultados';
 ---
 
@@ -41,6 +52,7 @@ const idVacio = 'sin-resultados';
   titulo={`${tituloH1} | ${empresa.nombre}`}
   descripcion={textosPagina.seoDescripcion[idioma]}
   alternativas={alternativas}
+  datosEstructurados={datos}
 >
   <Seccion espacio="ninguno" class="pt-12 pb-20 sm:pt-16 sm:pb-28">
     <Contenedor>

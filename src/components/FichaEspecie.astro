@@ -4,6 +4,8 @@
  * galería (o marcador de foto) y botón para añadir a la lista de presupuesto.
  */
 import type { CollectionEntry } from 'astro:content';
+import { getImage } from 'astro:assets';
+import { migas, producto } from '../lib/seo/datos-estructurados';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TarjetaEspecie from './catalogo/TarjetaEspecie.astro';
 import BotonLista from './ficha/BotonLista.astro';
@@ -33,6 +35,28 @@ const relacionadas = (await obtenerEspecies(idioma))
   .slice(0, 3);
 const alturaRelacionadas = Math.max(2, Math.ceil(Math.max(0, ...relacionadas.map((e) => e.data.alturaMax))));
 
+const abs = (ruta: string) => new URL(ruta, Astro.site).href;
+const url = abs(rutaFicha(idioma, data.slug));
+// La foto principal, si existe, también es la imagen al compartir en redes.
+const imagenSocial = principal ? (await getImage({ src: principal.imagen, width: 1200, format: 'jpg' })).src : undefined;
+const datos = [
+  producto({
+    nombre,
+    nombreCientifico: data.nombreCientifico,
+    descripcion: data.descripcion[idioma],
+    url,
+    categoria: familias[data.familia][idioma],
+    precioDesde: data.precioDesde,
+    disponibilidad: data.disponibilidad,
+    imagen: imagenSocial && abs(imagenSocial),
+  }),
+  migas([
+    { nombre: t.catalogo, url: abs(rutas.catalogo[idioma]) },
+    { nombre: familias[data.familia][idioma], url: abs(rutaFamilia(idioma, data.familia)) },
+    { nombre, url },
+  ]),
+];
+
 const medidas: [string, string][] = [
   [t.nombreCientifico, data.nombreCientifico],
   [t.altura, formatearRango(data.alturaMin, data.alturaMax, 'm', idioma)],
@@ -51,6 +75,8 @@ const medidas: [string, string][] = [
   titulo={data.seo[idioma].titulo}
   descripcion={data.seo[idioma].descripcion}
   alternativas={{ es: rutaFicha('es', data.slug), en: rutaFicha('en', data.slug) }}
+  datosEstructurados={datos}
+  imagenSocial={imagenSocial}
   mensajeWhatsapp={t.whatsappEspecie.replace('{nombre}', nombre).replace('{cientifico}', data.nombreCientifico)}
 >
   <Seccion espacio="ninguno" class="pt-10 pb-20 sm:pt-14 sm:pb-28">

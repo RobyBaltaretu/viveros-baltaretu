@@ -9,6 +9,8 @@ import { rutas, type Idioma } from '../i18n/ui';
 import { obtenerEspecies } from '../lib/catalogo';
 import { obtenerEmpresa } from '../lib/empresa';
 import { obtenerPortada } from '../lib/portada';
+import { esPlaceholder } from '../lib/empresa';
+import { organizacion, sitioWeb } from '../lib/seo/datos-estructurados';
 
 interface Props {
   idioma: Idioma;
@@ -17,9 +19,11 @@ interface Props {
 const { idioma } = Astro.props;
 const [empresa, portada, especies] = await Promise.all([obtenerEmpresa(), obtenerPortada(), obtenerEspecies(idioma)]);
 const titulo = `${portada.titular[idioma]} ${portada.titularDestacado[idioma]} | ${empresa.nombre}`;
+const url = new URL(rutas.inicio[idioma], Astro.site).href;
+const datos = [organizacion(empresa, new URL('/', Astro.site).href), sitioWeb(esPlaceholder(empresa.nombre) ? null : empresa.nombre, url, idioma)];
 ---
 
-<BaseLayout idioma={idioma} titulo={titulo} descripcion={portada.entradilla[idioma]} alternativas={rutas.inicio}>
+<BaseLayout idioma={idioma} titulo={titulo} descripcion={portada.entradilla[idioma]} alternativas={rutas.inicio} datosEstructurados={datos}>
   <Heroe idioma={idioma} portada={portada} especies={especies} />
   <FranjaEspecies idioma={idioma} titulo={portada.tituloFranja[idioma]} especies={especies} />
   <BloqueConfianza idioma={idioma} puntos={portada.confianza} />

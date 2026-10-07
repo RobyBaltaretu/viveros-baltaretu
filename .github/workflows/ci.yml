@@ -40,3 +40,25 @@ jobs:
       # Valida wrangler.jsonc y el bundle del Worker sin desplegar ni usar credenciales.
       - name: Comprobar el Worker de Cloudflare
         run: npm run check:worker
+
+  accesibilidad:
+    name: Accesibilidad y teclado (Playwright + axe)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Pruebas en navegador
+        run: npm run test:e2e
+        env:
+          ASTRO_TELEMETRY_DISABLED: '1'
