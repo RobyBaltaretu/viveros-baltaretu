@@ -36,5 +36,7 @@ Requiere Node 22.12 o superior (`.nvmrc`).
 - `npm run lint`: ESLint y `astro check` (tipos y esquema del contenido).
 - `npm test`: tests con Vitest (incluye la validación de todas las fichas del catálogo).
 
+La CI (`.github/workflows/ci.yml`) ejecuta `npm run lint`, `npm test` y `npm run build` en cada PR.
+
 ## Documentos de referencia
 Hoja de ruta, definición funcional y técnica, y estrategia SEO con el mapa de páginas.
