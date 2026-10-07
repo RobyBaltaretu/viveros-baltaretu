@@ -1,0 +1,33 @@
+---
+import PaginaFija from './PaginaFija.astro';
+import Silueta from '../ilustraciones/Silueta.astro';
+import Contenedor from '../ui/Contenedor.astro';
+import Seccion from '../ui/Seccion.astro';
+import { textos, type Idioma } from '../../i18n/ui';
+import { obtenerPortada } from '../../lib/portada';
+
+interface Props {
+  idioma: Idioma;
+}
+
+const { idioma } = Astro.props;
+const t = textos[idioma];
+// Misión y visión se editan una sola vez (en Portada) y se muestran aquí también.
+const portada = await obtenerPortada();
+---
+
+<PaginaFija idioma={idioma} clave="nosotros" ruta="nosotros">
+  <Seccion tono="medio" bordeOrganico>
+    <Contenedor class="grid gap-12 md:grid-cols-[1fr_1fr_auto] md:gap-16">
+      <div>
+        <h2 class="antetitulo text-salvia">{t.mision}</h2>
+        <p class="titular-medio titular-ligero mt-4">{portada.mision[idioma]}</p>
+      </div>
+      <div>
+        <h2 class="antetitulo text-salvia">{t.vision}</h2>
+        <p class="titular-medio titular-ligero mt-4">{portada.vision[idioma]}</p>
+      </div>
+      <Silueta tipo="olivo" class="hidden h-40 w-auto text-lima md:block" style="--tono-tronco: var(--color-salvia)" />
+    </Contenedor>
+  </Seccion>
+</PaginaFija>

@@ -1,0 +1,35 @@
+titulo:
+  es: Reparto a toda España
+  en: Delivery across Spain
+entradilla:
+  es: Servimos desde la provincia de Valencia a obras de toda España.
+  en: We supply projects all over Spain from the province of Valencia.
+secciones:
+  - titulo:
+      es: Zonas y plazos
+      en: Areas and lead times
+    texto:
+      es: '[PLACEHOLDER: zonas de reparto y plazos habituales]'
+      en: '[PLACEHOLDER: delivery areas and usual lead times]'
+  - titulo:
+      es: Transporte de ejemplares grandes
+      en: Moving large specimens
+    texto:
+      es: '[PLACEHOLDER: tipo de vehículos, grúa, preparación del cepellón o del contenedor]'
+      en: '[PLACEHOLDER: vehicles, crane, root ball or container preparation]'
+  - titulo:
+      es: Descarga en obra
+      en: Unloading on site
+    texto:
+      es: '[PLACEHOLDER: qué hace falta en obra para la descarga (acceso, espacio, medios)]'
+      en: '[PLACEHOLDER: what is needed on site for unloading (access, space, equipment)]'
+  - titulo:
+      es: Documentación
+      en: Paperwork
+    texto:
+      es: '[PLACEHOLDER: pasaporte fitosanitario y documentación que acompaña a cada envío]'
+      en: '[PLACEHOLDER: plant passport and paperwork shipped with each order]'
+seoDescripcion:
+  es: Reparto de palmeras, olivos y plantas ornamentales a toda España desde la provincia de Valencia.
+  en: Delivery of palms, olive trees and ornamental plants across Spain from the province of Valencia.
+pendienteRevision: false

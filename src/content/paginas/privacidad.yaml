@@ -1,0 +1,29 @@
+titulo:
+  es: Política de privacidad
+  en: Privacy policy
+entradilla:
+  es: Texto pendiente de redacción y revisión por un asesor legal. No es un texto definitivo.
+  en: Text pending drafting and review by a legal adviser. This is not a final text.
+secciones:
+  - titulo:
+      es: Responsable del tratamiento
+      en: Data controller
+    texto:
+      es: '[PLACEHOLDER: texto legal pendiente]'
+      en: '[PLACEHOLDER: legal text pending]'
+  - titulo:
+      es: Datos que recogemos y para qué
+      en: What data we collect and why
+    texto:
+      es: '[PLACEHOLDER: texto legal pendiente]'
+      en: '[PLACEHOLDER: legal text pending]'
+  - titulo:
+      es: Tus derechos
+      en: Your rights
+    texto:
+      es: '[PLACEHOLDER: texto legal pendiente]'
+      en: '[PLACEHOLDER: legal text pending]'
+seoDescripcion:
+  es: Política de privacidad del sitio web.
+  en: Privacy policy for this website.
+pendienteRevision: true

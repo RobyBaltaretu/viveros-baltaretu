@@ -1,0 +1,29 @@
+titulo:
+  es: Aviso legal
+  en: Legal notice
+entradilla:
+  es: Texto pendiente de redacción y revisión por un asesor legal. No es un texto definitivo.
+  en: Text pending drafting and review by a legal adviser. This is not a final text.
+secciones:
+  - titulo:
+      es: Titular del sitio web
+      en: Website owner
+    texto:
+      es: '[PLACEHOLDER: texto legal pendiente]'
+      en: '[PLACEHOLDER: legal text pending]'
+  - titulo:
+      es: Condiciones de uso
+      en: Terms of use
+    texto:
+      es: '[PLACEHOLDER: texto legal pendiente]'
+      en: '[PLACEHOLDER: legal text pending]'
+  - titulo:
+      es: Propiedad intelectual
+      en: Intellectual property
+    texto:
+      es: '[PLACEHOLDER: texto legal pendiente]'
+      en: '[PLACEHOLDER: legal text pending]'
+seoDescripcion:
+  es: Aviso legal del sitio web.
+  en: Legal notice for this website.
+pendienteRevision: true

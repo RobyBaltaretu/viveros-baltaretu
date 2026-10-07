@@ -12,6 +12,7 @@ export const FAMILIAS = ['palmeras', 'olivos', 'higueras', 'otras-ornamentales']
 export const DISPONIBILIDADES = ['disponible', 'bajo-pedido', 'agotado'] as const;
 export const FORMATOS = ['contenedor', 'cepellon', 'raiz-desnuda'] as const;
 export const UNIDADES_PRECIO = ['unidad'] as const;
+export const SILUETAS = ['palmera', 'olivo', 'higuera', 'cica'] as const;
 
 export const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -56,6 +57,8 @@ export function crearEsquemaEspecie<TImagen extends z.ZodType>(imagen: TImagen) 
       unidadPrecio: z.enum(UNIDADES_PRECIO).default('unidad'),
       origen: z.string().trim().min(1),
       destacada: z.boolean().default(false),
+      // Dibujo que representa la especie mientras no haya fotos. Si falta, se usa el de su familia.
+      silueta: z.preprocess((v) => (v === '' || v === null ? undefined : v), z.enum(SILUETAS).optional()),
       fotos: z
         .array(
           z.object({

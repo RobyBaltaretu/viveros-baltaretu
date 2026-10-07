@@ -18,3 +18,8 @@ export const SILUETA_POR_FAMILIA: Record<Familia, Exclude<TipoSilueta, 'persona'
   higueras: 'higuera',
   'otras-ornamentales': 'cica',
 };
+
+/** Silueta de una especie: la indicada en su ficha o, si no hay, la de su familia. */
+export function siluetaDe(data: { familia: Familia; silueta?: Exclude<TipoSilueta, 'persona'> | undefined }) {
+  return data.silueta ?? SILUETA_POR_FAMILIA[data.familia];
+}

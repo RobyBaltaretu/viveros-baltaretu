@@ -1,0 +1,36 @@
+# Textos del catálogo y de cada familia. Se editan desde el panel (/keystatic → Textos del catálogo).
+catalogo:
+  entradilla:
+    es: Elige por tamaño con la regla de altura y afina por familia, perímetro de tronco y formato. Todas las alturas son reales.
+    en: Choose by size with the height ruler, then narrow down by family, trunk girth and format. Every height shown is real.
+  seoDescripcion:
+    es: Catálogo mayorista de palmeras, olivos, higueras y plantas ornamentales con altura real de cada ejemplar. Reparto a toda España.
+    en: Wholesale catalogue of palms, olive trees, fig trees and ornamental plants, with the real height of each specimen. Delivery across Spain.
+palmeras:
+  entradilla:
+    es: Palmeras de distintos portes para avenidas, rotondas, jardines y proyectos de paisajismo.
+    en: Palms in a range of sizes for avenues, roundabouts, gardens and landscaping projects.
+  seoDescripcion:
+    es: Palmeras al por mayor con altura real de cada ejemplar. Reparto a toda España desde la provincia de Valencia.
+    en: Wholesale palm trees with the real height of each specimen. Delivery across Spain from the province of Valencia.
+olivos:
+  entradilla:
+    es: Olivos ornamentales, desde ejemplares formados en vivero hasta troncos de gran perímetro.
+    en: Ornamental olive trees, from nursery-trained specimens to large-girth trunks.
+  seoDescripcion:
+    es: Olivos ornamentales al por mayor con altura y perímetro de tronco reales. Reparto a toda España.
+    en: Wholesale ornamental olive trees with real height and trunk girth. Delivery across Spain.
+higueras:
+  entradilla:
+    es: Higueras de porte amplio, con sombra en verano y forma escultórica en invierno.
+    en: Broad fig trees that give shade in summer and a sculptural shape in winter.
+  seoDescripcion:
+    es: Higueras al por mayor con altura real de cada ejemplar. Reparto a toda España.
+    en: Wholesale fig trees with the real height of each specimen. Delivery across Spain.
+otras-ornamentales:
+  entradilla:
+    es: Cítricos, cicas, yucas y otras ornamentales para completar cada proyecto.
+    en: Citrus, sago palms, yuccas and other ornamentals to round off every project.
+  seoDescripcion:
+    es: Plantas ornamentales al por mayor con altura real de cada ejemplar. Reparto a toda España.
+    en: Wholesale ornamental plants with the real height of each specimen. Delivery across Spain.

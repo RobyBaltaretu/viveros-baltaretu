@@ -1,12 +1,23 @@
 ---
-// Provisional con el sistema de diseño: la ficha completa (comparador de escala, lista de presupuesto) llega en el bloque 4.
+/**
+ * Ficha de especie: comparador de escala, tabla de medidas, precio "desde",
+ * galería (o marcador de foto) y botón para añadir a la lista de presupuesto.
+ */
 import type { CollectionEntry } from 'astro:content';
+import { getImage } from 'astro:assets';
+import { migas, producto } from '../lib/seo/datos-estructurados';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { SILUETA_POR_FAMILIA } from './ilustraciones/siluetas';
+import TarjetaEspecie from './catalogo/TarjetaEspecie.astro';
+import BotonLista from './ficha/BotonLista.astro';
+import ComparadorEscala from './ficha/ComparadorEscala.astro';
+import { siluetaDe } from './ilustraciones/siluetas';
+import Boton from './ui/Boton.astro';
 import Contenedor from './ui/Contenedor.astro';
+import Etiqueta from './ui/Etiqueta.astro';
 import FotoOPlaceholder from './ui/FotoOPlaceholder.astro';
 import Seccion from './ui/Seccion.astro';
-import { disponibilidades, familias, formatos, rutaFicha, rutas, textos, type Idioma } from '../i18n/ui';
+import { disponibilidades, familias, formatos, rutaFamilia, rutaFicha, rutas, textos, type Idioma } from '../i18n/ui';
+import { obtenerEspecies } from '../lib/catalogo';
 import { formatearPrecio, formatearRango } from '../lib/catalogo/formato';
 
 interface Props {
@@ -17,7 +28,46 @@ interface Props {
 const { idioma, especie } = Astro.props;
 const { data } = especie;
 const t = textos[idioma];
-const fotoPrincipal = data.fotos[0];
+const nombre = data.nombre[idioma];
+const [principal, ...resto] = data.fotos;
+const relacionadas = (await obtenerEspecies(idioma))
+  .filter((e) => e.data.familia === data.familia && e.data.slug !== data.slug)
+  .slice(0, 3);
+const alturaRelacionadas = Math.max(2, Math.ceil(Math.max(0, ...relacionadas.map((e) => e.data.alturaMax))));
+
+const abs = (ruta: string) => new URL(ruta, Astro.site).href;
+const url = abs(rutaFicha(idioma, data.slug));
+// La foto principal, si existe, también es la imagen al compartir en redes.
+const imagenSocial = principal ? (await getImage({ src: principal.imagen, width: 1200, format: 'jpg' })).src : undefined;
+const datos = [
+  producto({
+    nombre,
+    nombreCientifico: data.nombreCientifico,
+    descripcion: data.descripcion[idioma],
+    url,
+    categoria: familias[data.familia][idioma],
+    precioDesde: data.precioDesde,
+    disponibilidad: data.disponibilidad,
+    imagen: imagenSocial && abs(imagenSocial),
+  }),
+  migas([
+    { nombre: t.catalogo, url: abs(rutas.catalogo[idioma]) },
+    { nombre: familias[data.familia][idioma], url: abs(rutaFamilia(idioma, data.familia)) },
+    { nombre, url },
+  ]),
+];
+
+const medidas: [string, string][] = [
+  [t.nombreCientifico, data.nombreCientifico],
+  [t.altura, formatearRango(data.alturaMin, data.alturaMax, 'm', idioma)],
+  ...(data.perimetroTroncoCm
+    ? [[t.perimetroTronco, formatearRango(data.perimetroTroncoCm[0], data.perimetroTroncoCm[1], 'cm', idioma)] as [string, string]]
+    : []),
+  [t.formatos, data.formatos.map((f) => formatos[f][idioma]).join(', ')],
+  [t.disponibilidad, disponibilidades[data.disponibilidad][idioma]],
+  [t.origen, data.origen],
+  [t.precio, formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)],
+];
 ---
 
 <BaseLayout
@@ -25,57 +75,85 @@ const fotoPrincipal = data.fotos[0];
   titulo={data.seo[idioma].titulo}
   descripcion={data.seo[idioma].descripcion}
   alternativas={{ es: rutaFicha('es', data.slug), en: rutaFicha('en', data.slug) }}
+  datosEstructurados={datos}
+  imagenSocial={imagenSocial}
+  mensajeWhatsapp={t.whatsappEspecie.replace('{nombre}', nombre).replace('{cientifico}', data.nombreCientifico)}
 >
-  <Seccion>
-    <Contenedor class="grid gap-12 lg:grid-cols-2 lg:items-start">
-      <div>
-        {!data.revisado && <p class="mb-6 rounded-2xl border border-lima p-4 text-lima">{t.avisoNoRevisado}</p>}
-        <h1 class="titular-grande">{data.nombre[idioma]}</h1>
-        <p class="mt-3 texto-entrada italic text-salvia">{data.nombreCientifico}</p>
-        <p class="mt-6 titular-medio text-lima">{formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}</p>
-        <p class="mt-6 max-w-prose texto-entrada">{data.descripcion[idioma]}</p>
+  <Seccion espacio="ninguno" class="pt-10 pb-20 sm:pt-14 sm:pb-28">
+    <Contenedor>
+      <nav aria-label={t.migas}>
+        <ol class="flex flex-wrap items-center gap-2 text-sm text-salvia">
+          <li><a href={rutas.catalogo[idioma]} class="underline-offset-4 hover:text-lima hover:underline">{t.catalogo}</a></li>
+          <li aria-hidden="true">/</li>
+          <li><a href={rutaFamilia(idioma, data.familia)} class="underline-offset-4 hover:text-lima hover:underline">{familias[data.familia][idioma]}</a></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" class="text-texto">{nombre}</li>
+        </ol>
+      </nav>
 
-        <dl class="mt-10 grid grid-cols-[max-content_1fr] gap-x-6 gap-y-3 border-t border-linea-oscura pt-6">
-          <dt class="text-salvia">{t.familia}</dt>
-          <dd>{familias[data.familia][idioma]}</dd>
-          <dt class="text-salvia">{t.altura}</dt>
-          <dd>{formatearRango(data.alturaMin, data.alturaMax, 'm', idioma)}</dd>
-          {
-            data.perimetroTroncoCm && (
-              <>
-                <dt class="text-salvia">{t.perimetroTronco}</dt>
-                <dd>{formatearRango(data.perimetroTroncoCm[0], data.perimetroTroncoCm[1], 'cm', idioma)}</dd>
-              </>
-            )
-          }
-          <dt class="text-salvia">{t.formatos}</dt>
-          <dd>{data.formatos.map((f) => formatos[f][idioma]).join(', ')}</dd>
-          <dt class="text-salvia">{t.disponibilidad}</dt>
-          <dd>{disponibilidades[data.disponibilidad][idioma]}</dd>
-          <dt class="text-salvia">{t.origen}</dt>
-          <dd>{data.origen}</dd>
-        </dl>
+      {!data.revisado && <p class="mt-6 rounded-2xl border border-lima p-4 text-lima">{t.avisoNoRevisado}</p>}
 
-        <p class="mt-10"><a href={rutas.catalogo[idioma]} class="font-semibold underline underline-offset-4 hover:text-lima">{t.volverAlCatalogo}</a></p>
+      <div class="mt-8 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
+        <div class="min-w-0">
+          <div class="flex flex-wrap gap-2">
+            <Etiqueta>{familias[data.familia][idioma]}</Etiqueta>
+            <Etiqueta resaltada={data.disponibilidad === 'disponible'}>{disponibilidades[data.disponibilidad][idioma]}</Etiqueta>
+          </div>
+          <h1 class="titular-gigante mt-6 text-[clamp(2.75rem,1.4rem+5vw,6.5rem)]">{nombre}</h1>
+          <p class="mt-3 texto-entrada italic text-salvia">{data.nombreCientifico}</p>
+          <p class="mt-8 font-titular text-[clamp(1.75rem,1.2rem+1.8vw,2.75rem)] font-bold leading-tight text-lima">{formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}</p>
+          <p class="mt-6 max-w-prose texto-entrada">{data.descripcion[idioma]}</p>
+          <div class="mt-10 flex flex-wrap gap-3">
+            <BotonLista idioma={idioma} slug={data.slug} nombre={nombre} />
+            <Boton href={rutas.presupuesto[idioma]} tamano="grande" variante="secundario" flecha>{t.pedirPresupuesto}</Boton>
+          </div>
+        </div>
+
+        <ComparadorEscala
+          idioma={idioma}
+          nombre={nombre}
+          silueta={siluetaDe(data)}
+          alturaMin={data.alturaMin}
+          alturaMax={data.alturaMax}
+        />
       </div>
+    </Contenedor>
+  </Seccion>
 
-      <div class="grid gap-4">
+  <Seccion tono="claro" bordeOrganico>
+    <Contenedor class="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16">
+      <div class="min-w-0">
+        <h2 class="titular-grande">{t.medidasTitulo}</h2>
+        <table class="mt-10 w-full border-collapse text-left">
+          <caption class="sr-only">{t.medidasTitulo}: {nombre}</caption>
+          <tbody>
+            {
+              medidas.map(([etiqueta, valor]) => (
+                <tr class="border-b border-linea-clara">
+                  <th scope="row" class="w-2/5 py-4 pr-4 align-top font-medium text-musgo">{etiqueta}</th>
+                  <td class="py-4 align-top font-semibold">{valor}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="grid min-w-0 content-start gap-4">
         <FotoOPlaceholder
-          foto={fotoPrincipal && { imagen: fotoPrincipal.imagen, alt: fotoPrincipal.alt[idioma] }}
-          pendiente={data.nombre[idioma]}
-          silueta={SILUETA_POR_FAMILIA[data.familia]}
-          prioridad
+          foto={principal && { imagen: principal.imagen, alt: principal.alt[idioma] }}
+          pendiente={nombre}
+          silueta={siluetaDe(data)}
           sizes="(min-width: 1024px) 50vw, 100vw"
         />
         {
-          data.fotos.length > 1 && (
+          resto.length > 0 && (
             <ul class="grid grid-cols-2 gap-4">
-              {data.fotos.slice(1).map((foto) => (
+              {resto.map((foto) => (
                 <li>
                   <FotoOPlaceholder
                     foto={{ imagen: foto.imagen, alt: foto.alt[idioma] }}
-                    pendiente={data.nombre[idioma]}
-                    silueta={SILUETA_POR_FAMILIA[data.familia]}
+                    pendiente={nombre}
+                    silueta={siluetaDe(data)}
                     proporcion="1 / 1"
                     sizes="(min-width: 1024px) 25vw, 50vw"
                   />
@@ -87,4 +165,24 @@ const fotoPrincipal = data.fotos[0];
       </div>
     </Contenedor>
   </Seccion>
+
+  {
+    relacionadas.length > 0 && (
+      <Seccion bordeOrganico>
+        <Contenedor>
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <h2 class="titular-grande">{t.masDeLaFamilia.replace('{familia}', familias[data.familia][idioma].toLowerCase())}</h2>
+            <a href={rutaFamilia(idioma, data.familia)} class="font-semibold underline underline-offset-4 hover:text-lima">
+              {familias[data.familia][idioma]}
+            </a>
+          </div>
+          <ul class="mt-12 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+            {relacionadas.map((e) => (
+              <TarjetaEspecie especie={e} idioma={idioma} alturaReferencia={alturaRelacionadas} />
+            ))}
+          </ul>
+        </Contenedor>
+      </Seccion>
+    )
+  }
 </BaseLayout>

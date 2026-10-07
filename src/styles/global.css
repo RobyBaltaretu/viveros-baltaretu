@@ -140,6 +140,10 @@
     background-color: var(--color-lima);
     color: var(--color-bosque);
   }
+  /* Controles que solo funcionan con JavaScript. */
+  .sin-js .solo-js {
+    display: none !important;
+  }
   /* Subrayado de acento en secciones claras: el "guiño" lima sin perder contraste. */
   .subrayado-lima {
     text-decoration-line: underline;
@@ -186,13 +190,12 @@
       animation-timeline: view();
       animation-range: entry 0% entry 55%;
     }
+    /* Solo desplazamiento: el texto mantiene siempre su contraste (sin fundido). */
     @keyframes aparecer {
       from {
-        opacity: 0;
-        translate: 0 2rem;
+        translate: 0 2.5rem;
       }
       to {
-        opacity: 1;
         translate: 0 0;
       }
     }

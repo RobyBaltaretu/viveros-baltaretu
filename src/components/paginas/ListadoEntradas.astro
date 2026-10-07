@@ -1,0 +1,67 @@
+---
+/** Listado de proyectos o de guías. */
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FotoOPlaceholder from '../ui/FotoOPlaceholder.astro';
+import Contenedor from '../ui/Contenedor.astro';
+import Etiqueta from '../ui/Etiqueta.astro';
+import Seccion from '../ui/Seccion.astro';
+import { rutaGuia, rutaProyecto, rutas, textos, type Idioma } from '../../i18n/ui';
+import { obtenerEmpresa } from '../../lib/empresa';
+import { obtenerGuias, obtenerProyectos } from '../../lib/paginas';
+
+interface Props {
+  idioma: Idioma;
+  tipo: 'proyectos' | 'guias';
+}
+
+const { idioma, tipo } = Astro.props;
+const t = textos[idioma];
+const empresa = await obtenerEmpresa();
+const entradas: (CollectionEntry<'proyectos'> | CollectionEntry<'guias'>)[] =
+  tipo === 'proyectos' ? await obtenerProyectos() : await obtenerGuias();
+const titulo = tipo === 'proyectos' ? t.tituloProyectos : t.tituloGuias;
+const entradilla = tipo === 'proyectos' ? t.entradillaProyectos : t.entradillaGuias;
+const enlace = (slug: string) => (tipo === 'proyectos' ? rutaProyecto(idioma, slug) : rutaGuia(idioma, slug));
+---
+
+<BaseLayout idioma={idioma} titulo={`${titulo} | ${empresa.nombre}`} descripcion={entradilla} alternativas={rutas[tipo]}>
+  <Seccion espacio="ninguno" class="pt-14 pb-20 sm:pt-20 sm:pb-28">
+    <Contenedor>
+      <h1 class="titular-gigante">{titulo}</h1>
+      <p class="mt-8 max-w-2xl texto-entrada text-salvia">{entradilla}</p>
+      {
+        entradas.length === 0 ? (
+          <p class="mt-12 texto-entrada">{tipo === 'proyectos' ? t.sinProyectos : t.sinGuias}</p>
+        ) : (
+          <ul class="mt-14 grid gap-x-6 gap-y-14 md:grid-cols-2">
+            {entradas.map(({ data }) => (
+              <li class="group relative">
+                {tipo === 'proyectos' && 'ubicacion' in data && (
+                  <FotoOPlaceholder
+                    foto={data.fotos[0] && { imagen: data.fotos[0].imagen, alt: data.fotos[0].alt[idioma] }}
+                    pendiente={data.titulo[idioma]}
+                    silueta="palmera"
+                    proporcion="16 / 10"
+                    class="mb-6"
+                  />
+                )}
+                {!data.revisado && <Etiqueta class="mb-4">{t.avisoEjemplo}</Etiqueta>}
+                <h2 class="titular-medio">
+                  <a href={enlace(data.slug)} class="after:absolute after:inset-0 group-hover:text-lima">
+                    {data.titulo[idioma]}
+                  </a>
+                </h2>
+                {'ubicacion' in data && <p class="mt-2 text-sm text-salvia">{data.ubicacion}</p>}
+                <p class="mt-4 max-w-prose">{data.resumen[idioma]}</p>
+                <p class="mt-4 font-semibold text-lima" aria-hidden="true">
+                  {tipo === 'proyectos' ? t.verProyecto : t.leerGuia} →
+                </p>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </Contenedor>
+  </Seccion>
+</BaseLayout>

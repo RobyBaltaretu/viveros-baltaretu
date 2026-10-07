@@ -1,14 +1,26 @@
 ---
+/**
+ * /catalogo/<slug>/ sirve dos tipos de página: las familias (palmeras, olivos…)
+ * y las fichas de especie. Un test comprueba que sus slugs no coinciden.
+ */
 import type { GetStaticPaths } from 'astro';
+import type { CollectionEntry } from 'astro:content';
+import PaginaCatalogo from '../../components/catalogo/PaginaCatalogo.astro';
 import FichaEspecie from '../../components/FichaEspecie.astro';
+import { slugFamilia } from '../../i18n/ui';
 import { obtenerEspecies } from '../../lib/catalogo';
+import { FAMILIAS } from '../../lib/catalogo/schema';
 
 export const getStaticPaths = (async () => {
   const especies = await obtenerEspecies('es');
-  return especies.map((especie) => ({ params: { slug: especie.data.slug }, props: { especie } }));
+  const conEspecies = FAMILIAS.filter((f) => especies.some((e) => e.data.familia === f));
+  return [
+    ...conEspecies.map((familia) => ({ params: { slug: slugFamilia[familia].es }, props: { familia } })),
+    ...especies.map((especie) => ({ params: { slug: especie.data.slug }, props: { especie } })),
+  ];
 }) satisfies GetStaticPaths;
 
-const { especie } = Astro.props;
+const props = Astro.props as { especie: CollectionEntry<'catalogo'> } | { familia: (typeof FAMILIAS)[number] };
 ---
 
-<FichaEspecie idioma="es" especie={especie} />
+{'especie' in props ? <FichaEspecie idioma="es" especie={props.especie} /> : <PaginaCatalogo idioma="es" familia={props.familia} />}

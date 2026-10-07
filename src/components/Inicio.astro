@@ -1,31 +1,32 @@
 ---
-// Provisional: la portada completa llega en el bloque 2.
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Silueta from './ilustraciones/Silueta.astro';
-import Boton from './ui/Boton.astro';
-import Contenedor from './ui/Contenedor.astro';
-import Seccion from './ui/Seccion.astro';
-import { rutas, textos, type Idioma } from '../i18n/ui';
+import BloqueConfianza from './portada/BloqueConfianza.astro';
+import FranjaEspecies from './portada/FranjaEspecies.astro';
+import Heroe from './portada/Heroe.astro';
+import LlamadaPresupuesto from './portada/LlamadaPresupuesto.astro';
+import MisionVision from './portada/MisionVision.astro';
+import { rutas, type Idioma } from '../i18n/ui';
+import { obtenerEspecies } from '../lib/catalogo';
 import { obtenerEmpresa } from '../lib/empresa';
+import { obtenerPortada } from '../lib/portada';
+import { esPlaceholder } from '../lib/empresa';
+import { organizacion, sitioWeb } from '../lib/seo/datos-estructurados';
 
 interface Props {
   idioma: Idioma;
 }
 
 const { idioma } = Astro.props;
-const t = textos[idioma];
-const empresa = await obtenerEmpresa();
+const [empresa, portada, especies] = await Promise.all([obtenerEmpresa(), obtenerPortada(), obtenerEspecies(idioma)]);
+const titulo = `${portada.titular[idioma]} ${portada.titularDestacado[idioma]} | ${empresa.nombre}`;
+const url = new URL(rutas.inicio[idioma], Astro.site).href;
+const datos = [organizacion(empresa, new URL('/', Astro.site).href), sitioWeb(esPlaceholder(empresa.nombre) ? null : empresa.nombre, url, idioma)];
 ---
 
-<BaseLayout idioma={idioma} titulo={empresa.nombre} descripcion={t.lemaEmpresa} alternativas={rutas.inicio}>
-  <Seccion espacio="amplio">
-    <Contenedor class="grid items-end gap-12 md:grid-cols-[1fr_auto]">
-      <div class="min-w-0">
-        <h1 class="titular-gigante">{empresa.nombre}</h1>
-        <p class="mt-6 max-w-2xl texto-entrada text-salvia">{t.lemaEmpresa}</p>
-        <p class="mt-10"><Boton href={rutas.catalogo[idioma]} flecha tamano="grande">{t.tituloCatalogo}</Boton></p>
-      </div>
-      <Silueta tipo="palmera" class="h-72 w-auto text-lima" style="--tono-tronco: var(--color-salvia)" />
-    </Contenedor>
-  </Seccion>
+<BaseLayout idioma={idioma} titulo={titulo} descripcion={portada.entradilla[idioma]} alternativas={rutas.inicio} datosEstructurados={datos}>
+  <Heroe idioma={idioma} portada={portada} especies={especies} />
+  <FranjaEspecies idioma={idioma} titulo={portada.tituloFranja[idioma]} especies={especies} />
+  <BloqueConfianza idioma={idioma} puntos={portada.confianza} />
+  <MisionVision idioma={idioma} portada={portada} />
+  <LlamadaPresupuesto idioma={idioma} titulo={portada.llamadaTitulo[idioma]} texto={portada.llamadaTexto[idioma]} />
 </BaseLayout>

@@ -1,0 +1,70 @@
+---
+/**
+ * Tarjeta de especie del catálogo. Los atributos data-* permiten filtrarla en el
+ * navegador sin volver a renderizar (ver FiltrosCatalogo).
+ */
+import type { CollectionEntry } from 'astro:content';
+import { siluetaDe } from '../ilustraciones/siluetas';
+import Etiqueta from '../ui/Etiqueta.astro';
+import FotoOPlaceholder from '../ui/FotoOPlaceholder.astro';
+import { disponibilidades, familias, rutaFicha, textos, type Idioma } from '../../i18n/ui';
+import { formatearPrecio, formatearRango } from '../../lib/catalogo/formato';
+
+interface Props {
+  especie: CollectionEntry<'catalogo'>;
+  idioma: Idioma;
+  /** Altura que representa el ancho completo de la barra de altura (la mayor del catálogo). */
+  alturaReferencia: number;
+  prioridad?: boolean;
+}
+
+const { especie, idioma, alturaReferencia, prioridad = false } = Astro.props;
+const { data } = especie;
+const t = textos[idioma];
+const foto = data.fotos[0];
+const porcentaje = (m: number) => `${(m / alturaReferencia) * 100}%`;
+---
+
+<li
+  class="tarjeta-especie group relative flex flex-col"
+  data-familia={data.familia}
+  data-altura-min={data.alturaMin}
+  data-altura-max={data.alturaMax}
+  data-formatos={data.formatos.join(',')}
+  data-perimetro={data.perimetroTroncoCm?.join('-')}
+>
+  <FotoOPlaceholder
+    foto={foto && { imagen: foto.imagen, alt: foto.alt[idioma] }}
+    pendiente={data.nombre[idioma]}
+    silueta={siluetaDe(data)}
+    prioridad={prioridad}
+    proporcion="1 / 1"
+    sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
+    class="transition-[border-color] duration-300 group-hover:border-lima"
+  />
+  <div class="mt-5 flex flex-wrap items-center gap-2">
+    <Etiqueta>{familias[data.familia][idioma]}</Etiqueta>
+    <Etiqueta resaltada={data.disponibilidad === 'disponible'}>{disponibilidades[data.disponibilidad][idioma]}</Etiqueta>
+  </div>
+  <h3 class="titular-medio mt-4">
+    <a href={rutaFicha(idioma, data.slug)} class="after:absolute after:inset-0 after:rounded-(--radius-organico) group-hover:text-lima">
+      {data.nombre[idioma]}
+    </a>
+  </h3>
+  <p class="mt-1 italic text-salvia">{data.nombreCientifico}</p>
+
+  <div class="mt-4">
+    <p class="flex justify-between text-sm">
+      <span class="text-salvia">{t.alturaEjemplar}</span>
+      <span class="font-semibold tabular-nums">{formatearRango(data.alturaMin, data.alturaMax, 'm', idioma)}</span>
+    </p>
+    <div class="relative mt-2 h-1.5 rounded-full bg-linea-oscura" aria-hidden="true">
+      <div
+        class="absolute inset-y-0 rounded-full bg-lima"
+        style={`left: ${porcentaje(data.alturaMin)}; width: ${porcentaje(data.alturaMax - data.alturaMin)}`}
+      >
+      </div>
+    </div>
+  </div>
+  <p class="mt-4 text-lg font-semibold">{formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}</p>
+</li>

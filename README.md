@@ -142,6 +142,12 @@ En **Workers & Pages → viveros-baltaretu → Settings → Variables & Secrets*
 2. Abre una ficha, cambia algo pequeño y guarda. Comprueba que aparece el commit en `main` en GitHub y que Cloudflare lanza un build (**Deployments**).
 3. Deshaz el cambio desde el panel.
 
+### 12 bis. Rellenar los datos de la empresa
+
+1. En `/keystatic`, abre **Empresa** y completa el nombre, el teléfono, el email y la dirección. Mientras no estén, la web muestra `[PLACEHOLDER]`.
+2. En **WhatsApp**, escribe el número con el prefijo del país, solo dígitos (por ejemplo `34600000000`). Con el campo vacío no aparece el botón flotante de WhatsApp.
+3. Revisa también **Portada** y **Textos del catálogo**.
+
 ### 13. Invitar al gerente
 
 1. En Keystatic Cloud, abre el equipo del paso 4 e invita al gerente con su correo. No necesita cuenta de GitHub.

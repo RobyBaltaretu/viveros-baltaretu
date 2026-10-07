@@ -3,7 +3,11 @@ import '../styles/global.css';
 import { Font } from 'astro:assets';
 import Cabecera from '../components/Cabecera.astro';
 import Pie from '../components/Pie.astro';
+import PanelLista from '../components/presupuesto/PanelLista.astro';
+import BotonWhatsApp from '../components/BotonWhatsApp.astro';
 import { IDIOMA_POR_DEFECTO, textos, type Idioma } from '../i18n/ui';
+import { esPlaceholder, obtenerEmpresa } from '../lib/empresa';
+import { aJsonLd } from '../lib/seo/datos-estructurados';
 
 interface Props {
   idioma: Idioma;
@@ -13,18 +17,40 @@ interface Props {
   alternativas: Record<Idioma, string>;
   /** Para páginas que no deben indexarse (p. ej. 404): sin canonical ni hreflang. */
   noIndexar?: boolean;
+  /** Mensaje prellenado del botón de WhatsApp (por defecto, uno general). */
+  mensajeWhatsapp?: string;
+  /** Nodos JSON-LD de la página (ver src/lib/seo/datos-estructurados.ts). */
+  datosEstructurados?: (Record<string, unknown> | null)[];
+  /** Imagen para redes sociales (ruta o URL); por defecto, la ilustración genérica. */
+  imagenSocial?: string;
+  tipoSocial?: 'website' | 'article' | 'product';
 }
 
-const { idioma, titulo, descripcion, alternativas, noIndexar = false } = Astro.props;
+const {
+  idioma,
+  titulo,
+  descripcion,
+  alternativas,
+  noIndexar = false,
+  mensajeWhatsapp,
+  datosEstructurados = [],
+  imagenSocial = '/og-imagen.png',
+  tipoSocial = 'website',
+} = Astro.props;
+const empresa = await obtenerEmpresa();
+const nombreSitio = esPlaceholder(empresa.nombre) ? null : empresa.nombre;
+const LOCALE_OG: Record<Idioma, string> = { es: 'es_ES', en: 'en_GB' };
 const t = textos[idioma];
 const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
 ---
 
 <!doctype html>
-<html lang={idioma}>
+<html lang={idioma} class="sin-js">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Antes de pintar: si hay JavaScript se muestran los controles interactivos (sin saltos de maquetación). -->
+    <script is:inline>document.documentElement.classList.remove('sin-js');</script>
     <meta name="theme-color" content="#0e2519" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{titulo}</title>
@@ -44,6 +70,16 @@ const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
         </>
       )
     }
+    <meta property="og:type" content={tipoSocial} />
+    <meta property="og:title" content={titulo} />
+    <meta property="og:description" content={descripcion} />
+    <meta property="og:url" content={absoluta(alternativas[idioma])} />
+    <meta property="og:image" content={absoluta(imagenSocial)} />
+    <meta property="og:locale" content={LOCALE_OG[idioma]} />
+    <meta property="og:locale:alternate" content={LOCALE_OG[idioma === 'es' ? 'en' : 'es']} />
+    {nombreSitio && <meta property="og:site_name" content={nombreSitio} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    {datosEstructurados.some(Boolean) && <script type="application/ld+json" set:html={aJsonLd(datosEstructurados)} />}
   </head>
   <body class="flex min-h-dvh flex-col">
     <a
@@ -57,5 +93,7 @@ const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
       <slot />
     </main>
     <Pie idioma={idioma} alternativas={alternativas} />
+    <PanelLista idioma={idioma} />
+    <BotonWhatsApp idioma={idioma} mensaje={mensajeWhatsapp ?? t.whatsappGeneral} />
   </body>
 </html>

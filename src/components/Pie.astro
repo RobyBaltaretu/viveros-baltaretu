@@ -2,7 +2,7 @@
 import Silueta from './ilustraciones/Silueta.astro';
 import Contenedor from './ui/Contenedor.astro';
 import Seccion from './ui/Seccion.astro';
-import { navegacion, nombresIdioma, rutas, textos, type Idioma } from '../i18n/ui';
+import { legales, navegacion, nombresIdioma, rutas, textos, type Idioma } from '../i18n/ui';
 import { esPlaceholder, obtenerEmpresa } from '../lib/empresa';
 
 interface Props {
@@ -64,13 +64,21 @@ const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa
           </ul>
         </nav>
 
-        <div>
+        <div class="grid content-start gap-10">
+          <nav aria-label={t.legal}>
+            <h2 class="antetitulo text-salvia">{t.legal}</h2>
+            <ul class="mt-4 space-y-3">
+              {legales.map((clave) => <li><a href={rutas[clave][idioma]} class="hover:text-lima">{t[clave]}</a></li>)}
+            </ul>
+          </nav>
+          <div>
           <h2 class="antetitulo text-salvia">{t.idioma}</h2>
           <p class="mt-4">
             <a href={alternativas[otroIdioma]} hreflang={otroIdioma} lang={otroIdioma} class="underline underline-offset-4 hover:text-lima">
               {nombresIdioma[otroIdioma]}
             </a>
           </p>
+          </div>
         </div>
       </div>
 

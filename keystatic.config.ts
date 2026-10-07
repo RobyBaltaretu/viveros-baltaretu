@@ -1,6 +1,7 @@
 import { collection, config, fields, singleton } from '@keystatic/core';
 import { SLUG_REGEX } from './src/lib/catalogo/schema';
 import { WHATSAPP_REGEX } from './src/lib/empresa/schema';
+import { ICONOS_CONFIANZA } from './src/lib/portada/schema';
 
 /**
  * Panel del catálogo en /keystatic.
@@ -52,6 +53,74 @@ const seoIdioma = (idioma: string) =>
     { label: `SEO (${idioma})` },
   );
 
+const textosPagina = (etiqueta: string) =>
+  fields.object(
+    {
+      entradilla: textoBilingue('Entradilla', { multilinea: true }),
+      seoDescripcion: textoBilingue('Descripción para Google', {
+        multilinea: true,
+        descripcion: 'Texto bajo el título en los resultados de búsqueda. Recomendado: menos de 155 caracteres.',
+      }),
+    },
+    { label: etiqueta },
+  );
+
+const secciones = (etiqueta = 'Secciones') =>
+  fields.array(
+    fields.object({
+      titulo: fields.object(
+        {
+          es: fields.text({ label: 'Título (español)' }),
+          en: fields.text({ label: 'Título (inglés)' }),
+        },
+        { label: 'Título de la sección (opcional)' },
+      ),
+      texto: textoBilingue('Texto', {
+        multilinea: true,
+        descripcion: 'Separa los párrafos con una línea en blanco.',
+      }),
+    }),
+    { label: etiqueta, itemLabel: (props) => props.fields.titulo.fields.es.value || 'Sección sin título' },
+  );
+
+const paginaFija = (label: string, clave: string, legal = false) =>
+  singleton({
+    label,
+    path: `src/content/paginas/${clave}`,
+    format: { data: 'yaml' },
+    schema: {
+      titulo: textoBilingue('Título'),
+      entradilla: textoBilingue('Entradilla', { multilinea: true }),
+      secciones: secciones(),
+      seoDescripcion: textoBilingue('Descripción para Google', { multilinea: true }),
+      pendienteRevision: fields.checkbox({
+        label: 'Pendiente de revisión por el asesor',
+        description: 'Muestra un aviso de que el texto no es definitivo.',
+        defaultValue: legal,
+      }),
+    },
+  });
+
+const slugEntrada = fields.slug({
+  name: {
+    label: 'Identificador para la URL',
+    description: 'Solo minúsculas, números y guiones. No lo cambies una vez publicado.',
+    validation: {
+      isRequired: true,
+      pattern: { regex: SLUG_REGEX, message: 'Solo minúsculas sin acentos, números y guiones.' },
+    },
+  },
+  slug: { label: 'Nombre del archivo', description: 'Debe ser igual que el identificador.' },
+});
+
+const publicacion = {
+  datosDeEjemplo: fields.checkbox({ label: 'Datos de ejemplo' }),
+  revisado: fields.checkbox({
+    label: 'Revisado (publicar)',
+    description: 'Solo lo revisado aparece en la web pública.',
+  }),
+};
+
 export default config({
   storage: proyectoCloud ? { kind: 'cloud' } : import.meta.env.DEV ? { kind: 'local' } : { kind: 'cloud' },
   ...(proyectoCloud ? { cloud: { project: proyectoCloud } } : {}),
@@ -81,8 +150,111 @@ export default config({
         direccion: fields.text({ label: 'Dirección', multiline: true }),
       },
     }),
+    textosCatalogo: singleton({
+      label: 'Textos del catálogo',
+      path: 'src/content/ajustes/catalogo',
+      format: { data: 'yaml' },
+      schema: {
+        catalogo: textosPagina('Catálogo completo'),
+        palmeras: textosPagina('Palmeras'),
+        olivos: textosPagina('Olivos'),
+        higueras: textosPagina('Higueras'),
+        'otras-ornamentales': textosPagina('Otras ornamentales'),
+      },
+    }),
+    nosotros: paginaFija('Página: Nosotros', 'nosotros'),
+    reparto: paginaFija('Página: Reparto', 'reparto'),
+    avisoLegal: paginaFija('Legal: Aviso legal', 'aviso-legal', true),
+    privacidad: paginaFija('Legal: Privacidad', 'privacidad', true),
+    cookies: paginaFija('Legal: Cookies', 'cookies', true),
+    portada: singleton({
+      label: 'Portada',
+      path: 'src/content/ajustes/portada',
+      format: { data: 'yaml' },
+      schema: {
+        titular: textoBilingue('Titular', { descripcion: 'Primera parte del titular principal.' }),
+        titularDestacado: textoBilingue('Final del titular (resaltado)', {
+          descripcion: 'Se muestra en color lima justo después del titular.',
+        }),
+        entradilla: textoBilingue('Entradilla', { multilinea: true }),
+        tituloFranja: textoBilingue('Título de la franja de especies'),
+        confianza: fields.array(
+          fields.object({
+            icono: fields.select({
+              label: 'Icono',
+              options: [
+                { label: 'Origen', value: 'origen' },
+                { label: 'Documentación', value: 'documentacion' },
+                { label: 'Reparto', value: 'reparto' },
+                { label: 'Calidad', value: 'calidad' },
+              ] satisfies { label: string; value: (typeof ICONOS_CONFIANZA)[number] }[],
+              defaultValue: 'origen',
+            }),
+            titulo: textoBilingue('Título'),
+            texto: textoBilingue('Texto', { multilinea: true }),
+          }),
+          {
+            label: 'Bloque de confianza',
+            description: 'Hasta 6 puntos (origen, documentación, reparto…). No pongas nada que no esté confirmado.',
+            itemLabel: (props) => props.fields.titulo.fields.es.value || 'Punto sin título',
+            validation: { length: { max: 6 } },
+          },
+        ),
+        mision: textoBilingue('Misión', { multilinea: true }),
+        vision: textoBilingue('Visión', { multilinea: true }),
+        llamadaTitulo: textoBilingue('Llamada a presupuesto: título'),
+        llamadaTexto: textoBilingue('Llamada a presupuesto: texto', { multilinea: true }),
+      },
+    }),
   },
   collections: {
+    proyectos: collection({
+      label: 'Proyectos',
+      path: 'src/content/proyectos/*',
+      slugField: 'slug',
+      format: { data: 'yaml' },
+      columns: ['ubicacion', 'revisado'],
+      schema: {
+        slug: slugEntrada,
+        titulo: textoBilingue('Título'),
+        resumen: textoBilingue('Resumen', { multilinea: true }),
+        ubicacion: fields.text({ label: 'Ubicación', validation: { isRequired: true } }),
+        especies: fields.array(fields.relationship({ label: 'Especie', collection: 'catalogo', validation: { isRequired: true } }), {
+          label: 'Especies utilizadas',
+          itemLabel: (props) => props.value ?? 'Elige una especie',
+        }),
+        fotos: fields.array(
+          fields.object({
+            imagen: fields.image({
+              label: 'Foto',
+              directory: 'src/assets/proyectos',
+              publicPath: '../../assets/proyectos/',
+              validation: { isRequired: true },
+            }),
+            alt: textoBilingue('Texto alternativo'),
+          }),
+          { label: 'Fotos', itemLabel: (props) => props.fields.alt.fields.es.value || 'Foto sin descripción' },
+        ),
+        secciones: secciones(),
+        seoDescripcion: textoBilingue('Descripción para Google', { multilinea: true }),
+        ...publicacion,
+      },
+    }),
+    guias: collection({
+      label: 'Guías',
+      path: 'src/content/guias/*',
+      slugField: 'slug',
+      format: { data: 'yaml' },
+      columns: ['revisado'],
+      schema: {
+        slug: slugEntrada,
+        titulo: textoBilingue('Título'),
+        resumen: textoBilingue('Resumen', { multilinea: true }),
+        secciones: secciones(),
+        seoDescripcion: textoBilingue('Descripción para Google', { multilinea: true }),
+        ...publicacion,
+      },
+    }),
     catalogo: collection({
       label: 'Catálogo',
       path: 'src/content/catalogo/*',
@@ -167,6 +339,18 @@ export default config({
         }),
         origen: fields.text({ label: 'Origen', validation: { isRequired: true } }),
         destacada: fields.checkbox({ label: 'Destacada', description: 'Se mostrará en la portada.' }),
+        silueta: fields.select({
+          label: 'Dibujo provisional',
+          description: 'Silueta que se muestra mientras no haya fotos y en el comparador de escala.',
+          options: [
+            { label: 'Según la familia', value: '' },
+            { label: 'Palmera', value: 'palmera' },
+            { label: 'Árbol de copa alargada (olivo)', value: 'olivo' },
+            { label: 'Árbol de copa redonda (higuera, cítricos)', value: 'higuera' },
+            { label: 'Planta baja en roseta (cica, yuca)', value: 'cica' },
+          ],
+          defaultValue: '',
+        }),
         fotos: fields.array(
           fields.object({
             imagen: fields.image({

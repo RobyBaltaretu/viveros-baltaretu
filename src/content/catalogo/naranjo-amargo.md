@@ -17,6 +17,7 @@ precioDesde: 40
 unidadPrecio: unidad
 origen: "Vivero en la provincia de Valencia (POR CONFIRMAR)"
 destacada: false
+silueta: higuera
 seo:
   es:
     titulo: "Naranjo amargo al por mayor | [NOMBRE EMPRESA]"

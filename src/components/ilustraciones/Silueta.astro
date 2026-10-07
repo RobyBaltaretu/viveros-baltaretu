@@ -152,8 +152,11 @@ const angulosCica = [-62, -38, -14, 8];
 </svg>
 
 <style>
-  .silueta {
-    display: block;
-    overflow: visible;
+  /* En la capa base para que las utilidades de Tailwind (p. ej. `hidden`) puedan sobrescribirlo. */
+  @layer base {
+    .silueta {
+      display: block;
+      overflow: visible;
+    }
   }
 </style>

@@ -5,6 +5,10 @@ dist/
 # generado por `wrangler types`
 worker-configuration.d.ts
 
+# resultados de Playwright
+test-results/
+playwright-report/
+
 # dependencias
 node_modules/
 

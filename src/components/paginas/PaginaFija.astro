@@ -1,0 +1,46 @@
+---
+/** Página fija (nosotros, reparto, legales) con sus textos del panel. */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Secciones from './Secciones.astro';
+import Contenedor from '../ui/Contenedor.astro';
+import Seccion from '../ui/Seccion.astro';
+import { rutas, textos, type Idioma } from '../../i18n/ui';
+import { obtenerEmpresa } from '../../lib/empresa';
+import { obtenerPagina } from '../../lib/paginas';
+import type { ClavePagina } from '../../lib/paginas/schema';
+
+interface Props {
+  idioma: Idioma;
+  clave: ClavePagina;
+  ruta: keyof typeof rutas;
+}
+
+const { idioma, clave, ruta } = Astro.props;
+const t = textos[idioma];
+const [pagina, empresa] = await Promise.all([obtenerPagina(clave), obtenerEmpresa()]);
+---
+
+<BaseLayout
+  idioma={idioma}
+  titulo={`${pagina.titulo[idioma]} | ${empresa.nombre}`}
+  descripcion={pagina.seoDescripcion[idioma]}
+  alternativas={rutas[ruta]}
+>
+  <Seccion espacio="ninguno" class="pt-14 pb-20 sm:pt-20 sm:pb-24">
+    <Contenedor>
+      <h1 class="titular-gigante max-w-5xl">{pagina.titulo[idioma]}</h1>
+      <p class="mt-8 max-w-2xl texto-entrada text-salvia">{pagina.entradilla[idioma]}</p>
+      {pagina.pendienteRevision && <p class="mt-8 max-w-2xl rounded-2xl border border-lima p-4 text-lima">{t.textoLegalPendiente}</p>}
+    </Contenedor>
+  </Seccion>
+  <slot />
+  {
+    pagina.secciones.length > 0 && (
+      <Seccion tono="claro" bordeOrganico>
+        <Contenedor>
+          <Secciones secciones={pagina.secciones} idioma={idioma} />
+        </Contenedor>
+      </Seccion>
+    )
+  }
+</BaseLayout>

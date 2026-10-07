@@ -1,0 +1,29 @@
+titulo:
+  es: Política de cookies
+  en: Cookie policy
+entradilla:
+  es: Texto pendiente de redacción y revisión por un asesor legal. No es un texto definitivo.
+  en: Text pending drafting and review by a legal adviser. This is not a final text.
+secciones:
+  - titulo:
+      es: Qué son las cookies
+      en: What cookies are
+    texto:
+      es: '[PLACEHOLDER: texto legal pendiente]'
+      en: '[PLACEHOLDER: legal text pending]'
+  - titulo:
+      es: Cookies que usa esta web
+      en: Cookies used on this website
+    texto:
+      es: '[PLACEHOLDER: texto legal pendiente]'
+      en: '[PLACEHOLDER: legal text pending]'
+  - titulo:
+      es: Cómo gestionarlas
+      en: How to manage them
+    texto:
+      es: '[PLACEHOLDER: texto legal pendiente]'
+      en: '[PLACEHOLDER: legal text pending]'
+seoDescripcion:
+  es: Política de cookies del sitio web.
+  en: Cookie policy for this website.
+pendienteRevision: true

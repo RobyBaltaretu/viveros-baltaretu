@@ -1,5 +1,6 @@
 ---
 import Silueta from './ilustraciones/Silueta.astro';
+import Boton from './ui/Boton.astro';
 import Contenedor from './ui/Contenedor.astro';
 import { navegacion, nombresIdioma, rutas, textos, type Idioma } from '../i18n/ui';
 import { obtenerEmpresa } from '../lib/empresa';
@@ -24,7 +25,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
       <span class="truncate">{empresa.nombre}</span>
     </a>
 
-    <nav aria-label={t.navegacionPrincipal} class="ml-auto hidden md:block">
+    <nav aria-label={t.navegacionPrincipal} class="ml-auto hidden lg:block">
       <ul class="flex items-center gap-1">
         {
           navegacion.map((clave) => (
@@ -32,7 +33,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
               <a
                 href={rutas[clave][idioma]}
                 aria-current={esActual(rutas[clave][idioma]) ? 'page' : undefined}
-                class="rounded-full px-4 py-2 font-medium transition-colors hover:text-lima aria-[current=page]:text-lima"
+                class="rounded-full px-3 py-2 font-medium transition-colors hover:text-lima aria-[current=page]:text-lima xl:px-4"
               >
                 {t[clave]}
               </a>
@@ -46,15 +47,39 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
       href={alternativas[otroIdioma]}
       hreflang={otroIdioma}
       lang={otroIdioma}
-      class="hidden items-center rounded-full border border-linea-oscura px-3 py-1.5 text-sm font-semibold uppercase tracking-wider hover:border-lima md:inline-flex"
+      class="hidden items-center rounded-full border border-linea-oscura px-3 py-1.5 text-sm font-semibold uppercase tracking-wider hover:border-lima lg:inline-flex"
     >
       <span aria-hidden="true">{otroIdioma}</span>
       <span class="sr-only">{nombresIdioma[otroIdioma]}</span>
     </a>
 
+    <contador-lista class="solo-js ml-auto lg:ml-0" data-plantilla={t.abrirListaConUnidades} data-texto={t.abrirLista}>
+      <button
+        type="button"
+        data-abrir-lista
+        aria-haspopup="dialog"
+        aria-controls="panel-lista"
+        class="relative inline-flex size-11 items-center justify-center rounded-full border border-linea-oscura hover:border-lima"
+        aria-label={t.abrirLista}
+      >
+        <svg class="size-5" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M8 4h8M7 4H5v17h14V4h-2M9 10h6M9 14h6M9 18h3" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span
+          data-contador
+          hidden
+          class="absolute -top-1.5 -right-1.5 inline-flex min-w-6 items-center justify-center rounded-full bg-lima px-1.5 text-xs font-bold leading-6 text-bosque tabular-nums"
+        ></span>
+      </button>
+    </contador-lista>
+
+    <div class="hidden lg:block">
+      <Boton href={rutas.presupuesto[idioma]} class="min-h-11 px-5 text-sm whitespace-nowrap">{t.pedirPresupuesto}</Boton>
+    </div>
+
     <button
       type="button"
-      class="ml-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-linea-oscura px-4 font-semibold md:hidden"
+      class="inline-flex min-h-11 items-center gap-2 rounded-full border border-linea-oscura px-4 font-semibold lg:hidden"
       aria-expanded="false"
       aria-controls="menu-movil"
       data-boton-menu
@@ -68,7 +93,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
     </button>
   </Contenedor>
 
-  <div id="menu-movil" class="border-t border-linea-oscura md:hidden" hidden data-menu-movil>
+  <div id="menu-movil" class="border-t border-linea-oscura lg:hidden" hidden data-menu-movil>
     <Contenedor class="py-6">
       <nav aria-label={t.navegacionPrincipal}>
         <ul class="flex flex-col gap-1">
@@ -87,6 +112,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
           }
         </ul>
       </nav>
+      <p class="mt-6"><Boton href={rutas.presupuesto[idioma]} flecha>{t.pedirPresupuesto}</Boton></p>
       <p class="mt-6 border-t border-linea-oscura pt-6">
         <a href={alternativas[otroIdioma]} hreflang={otroIdioma} lang={otroIdioma} class="font-semibold underline underline-offset-4">
           {nombresIdioma[otroIdioma]}
@@ -95,6 +121,48 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
     </Contenedor>
   </div>
 </header>
+
+<style>
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.rebote) {
+      animation: rebote 0.45s var(--ease-suave);
+    }
+    @keyframes rebote {
+      40% {
+        scale: 1.35;
+      }
+    }
+  }
+</style>
+
+<script>
+  import { almacen, totalUnidades } from '../lib/presupuesto/lista';
+
+  // Contador de la lista de presupuesto: se anima cuando cambia.
+  class ContadorLista extends HTMLElement {
+    connectedCallback() {
+      const boton = this.querySelector('button');
+      const contador = this.querySelector<HTMLElement>('[data-contador]');
+      if (!boton || !contador) return;
+      let anterior = -1;
+      const pintar = () => {
+        const n = totalUnidades(almacen.leer());
+        contador.hidden = n === 0;
+        contador.textContent = n > 999 ? '999+' : String(n);
+        boton.setAttribute('aria-label', n ? (this.dataset.plantilla ?? '').replace('{n}', String(n)) : (this.dataset.texto ?? ''));
+        if (anterior >= 0 && n !== anterior) {
+          contador.classList.remove('rebote');
+          void contador.offsetWidth;
+          contador.classList.add('rebote');
+        }
+        anterior = n;
+      };
+      almacen.alCambiar(pintar);
+      pintar();
+    }
+  }
+  customElements.define('contador-lista', ContadorLista);
+</script>
 
 <script>
   // Menú móvil: botón con aria-expanded; Esc cierra y devuelve el foco al botón.
@@ -114,6 +182,6 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
         boton.focus();
       }
     });
-    matchMedia('(min-width: 48rem)').addEventListener('change', (e) => e.matches && cambiar(false));
+    matchMedia('(min-width: 64rem)').addEventListener('change', (e) => e.matches && cambiar(false));
   }
 </script>
