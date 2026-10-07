@@ -1,0 +1,72 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import EscenaEscala, { type ElementoEscena } from '../ilustraciones/EscenaEscala.astro';
+import { siluetaDe } from '../ilustraciones/siluetas';
+import Boton from '../ui/Boton.astro';
+import Contenedor from '../ui/Contenedor.astro';
+import Seccion from '../ui/Seccion.astro';
+import { familias, rutas, textos, type Idioma } from '../../i18n/ui';
+import type { Portada } from '../../lib/portada/schema';
+
+interface Props {
+  idioma: Idioma;
+  portada: Portada;
+  especies: CollectionEntry<'catalogo'>[];
+}
+
+const { idioma, portada, especies } = Astro.props;
+const t = textos[idioma];
+const metros = new Intl.NumberFormat(idioma === 'es' ? 'es-ES' : 'en-GB', { maximumFractionDigits: 1 });
+
+// La especie más alta de cada familia (las destacadas primero) y, de ellas, las 2 más altas:
+// cuanto más grande es el ejemplar junto a la persona, más clara es la escala.
+const porFamilia = new Map<string, CollectionEntry<'catalogo'>>();
+for (const e of especies) {
+  const actual = porFamilia.get(e.data.familia);
+  const mejor =
+    !actual ||
+    Number(e.data.destacada) > Number(actual.data.destacada) ||
+    (e.data.destacada === actual.data.destacada && e.data.alturaMax > actual.data.alturaMax);
+  if (mejor) porFamilia.set(e.data.familia, e);
+}
+const elegidas = [...porFamilia.values()]
+  .sort((a, b) => Number(b.data.destacada) - Number(a.data.destacada) || b.data.alturaMax - a.data.alturaMax)
+  .slice(0, 2)
+  .sort((a, b) => b.data.alturaMax - a.data.alturaMax);
+
+const persona: ElementoEscena = { tipo: 'persona', altura: 1.8, etiqueta: t.persona, detalle: t.alturaPersona };
+const plantas: ElementoEscena[] = elegidas.length
+  ? elegidas.map((e, i) => ({
+      tipo: siluetaDe(e.data),
+      altura: e.data.alturaMax,
+      etiqueta: e.data.nombre[idioma],
+      detalle: `${t.hastaAltura} ${metros.format(e.data.alturaMax)} m`,
+      soloEscritorio: i > 0,
+    }))
+  : // Sin especies publicadas: silueta ilustrativa, sin cifras.
+    [{ tipo: 'palmera', altura: 5, etiqueta: familias.palmeras[idioma] }];
+---
+
+<Seccion espacio="ninguno" class="overflow-hidden pt-10 pb-20 sm:pt-16 sm:pb-24">
+  <!-- Móvil: titular, escena y texto (la escala humana entra en la primera pantalla).
+       Escritorio: texto a la izquierda y escena a la derecha. -->
+  <Contenedor class="grid gap-x-16 gap-y-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr]">
+    <div class="min-w-0 lg:self-end">
+      <p class="antetitulo text-salvia">{t.antetituloPortada}</p>
+      <h1 class="titular-gigante mt-5 text-[clamp(2.75rem,1.2rem+5.6vw,7.25rem)]">
+        {portada.titular[idioma]} <span class="text-lima">{portada.titularDestacado[idioma]}</span>
+      </h1>
+    </div>
+    <div class="min-w-0 [--alto-escena:clamp(11rem,30vh,16rem)] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-end lg:[--alto-escena:clamp(16rem,48vh,28rem)]">
+      <p class="sr-only">{t.escenaPortada}</p>
+      <EscenaEscala elementos={[persona, ...plantas]} idioma={idioma} alto="var(--alto-escena)" />
+    </div>
+    <div class="min-w-0">
+      <p class="max-w-xl texto-entrada text-salvia">{portada.entradilla[idioma]}</p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <Boton href={rutas.presupuesto[idioma]} tamano="grande" flecha>{t.pedirPresupuesto}</Boton>
+        <Boton href={rutas.catalogo[idioma]} tamano="grande" variante="secundario">{t.verCatalogo}</Boton>
+      </div>
+    </div>
+  </Contenedor>
+</Seccion>

@@ -1,0 +1,52 @@
+# Textos de la portada. Se editan desde el panel (/keystatic → Portada).
+# Los datos de la empresa que falten se quedan como [PLACEHOLDER] hasta que se confirmen.
+titular:
+  es: Ejemplares de gran porte,
+  en: Mature specimens,
+titularDestacado:
+  es: a escala real.
+  en: shown at true scale.
+entradilla:
+  es: >-
+    Vivero mayorista de palmeras, olivos, higueras y otras ornamentales en la provincia de Valencia.
+    Compara cada ejemplar con una persona de 1,8 m y pide presupuesto para tu obra.
+  en: >-
+    A wholesale nursery of palms, olive trees, fig trees and other ornamentals in the province of Valencia.
+    See every specimen next to a 1.8 m person, then ask us for a quote for your project.
+tituloFranja:
+  es: Del catálogo
+  en: From the catalogue
+confianza:
+  - icono: origen
+    titulo:
+      es: Origen del material
+      en: Where our plants come from
+    texto:
+      es: '[PLACEHOLDER: procedencia de los ejemplares y cómo se cultivan]'
+      en: '[PLACEHOLDER: where the specimens come from and how they are grown]'
+  - icono: documentacion
+    titulo:
+      es: Documentación fitosanitaria
+      en: Plant-health paperwork
+    texto:
+      es: '[PLACEHOLDER: pasaporte fitosanitario y documentación que acompaña a cada envío]'
+      en: '[PLACEHOLDER: plant passport and paperwork shipped with each order]'
+  - icono: reparto
+    titulo:
+      es: Reparto a toda España
+      en: Delivery across Spain
+    texto:
+      es: 'Desde la provincia de Valencia. [PLACEHOLDER: plazos y condiciones de reparto]'
+      en: 'From the province of Valencia. [PLACEHOLDER: delivery times and conditions]'
+mision:
+  es: '[PLACEHOLDER: misión de la empresa]'
+  en: '[PLACEHOLDER: company mission]'
+vision:
+  es: '[PLACEHOLDER: visión de la empresa]'
+  en: '[PLACEHOLDER: company vision]'
+llamadaTitulo:
+  es: ¿Tienes una obra entre manos?
+  en: Planning a project?
+llamadaTexto:
+  es: Dinos qué especies, alturas y cantidades necesitas y te preparamos un presupuesto.
+  en: Tell us the species, sizes and quantities you need and we will put a quote together.

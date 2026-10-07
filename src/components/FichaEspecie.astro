@@ -2,7 +2,7 @@
 // Provisional con el sistema de diseño: la ficha completa (comparador de escala, lista de presupuesto) llega en el bloque 4.
 import type { CollectionEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { SILUETA_POR_FAMILIA } from './ilustraciones/siluetas';
+import { siluetaDe } from './ilustraciones/siluetas';
 import Contenedor from './ui/Contenedor.astro';
 import FotoOPlaceholder from './ui/FotoOPlaceholder.astro';
 import Seccion from './ui/Seccion.astro';
@@ -63,7 +63,7 @@ const fotoPrincipal = data.fotos[0];
         <FotoOPlaceholder
           foto={fotoPrincipal && { imagen: fotoPrincipal.imagen, alt: fotoPrincipal.alt[idioma] }}
           pendiente={data.nombre[idioma]}
-          silueta={SILUETA_POR_FAMILIA[data.familia]}
+          silueta={siluetaDe(data)}
           prioridad
           sizes="(min-width: 1024px) 50vw, 100vw"
         />
@@ -75,7 +75,7 @@ const fotoPrincipal = data.fotos[0];
                   <FotoOPlaceholder
                     foto={{ imagen: foto.imagen, alt: foto.alt[idioma] }}
                     pendiente={data.nombre[idioma]}
-                    silueta={SILUETA_POR_FAMILIA[data.familia]}
+                    silueta={siluetaDe(data)}
                     proporcion="1 / 1"
                     sizes="(min-width: 1024px) 25vw, 50vw"
                   />

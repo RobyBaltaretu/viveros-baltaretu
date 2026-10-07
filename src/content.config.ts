@@ -2,6 +2,7 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { crearEsquemaEspecie } from './lib/catalogo/schema';
 import { esquemaEmpresa } from './lib/empresa/schema';
+import { esquemaPortada } from './lib/portada/schema';
 
 const catalogo = defineCollection({
   // El id de cada entrada es el campo `slug` del frontmatter.
@@ -15,4 +16,9 @@ const empresa = defineCollection({
   schema: esquemaEmpresa,
 });
 
-export const collections = { catalogo, empresa };
+const portada = defineCollection({
+  loader: glob({ pattern: 'portada.yaml', base: './src/content/ajustes' }),
+  schema: esquemaPortada,
+});
+
+export const collections = { catalogo, empresa, portada };

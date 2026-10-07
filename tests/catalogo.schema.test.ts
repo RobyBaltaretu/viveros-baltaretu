@@ -75,3 +75,14 @@ describe('esquema de especie', () => {
     expect(esquema.parse(resto).revisado).toBe(false);
   });
 });
+
+describe('campo silueta', () => {
+  const esquema2 = crearEsquemaEspecie(z.string());
+  const base = fichas[0]!.datos;
+  it('vacío (como lo guarda el panel) equivale a "según la familia"', () => {
+    expect(esquema2.parse({ ...base, silueta: '' }).silueta).toBeUndefined();
+  });
+  it('rechaza un dibujo desconocido', () => {
+    expect(esquema2.safeParse({ ...base, silueta: 'cactus' }).success).toBe(false);
+  });
+});

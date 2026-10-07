@@ -45,3 +45,21 @@ describe('singleton Empresa', () => {
     expect(esquemaEmpresa.safeParse(datos).success).toBe(true);
   });
 });
+
+describe('singleton Portada', () => {
+  it('escribe en src/content/ajustes/portada.yaml con los campos del esquema', async () => {
+    const { esquemaPortada } = await import('../src/lib/portada/schema');
+    const portada = keystaticConfig.singletons!.portada!;
+    expect(portada.path).toBe('src/content/ajustes/portada');
+    expect(Object.keys(portada.schema).sort()).toEqual(Object.keys(esquemaPortada.shape).sort());
+  });
+
+  it('el archivo actual cumple el esquema', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { parse } = await import('yaml');
+    const { esquemaPortada } = await import('../src/lib/portada/schema');
+    const datos = parse(readFileSync(new URL('../src/content/ajustes/portada.yaml', import.meta.url), 'utf8'));
+    const resultado = esquemaPortada.safeParse(datos);
+    expect(resultado.error?.issues ?? []).toEqual([]);
+  });
+});

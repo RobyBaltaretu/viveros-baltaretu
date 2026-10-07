@@ -1,0 +1,63 @@
+---
+/**
+ * Escena a escala real: siluetas sobre un mismo suelo, con la cinta métrica.
+ * Cada elemento mide `altura` metros; la escena mide `alturaEscena` (por defecto,
+ * la mayor altura redondeada al metro siguiente). La persona de 1,8 m es la referencia.
+ */
+import CintaMetrica from '../ui/CintaMetrica.astro';
+import Silueta from './Silueta.astro';
+import type { TipoSilueta } from './siluetas';
+import type { Idioma } from '../../i18n/ui';
+
+export interface ElementoEscena {
+  tipo: TipoSilueta;
+  altura: number;
+  /** Texto bajo la silueta (y nombre accesible). */
+  etiqueta: string;
+  detalle?: string;
+  /** Ocultar en móvil para no saturar la escena. */
+  soloEscritorio?: boolean;
+}
+
+interface Props {
+  elementos: ElementoEscena[];
+  idioma: Idioma;
+  alturaEscena?: number;
+  /** Alto de la escena (CSS), p. ej. "clamp(16rem, 45vh, 30rem)". */
+  alto?: string;
+  class?: string;
+}
+
+const { elementos, idioma, alto = 'clamp(16rem, 45vh, 30rem)', class: clase } = Astro.props;
+const alturaEscena = Astro.props.alturaEscena ?? Math.max(2, Math.ceil(Math.max(...elementos.map((e) => e.altura))));
+---
+
+<!-- Grid de dos filas: fila 1 = escena (todas las siluetas sobre el mismo suelo), fila 2 = etiquetas. -->
+<figure
+  class:list={['escena-escala grid grid-flow-col auto-cols-[minmax(4.5rem,max-content)] items-end gap-x-[clamp(0.75rem,3vw,2.5rem)]', clase]}
+  style={`grid-template-rows: ${alto} auto; grid-template-columns: 3rem`}
+>
+  <CintaMetrica alturaMax={alturaEscena} idioma={idioma} class="h-full text-(--color-secundario)" />
+  <span aria-hidden="true"></span>
+  {
+    elementos.map((e) => (
+      <>
+        <div class:list={['relative flex h-full items-end justify-center', e.soloEscritorio && 'max-sm:hidden']}>
+          <Silueta
+            tipo={e.tipo}
+            titulo={e.detalle ? `${e.etiqueta}, ${e.detalle}` : e.etiqueta}
+            class:list={['w-auto max-w-none', e.tipo === 'persona' ? 'text-(--color-persona,var(--color-texto))' : 'text-(--color-planta,var(--color-lima))']}
+            style={`height: ${(e.altura / alturaEscena) * 100}%; --tono-tronco: var(--color-salvia)`}
+          />
+        </div>
+        <span
+          class:list={['self-start border-t-2 border-(--color-linea) pt-3 text-sm leading-tight', e.soloEscritorio && 'max-sm:hidden']}
+          aria-hidden="true"
+        >
+          <span class="block font-semibold">{e.etiqueta}</span>
+          {e.detalle && <span class="block text-(--color-secundario)">{e.detalle}</span>}
+        </span>
+      </>
+    ))
+  }
+</figure>

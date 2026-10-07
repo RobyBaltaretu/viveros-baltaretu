@@ -1,7 +1,7 @@
 ---
 // Provisional con el sistema de diseño: el catálogo completo (regla de altura y filtros) llega en el bloque 3.
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { SILUETA_POR_FAMILIA as SILUETAS } from './ilustraciones/siluetas';
+import { siluetaDe } from './ilustraciones/siluetas';
 import Contenedor from './ui/Contenedor.astro';
 import Etiqueta from './ui/Etiqueta.astro';
 import FotoOPlaceholder from './ui/FotoOPlaceholder.astro';
@@ -40,7 +40,7 @@ const empresa = await obtenerEmpresa();
                 <FotoOPlaceholder
                   foto={data.fotos[0] && { imagen: data.fotos[0].imagen, alt: data.fotos[0].alt[idioma] }}
                   pendiente={data.nombre[idioma]}
-                  silueta={SILUETAS[data.familia]}
+                  silueta={siluetaDe(data)}
                 />
                 <h2 class="titular-medio mt-5">
                   <a href={rutaFicha(idioma, data.slug)} class="after:absolute after:inset-0 group-hover:text-lima">

@@ -1,6 +1,7 @@
 import { collection, config, fields, singleton } from '@keystatic/core';
 import { SLUG_REGEX } from './src/lib/catalogo/schema';
 import { WHATSAPP_REGEX } from './src/lib/empresa/schema';
+import { ICONOS_CONFIANZA } from './src/lib/portada/schema';
 
 /**
  * Panel del catálogo en /keystatic.
@@ -79,6 +80,45 @@ export default config({
         }),
         email: fields.text({ label: 'Email de contacto' }),
         direccion: fields.text({ label: 'Dirección', multiline: true }),
+      },
+    }),
+    portada: singleton({
+      label: 'Portada',
+      path: 'src/content/ajustes/portada',
+      format: { data: 'yaml' },
+      schema: {
+        titular: textoBilingue('Titular', { descripcion: 'Primera parte del titular principal.' }),
+        titularDestacado: textoBilingue('Final del titular (resaltado)', {
+          descripcion: 'Se muestra en color lima justo después del titular.',
+        }),
+        entradilla: textoBilingue('Entradilla', { multilinea: true }),
+        tituloFranja: textoBilingue('Título de la franja de especies'),
+        confianza: fields.array(
+          fields.object({
+            icono: fields.select({
+              label: 'Icono',
+              options: [
+                { label: 'Origen', value: 'origen' },
+                { label: 'Documentación', value: 'documentacion' },
+                { label: 'Reparto', value: 'reparto' },
+                { label: 'Calidad', value: 'calidad' },
+              ] satisfies { label: string; value: (typeof ICONOS_CONFIANZA)[number] }[],
+              defaultValue: 'origen',
+            }),
+            titulo: textoBilingue('Título'),
+            texto: textoBilingue('Texto', { multilinea: true }),
+          }),
+          {
+            label: 'Bloque de confianza',
+            description: 'Hasta 6 puntos (origen, documentación, reparto…). No pongas nada que no esté confirmado.',
+            itemLabel: (props) => props.fields.titulo.fields.es.value || 'Punto sin título',
+            validation: { length: { max: 6 } },
+          },
+        ),
+        mision: textoBilingue('Misión', { multilinea: true }),
+        vision: textoBilingue('Visión', { multilinea: true }),
+        llamadaTitulo: textoBilingue('Llamada a presupuesto: título'),
+        llamadaTexto: textoBilingue('Llamada a presupuesto: texto', { multilinea: true }),
       },
     }),
   },
@@ -167,6 +207,18 @@ export default config({
         }),
         origen: fields.text({ label: 'Origen', validation: { isRequired: true } }),
         destacada: fields.checkbox({ label: 'Destacada', description: 'Se mostrará en la portada.' }),
+        silueta: fields.select({
+          label: 'Dibujo provisional',
+          description: 'Silueta que se muestra mientras no haya fotos y en el comparador de escala.',
+          options: [
+            { label: 'Según la familia', value: '' },
+            { label: 'Palmera', value: 'palmera' },
+            { label: 'Árbol de copa alargada (olivo)', value: 'olivo' },
+            { label: 'Árbol de copa redonda (higuera, cítricos)', value: 'higuera' },
+            { label: 'Planta baja en roseta (cica, yuca)', value: 'cica' },
+          ],
+          defaultValue: '',
+        }),
         fotos: fields.array(
           fields.object({
             imagen: fields.image({

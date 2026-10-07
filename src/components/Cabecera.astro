@@ -1,5 +1,6 @@
 ---
 import Silueta from './ilustraciones/Silueta.astro';
+import Boton from './ui/Boton.astro';
 import Contenedor from './ui/Contenedor.astro';
 import { navegacion, nombresIdioma, rutas, textos, type Idioma } from '../i18n/ui';
 import { obtenerEmpresa } from '../lib/empresa';
@@ -52,6 +53,10 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
       <span class="sr-only">{nombresIdioma[otroIdioma]}</span>
     </a>
 
+    <div class="hidden md:block">
+      <Boton href={rutas.presupuesto[idioma]} class="min-h-11 px-5 text-sm">{t.pedirPresupuesto}</Boton>
+    </div>
+
     <button
       type="button"
       class="ml-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-linea-oscura px-4 font-semibold md:hidden"
@@ -87,6 +92,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
           }
         </ul>
       </nav>
+      <p class="mt-6"><Boton href={rutas.presupuesto[idioma]} flecha>{t.pedirPresupuesto}</Boton></p>
       <p class="mt-6 border-t border-linea-oscura pt-6">
         <a href={alternativas[otroIdioma]} hreflang={otroIdioma} lang={otroIdioma} class="font-semibold underline underline-offset-4">
           {nombresIdioma[otroIdioma]}

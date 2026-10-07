@@ -6,6 +6,7 @@ Web corporativa y de catálogo para un vivero mayorista de plantas ornamentales 
 ## Stack
 - Astro (páginas estáticas, JavaScript solo en componentes interactivos) y Tailwind CSS.
 - Catálogo en archivos Markdown con frontmatter, en `src/content/catalogo/`, validado con un esquema en cada build.
+- Textos editables que no son fichas (datos de la empresa, portada) en `src/content/ajustes/*.yaml`, como singletons del panel. Nada de textos de contenido fijos en los componentes; los de interfaz van en `src/i18n/ui.ts`.
 - Panel interno con Keystatic para el gerente, que no tiene GitHub: acceso por Keystatic Cloud (gratuito hasta 3 usuarios). El GitHub y el soporte los lleva el propietario del proyecto.
 - Hosting en Cloudflare Workers con Static Assets (plan gratuito), con el adaptador `@astrojs/cloudflare` y `wrangler.jsonc`. No usar Vercel ni Netlify. Las páginas son estáticas. Solo ejecutan el Worker las rutas con `prerender = false`: formularios y presupuestos (`/api/*`, con Turnstile y Cloudflare Email Service) y el panel (`/keystatic`).
 - Producción con aprobación manual: Workers Builds sube versiones con `wrangler versions upload` y el propietario las publica desde el panel de Cloudflare.
@@ -26,7 +27,7 @@ Español en la raíz (`/`) e inglés bajo `/en/`. Cada texto se escribe en los d
 - Textos legales: los revisa un asesor. No presentarlos como definitivos.
 
 ## Esquema de cada especie
-`slug`, `familia` (palmeras, olivos, higueras, otras-ornamentales), `nombre {es,en}`, `nombreCientifico`, `descripcion {es,en}`, `alturaMin/Max` (m), `perimetroTroncoCm` (opcional), `formatos`, `disponibilidad` (disponible, bajo-pedido, agotado), `precioDesde` y `unidadPrecio`, `origen`, `destacada`, `seo {es,en}`, `revisado`.
+`slug`, `familia` (palmeras, olivos, higueras, otras-ornamentales), `nombre {es,en}`, `nombreCientifico`, `descripcion {es,en}`, `alturaMin/Max` (m), `perimetroTroncoCm` (opcional), `formatos`, `disponibilidad` (disponible, bajo-pedido, agotado), `precioDesde` y `unidadPrecio`, `origen`, `destacada`, `seo {es,en}`, `revisado`. Opcionales añadidos para la web: `fotos` (imagen + `alt {es,en}`), `silueta` (dibujo provisional; por defecto el de la familia) y `datosDeEjemplo`.
 
 ## Diseño
 - Tokens en `src/styles/global.css` (`@theme` de Tailwind 4): bosque, superficie, lima, claro, texto, salvia y musgo. Los contrastes se comprueban en `tests/tokens.test.ts`.

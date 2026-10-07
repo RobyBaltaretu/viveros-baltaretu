@@ -1,0 +1,29 @@
+---
+import Silueta from '../ilustraciones/Silueta.astro';
+import Contenedor from '../ui/Contenedor.astro';
+import Seccion from '../ui/Seccion.astro';
+import { textos, type Idioma } from '../../i18n/ui';
+import type { Portada } from '../../lib/portada/schema';
+
+interface Props {
+  idioma: Idioma;
+  portada: Portada;
+}
+
+const { idioma, portada } = Astro.props;
+const t = textos[idioma];
+---
+
+<Seccion tono="claro" espacio="ninguno" class="pb-24 sm:pb-32">
+  <Contenedor class="grid gap-12 border-t border-linea-clara pt-16 md:grid-cols-[1fr_1fr_auto] md:gap-16">
+    <div class="aparecer">
+      <h2 class="antetitulo text-musgo">{t.mision}</h2>
+      <p class="titular-medio titular-ligero mt-4">{portada.mision[idioma]}</p>
+    </div>
+    <div class="aparecer">
+      <h2 class="antetitulo text-musgo">{t.vision}</h2>
+      <p class="titular-medio titular-ligero mt-4">{portada.vision[idioma]}</p>
+    </div>
+    <Silueta tipo="higuera" class="hidden h-40 w-auto text-bosque md:block" style="--tono-tronco: var(--color-musgo)" />
+  </Contenedor>
+</Seccion>

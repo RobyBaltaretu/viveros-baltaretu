@@ -1,0 +1,33 @@
+---
+import Silueta from '../ilustraciones/Silueta.astro';
+import Boton from '../ui/Boton.astro';
+import Contenedor from '../ui/Contenedor.astro';
+import Seccion from '../ui/Seccion.astro';
+import { rutas, textos, type Idioma } from '../../i18n/ui';
+
+interface Props {
+  idioma: Idioma;
+  titulo: string;
+  texto: string;
+}
+
+const { idioma, titulo, texto } = Astro.props;
+const t = textos[idioma];
+---
+
+<Seccion bordeOrganico espacio="amplio" class="overflow-hidden">
+  <Contenedor class="relative grid items-end gap-10 md:grid-cols-[minmax(0,1fr)_auto]">
+    <div class="min-w-0">
+      <h2 class="titular-gigante max-w-4xl">{titulo}</h2>
+      <p class="mt-8 max-w-xl texto-entrada text-salvia">{texto}</p>
+      <div class="mt-10 flex flex-wrap gap-3">
+        <Boton href={rutas.presupuesto[idioma]} tamano="grande" flecha>{t.pedirPresupuesto}</Boton>
+        <Boton href={rutas.catalogo[idioma]} tamano="grande" variante="secundario">{t.verCatalogo}</Boton>
+      </div>
+    </div>
+    <div class="hidden items-end gap-4 md:flex" aria-hidden="true">
+      <Silueta tipo="cica" class="h-24 w-auto text-lima" style="--tono-tronco: var(--color-salvia)" />
+      <Silueta tipo="palmera" class="h-80 w-auto text-lima" style="--tono-tronco: var(--color-salvia)" />
+    </div>
+  </Contenedor>
+</Seccion>
