@@ -17,6 +17,18 @@ export const navegacion = ['catalogo'] as const satisfies readonly (keyof typeof
 
 export const nombresIdioma: Record<Idioma, string> = { es: 'Español', en: 'English' };
 
+/** Parte de la URL de cada familia: /catalogo/palmeras/ y /en/catalogue/palm-trees/. */
+export const slugFamilia: Record<Familia, Record<Idioma, string>> = {
+  palmeras: { es: 'palmeras', en: 'palm-trees' },
+  olivos: { es: 'olivos', en: 'olive-trees' },
+  higueras: { es: 'higueras', en: 'fig-trees' },
+  'otras-ornamentales': { es: 'otras-ornamentales', en: 'other-ornamentals' },
+};
+
+export function rutaFamilia(idioma: Idioma, familia: Familia): string {
+  return `${rutas.catalogo[idioma]}${slugFamilia[familia][idioma]}/`;
+}
+
 export function rutaFicha(idioma: Idioma, slug: string): string {
   return `${rutas.catalogo[idioma]}${slug}/`;
 }
@@ -47,6 +59,25 @@ export const textos = {
     mision: 'Misión',
     vision: 'Visión',
     verFicha: 'Ver ficha',
+    familiasNav: 'Familias',
+    todas: 'Todas',
+    eligePorTamano: 'Elige por tamaño',
+    alturaMinima: 'Altura mínima',
+    alturaMaxima: 'Altura máxima',
+    rangoAltura: 'De {min} a {max} m',
+    cualquierAltura: 'Cualquier altura',
+    filtroFamilia: 'Familia',
+    filtroFormato: 'Formato',
+    filtroPerimetro: 'Perímetro de tronco',
+    cualquiera: 'Cualquiera',
+    perimetroHasta30: 'Hasta 30 cm',
+    perimetro30a80: '30–80 cm',
+    perimetroMas80: 'Más de 80 cm',
+    borrarFiltros: 'Borrar filtros',
+    resultados: '{n} especies',
+    resultadosUno: '1 especie',
+    sinResultados: 'Ninguna especie cumple estos filtros. Prueba a ampliar la altura o a quitar alguno.',
+    alturaEjemplar: 'Altura',
     presupuestoTitulo: 'Pide tu presupuesto',
     presupuestoProvisional: 'El formulario de presupuesto está en preparación. Mientras tanto, puedes escribirnos o llamarnos:',
     inicio: 'Inicio',
@@ -94,6 +125,25 @@ export const textos = {
     mision: 'Mission',
     vision: 'Vision',
     verFicha: 'View details',
+    familiasNav: 'Families',
+    todas: 'All',
+    eligePorTamano: 'Choose by size',
+    alturaMinima: 'Minimum height',
+    alturaMaxima: 'Maximum height',
+    rangoAltura: '{min} to {max} m',
+    cualquierAltura: 'Any height',
+    filtroFamilia: 'Family',
+    filtroFormato: 'Format',
+    filtroPerimetro: 'Trunk girth',
+    cualquiera: 'Any',
+    perimetroHasta30: 'Up to 30 cm',
+    perimetro30a80: '30–80 cm',
+    perimetroMas80: 'Over 80 cm',
+    borrarFiltros: 'Clear filters',
+    resultados: '{n} species',
+    resultadosUno: '1 species',
+    sinResultados: 'No species match these filters. Try a wider height range or remove a filter.',
+    alturaEjemplar: 'Height',
     presupuestoTitulo: 'Request a quote',
     presupuestoProvisional: 'The quote form is being prepared. In the meantime, you can email or call us:',
     inicio: 'Home',

@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { crearEsquemaEspecie } from './lib/catalogo/schema';
+import { esquemaTextosCatalogo } from './lib/catalogo/textos-schema';
 import { esquemaEmpresa } from './lib/empresa/schema';
 import { esquemaPortada } from './lib/portada/schema';
 
@@ -21,4 +22,9 @@ const portada = defineCollection({
   schema: esquemaPortada,
 });
 
-export const collections = { catalogo, empresa, portada };
+const textosCatalogo = defineCollection({
+  loader: glob({ pattern: 'catalogo.yaml', base: './src/content/ajustes' }),
+  schema: esquemaTextosCatalogo,
+});
+
+export const collections = { catalogo, empresa, portada, textosCatalogo };

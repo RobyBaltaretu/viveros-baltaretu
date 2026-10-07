@@ -21,10 +21,12 @@ const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
 ---
 
 <!doctype html>
-<html lang={idioma}>
+<html lang={idioma} class="sin-js">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Antes de pintar: si hay JavaScript se muestran los controles interactivos (sin saltos de maquetación). -->
+    <script is:inline>document.documentElement.classList.remove('sin-js');</script>
     <meta name="theme-color" content="#0e2519" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{titulo}</title>

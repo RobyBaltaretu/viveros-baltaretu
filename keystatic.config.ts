@@ -53,6 +53,18 @@ const seoIdioma = (idioma: string) =>
     { label: `SEO (${idioma})` },
   );
 
+const textosPagina = (etiqueta: string) =>
+  fields.object(
+    {
+      entradilla: textoBilingue('Entradilla', { multilinea: true }),
+      seoDescripcion: textoBilingue('Descripción para Google', {
+        multilinea: true,
+        descripcion: 'Texto bajo el título en los resultados de búsqueda. Recomendado: menos de 155 caracteres.',
+      }),
+    },
+    { label: etiqueta },
+  );
+
 export default config({
   storage: proyectoCloud ? { kind: 'cloud' } : import.meta.env.DEV ? { kind: 'local' } : { kind: 'cloud' },
   ...(proyectoCloud ? { cloud: { project: proyectoCloud } } : {}),
@@ -80,6 +92,18 @@ export default config({
         }),
         email: fields.text({ label: 'Email de contacto' }),
         direccion: fields.text({ label: 'Dirección', multiline: true }),
+      },
+    }),
+    textosCatalogo: singleton({
+      label: 'Textos del catálogo',
+      path: 'src/content/ajustes/catalogo',
+      format: { data: 'yaml' },
+      schema: {
+        catalogo: textosPagina('Catálogo completo'),
+        palmeras: textosPagina('Palmeras'),
+        olivos: textosPagina('Olivos'),
+        higueras: textosPagina('Higueras'),
+        'otras-ornamentales': textosPagina('Otras ornamentales'),
       },
     }),
     portada: singleton({

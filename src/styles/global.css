@@ -140,6 +140,10 @@
     background-color: var(--color-lima);
     color: var(--color-bosque);
   }
+  /* Controles que solo funcionan con JavaScript. */
+  .sin-js .solo-js {
+    display: none !important;
+  }
   /* Subrayado de acento en secciones claras: el "guiño" lima sin perder contraste. */
   .subrayado-lima {
     text-decoration-line: underline;

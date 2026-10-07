@@ -63,3 +63,16 @@ describe('singleton Portada', () => {
     expect(resultado.error?.issues ?? []).toEqual([]);
   });
 });
+
+describe('singleton Textos del catálogo', () => {
+  it('cubre el catálogo y todas las familias, y el archivo cumple el esquema', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { parse } = await import('yaml');
+    const { FAMILIAS } = await import('../src/lib/catalogo/schema');
+    const singleton = keystaticConfig.singletons!.textosCatalogo!;
+    expect(singleton.path).toBe('src/content/ajustes/catalogo');
+    expect(Object.keys(singleton.schema).sort()).toEqual(['catalogo', ...FAMILIAS].sort());
+    const datos = parse(readFileSync(new URL('../src/content/ajustes/catalogo.yaml', import.meta.url), 'utf8'));
+    expect(Object.keys(datos).sort()).toEqual(['catalogo', ...FAMILIAS].sort());
+  });
+});

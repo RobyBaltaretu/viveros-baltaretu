@@ -1,0 +1,106 @@
+---
+/**
+ * Catálogo completo o de una familia. Todas las especies se generan en HTML
+ * estático; los filtros solo ocultan o muestran tarjetas en el navegador.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FiltrosCatalogo from './FiltrosCatalogo.astro';
+import TarjetaEspecie from './TarjetaEspecie.astro';
+import Contenedor from '../ui/Contenedor.astro';
+import Seccion from '../ui/Seccion.astro';
+import { familias, rutaFamilia, rutas, textos, type Idioma } from '../../i18n/ui';
+import { obtenerEspecies } from '../../lib/catalogo';
+import { FAMILIAS } from '../../lib/catalogo/schema';
+import { obtenerTextosCatalogo } from '../../lib/catalogo/textos';
+import type { Familia } from '../../lib/catalogo/tipos';
+import { obtenerEmpresa } from '../../lib/empresa';
+
+interface Props {
+  idioma: Idioma;
+  familia?: Familia;
+}
+
+const { idioma, familia } = Astro.props;
+const t = textos[idioma];
+const [todas, textosCatalogo, empresa] = await Promise.all([obtenerEspecies(idioma), obtenerTextosCatalogo(), obtenerEmpresa()]);
+const especies = familia ? todas.filter((e) => e.data.familia === familia) : todas;
+const familiasDisponibles = FAMILIAS.filter((f) => todas.some((e) => e.data.familia === f));
+const alturaMaxima = Math.max(2, Math.ceil(Math.max(0, ...especies.map((e) => e.data.alturaMax))));
+
+const textosPagina = textosCatalogo[familia ?? 'catalogo'];
+const tituloH1 = familia ? familias[familia][idioma] : t.tituloCatalogo;
+const alternativas = familia
+  ? { es: rutaFamilia('es', familia), en: rutaFamilia('en', familia) }
+  : rutas.catalogo;
+const idLista = 'lista-especies';
+const idVacio = 'sin-resultados';
+---
+
+<BaseLayout
+  idioma={idioma}
+  titulo={`${tituloH1} | ${empresa.nombre}`}
+  descripcion={textosPagina.seoDescripcion[idioma]}
+  alternativas={alternativas}
+>
+  <Seccion espacio="ninguno" class="pt-12 pb-20 sm:pt-16 sm:pb-28">
+    <Contenedor>
+      <nav aria-label={t.familiasNav}>
+        <ul class="flex flex-wrap gap-2">
+          <li>
+            <a
+              href={rutas.catalogo[idioma]}
+              aria-current={!familia ? 'page' : undefined}
+              class="inline-flex min-h-11 items-center rounded-full border border-linea-oscura px-4 text-sm font-semibold hover:border-lima aria-[current=page]:border-lima aria-[current=page]:text-lima"
+            >
+              {t.todas}
+            </a>
+          </li>
+          {
+            familiasDisponibles.map((f) => (
+              <li>
+                <a
+                  href={rutaFamilia(idioma, f)}
+                  aria-current={familia === f ? 'page' : undefined}
+                  class="inline-flex min-h-11 items-center rounded-full border border-linea-oscura px-4 text-sm font-semibold hover:border-lima aria-[current=page]:border-lima aria-[current=page]:text-lima"
+                >
+                  {familias[f][idioma]}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <h1 class="titular-gigante mt-10">{tituloH1}</h1>
+      <p class="mt-6 max-w-2xl texto-entrada text-salvia">{textosPagina.entradilla[idioma]}</p>
+
+      {
+        especies.length === 0 ? (
+          <p class="mt-12 texto-entrada">{t.catalogoVacio}</p>
+        ) : (
+          <>
+            <div class="mt-12">
+              <FiltrosCatalogo
+                idioma={idioma}
+                alturaMaxima={alturaMaxima}
+                idLista={idLista}
+                idVacio={idVacio}
+                familiaFija={familia}
+                familiasDisponibles={familiasDisponibles}
+              />
+            </div>
+            <h2 class="sr-only">{tituloH1}</h2>
+            <ul id={idLista} class="mt-12 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+              {especies.map((especie, i) => (
+                <TarjetaEspecie especie={especie} idioma={idioma} alturaReferencia={alturaMaxima} prioridad={i === 0} />
+              ))}
+            </ul>
+            <p id={idVacio} class="mt-12 texto-entrada text-salvia" hidden>
+              {t.sinResultados}
+            </p>
+          </>
+        )
+      }
+    </Contenedor>
+  </Seccion>
+</BaseLayout>

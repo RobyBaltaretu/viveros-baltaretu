@@ -86,3 +86,11 @@ describe('campo silueta', () => {
     expect(esquema2.safeParse({ ...base, silueta: 'cactus' }).success).toBe(false);
   });
 });
+
+describe('rutas del catálogo', () => {
+  it('ninguna ficha usa el mismo slug que una familia (comparten /catalogo/<slug>/)', async () => {
+    const { slugFamilia } = await import('../src/i18n/ui');
+    const deFamilias = Object.values(slugFamilia).flatMap((s) => [s.es, s.en]);
+    for (const { datos } of fichas) expect(deFamilias).not.toContain(datos.slug);
+  });
+});
