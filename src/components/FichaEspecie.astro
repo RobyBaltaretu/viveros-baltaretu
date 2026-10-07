@@ -51,6 +51,7 @@ const medidas: [string, string][] = [
   titulo={data.seo[idioma].titulo}
   descripcion={data.seo[idioma].descripcion}
   alternativas={{ es: rutaFicha('es', data.slug), en: rutaFicha('en', data.slug) }}
+  mensajeWhatsapp={t.whatsappEspecie.replace('{nombre}', nombre).replace('{cientifico}', data.nombreCientifico)}
 >
   <Seccion espacio="ninguno" class="pt-10 pb-20 sm:pt-14 sm:pb-28">
     <Contenedor>

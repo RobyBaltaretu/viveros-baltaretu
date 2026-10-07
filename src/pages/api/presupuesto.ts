@@ -8,8 +8,20 @@ import { TURNSTILE_PRUEBA, verificarTurnstile } from '../../lib/presupuesto/turn
 // Única ruta del sitio, junto al panel, que se ejecuta en el Worker.
 export const prerender = false;
 
+/** Lo que usamos del binding `send_email` (Cloudflare Email Service). */
+interface EnvioEmail {
+  send(mensaje: {
+    from: string | { email: string; name?: string };
+    to: string;
+    replyTo?: string;
+    subject: string;
+    text?: string;
+    html?: string;
+  }): Promise<unknown>;
+}
+
 interface EntornoPresupuesto {
-  EMAIL?: SendEmail;
+  EMAIL?: EnvioEmail;
   EMAIL_DESTINO?: string;
   EMAIL_REMITENTE?: string;
   TURNSTILE_SECRET_KEY?: string;

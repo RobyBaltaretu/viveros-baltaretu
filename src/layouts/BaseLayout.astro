@@ -3,6 +3,8 @@ import '../styles/global.css';
 import { Font } from 'astro:assets';
 import Cabecera from '../components/Cabecera.astro';
 import Pie from '../components/Pie.astro';
+import PanelLista from '../components/presupuesto/PanelLista.astro';
+import BotonWhatsApp from '../components/BotonWhatsApp.astro';
 import { IDIOMA_POR_DEFECTO, textos, type Idioma } from '../i18n/ui';
 
 interface Props {
@@ -13,9 +15,11 @@ interface Props {
   alternativas: Record<Idioma, string>;
   /** Para páginas que no deben indexarse (p. ej. 404): sin canonical ni hreflang. */
   noIndexar?: boolean;
+  /** Mensaje prellenado del botón de WhatsApp (por defecto, uno general). */
+  mensajeWhatsapp?: string;
 }
 
-const { idioma, titulo, descripcion, alternativas, noIndexar = false } = Astro.props;
+const { idioma, titulo, descripcion, alternativas, noIndexar = false, mensajeWhatsapp } = Astro.props;
 const t = textos[idioma];
 const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
 ---
@@ -59,5 +63,7 @@ const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
       <slot />
     </main>
     <Pie idioma={idioma} alternativas={alternativas} />
+    <PanelLista idioma={idioma} />
+    <BotonWhatsApp idioma={idioma} mensaje={mensajeWhatsapp ?? t.whatsappGeneral} />
   </body>
 </html>

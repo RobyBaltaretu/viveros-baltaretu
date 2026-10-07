@@ -7,13 +7,13 @@
     "node": "^22.12.0"
   },
   "scripts": {
-    "dev": "wrangler types && astro dev",
+    "dev": "wrangler types --include-runtime=false && astro dev",
     "panel:local": "node scripts/panel-local.mjs",
     "build": "astro build",
     "preview": "astro preview",
-    "types": "wrangler types",
+    "types": "wrangler types --include-runtime=false",
     "check": "astro check",
-    "lint": "wrangler types && eslint . && astro check",
+    "lint": "wrangler types --include-runtime=false && eslint . && astro check",
     "test": "vitest run",
     "check:worker": "wrangler deploy --dry-run",
     "astro": "astro"
