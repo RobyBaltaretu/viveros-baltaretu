@@ -36,7 +36,7 @@ Requiere Node 22 (22.12 o superior, ver `.nvmrc`).
 - `npm run preview`: sirve el build con el runtime de Cloudflare (workerd). Las variables de runtime van en `.dev.vars` (ver `.dev.vars.example`).
 - `npm run lint`: `wrangler types`, ESLint y `astro check` (tipos y esquema del contenido).
 - `npm test`: tests con Vitest (validación de las fichas del catálogo y de la función de presupuestos).
-- Panel: `npm run dev` y abrir http://localhost:4321/keystatic. Sin `PUBLIC_KEYSTATIC_CLOUD_PROJECT` edita los archivos locales; con ella usa Keystatic Cloud.
+- `npm run panel:local`: servidor de desarrollo en Node, sin el adaptador de Cloudflare, para editar el contenido en http://127.0.0.1:4321/keystatic con el modo local de Keystatic, que escribe en disco. El modo local no funciona en workerd, así que en `npm run dev` y en producción el panel usa Keystatic Cloud (`PUBLIC_KEYSTATIC_CLOUD_PROJECT`).
 - `npm run check:worker`: `wrangler deploy --dry-run`, que valida `wrangler.jsonc` y el bundle sin desplegar.
 - Variables: las de build en `.env.example` y las de runtime en `.dev.vars.example`. Los pasos en Cloudflare están en el README.
 

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "wrangler types && astro dev",
+    "panel:local": "node scripts/panel-local.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "types": "wrangler types",

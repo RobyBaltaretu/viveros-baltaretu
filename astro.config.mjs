@@ -21,10 +21,14 @@ export default defineConfig({
   output: 'static',
   // Sin sesiones de Astro: así el adaptador no crea un espacio KV que no usamos.
   session: false,
-  adapter: cloudflare({
-    // Imágenes optimizadas en el build con Sharp; sin el binding de Cloudflare Images.
-    imageService: 'compile',
-  }),
+  // `npm run panel:local` arranca sin el adaptador (en Node): el modo local de
+  // Keystatic no funciona en workerd. Solo para editar contenido en local.
+  adapter: process.env.KEYSTATIC_LOCAL
+    ? undefined
+    : cloudflare({
+        // Imágenes optimizadas en el build con Sharp; sin el binding de Cloudflare Images.
+        imageService: 'compile',
+      }),
   // Keystatic añade /keystatic y /api/keystatic como rutas del Worker.
   integrations: [react(), keystatic()],
   i18n: {

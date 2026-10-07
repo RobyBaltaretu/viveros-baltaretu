@@ -11,7 +11,7 @@
     "not_found_handling": "404-page",
     // Rutas que siempre ejecutan el Worker. Sin esto, las navegaciones del navegador
     // (incluido enviar un formulario sin JavaScript) reciben la 404 estática.
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/keystatic", "/keystatic/*"]
   },
   // Envío de avisos de presupuesto con Cloudflare Email Service. Sin restricciones
   // en el binding: el plan gratuito solo permite enviar a direcciones de destino

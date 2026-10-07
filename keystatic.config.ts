@@ -7,7 +7,8 @@ import { SLUG_REGEX } from './src/lib/catalogo/schema';
  * - Con PUBLIC_KEYSTATIC_CLOUD_PROJECT definido ("equipo/proyecto"), el panel usa
  *   Keystatic Cloud: el gerente entra con su cuenta de Keystatic Cloud (sin GitHub)
  *   y cada guardado es un commit en la rama principal del repositorio.
- * - Sin esa variable, solo en desarrollo local, se edita directamente en disco.
+ * - Sin esa variable, solo en desarrollo, se edita directamente en disco. Requiere Node:
+ *   usa `npm run panel:local` (el modo local de Keystatic no funciona en workerd).
  *
  * Los campos y valores deben coincidir con el esquema Zod de
  * src/lib/catalogo/schema.ts, que es el que valida cada build.
