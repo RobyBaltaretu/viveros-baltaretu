@@ -1,10 +1,13 @@
 ---
 /**
- * Escena a escala real: siluetas sobre un mismo suelo, con la cinta métrica.
- * Cada elemento mide `altura` metros; la escena mide `alturaEscena` (por defecto,
- * la mayor altura redondeada al metro siguiente). La persona de 1,8 m es la referencia.
+ * Alzado a escala real, como una lámina de paisajismo: los dibujos se apoyan en el
+ * mismo suelo sobre una cuadrícula de 1 m, con la cinta métrica y una cota por
+ * ejemplar. Cada elemento mide `altura` metros; la escena mide `alturaEscena`
+ * (por defecto, la mayor altura redondeada al metro siguiente). La persona de
+ * 1,8 m es la referencia.
  */
 import CintaMetrica from '../ui/CintaMetrica.astro';
+import Cota from './Cota.astro';
 import Silueta from './Silueta.astro';
 import type { TipoSilueta } from './siluetas';
 import type { Idioma } from '../../i18n/ui';
@@ -12,9 +15,11 @@ import type { Idioma } from '../../i18n/ui';
 export interface ElementoEscena {
   tipo: TipoSilueta;
   altura: number;
-  /** Texto bajo la silueta (y nombre accesible). */
+  /** Texto bajo el dibujo (y nombre accesible). */
   etiqueta: string;
   detalle?: string;
+  /** Enlace (p. ej. a la ficha). */
+  href?: string;
   /** Ocultar en móvil para no saturar la escena. */
   soloEscritorio?: boolean;
 }
@@ -25,39 +30,62 @@ interface Props {
   alturaEscena?: number;
   /** Alto de la escena (CSS), p. ej. "clamp(16rem, 45vh, 30rem)". */
   alto?: string;
+  /** Cotas junto a cada planta. */
+  cotas?: boolean;
+  /** Las cotas cuentan de 0 a su medida al cargar. */
+  contar?: boolean;
+  /** Los dibujos se trazan al cargar. */
+  trazar?: boolean;
   class?: string;
 }
 
-const { elementos, idioma, alto = 'clamp(16rem, 45vh, 30rem)', class: clase } = Astro.props;
+const { elementos, idioma, alto = 'clamp(16rem, 45vh, 30rem)', cotas = true, contar = false, trazar = false, class: clase } = Astro.props;
 const alturaEscena = Astro.props.alturaEscena ?? Math.max(2, Math.ceil(Math.max(...elementos.map((e) => e.altura))));
+const columnas = `3rem repeat(${elementos.length}, auto)`;
 ---
 
-<!-- Grid de dos filas: fila 1 = escena (todas las siluetas sobre el mismo suelo), fila 2 = etiquetas. -->
 <figure
-  class:list={['escena-escala grid grid-flow-col auto-cols-[minmax(4.5rem,max-content)] items-end gap-x-[clamp(0.75rem,3vw,2.5rem)]', clase]}
-  style={`grid-template-rows: ${alto} auto; grid-template-columns: 3rem`}
+  class:list={['escena-escala grid items-end pt-3 gap-x-[clamp(1.5rem,4vw,3.5rem)]', cotas && 'pr-8', trazar && 'trazar', clase]}
+  style={`grid-template-rows: ${alto} auto; grid-template-columns: ${columnas}; --alto-escena: ${alto}; --paso-cuadricula: calc(var(--alto-escena) / ${alturaEscena})`}
 >
-  <CintaMetrica alturaMax={alturaEscena} idioma={idioma} class="h-full text-(--color-secundario)" />
-  <span aria-hidden="true"></span>
+  <!-- Cuadrícula de 1 m y suelo. -->
+  <div class="cuadricula pointer-events-none col-[1/-1] row-1 h-full border-b border-current/50" aria-hidden="true"></div>
+  <CintaMetrica alturaMax={alturaEscena} idioma={idioma} class="col-1 row-1 h-full text-(--color-secundario)" />
   {
-    elementos.map((e) => (
-      <>
-        <div class:list={['relative flex h-full items-end justify-center', e.soloEscritorio && 'max-sm:hidden']}>
-          <Silueta
-            tipo={e.tipo}
-            titulo={e.detalle ? `${e.etiqueta}, ${e.detalle}` : e.etiqueta}
-            class:list={['w-auto max-w-none', e.tipo === 'persona' ? 'text-(--color-persona,var(--color-texto))' : 'text-(--color-planta,var(--color-lima))']}
-            style={`height: ${(e.altura / alturaEscena) * 100}%; --tono-tronco: var(--color-salvia)`}
-          />
-        </div>
-        <span
-          class:list={['self-start border-t-2 border-(--color-linea) pt-3 text-sm leading-tight', e.soloEscritorio && 'max-sm:hidden']}
-          aria-hidden="true"
-        >
-          <span class="block font-semibold">{e.etiqueta}</span>
-          {e.detalle && <span class="block text-(--color-secundario)">{e.detalle}</span>}
-        </span>
-      </>
-    ))
+    elementos.map((e, i) => {
+      const columna = `grid-column: ${i + 2}`;
+      const planta = e.tipo !== 'persona';
+      const Envoltura = e.href ? 'a' : 'div';
+      return (
+        <>
+          <div class:list={['relative row-1 flex h-full items-end justify-center', e.soloEscritorio && 'max-sm:hidden']} style={columna}>
+            <Envoltura
+              href={e.href}
+              class:list={['relative block', e.href && 'group/planta']}
+              style={`height: ${(e.altura / alturaEscena) * 100}%`}
+            >
+              <Silueta
+                tipo={e.tipo}
+                titulo={e.detalle ? `${e.etiqueta}, ${e.detalle}` : e.etiqueta}
+                trazable={trazar}
+                class:list={[
+                  'h-full w-auto max-w-none transition-colors duration-300',
+                  planta ? 'text-(--color-planta,var(--color-texto)) group-hover/planta:text-(--color-acento)' : 'text-(--color-persona,var(--color-secundario))',
+                ]}
+              />
+              {cotas && <Cota metros={e.altura} idioma={idioma} contar={contar && planta} class="-right-6 text-(--color-acento)" />}
+            </Envoltura>
+          </div>
+          <span
+            class:list={['row-2 self-start pt-3 leading-tight', e.soloEscritorio && 'max-sm:hidden']}
+            style={columna}
+            aria-hidden="true"
+          >
+            <span class="rotulo block">{e.etiqueta}</span>
+            {e.detalle && <span class="rotulo mt-1 block text-(--color-secundario)">{e.detalle}</span>}
+          </span>
+        </>
+      );
+    })
   }
 </figure>

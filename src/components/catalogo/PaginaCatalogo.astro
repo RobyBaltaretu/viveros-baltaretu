@@ -62,7 +62,7 @@ const idVacio = 'sin-resultados';
             <a
               href={rutas.catalogo[idioma]}
               aria-current={!familia ? 'page' : undefined}
-              class="inline-flex min-h-11 items-center rounded-full border border-linea-oscura px-4 text-sm font-semibold hover:border-lima aria-[current=page]:border-lima aria-[current=page]:text-lima"
+              class="inline-flex min-h-11 items-center rounded-tarjeta border border-linea-oscura px-4 text-sm font-semibold hover:border-lima aria-[current=page]:border-lima aria-[current=page]:text-lima"
             >
               {t.todas}
             </a>
@@ -73,7 +73,7 @@ const idVacio = 'sin-resultados';
                 <a
                   href={rutaFamilia(idioma, f)}
                   aria-current={familia === f ? 'page' : undefined}
-                  class="inline-flex min-h-11 items-center rounded-full border border-linea-oscura px-4 text-sm font-semibold hover:border-lima aria-[current=page]:border-lima aria-[current=page]:text-lima"
+                  class="inline-flex min-h-11 items-center rounded-tarjeta border border-linea-oscura px-4 text-sm font-semibold hover:border-lima aria-[current=page]:border-lima aria-[current=page]:text-lima"
                 >
                   {familias[f][idioma]}
                 </a>
@@ -83,7 +83,10 @@ const idVacio = 'sin-resultados';
         </ul>
       </nav>
 
-      <h1 class="titular-gigante mt-10">{tituloH1}</h1>
+      <p class="antetitulo mt-12 text-salvia">
+        {t.catalogo} · {especies.length === 1 ? t.resultadosUno : t.resultados.replace('{n}', String(especies.length))}
+      </p>
+      <h1 class="titular-gigante mt-4">{tituloH1}</h1>
       <p class="mt-6 max-w-2xl texto-entrada text-salvia">{textosPagina.entradilla[idioma]}</p>
 
       {

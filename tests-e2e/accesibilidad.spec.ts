@@ -62,6 +62,17 @@ test.describe('teclado', () => {
     await expect(page).toHaveURL(/altura=1-/);
   });
 
+  test('el buscador por altura de la portada filtra y enlaza al catálogo con el mismo rango', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Basta con comprobarlo en escritorio');
+    await page.goto('/');
+    const ver = page.getByRole('link', { name: /^Ver \d+ especies?$/ });
+    await expect(ver).toHaveAttribute('href', /altura=6-10$/);
+    await page.getByLabel('Altura máxima').focus();
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await expect(ver).toHaveAttribute('href', /altura=6-9$/);
+  });
+
   test('el panel de la lista se cierra con Esc y devuelve el foco', async ({ page }) => {
     await page.goto('/catalogo/higuera-comun/');
     await page.getByRole('button', { name: 'Añadir a la lista de presupuesto' }).click();

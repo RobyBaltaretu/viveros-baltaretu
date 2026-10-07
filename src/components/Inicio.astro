@@ -1,10 +1,11 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BloqueConfianza from './portada/BloqueConfianza.astro';
-import FranjaEspecies from './portada/FranjaEspecies.astro';
+import BuscadorAltura from './portada/BuscadorAltura.astro';
 import Heroe from './portada/Heroe.astro';
+import LaminaEspecies from './portada/LaminaEspecies.astro';
 import LlamadaPresupuesto from './portada/LlamadaPresupuesto.astro';
-import MisionVision from './portada/MisionVision.astro';
+import PerfilesPasos from './portada/PerfilesPasos.astro';
 import { rutas, type Idioma } from '../i18n/ui';
 import { obtenerEspecies } from '../lib/catalogo';
 import { obtenerEmpresa } from '../lib/empresa';
@@ -25,8 +26,9 @@ const datos = [organizacion(empresa, new URL('/', Astro.site).href), sitioWeb(es
 
 <BaseLayout idioma={idioma} titulo={titulo} descripcion={portada.entradilla[idioma]} alternativas={rutas.inicio} datosEstructurados={datos}>
   <Heroe idioma={idioma} portada={portada} especies={especies} />
-  <FranjaEspecies idioma={idioma} titulo={portada.tituloFranja[idioma]} especies={especies} />
-  <BloqueConfianza idioma={idioma} puntos={portada.confianza} />
-  <MisionVision idioma={idioma} portada={portada} />
+  <LaminaEspecies idioma={idioma} titulo={portada.laminaTitulo[idioma]} texto={portada.laminaTexto[idioma]} especies={especies} />
+  <BuscadorAltura idioma={idioma} titulo={portada.alturaTitulo[idioma]} texto={portada.alturaTexto[idioma]} especies={especies} />
+  <PerfilesPasos idioma={idioma} portada={portada} />
+  <BloqueConfianza idioma={idioma} titulo={portada.confianzaTitulo[idioma]} puntos={portada.confianza} />
   <LlamadaPresupuesto idioma={idioma} titulo={portada.llamadaTitulo[idioma]} texto={portada.llamadaTexto[idioma]} />
 </BaseLayout>

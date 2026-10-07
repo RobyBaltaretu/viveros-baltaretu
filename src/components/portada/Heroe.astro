@@ -1,12 +1,17 @@
 ---
+/**
+ * Primera pantalla: el titular y, al lado, el alzado de la especie más alta del
+ * catálogo junto a una persona de 1,80 m. Al cargar, el dibujo se traza y la cota
+ * sube de 0 a la altura real (solo CSS; quieto con "reducir movimiento").
+ */
 import type { CollectionEntry } from 'astro:content';
 import EscenaEscala, { type ElementoEscena } from '../ilustraciones/EscenaEscala.astro';
 import { siluetaDe } from '../ilustraciones/siluetas';
 import Boton from '../ui/Boton.astro';
 import Contenedor from '../ui/Contenedor.astro';
-import Seccion from '../ui/Seccion.astro';
-import { familias, rutas, textos, type Idioma } from '../../i18n/ui';
+import { familias, rutaFicha, rutas, textos, type Idioma } from '../../i18n/ui';
 import type { Portada } from '../../lib/portada/schema';
+import { representantesPorFamilia } from '../../lib/portada/seleccion';
 
 interface Props {
   idioma: Idioma;
@@ -18,55 +23,75 @@ const { idioma, portada, especies } = Astro.props;
 const t = textos[idioma];
 const metros = new Intl.NumberFormat(idioma === 'es' ? 'es-ES' : 'en-GB', { maximumFractionDigits: 1 });
 
-// La especie más alta de cada familia (las destacadas primero) y, de ellas, las 2 más altas:
-// cuanto más grande es el ejemplar junto a la persona, más clara es la escala.
-const porFamilia = new Map<string, CollectionEntry<'catalogo'>>();
-for (const e of especies) {
-  const actual = porFamilia.get(e.data.familia);
-  const mejor =
-    !actual ||
-    Number(e.data.destacada) > Number(actual.data.destacada) ||
-    (e.data.destacada === actual.data.destacada && e.data.alturaMax > actual.data.alturaMax);
-  if (mejor) porFamilia.set(e.data.familia, e);
-}
-const elegidas = [...porFamilia.values()]
-  .sort((a, b) => Number(b.data.destacada) - Number(a.data.destacada) || b.data.alturaMax - a.data.alturaMax)
-  .slice(0, 2)
-  .sort((a, b) => b.data.alturaMax - a.data.alturaMax);
-
+const masAlta = representantesPorFamilia(especies).sort((a, b) => b.data.alturaMax - a.data.alturaMax)[0];
 const persona: ElementoEscena = { tipo: 'persona', altura: 1.8, etiqueta: t.persona, detalle: t.alturaPersona };
-const plantas: ElementoEscena[] = elegidas.length
-  ? elegidas.map((e, i) => ({
-      tipo: siluetaDe(e.data),
-      altura: e.data.alturaMax,
-      etiqueta: e.data.nombre[idioma],
-      detalle: `${t.hastaAltura} ${metros.format(e.data.alturaMax)} m`,
-      soloEscritorio: i > 0,
-    }))
-  : // Sin especies publicadas: silueta ilustrativa, sin cifras.
-    [{ tipo: 'palmera', altura: 5, etiqueta: familias.palmeras[idioma] }];
+const planta: ElementoEscena = masAlta
+  ? {
+      tipo: siluetaDe(masAlta.data),
+      altura: masAlta.data.alturaMax,
+      etiqueta: masAlta.data.nombre[idioma],
+      detalle: masAlta.data.nombreCientifico !== masAlta.data.nombre[idioma] ? masAlta.data.nombreCientifico : undefined,
+      href: rutaFicha(idioma, masAlta.data.slug),
+    }
+  : // Sin especies publicadas: dibujo ilustrativo, sin cifras de catálogo.
+    { tipo: 'palmera', altura: 6, etiqueta: familias.palmeras[idioma] };
+
+// Datos reales del catálogo publicado (nada inventado): número de especies y altura máxima.
+const alturaMaxima = Math.max(0, ...especies.map((e) => e.data.alturaMax));
+const datos = [
+  especies.length > 0 && (especies.length === 1 ? t.datoEspeciesUno : t.datoEspecies.replace('{n}', String(especies.length))),
+  alturaMaxima > 0 && t.datoAltura.replace('{n}', metros.format(alturaMaxima)),
+  t.datoReparto,
+].filter((d): d is string => Boolean(d));
 ---
 
-<Seccion espacio="ninguno" class="overflow-hidden pt-10 pb-20 sm:pt-16 sm:pb-24">
-  <!-- Móvil: titular, escena y texto (la escala humana entra en la primera pantalla).
-       Escritorio: texto a la izquierda y escena a la derecha. -->
-  <Contenedor class="grid gap-x-16 gap-y-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr]">
-    <div class="min-w-0 lg:self-end">
+<section class="heroe superficie-oscura relative overflow-hidden">
+  <Contenedor
+    class="grid min-h-[calc(100svh-4.5rem)] gap-x-12 gap-y-10 pt-10 pb-10 sm:pt-14 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:grid-rows-[1fr_auto] lg:pb-12"
+  >
+    <div class="flex min-w-0 flex-col justify-center lg:row-span-1">
       <p class="antetitulo text-salvia">{t.antetituloPortada}</p>
-      <h1 class="titular-gigante mt-5 text-[clamp(2.75rem,1.2rem+5.6vw,7.25rem)]">
+      <h1 class="titular-gigante mt-6 text-[clamp(3.4rem,0.9rem+6.4vw,7.5rem)]">
         {portada.titular[idioma]} <span class="text-lima">{portada.titularDestacado[idioma]}</span>
       </h1>
+      <p class="mt-8 max-w-[38rem] texto-entrada text-salvia max-lg:hidden">{portada.entradilla[idioma]}</p>
+      <div class="mt-10 flex flex-wrap gap-3 max-lg:hidden">
+        <Boton href={rutas.presupuesto[idioma]} tamano="grande" flecha>{t.pedirPresupuesto}</Boton>
+        <Boton href={rutas.catalogo[idioma]} tamano="grande" variante="secundario">{t.verCatalogo}</Boton>
+      </div>
     </div>
-    <div class="min-w-0 [--alto-escena:clamp(11rem,30vh,16rem)] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-end lg:[--alto-escena:clamp(16rem,48vh,28rem)]">
+
+    <div class="min-w-0 self-end [--alto-heroe:clamp(17rem,46svh,26rem)] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:[--alto-heroe:clamp(24rem,calc(100svh-15rem),48rem)]">
       <p class="sr-only">{t.escenaPortada}</p>
-      <EscenaEscala elementos={[persona, ...plantas]} idioma={idioma} alto="var(--alto-escena)" />
+      <EscenaEscala
+        elementos={[persona, planta]}
+        idioma={idioma}
+        alto="var(--alto-heroe)"
+        alturaEscena={Math.max(2, Math.ceil(planta.altura + 0.6))}
+        contar={Boolean(masAlta)}
+        cotas={Boolean(masAlta)}
+        trazar
+        class="[--color-planta:var(--color-texto)] [--color-persona:var(--color-lima)]"
+      />
     </div>
-    <div class="min-w-0">
-      <p class="max-w-xl texto-entrada text-salvia">{portada.entradilla[idioma]}</p>
+
+    <div class="min-w-0 lg:hidden">
+      <p class="texto-entrada text-salvia">{portada.entradilla[idioma]}</p>
       <div class="mt-8 flex flex-wrap gap-3">
         <Boton href={rutas.presupuesto[idioma]} tamano="grande" flecha>{t.pedirPresupuesto}</Boton>
         <Boton href={rutas.catalogo[idioma]} tamano="grande" variante="secundario">{t.verCatalogo}</Boton>
       </div>
     </div>
+
+    <ul class="grid min-w-0 gap-x-8 gap-y-3 border-t border-linea-oscura pt-5 sm:grid-cols-3 lg:col-start-1 lg:row-start-2" role="list">
+      {
+        datos.map((dato, i) => (
+          <li class="rotulo flex gap-3 text-salvia">
+            <span class="text-lima">{String(i + 1).padStart(2, '0')}</span>
+            {dato}
+          </li>
+        ))
+      }
+    </ul>
   </Contenedor>
-</Seccion>
+</section>

@@ -23,3 +23,10 @@ export const SILUETA_POR_FAMILIA: Record<Familia, Exclude<TipoSilueta, 'persona'
 export function siluetaDe(data: { familia: Familia; silueta?: Exclude<TipoSilueta, 'persona'> | undefined }) {
   return data.silueta ?? SILUETA_POR_FAMILIA[data.familia];
 }
+
+let siguienteId = 0;
+/** Prefijo único para los `id` internos de cada dibujo (las frondas se reutilizan con <use>). */
+export function nuevoIdSilueta(): string {
+  siguienteId += 1;
+  return `sil${siguienteId}`;
+}

@@ -18,11 +18,13 @@ const telefonoEnlace = esPlaceholder(empresa.telefono) ? undefined : `tel:${empr
 const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa.email}`;
 ---
 
-<Seccion como="footer" tono="medio" bordeOrganico espacio="ninguno" class="mt-[clamp(2rem,5vw,5rem)] pt-16 pb-10 sm:pt-24">
-    <Contenedor>
+<Seccion como="footer" tono="oscuro" espacio="ninguno" class="pb-10">
+    <!-- Cinta métrica horizontal: el motivo de la web, como borde superior del pie. -->
+    <div class="regla-horizontal h-7 border-t border-linea-oscura text-salvia/60" aria-hidden="true"></div>
+    <Contenedor class="pt-14 sm:pt-20">
       <div class="grid gap-12 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div class="max-w-md">
-          <p class="titular-medio">{empresa.nombre}</p>
+          <p class="titular-medio [font-stretch:85%]">{empresa.nombre}</p>
           <p class="mt-4 text-salvia">{t.lemaEmpresa}</p>
         </div>
 
@@ -84,7 +86,7 @@ const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa
 
       <div class="mt-16 flex flex-wrap items-end justify-between gap-6 border-t border-linea-oscura pt-8 text-sm text-salvia">
         <p>© {new Date().getFullYear()} {empresa.nombre}. {t.derechos}</p>
-        <Silueta tipo="olivo" quieta class="h-12 w-auto text-lima/70" style="--tono-tronco: var(--color-salvia)" />
+        <Silueta tipo="palmera" quieta simple class="h-12 w-auto text-lima" />
       </div>
     </Contenedor>
 </Seccion>

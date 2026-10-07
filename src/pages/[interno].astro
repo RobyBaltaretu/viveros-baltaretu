@@ -41,12 +41,12 @@ const alturaEscena = 4;
     <Contenedor>
       <p class="antetitulo text-salvia">Interno · no indexado</p>
       <h1 class="titular-gigante mt-4">Sistema de diseño</h1>
-      <p class="mt-6 max-w-2xl texto-entrada text-salvia">Estudio botánico contemporáneo: verde bosque, un único acento lima, titulares enormes y la cinta métrica como motivo.</p>
+      <p class="mt-6 max-w-2xl texto-entrada text-salvia">Plano de paisajismo: alzados a línea, cotas, cuadrícula de 1 m, titulares condensados y rótulos en mono. Un único acento lima.</p>
 
       <h2 class="titular-medio mt-20">Color</h2>
       <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
         {colores.map(([nombre, hex, clases]) => (
-          <li class:list={['flex aspect-square flex-col justify-end rounded-(--radius-organico) border border-linea-oscura p-4', clases]}>
+          <li class:list={['flex aspect-square flex-col justify-end rounded-tarjeta border border-linea-oscura p-4', clases]}>
             <span class="font-semibold">{nombre}</span>
             <span class="font-mono text-xs">{hex}</span>
           </li>
@@ -55,8 +55,9 @@ const alturaEscena = 4;
 
       <h2 class="titular-medio mt-20">Tipografía</h2>
       <div class="mt-6 space-y-6">
-        <p class="titular-gigante">Gigante 800</p>
+        <p class="titular-gigante">Gigante condensada</p>
         <p class="titular-grande">Grande <span class="titular-ligero">con contraste 300</span></p>
+        <p class="rotulo">Rótulo IBM Plex Mono · 10,00 m · Ø 80 cm</p>
         <p class="titular-medio">Medio · Bricolage Grotesque</p>
         <p class="texto-entrada max-w-2xl">Entrada en DM Sans. Ejemplares de gran porte con su altura real, preparados para proyectos de paisajismo.</p>
         <p class="max-w-2xl">Texto normal en DM Sans con <a href="#" class="underline underline-offset-4 hover:text-lima">un enlace</a>.</p>
@@ -75,7 +76,7 @@ const alturaEscena = 4;
     </Contenedor>
   </Seccion>
 
-  <Seccion tono="claro" bordeOrganico>
+  <Seccion tono="claro">
     <Contenedor>
       <h2 class="titular-grande">Sección <span class="subrayado-lima">clara</span></h2>
       <p class="mt-4 max-w-2xl text-musgo">En superficies claras el acento es el bosque y el lima solo aparece como subrayado decorativo.</p>
@@ -88,11 +89,11 @@ const alturaEscena = 4;
     </Contenedor>
   </Seccion>
 
-  <Seccion tono="medio" bordeOrganico>
+  <Seccion tono="medio">
     <Contenedor>
       <h2 class="titular-grande">Siluetas a escala</h2>
       <p class="mt-4 max-w-2xl text-salvia">Persona de 1,8 m junto a ejemplares de altura máxima de su ficha de ejemplo. Escena de {alturaEscena} m.</p>
-      <div class="mt-10 flex h-[26rem] items-end gap-6 overflow-x-auto border-b border-linea-oscura pt-4 pb-px text-lima" style="--tono-tronco: var(--color-salvia)">
+      <div class="muestra-siluetas mt-10 flex h-[26rem] items-end gap-6 overflow-x-auto border-b border-linea-oscura pt-4 pb-px text-lima" style="--tono-tronco: var(--color-salvia)">
         <CintaMetrica alturaMax={alturaEscena} idioma="es" class="h-full shrink-0 text-salvia" />
         <Silueta tipo="persona" titulo="Persona de 1,8 m" class="shrink-0 text-texto" style={`height: ${(1.8 / alturaEscena) * 100}%`} />
         <Silueta tipo="palmera" titulo="Palmera de 4 m" class="shrink-0" style="height: 100%" />
@@ -110,7 +111,7 @@ const alturaEscena = 4;
     </Contenedor>
   </Seccion>
 
-  <Seccion bordeOrganico>
+  <Seccion>
     <Contenedor>
       <h2 class="titular-medio aparecer">Aparición al hacer scroll</h2>
       <p class="aparecer mt-4 max-w-2xl text-salvia">Solo con CSS (animation-timeline). Desactivada con prefers-reduced-motion.</p>

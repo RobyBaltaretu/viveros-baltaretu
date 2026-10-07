@@ -174,10 +174,34 @@ export default config({
       schema: {
         titular: textoBilingue('Titular', { descripcion: 'Primera parte del titular principal.' }),
         titularDestacado: textoBilingue('Final del titular (resaltado)', {
-          descripcion: 'Se muestra en color lima justo después del titular.',
+          descripcion: 'Se muestra resaltado justo después del titular.',
         }),
         entradilla: textoBilingue('Entradilla', { multilinea: true }),
-        tituloFranja: textoBilingue('Título de la franja de especies'),
+        laminaTitulo: textoBilingue('Lámina a escala: título'),
+        laminaTexto: textoBilingue('Lámina a escala: texto', { multilinea: true }),
+        alturaTitulo: textoBilingue('Buscador por altura: título'),
+        alturaTexto: textoBilingue('Buscador por altura: texto', { multilinea: true }),
+        perfilesTitulo: textoBilingue('Para quién: título'),
+        perfiles: fields.array(
+          fields.object({ titulo: textoBilingue('Título'), texto: textoBilingue('Texto', { multilinea: true }) }),
+          {
+            label: 'Para quién',
+            description: 'Hasta 6 tipos de cliente. No menciones clientes concretos si no está confirmado.',
+            itemLabel: (props) => props.fields.titulo.fields.es.value || 'Perfil sin título',
+            validation: { length: { max: 6 } },
+          },
+        ),
+        pasosTitulo: textoBilingue('Pasos: título'),
+        pasos: fields.array(
+          fields.object({ titulo: textoBilingue('Título'), texto: textoBilingue('Texto', { multilinea: true }) }),
+          {
+            label: 'Pasos para pedir',
+            description: 'Hasta 4 pasos.',
+            itemLabel: (props) => props.fields.titulo.fields.es.value || 'Paso sin título',
+            validation: { length: { max: 4 } },
+          },
+        ),
+        confianzaTitulo: textoBilingue('Bloque de confianza: título'),
         confianza: fields.array(
           fields.object({
             icono: fields.select({
@@ -200,8 +224,8 @@ export default config({
             validation: { length: { max: 6 } },
           },
         ),
-        mision: textoBilingue('Misión', { multilinea: true }),
-        vision: textoBilingue('Visión', { multilinea: true }),
+        mision: textoBilingue('Misión', { multilinea: true, descripcion: 'Se muestra en la página Nosotros.' }),
+        vision: textoBilingue('Visión', { multilinea: true, descripcion: 'Se muestra en la página Nosotros.' }),
         llamadaTitulo: textoBilingue('Llamada a presupuesto: título'),
         llamadaTexto: textoBilingue('Llamada a presupuesto: texto', { multilinea: true }),
       },

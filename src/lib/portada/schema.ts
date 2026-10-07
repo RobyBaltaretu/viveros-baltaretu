@@ -10,7 +10,19 @@ export const esquemaPortada = z.object({
   /** Parte final del titular, resaltada en lima. */
   titularDestacado: bilingue,
   entradilla: bilingue,
-  tituloFranja: bilingue,
+  /** Lámina con las especies dibujadas a escala. */
+  laminaTitulo: bilingue,
+  laminaTexto: bilingue,
+  /** Buscador por altura. */
+  alturaTitulo: bilingue,
+  alturaTexto: bilingue,
+  /** Para quién trabaja el vivero. */
+  perfilesTitulo: bilingue,
+  perfiles: z.array(z.object({ titulo: bilingue, texto: bilingue })).max(6),
+  /** Cómo se pide, paso a paso. */
+  pasosTitulo: bilingue,
+  pasos: z.array(z.object({ titulo: bilingue, texto: bilingue })).max(4),
+  confianzaTitulo: bilingue,
   confianza: z
     .array(
       z.object({
@@ -20,6 +32,7 @@ export const esquemaPortada = z.object({
       }),
     )
     .max(6),
+  /** Se muestran en la página "Nosotros". */
   mision: bilingue,
   vision: bilingue,
   llamadaTitulo: bilingue,

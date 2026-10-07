@@ -29,7 +29,7 @@ const id = 'comparador-altura';
 ---
 
 <comparador-escala
-  class="block rounded-(--radius-amplio) border border-linea-oscura bg-superficie p-6 sm:p-8"
+  class="block rounded-panel border border-linea-oscura bg-superficie p-6 sm:p-8"
   style={`--escena: ${escena}; --altura: ${alturaMax}`}
   data-locale={locale}
   data-veces={t.vecesPersona}
@@ -41,20 +41,21 @@ const id = 'comparador-altura';
   <p class="mt-1 text-right text-sm text-salvia" data-veces-texto aria-hidden="true">{textoVeces(alturaMax)}</p>
 
   <figure class="mt-6">
-    <div class="grid grid-cols-[3rem_auto_minmax(0,1fr)] items-end gap-x-[clamp(1rem,4vw,3rem)]" style="height: clamp(16rem, 52vh, 26rem); grid-template-rows: minmax(0, 1fr)">
+    <div
+      class="cuadricula grid grid-cols-[3rem_auto_minmax(0,1fr)] items-end gap-x-[clamp(1rem,4vw,3rem)] border-b border-texto/50"
+      style={`height: clamp(16rem, 52vh, 26rem); grid-template-rows: minmax(0, 1fr); --paso-cuadricula: calc(clamp(16rem, 52vh, 26rem) / ${escena})`}
+    >
       <CintaMetrica alturaMax={escena} idioma={idioma} class="h-full text-salvia" />
       <div class="flex h-full flex-col justify-end">
-        <Silueta tipo="persona" titulo={`${t.persona}, ${t.alturaPersona}`} class="w-auto text-texto" style={`height: ${(1.8 / escena) * 100}%`} />
+        <Silueta tipo="persona" titulo={`${t.persona}, ${t.alturaPersona}`} class="w-auto text-lima" style={`height: ${(1.8 / escena) * 100}%`} />
       </div>
       <div class="flex h-full min-w-0 items-end justify-center">
         <Silueta
           tipo={silueta}
-          class="planta w-auto max-w-full text-lima"
-          style="--tono-tronco: var(--color-salvia)"
+          class="planta w-auto max-w-full text-texto"
         />
       </div>
     </div>
-    <div class="ml-12 border-t-2 border-linea-oscura"></div>
     <figcaption class="sr-only" data-descripcion>
       {nombre}: {metros.format(alturaMax)} m, {textoVeces(alturaMax)}.
     </figcaption>
