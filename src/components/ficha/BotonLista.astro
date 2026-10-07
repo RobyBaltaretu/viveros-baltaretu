@@ -1,0 +1,61 @@
+---
+/**
+ * Añade la especie a la lista de presupuesto (localStorage). El panel de la
+ * lista llega en el bloque 5; aquí el botón refleja cuántas hay y lo anuncia.
+ */
+import Boton from '../ui/Boton.astro';
+import { textos, type Idioma } from '../../i18n/ui';
+
+interface Props {
+  idioma: Idioma;
+  slug: string;
+  nombre: string;
+}
+
+const { idioma, slug, nombre } = Astro.props;
+const t = textos[idioma];
+---
+
+<boton-lista
+  class="solo-js contents"
+  data-slug={slug}
+  data-texto={t.anadirLista}
+  data-texto-anadida={t.anadidaLista}
+  data-aviso={t.avisoAnadida.replace('{nombre}', nombre)}
+>
+  <Boton type="button" tamano="grande">
+    <svg class="size-5" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M10 3a1 1 0 0 1 1 1v5h5a1 1 0 1 1 0 2h-5v5a1 1 0 1 1-2 0v-5H4a1 1 0 1 1 0-2h5V4a1 1 0 0 1 1-1Z" />
+    </svg>
+    <span data-texto-boton>{t.anadirLista}</span>
+  </Boton>
+  <p class="sr-only" role="status" data-aviso-lista></p>
+</boton-lista>
+
+<script>
+  import { agregar, almacen } from '../../lib/presupuesto/lista';
+
+  class BotonLista extends HTMLElement {
+    connectedCallback() {
+      const slug = this.dataset.slug ?? '';
+      const boton = this.querySelector('button');
+      const texto = this.querySelector('[data-texto-boton]');
+      const aviso = this.querySelector('[data-aviso-lista]');
+      if (!boton || !texto || !aviso) return;
+      const pintar = () => {
+        const linea = almacen.leer().find((l) => l.slug === slug);
+        texto.textContent = linea
+          ? (this.dataset.textoAnadida ?? '').replace('{n}', String(linea.cantidad))
+          : (this.dataset.texto ?? '');
+      };
+      boton.addEventListener('click', () => {
+        almacen.guardar(agregar(almacen.leer(), slug));
+        aviso.textContent = '';
+        requestAnimationFrame(() => (aviso.textContent = this.dataset.aviso ?? ''));
+      });
+      almacen.alCambiar(pintar);
+      pintar();
+    }
+  }
+  customElements.define('boton-lista', BotonLista);
+</script>
