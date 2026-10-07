@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { rutas, textos, type Idioma } from '../i18n/ui';
+import { empresa } from '../lib/empresa';
+
+interface Props {
+  idioma: Idioma;
+}
+
+const { idioma } = Astro.props;
+const t = textos[idioma];
+---
+
+<!-- Provisional: el diseño final llega con el bloque de presupuesto. -->
+<BaseLayout
+  idioma={idioma}
+  titulo={`${t.presupuestoEnviadoTitulo} | ${empresa.nombre}`}
+  descripcion={t.presupuestoEnviadoTexto}
+  alternativas={rutas.presupuestoEnviado}
+  noIndexar
+>
+  <h1 class="mb-4 text-2xl font-bold">{t.presupuestoEnviadoTitulo}</h1>
+  <p>{t.presupuestoEnviadoTexto}</p>
+</BaseLayout>

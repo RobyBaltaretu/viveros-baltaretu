@@ -1,18 +1,28 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import cloudflare from '@astrojs/cloudflare';
 import tailwindcss from '@tailwindcss/vite';
 
-// URL pública para canonical y hreflang. Mientras no haya dominio definitivo
-// se usa el dominio de producción que asigna Vercel.
-const site =
-  process.env.SITE_URL ||
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : 'http://localhost:4321');
+// URL pública para canonical y hreflang. En Workers Builds es obligatoria
+// (variable de build SITE_URL): mientras no haya dominio propio, la URL *.workers.dev.
+if (process.env.WORKERS_CI && !process.env.SITE_URL) {
+  throw new Error('Falta la variable de build SITE_URL (URL pública con https://, sin barra final).');
+}
+const site = process.env.SITE_URL || 'http://localhost:4321';
 
 export default defineConfig({
   site,
-  trailingSlash: 'always',
+  // 'ignore' para que /api/* y /keystatic funcionen sin barra final; enlaces y canonical la llevan.
+  trailingSlash: 'ignore',
+  // Web estática: todas las páginas se generan en el build. Solo las rutas con
+  // `export const prerender = false` (formularios y panel) ejecutan el Worker.
+  output: 'static',
+  // Sin sesiones de Astro: así el adaptador no crea un espacio KV que no usamos.
+  session: false,
+  adapter: cloudflare({
+    // Imágenes optimizadas en el build con Sharp; sin el binding de Cloudflare Images.
+    imageService: 'compile',
+  }),
   i18n: {
     locales: ['es', 'en'],
     defaultLocale: 'es',
@@ -22,5 +32,11 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    define: {
+      // Workers Builds solo expone estas variables al proceso de build (Node). El
+      // prerender corre en workerd, así que se inyectan como constantes.
+      'import.meta.env.WORKERS_CI_BRANCH': JSON.stringify(process.env.WORKERS_CI_BRANCH ?? ''),
+      'import.meta.env.PRODUCTION_BRANCH': JSON.stringify(process.env.PRODUCTION_BRANCH ?? 'main'),
+    },
   },
 });

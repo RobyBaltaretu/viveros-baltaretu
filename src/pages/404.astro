@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { rutas } from '../i18n/ui';
+---
+
+<!-- Página estática: Cloudflare la sirve con not_found_handling "404-page" sin ejecutar el Worker. -->
+<BaseLayout idioma="es" titulo="Página no encontrada" descripcion="Página no encontrada" alternativas={rutas.inicio} noIndexar>
+  <h1 class="mb-4 text-2xl font-bold">Página no encontrada</h1>
+  <p class="mb-2"><a href={rutas.inicio.es} class="underline">Volver al inicio</a></p>
+  <p lang="en"><a href={rutas.inicio.en} class="underline">Page not found. Go to the English home page</a></p>
+</BaseLayout>

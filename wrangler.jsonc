@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Nombre del Worker en Cloudflare. Si lo cambias, cámbialo también en el panel.
+  "name": "viveros-baltaretu",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "compatibility_date": "2026-10-07",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  },
+  // Envío de avisos de presupuesto con Cloudflare Email Service. Sin restricciones
+  // en el binding: el plan gratuito solo permite enviar a direcciones de destino
+  // verificadas en Email Routing (EMAIL_DESTINO).
+  "send_email": [{ "name": "EMAIL" }],
+  // Conserva las variables y secretos definidos en el panel de Cloudflare
+  // (EMAIL_DESTINO, EMAIL_REMITENTE, TURNSTILE_SECRET_KEY) al desplegar.
+  "keep_vars": true,
+  "observability": {
+    "enabled": true
+  }
+}

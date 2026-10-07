@@ -9,9 +9,11 @@ interface Props {
   descripcion: string;
   /** Ruta de esta misma página en cada idioma (para hreflang y el selector de idioma). */
   alternativas: Record<Idioma, string>;
+  /** Para páginas que no deben indexarse (p. ej. 404): sin canonical ni hreflang. */
+  noIndexar?: boolean;
 }
 
-const { idioma, titulo, descripcion, alternativas } = Astro.props;
+const { idioma, titulo, descripcion, alternativas, noIndexar = false } = Astro.props;
 const t = textos[idioma];
 const otroIdioma: Idioma = idioma === 'es' ? 'en' : 'es';
 const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
@@ -24,10 +26,18 @@ const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{titulo}</title>
     <meta name="description" content={descripcion} />
-    <link rel="canonical" href={absoluta(alternativas[idioma])} />
-    <link rel="alternate" hreflang="es" href={absoluta(alternativas.es)} />
-    <link rel="alternate" hreflang="en" href={absoluta(alternativas.en)} />
-    <link rel="alternate" hreflang="x-default" href={absoluta(alternativas[IDIOMA_POR_DEFECTO])} />
+    {
+      noIndexar ? (
+        <meta name="robots" content="noindex" />
+      ) : (
+        <>
+          <link rel="canonical" href={absoluta(alternativas[idioma])} />
+          <link rel="alternate" hreflang="es" href={absoluta(alternativas.es)} />
+          <link rel="alternate" hreflang="en" href={absoluta(alternativas.en)} />
+          <link rel="alternate" hreflang="x-default" href={absoluta(alternativas[IDIOMA_POR_DEFECTO])} />
+        </>
+      )
+    }
   </head>
   <body class="bg-white text-stone-900">
     <a

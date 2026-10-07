@@ -21,15 +21,16 @@ describe('publicación de fichas', () => {
   const entradas = [{ data: { revisado: true } }, { data: { revisado: false } }];
 
   it('en producción solo se publican las fichas revisadas', () => {
-    expect(filtrarPublicables(entradas, { dev: false, vercelEnv: 'production' })).toHaveLength(1);
+    expect(filtrarPublicables(entradas, { dev: false, ramaCi: 'main' })).toHaveLength(1);
+    expect(filtrarPublicables(entradas, { dev: false, ramaCi: 'produccion', ramaProduccion: 'produccion' })).toHaveLength(1);
   });
 
-  it('un build sin entorno de Vercel también excluye las no revisadas', () => {
+  it('un build fuera de Workers Builds (por ejemplo, la CI) también las excluye', () => {
     expect(mostrarNoRevisadas({ dev: false })).toBe(false);
   });
 
-  it('en desarrollo y en previews se muestran todas', () => {
+  it('en desarrollo y en builds de otras ramas se muestran todas', () => {
     expect(filtrarPublicables(entradas, { dev: true })).toHaveLength(2);
-    expect(filtrarPublicables(entradas, { dev: false, vercelEnv: 'preview' })).toHaveLength(2);
+    expect(filtrarPublicables(entradas, { dev: false, ramaCi: 'claude/rama-de-prueba' })).toHaveLength(2);
   });
 });

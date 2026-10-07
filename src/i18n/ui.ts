@@ -8,6 +8,8 @@ export const IDIOMA_POR_DEFECTO: Idioma = 'es';
 export const rutas = {
   inicio: { es: '/', en: '/en/' },
   catalogo: { es: '/catalogo/', en: '/en/catalogue/' },
+  presupuesto: { es: '/presupuesto/', en: '/en/quote/' },
+  presupuestoEnviado: { es: '/presupuesto/enviado/', en: '/en/quote/sent/' },
 } as const satisfies Record<string, Record<Idioma, string>>;
 
 export function rutaFicha(idioma: Idioma, slug: string): string {
@@ -33,6 +35,10 @@ export const textos = {
     familia: 'Familia',
     volverAlCatalogo: 'Volver al catálogo',
     avisoNoRevisado: 'Ficha pendiente de revisión: no se publicará en producción.',
+    presupuestoEnviadoTitulo: 'Petición enviada',
+    presupuestoEnviadoTexto: 'Hemos recibido tu petición de presupuesto. Te responderemos por email.',
+    presupuestoErrorTitulo: 'No se ha podido enviar',
+    presupuestoErrorTexto: 'Revisa los datos e inténtalo de nuevo. Si el problema continúa, escríbenos por WhatsApp o por email.',
   },
   en: {
     saltarAlContenido: 'Skip to content',
@@ -52,6 +58,10 @@ export const textos = {
     familia: 'Family',
     volverAlCatalogo: 'Back to the catalogue',
     avisoNoRevisado: 'Entry pending review: it will not be published in production.',
+    presupuestoEnviadoTitulo: 'Request sent',
+    presupuestoEnviadoTexto: 'We have received your quote request and will reply by email.',
+    presupuestoErrorTitulo: 'Your request could not be sent',
+    presupuestoErrorTexto: 'Please check your details and try again. If the problem persists, contact us on WhatsApp or by email.',
   },
 } as const satisfies Record<Idioma, Record<string, string>>;
 

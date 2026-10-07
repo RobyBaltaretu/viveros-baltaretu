@@ -36,3 +36,7 @@ jobs:
         run: npm run build
         env:
           ASTRO_TELEMETRY_DISABLED: '1'
+
+      # Valida wrangler.jsonc y el bundle del Worker sin desplegar ni usar credenciales.
+      - name: Comprobar el Worker de Cloudflare
+        run: npm run check:worker
