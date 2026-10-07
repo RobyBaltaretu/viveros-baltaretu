@@ -7,10 +7,12 @@ Las normas del proyecto están en [CLAUDE.md](CLAUDE.md). Los comandos de desarr
 ## Cómo funciona
 
 - Las páginas son estáticas: se generan en cada build a partir de `src/content/`. Cloudflare las sirve como *Static Assets*, gratis y sin límite de peticiones.
-- Solo `/api/presupuesto` ejecuta código en el Worker. El plan gratuito cubre 100.000 peticiones al día.
+- Solo `/api/presupuesto` y el panel `/keystatic` ejecutan código en el Worker. El plan gratuito cubre 100.000 peticiones al día.
+- El gerente edita el catálogo en `/keystatic` con Keystatic Cloud, sin cuenta de GitHub. Cada vez que guarda, Keystatic Cloud hace un commit en `main`, lo que lanza un build. Esa versión no se publica hasta que la apruebas.
+- Las fotos subidas desde el panel se guardan en el repositorio, en `src/assets/catalogo/<ficha>/`, y Astro las optimiza en el build. No se usa Cloud Images porque es de pago.
 - El esquema de cada ficha del catálogo está en `src/lib/catalogo/schema.ts`. Si una ficha no lo cumple, el build falla y la web sigue con la versión anterior.
 - Las fichas con `revisado: false` no salen en producción. Sí se ven en local y en los builds de ramas que no son `main`.
-- **Producción requiere aprobación manual.** Cada build de `main` sube una *versión* del Worker con `wrangler versions upload`, pero no la publica. La publicas tú desde el panel de Cloudflare (paso 9).
+- **Producción requiere aprobación manual.** Cada build de `main` sube una *versión* del Worker con `wrangler versions upload`, pero no la publica. La publicas tú desde el panel de Cloudflare (paso 10).
 
 ### Peticiones de presupuesto
 
@@ -29,12 +31,13 @@ Las normas del proyecto están en [CLAUDE.md](CLAUDE.md). Los comandos de desarr
 | Workers Builds | 3.000 minutos de build al mes, 1 build a la vez |
 | Turnstile | Gratis, sin límite de verificaciones, hasta 20 widgets |
 | Email Service | Envío gratis a direcciones de destino verificadas |
+| Keystatic Cloud | Hasta 3 usuarios por equipo |
 
 ## Cómo gastar pocos builds
 
 En Workers el límite no es de 500 builds al mes (ese es el de Cloudflare Pages), sino de **3.000 minutos de build al mes**. Un build de esta web tarda 1 o 2 minutos. Aun así, cada guardado en el panel genera un build, así que conviene no gastarlos sin necesidad:
 
-1. **Rutas que disparan build (*Build watch paths*).** Configura que solo construyan los cambios que afectan a la web. Así, cambiar el README, CLAUDE.md, los tests o la CI no gasta build (paso 5.4).
+1. **Rutas que disparan build (*Build watch paths*).** Configura que solo construyan los cambios que afectan a la web. Así, cambiar el README, CLAUDE.md, los tests o la CI no gasta build (paso 6.4).
 2. **Sin *Preview Builds*.** La CI de GitHub ya compila cada PR sin gastar minutos de Cloudflare. Para ver una rama, usa `npm run preview` en local.
 3. **Caché de build activada.** Guarda las dependencias y las imágenes ya optimizadas (`node_modules/.astro`), así que cada build tarda menos.
 4. **Agrupar cambios en el panel.** Cada vez que el gerente pulsa "Guardar" se genera un build. Lo mejor es rellenar la ficha entera y guardar una vez. Como nada se publica sin tu aprobación, no hace falta guardar "para ver cómo queda".
@@ -57,15 +60,22 @@ Hazlos en este orden. No hay que poner ninguna clave en el repositorio: los valo
 1. Ve a **Compute → Email Service → Email Routing** y activa Email Routing en el dominio. Cloudflare crea los registros DNS necesarios.
 2. En **Email Routing → Destination Addresses**, añade el correo donde quieres recibir los presupuestos (por ejemplo, el del gerente).
 3. Abre el email de verificación que te llega a ese buzón y confírmalo. Hasta que esté verificado no se puede enviar nada.
-4. Elige el remitente de los avisos, una dirección de tu dominio que no hace falta que exista como buzón (por ejemplo, `presupuestos@tudominio.es`). Apúntala para el paso 6.
+4. Elige el remitente de los avisos, una dirección de tu dominio que no hace falta que exista como buzón (por ejemplo, `presupuestos@tudominio.es`). Apúntala para el paso 7.
 
 ### 3. Crear el widget de Turnstile
 
 1. Ve a **Turnstile → Add widget**.
-2. Nombre: `Web vivero`. En *Hostnames* añade tu dominio y el subdominio `*.workers.dev` del Worker (lo verás en el paso 4). Modo: **Managed**.
-3. Copia la **Site Key** (pública) y la **Secret Key** (secreta). Las usarás en los pasos 5 y 6.
+2. Nombre: `Web vivero`. En *Hostnames* añade tu dominio y el subdominio `*.workers.dev` del Worker (lo verás en el paso 5). Modo: **Managed**.
+3. Copia la **Site Key** (pública) y la **Secret Key** (secreta). Las usarás en los pasos 6 y 7.
 
-### 4. Crear el Worker conectado a GitHub
+### 4. Crear el proyecto en Keystatic Cloud
+
+1. Entra en https://keystatic.cloud y crea una cuenta. Puedes entrar con tu cuenta de GitHub.
+2. Crea un equipo (*team*). El plan gratuito permite hasta 3 usuarios por equipo.
+3. Dentro del equipo, crea un proyecto y conéctalo al repositorio `robybaltaretu/viveros-baltaretu`. Si te lo pide, instala la aplicación de Keystatic en GitHub solo para ese repositorio.
+4. Abre los ajustes (*settings*) del proyecto. Ahí aparece el valor `cloud.project`, con el formato `equipo/proyecto`. Apúntalo: es el valor de `PUBLIC_KEYSTATIC_CLOUD_PROJECT` del paso 6. Keystatic Cloud no necesita ninguna clave en Cloudflare.
+
+### 5. Crear el Worker conectado a GitHub
 
 1. Ve a **Compute → Workers & Pages → Create application → Import a repository**.
 2. Conecta GitHub y elige `robybaltaretu/viveros-baltaretu`.
@@ -74,7 +84,7 @@ Hazlos en este orden. No hay que poner ninguna clave en el repositorio: los valo
 5. **Deploy command:** `npx wrangler versions upload`. Con este comando el build sube una versión pero no la publica.
 6. Guarda. El primer build fallará porque falta `SITE_URL`; se arregla en el paso siguiente.
 
-### 5. Ajustes de build
+### 6. Ajustes de build
 
 En **Workers & Pages → viveros-baltaretu → Settings → Build**:
 
@@ -84,14 +94,15 @@ En **Workers & Pages → viveros-baltaretu → Settings → Build**:
    | --- | --- |
    | `SITE_URL` | `https://tudominio.es` sin barra final. Hasta tener dominio, la URL `https://viveros-baltaretu.<tu-subdominio>.workers.dev` |
    | `PUBLIC_TURNSTILE_SITE_KEY` | La *Site Key* del paso 3 |
+   | `PUBLIC_KEYSTATIC_CLOUD_PROJECT` | El valor `equipo/proyecto` del paso 4.4 |
 
 2. **Branch control:** rama de producción `main`. Desmarca **Enable Preview Builds**.
 3. **Build cache:** actívala.
 4. **Build watch paths:**
-   - *Include paths:* `src/*, public/*, astro.config.mjs, wrangler.jsonc, package.json, package-lock.json`
+   - *Include paths:* `src/*, public/*, astro.config.mjs, keystatic.config.ts, wrangler.jsonc, package.json, package-lock.json`
    - *Exclude paths:* vacío.
 
-### 6. Variables y secretos del Worker
+### 7. Variables y secretos del Worker
 
 En **Workers & Pages → viveros-baltaretu → Settings → Variables & Secrets** (se usan cuando la web está funcionando):
 
@@ -103,27 +114,50 @@ En **Workers & Pages → viveros-baltaretu → Settings → Variables & Secrets*
 
 `wrangler.jsonc` tiene `keep_vars: true`, así que los despliegues no borran estos valores.
 
-### 7. Conectar el dominio al Worker
+### 8. Conectar el dominio al Worker
 
 1. En **Workers & Pages → viveros-baltaretu → Settings → Domains & Routes → Add → Custom domain**, escribe `tudominio.es`. Repite con `www.tudominio.es` si lo usas.
-2. Cambia `SITE_URL` (paso 5.1) a la URL del dominio y lanza un build nuevo.
+2. Cambia `SITE_URL` (paso 6.1) a la URL del dominio y lanza un build nuevo.
 
-### 8. Lanzar el primer build
+### 9. Lanzar el primer build
 
 1. En **Workers & Pages → viveros-baltaretu → Deployments**, pulsa **Retry build** o haz cualquier cambio en `main`.
 2. Comprueba que termina en verde.
 
-### 9. Publicar una versión (aprobación manual)
+### 10. Publicar una versión (aprobación manual)
 
 1. En **Workers & Pages → viveros-baltaretu → Deployments**, verás las versiones subidas por cada build. Cada una tiene una URL de prueba para revisarla antes.
 2. Elige la versión y pulsa **Deploy version** (al 100 %). Desde ese momento es la web pública.
 3. Para volver atrás, despliega una versión anterior de la misma forma.
 
-### 10. Probar el formulario
+### 11. Probar el formulario
 
 1. En la web publicada, envía una petición de presupuesto de prueba.
 2. Comprueba que llega al correo de `EMAIL_DESTINO` y que, al responder, el destinatario es el email que pusiste en el formulario.
 3. Si no llega, mira **Workers & Pages → viveros-baltaretu → Observability → Logs**.
+
+### 12. Comprobar el panel
+
+1. Abre `https://tudominio.es/keystatic` y entra con tu cuenta de Keystatic Cloud.
+2. Abre una ficha, cambia algo pequeño y guarda. Comprueba que aparece el commit en `main` en GitHub y que Cloudflare lanza un build (**Deployments**).
+3. Deshaz el cambio desde el panel.
+
+### 13. Invitar al gerente
+
+1. En Keystatic Cloud, abre el equipo del paso 4 e invita al gerente con su correo. No necesita cuenta de GitHub.
+2. Cuando acepte la invitación, puede entrar en `https://tudominio.es/keystatic` con su cuenta de Keystatic Cloud.
+3. Explícale que:
+   - El campo **Revisado (publicar)** controla qué fichas aparecen en la web pública.
+   - Cada "Guardar" es un cambio en el repositorio y lanza un build. Conviene rellenar la ficha entera y guardar una sola vez.
+   - Sus cambios se ven en la web cuando tú publicas la versión (paso 10).
+   - Si los datos no cumplen las reglas (por ejemplo, un perímetro con un solo valor), el build falla y la web sigue como estaba. Lo verás en Cloudflare.
+   - Cada foto necesita un texto alternativo en español y en inglés.
+
+Si hacen falta más de 3 usuarios, el equipo de Keystatic Cloud pasa a Pro (de pago).
+
+### 14. Protección de la rama `main` (opcional)
+
+Si configuras en GitHub una regla que obligue a usar PR para cambiar `main`, Keystatic Cloud no podrá guardar. En ese caso, permite que la aplicación de Keystatic se salte la regla o no exijas PR en `main`.
 
 ## Pendiente de confirmar
 

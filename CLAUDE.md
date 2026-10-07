@@ -7,7 +7,7 @@ Web corporativa y de catálogo para un vivero mayorista de plantas ornamentales 
 - Astro (páginas estáticas, JavaScript solo en componentes interactivos) y Tailwind CSS.
 - Catálogo en archivos Markdown con frontmatter, en `src/content/catalogo/`, validado con un esquema en cada build.
 - Panel interno con Keystatic para el gerente, que no tiene GitHub: acceso por Keystatic Cloud (gratuito hasta 3 usuarios). El GitHub y el soporte los lleva el propietario del proyecto.
-- Hosting en Cloudflare Workers con Static Assets (plan gratuito), con el adaptador `@astrojs/cloudflare` y `wrangler.jsonc`. No usar Vercel ni Netlify. Las páginas son estáticas. Solo ejecutan el Worker las rutas con `prerender = false`: formularios y presupuestos (`/api/*`, con Turnstile y Cloudflare Email Service) y el panel.
+- Hosting en Cloudflare Workers con Static Assets (plan gratuito), con el adaptador `@astrojs/cloudflare` y `wrangler.jsonc`. No usar Vercel ni Netlify. Las páginas son estáticas. Solo ejecutan el Worker las rutas con `prerender = false`: formularios y presupuestos (`/api/*`, con Turnstile y Cloudflare Email Service) y el panel (`/keystatic`).
 - Producción con aprobación manual: Workers Builds sube versiones con `wrangler versions upload` y el propietario las publica desde el panel de Cloudflare.
 - Todo lo demás debe ser gratuito. Antes de elegir un servicio, comprobar sus límites actuales.
 
@@ -36,6 +36,7 @@ Requiere Node 22 (22.12 o superior, ver `.nvmrc`).
 - `npm run preview`: sirve el build con el runtime de Cloudflare (workerd). Las variables de runtime van en `.dev.vars` (ver `.dev.vars.example`).
 - `npm run lint`: `wrangler types`, ESLint y `astro check` (tipos y esquema del contenido).
 - `npm test`: tests con Vitest (validación de las fichas del catálogo y de la función de presupuestos).
+- Panel: `npm run dev` y abrir http://localhost:4321/keystatic. Sin `PUBLIC_KEYSTATIC_CLOUD_PROJECT` edita los archivos locales; con ella usa Keystatic Cloud.
 - `npm run check:worker`: `wrangler deploy --dry-run`, que valida `wrangler.jsonc` y el bundle sin desplegar.
 - Variables: las de build en `.env.example` y las de runtime en `.dev.vars.example`. Los pasos en Cloudflare están en el README.
 

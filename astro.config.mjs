@@ -1,6 +1,8 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
+import react from '@astrojs/react';
+import keystatic from '@keystatic/astro';
 import tailwindcss from '@tailwindcss/vite';
 
 // URL pública para canonical y hreflang. En Workers Builds es obligatoria
@@ -12,7 +14,7 @@ const site = process.env.SITE_URL || 'http://localhost:4321';
 
 export default defineConfig({
   site,
-  // 'ignore' para que /api/* y /keystatic funcionen sin barra final; enlaces y canonical la llevan.
+  // 'ignore' para que /api/* y las rutas de Keystatic funcionen sin barra final; enlaces y canonical la llevan.
   trailingSlash: 'ignore',
   // Web estática: todas las páginas se generan en el build. Solo las rutas con
   // `export const prerender = false` (formularios y panel) ejecutan el Worker.
@@ -23,6 +25,8 @@ export default defineConfig({
     // Imágenes optimizadas en el build con Sharp; sin el binding de Cloudflare Images.
     imageService: 'compile',
   }),
+  // Keystatic añade /keystatic y /api/keystatic como rutas del Worker.
+  integrations: [react(), keystatic()],
   i18n: {
     locales: ['es', 'en'],
     defaultLocale: 'es',
