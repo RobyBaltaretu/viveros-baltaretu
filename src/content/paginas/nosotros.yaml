@@ -1,0 +1,23 @@
+titulo:
+  es: Nosotros
+  en: About us
+entradilla:
+  es: '[PLACEHOLDER: presentación breve de la empresa]'
+  en: '[PLACEHOLDER: short company introduction]'
+secciones:
+  - titulo:
+      es: Quiénes somos
+      en: Who we are
+    texto:
+      es: '[PLACEHOLDER: historia de la empresa, equipo y años de experiencia]'
+      en: '[PLACEHOLDER: company history, team and years of experience]'
+  - titulo:
+      es: El vivero
+      en: The nursery
+    texto:
+      es: '[PLACEHOLDER: ubicación en la provincia de Valencia, superficie y cómo se cultivan los ejemplares]'
+      en: '[PLACEHOLDER: location in the province of Valencia, size and how the specimens are grown]'
+seoDescripcion:
+  es: Vivero mayorista de plantas ornamentales en la provincia de Valencia, con reparto a toda España.
+  en: Wholesale nursery of ornamental plants in the province of Valencia, delivering across Spain.
+pendienteRevision: false

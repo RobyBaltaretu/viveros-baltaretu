@@ -1,0 +1,90 @@
+---
+/** Detalle de un proyecto o de una guía. */
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Secciones from './Secciones.astro';
+import TarjetaEspecie from '../catalogo/TarjetaEspecie.astro';
+import Contenedor from '../ui/Contenedor.astro';
+import FotoOPlaceholder from '../ui/FotoOPlaceholder.astro';
+import Seccion from '../ui/Seccion.astro';
+import { rutaGuia, rutaProyecto, rutas, textos, type Idioma } from '../../i18n/ui';
+import { obtenerEspecies } from '../../lib/catalogo';
+import { obtenerEmpresa } from '../../lib/empresa';
+
+interface Props {
+  idioma: Idioma;
+  entrada: CollectionEntry<'proyectos'> | CollectionEntry<'guias'>;
+}
+
+const { idioma, entrada } = Astro.props;
+const { data } = entrada;
+const t = textos[idioma];
+const esProyecto = entrada.collection === 'proyectos';
+const proyecto = esProyecto ? (entrada as CollectionEntry<'proyectos'>).data : null;
+const empresa = await obtenerEmpresa();
+const especies = proyecto ? (await obtenerEspecies(idioma)).filter((e) => proyecto.especies.includes(e.data.slug)) : [];
+const alturaReferencia = Math.max(2, Math.ceil(Math.max(0, ...especies.map((e) => e.data.alturaMax))));
+const ruta = (i: Idioma) => (esProyecto ? rutaProyecto(i, data.slug) : rutaGuia(i, data.slug));
+const listado = esProyecto ? 'proyectos' : 'guias';
+---
+
+<BaseLayout
+  idioma={idioma}
+  titulo={`${data.titulo[idioma]} | ${empresa.nombre}`}
+  descripcion={data.seoDescripcion[idioma]}
+  alternativas={{ es: ruta('es'), en: ruta('en') }}
+>
+  <Seccion espacio="ninguno" class="pt-10 pb-20 sm:pt-14 sm:pb-24">
+    <Contenedor>
+      <nav aria-label={t.migas}>
+        <ol class="flex flex-wrap items-center gap-2 text-sm text-salvia">
+          <li><a href={rutas[listado][idioma]} class="underline-offset-4 hover:text-lima hover:underline">{t[listado]}</a></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" class="text-texto">{data.titulo[idioma]}</li>
+        </ol>
+      </nav>
+      {!data.revisado && <p class="mt-6 rounded-2xl border border-lima p-4 text-lima">{t.avisoEjemplo}</p>}
+      <h1 class="titular-gigante mt-8 max-w-5xl text-[clamp(2.5rem,1.4rem+4.5vw,6rem)]">{data.titulo[idioma]}</h1>
+      {proyecto && <p class="mt-4 text-salvia"><span class="sr-only">{t.ubicacion}: </span>{proyecto.ubicacion}</p>}
+      <p class="mt-8 max-w-2xl texto-entrada text-salvia">{data.resumen[idioma]}</p>
+      {
+        proyecto && (
+          <FotoOPlaceholder
+            foto={proyecto.fotos[0] && { imagen: proyecto.fotos[0].imagen, alt: proyecto.fotos[0].alt[idioma] }}
+            pendiente={data.titulo[idioma]}
+            silueta="palmera"
+            proporcion="16 / 9"
+            prioridad
+            sizes="(min-width: 1440px) 1344px, 100vw"
+            class="mt-12"
+          />
+        )
+      }
+    </Contenedor>
+  </Seccion>
+
+  {
+    data.secciones.length > 0 && (
+      <Seccion tono="claro" bordeOrganico>
+        <Contenedor>
+          <Secciones secciones={data.secciones} idioma={idioma} />
+        </Contenedor>
+      </Seccion>
+    )
+  }
+
+  {
+    especies.length > 0 && (
+      <Seccion bordeOrganico>
+        <Contenedor>
+          <h2 class="titular-grande">{t.especiesUsadas}</h2>
+          <ul class="mt-12 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+            {especies.map((e) => (
+              <TarjetaEspecie especie={e} idioma={idioma} alturaReferencia={alturaReferencia} />
+            ))}
+          </ul>
+        </Contenedor>
+      </Seccion>
+    )
+  }
+</BaseLayout>

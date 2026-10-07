@@ -6,7 +6,7 @@ Web corporativa y de catálogo para un vivero mayorista de plantas ornamentales 
 ## Stack
 - Astro (páginas estáticas, JavaScript solo en componentes interactivos) y Tailwind CSS.
 - Catálogo en archivos Markdown con frontmatter, en `src/content/catalogo/`, validado con un esquema en cada build.
-- Textos editables que no son fichas (datos de la empresa, portada) en `src/content/ajustes/*.yaml`, como singletons del panel. Nada de textos de contenido fijos en los componentes; los de interfaz van en `src/i18n/ui.ts`.
+- Textos editables que no son fichas, como singletons del panel: datos de la empresa, portada y textos del catálogo en `src/content/ajustes/*.yaml`; páginas fijas (nosotros, reparto y legales) en `src/content/paginas/*.yaml`. Proyectos y guías son colecciones (`src/content/proyectos/`, `src/content/guias/`) con la misma regla de `revisado` que el catálogo. Nada de textos de contenido fijos en los componentes; los de interfaz van en `src/i18n/ui.ts`.
 - Panel interno con Keystatic para el gerente, que no tiene GitHub: acceso por Keystatic Cloud (gratuito hasta 3 usuarios). El GitHub y el soporte los lleva el propietario del proyecto.
 - Hosting en Cloudflare Workers con Static Assets (plan gratuito), con el adaptador `@astrojs/cloudflare` y `wrangler.jsonc`. No usar Vercel ni Netlify. Las páginas son estáticas. Solo ejecutan el Worker las rutas con `prerender = false`: formularios y presupuestos (`/api/*`, con Turnstile y Cloudflare Email Service) y el panel (`/keystatic`).
 - Producción con aprobación manual: Workers Builds sube versiones con `wrangler versions upload` y el propietario las publica desde el panel de Cloudflare.

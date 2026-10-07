@@ -4,6 +4,7 @@ import { crearEsquemaEspecie } from './lib/catalogo/schema';
 import { esquemaTextosCatalogo } from './lib/catalogo/textos-schema';
 import { esquemaEmpresa } from './lib/empresa/schema';
 import { esquemaPortada } from './lib/portada/schema';
+import { crearEsquemaProyecto, esquemaGuia, esquemaPagina } from './lib/paginas/schema';
 
 const catalogo = defineCollection({
   // El id de cada entrada es el campo `slug` del frontmatter.
@@ -27,4 +28,19 @@ const textosCatalogo = defineCollection({
   schema: esquemaTextosCatalogo,
 });
 
-export const collections = { catalogo, empresa, portada, textosCatalogo };
+const paginas = defineCollection({
+  loader: glob({ pattern: '*.yaml', base: './src/content/paginas' }),
+  schema: esquemaPagina,
+});
+
+const proyectos = defineCollection({
+  loader: glob({ pattern: '*.yaml', base: './src/content/proyectos' }),
+  schema: ({ image }) => crearEsquemaProyecto(image()),
+});
+
+const guias = defineCollection({
+  loader: glob({ pattern: '*.yaml', base: './src/content/guias' }),
+  schema: esquemaGuia,
+});
+
+export const collections = { catalogo, empresa, portada, textosCatalogo, paginas, proyectos, guias };

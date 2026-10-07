@@ -10,11 +10,17 @@ export const rutas = {
   catalogo: { es: '/catalogo/', en: '/en/catalogue/' },
   presupuesto: { es: '/presupuesto/', en: '/en/quote/' },
   presupuestoEnviado: { es: '/presupuesto/enviado/', en: '/en/quote/sent/' },
+  proyectos: { es: '/proyectos/', en: '/en/projects/' },
+  guias: { es: '/guias/', en: '/en/guides/' },
+  reparto: { es: '/reparto/', en: '/en/delivery/' },
+  nosotros: { es: '/nosotros/', en: '/en/about/' },
+  avisoLegal: { es: '/aviso-legal/', en: '/en/legal-notice/' },
   privacidad: { es: '/privacidad/', en: '/en/privacy/' },
+  cookies: { es: '/cookies/', en: '/en/cookies/' },
 } as const satisfies Record<string, Record<Idioma, string>>;
 
 /** Páginas del menú principal, en orden. Se amplía a medida que existen las páginas. */
-export const navegacion = ['catalogo'] as const satisfies readonly (keyof typeof rutas)[];
+export const navegacion = ['catalogo', 'proyectos', 'guias', 'reparto', 'nosotros'] as const satisfies readonly (keyof typeof rutas)[];
 
 export const nombresIdioma: Record<Idioma, string> = { es: 'Español', en: 'English' };
 
@@ -28,6 +34,17 @@ export const slugFamilia: Record<Familia, Record<Idioma, string>> = {
 
 export function rutaFamilia(idioma: Idioma, familia: Familia): string {
   return `${rutas.catalogo[idioma]}${slugFamilia[familia][idioma]}/`;
+}
+
+/** Páginas legales, en el pie. */
+export const legales = ['avisoLegal', 'privacidad', 'cookies'] as const satisfies readonly (keyof typeof rutas)[];
+
+export function rutaProyecto(idioma: Idioma, slug: string): string {
+  return `${rutas.proyectos[idioma]}${slug}/`;
+}
+
+export function rutaGuia(idioma: Idioma, slug: string): string {
+  return `${rutas.guias[idioma]}${slug}/`;
 }
 
 export function rutaFicha(idioma: Idioma, slug: string): string {
@@ -135,6 +152,25 @@ export const textos = {
     presupuestoProvisional: 'El formulario de presupuesto está en preparación. Mientras tanto, puedes escribirnos o llamarnos:',
     inicio: 'Inicio',
     catalogo: 'Catálogo',
+    proyectos: 'Proyectos',
+    guias: 'Guías',
+    reparto: 'Reparto',
+    nosotros: 'Nosotros',
+    avisoLegal: 'Aviso legal',
+    privacidad: 'Privacidad',
+    cookies: 'Cookies',
+    legal: 'Legal',
+    tituloProyectos: 'Proyectos',
+    entradillaProyectos: 'Obras y jardines en los que han acabado nuestros ejemplares.',
+    tituloGuias: 'Guías',
+    entradillaGuias: 'Consejos prácticos para elegir, transportar y plantar ejemplares de gran porte.',
+    sinProyectos: 'Todavía no hay proyectos publicados.',
+    sinGuias: 'Todavía no hay guías publicadas.',
+    especiesUsadas: 'Especies utilizadas',
+    leerGuia: 'Leer la guía',
+    verProyecto: 'Ver el proyecto',
+    ubicacion: 'Ubicación',
+    avisoEjemplo: 'Contenido de ejemplo pendiente de revisión: no se publicará en producción.',
     cambiarIdioma: 'English',
     cambiarIdiomaEtiqueta: 'Ver esta página en inglés',
     tituloCatalogo: 'Catálogo de plantas',
@@ -253,6 +289,25 @@ export const textos = {
     presupuestoProvisional: 'The quote form is being prepared. In the meantime, you can email or call us:',
     inicio: 'Home',
     catalogo: 'Catalogue',
+    proyectos: 'Projects',
+    guias: 'Guides',
+    reparto: 'Delivery',
+    nosotros: 'About us',
+    avisoLegal: 'Legal notice',
+    privacidad: 'Privacy',
+    cookies: 'Cookies',
+    legal: 'Legal',
+    tituloProyectos: 'Projects',
+    entradillaProyectos: 'Sites and gardens where our specimens have ended up.',
+    tituloGuias: 'Guides',
+    entradillaGuias: 'Practical advice on choosing, moving and planting large specimens.',
+    sinProyectos: 'No projects have been published yet.',
+    sinGuias: 'No guides have been published yet.',
+    especiesUsadas: 'Species used',
+    leerGuia: 'Read the guide',
+    verProyecto: 'View the project',
+    ubicacion: 'Location',
+    avisoEjemplo: 'Sample content pending review: it will not be published in production.',
     cambiarIdioma: 'Español',
     cambiarIdiomaEtiqueta: 'View this page in Spanish',
     tituloCatalogo: 'Plant catalogue',

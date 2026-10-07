@@ -65,6 +65,62 @@ const textosPagina = (etiqueta: string) =>
     { label: etiqueta },
   );
 
+const secciones = (etiqueta = 'Secciones') =>
+  fields.array(
+    fields.object({
+      titulo: fields.object(
+        {
+          es: fields.text({ label: 'Título (español)' }),
+          en: fields.text({ label: 'Título (inglés)' }),
+        },
+        { label: 'Título de la sección (opcional)' },
+      ),
+      texto: textoBilingue('Texto', {
+        multilinea: true,
+        descripcion: 'Separa los párrafos con una línea en blanco.',
+      }),
+    }),
+    { label: etiqueta, itemLabel: (props) => props.fields.titulo.fields.es.value || 'Sección sin título' },
+  );
+
+const paginaFija = (label: string, clave: string, legal = false) =>
+  singleton({
+    label,
+    path: `src/content/paginas/${clave}`,
+    format: { data: 'yaml' },
+    schema: {
+      titulo: textoBilingue('Título'),
+      entradilla: textoBilingue('Entradilla', { multilinea: true }),
+      secciones: secciones(),
+      seoDescripcion: textoBilingue('Descripción para Google', { multilinea: true }),
+      pendienteRevision: fields.checkbox({
+        label: 'Pendiente de revisión por el asesor',
+        description: 'Muestra un aviso de que el texto no es definitivo.',
+        defaultValue: legal,
+      }),
+    },
+  });
+
+const slugEntrada = fields.slug({
+  name: {
+    label: 'Identificador para la URL',
+    description: 'Solo minúsculas, números y guiones. No lo cambies una vez publicado.',
+    validation: {
+      isRequired: true,
+      pattern: { regex: SLUG_REGEX, message: 'Solo minúsculas sin acentos, números y guiones.' },
+    },
+  },
+  slug: { label: 'Nombre del archivo', description: 'Debe ser igual que el identificador.' },
+});
+
+const publicacion = {
+  datosDeEjemplo: fields.checkbox({ label: 'Datos de ejemplo' }),
+  revisado: fields.checkbox({
+    label: 'Revisado (publicar)',
+    description: 'Solo lo revisado aparece en la web pública.',
+  }),
+};
+
 export default config({
   storage: proyectoCloud ? { kind: 'cloud' } : import.meta.env.DEV ? { kind: 'local' } : { kind: 'cloud' },
   ...(proyectoCloud ? { cloud: { project: proyectoCloud } } : {}),
@@ -106,6 +162,11 @@ export default config({
         'otras-ornamentales': textosPagina('Otras ornamentales'),
       },
     }),
+    nosotros: paginaFija('Página: Nosotros', 'nosotros'),
+    reparto: paginaFija('Página: Reparto', 'reparto'),
+    avisoLegal: paginaFija('Legal: Aviso legal', 'aviso-legal', true),
+    privacidad: paginaFija('Legal: Privacidad', 'privacidad', true),
+    cookies: paginaFija('Legal: Cookies', 'cookies', true),
     portada: singleton({
       label: 'Portada',
       path: 'src/content/ajustes/portada',
@@ -147,6 +208,53 @@ export default config({
     }),
   },
   collections: {
+    proyectos: collection({
+      label: 'Proyectos',
+      path: 'src/content/proyectos/*',
+      slugField: 'slug',
+      format: { data: 'yaml' },
+      columns: ['ubicacion', 'revisado'],
+      schema: {
+        slug: slugEntrada,
+        titulo: textoBilingue('Título'),
+        resumen: textoBilingue('Resumen', { multilinea: true }),
+        ubicacion: fields.text({ label: 'Ubicación', validation: { isRequired: true } }),
+        especies: fields.array(fields.relationship({ label: 'Especie', collection: 'catalogo', validation: { isRequired: true } }), {
+          label: 'Especies utilizadas',
+          itemLabel: (props) => props.value ?? 'Elige una especie',
+        }),
+        fotos: fields.array(
+          fields.object({
+            imagen: fields.image({
+              label: 'Foto',
+              directory: 'src/assets/proyectos',
+              publicPath: '../../assets/proyectos/',
+              validation: { isRequired: true },
+            }),
+            alt: textoBilingue('Texto alternativo'),
+          }),
+          { label: 'Fotos', itemLabel: (props) => props.fields.alt.fields.es.value || 'Foto sin descripción' },
+        ),
+        secciones: secciones(),
+        seoDescripcion: textoBilingue('Descripción para Google', { multilinea: true }),
+        ...publicacion,
+      },
+    }),
+    guias: collection({
+      label: 'Guías',
+      path: 'src/content/guias/*',
+      slugField: 'slug',
+      format: { data: 'yaml' },
+      columns: ['revisado'],
+      schema: {
+        slug: slugEntrada,
+        titulo: textoBilingue('Título'),
+        resumen: textoBilingue('Resumen', { multilinea: true }),
+        secciones: secciones(),
+        seoDescripcion: textoBilingue('Descripción para Google', { multilinea: true }),
+        ...publicacion,
+      },
+    }),
     catalogo: collection({
       label: 'Catálogo',
       path: 'src/content/catalogo/*',

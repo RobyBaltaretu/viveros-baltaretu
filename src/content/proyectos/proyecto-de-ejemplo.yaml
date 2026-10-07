@@ -1,0 +1,31 @@
+# Proyecto de ejemplo para ver el diseño. No se publica (revisado: false).
+slug: proyecto-de-ejemplo
+titulo:
+  es: '[PLACEHOLDER: nombre del proyecto]'
+  en: '[PLACEHOLDER: project name]'
+resumen:
+  es: '[PLACEHOLDER: resumen del proyecto en una o dos frases]'
+  en: '[PLACEHOLDER: one or two sentence project summary]'
+ubicacion: '[PLACEHOLDER: municipio y provincia]'
+especies:
+  - phoenix-canariensis
+  - olivo-gran-perimetro
+fotos: []
+secciones:
+  - titulo:
+      es: El encargo
+      en: The brief
+    texto:
+      es: '[PLACEHOLDER: qué pedía el cliente]'
+      en: '[PLACEHOLDER: what the client needed]'
+  - titulo:
+      es: Lo que suministramos
+      en: What we supplied
+    texto:
+      es: '[PLACEHOLDER: especies, tamaños y cantidades]'
+      en: '[PLACEHOLDER: species, sizes and quantities]'
+seoDescripcion:
+  es: '[PLACEHOLDER: descripción del proyecto para Google]'
+  en: '[PLACEHOLDER: project description for Google]'
+datosDeEjemplo: true
+revisado: false

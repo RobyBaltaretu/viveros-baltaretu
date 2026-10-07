@@ -25,7 +25,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
       <span class="truncate">{empresa.nombre}</span>
     </a>
 
-    <nav aria-label={t.navegacionPrincipal} class="ml-auto hidden md:block">
+    <nav aria-label={t.navegacionPrincipal} class="ml-auto hidden lg:block">
       <ul class="flex items-center gap-1">
         {
           navegacion.map((clave) => (
@@ -33,7 +33,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
               <a
                 href={rutas[clave][idioma]}
                 aria-current={esActual(rutas[clave][idioma]) ? 'page' : undefined}
-                class="rounded-full px-4 py-2 font-medium transition-colors hover:text-lima aria-[current=page]:text-lima"
+                class="rounded-full px-3 py-2 font-medium transition-colors hover:text-lima aria-[current=page]:text-lima xl:px-4"
               >
                 {t[clave]}
               </a>
@@ -47,13 +47,13 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
       href={alternativas[otroIdioma]}
       hreflang={otroIdioma}
       lang={otroIdioma}
-      class="hidden items-center rounded-full border border-linea-oscura px-3 py-1.5 text-sm font-semibold uppercase tracking-wider hover:border-lima md:inline-flex"
+      class="hidden items-center rounded-full border border-linea-oscura px-3 py-1.5 text-sm font-semibold uppercase tracking-wider hover:border-lima lg:inline-flex"
     >
       <span aria-hidden="true">{otroIdioma}</span>
       <span class="sr-only">{nombresIdioma[otroIdioma]}</span>
     </a>
 
-    <contador-lista class="solo-js ml-auto md:ml-0" data-plantilla={t.abrirListaConUnidades} data-texto={t.abrirLista}>
+    <contador-lista class="solo-js ml-auto lg:ml-0" data-plantilla={t.abrirListaConUnidades} data-texto={t.abrirLista}>
       <button
         type="button"
         data-abrir-lista
@@ -73,13 +73,13 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
       </button>
     </contador-lista>
 
-    <div class="hidden md:block">
-      <Boton href={rutas.presupuesto[idioma]} class="min-h-11 px-5 text-sm">{t.pedirPresupuesto}</Boton>
+    <div class="hidden lg:block">
+      <Boton href={rutas.presupuesto[idioma]} class="min-h-11 px-5 text-sm whitespace-nowrap">{t.pedirPresupuesto}</Boton>
     </div>
 
     <button
       type="button"
-      class="inline-flex min-h-11 items-center gap-2 rounded-full border border-linea-oscura px-4 font-semibold md:hidden"
+      class="inline-flex min-h-11 items-center gap-2 rounded-full border border-linea-oscura px-4 font-semibold lg:hidden"
       aria-expanded="false"
       aria-controls="menu-movil"
       data-boton-menu
@@ -93,7 +93,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
     </button>
   </Contenedor>
 
-  <div id="menu-movil" class="border-t border-linea-oscura md:hidden" hidden data-menu-movil>
+  <div id="menu-movil" class="border-t border-linea-oscura lg:hidden" hidden data-menu-movil>
     <Contenedor class="py-6">
       <nav aria-label={t.navegacionPrincipal}>
         <ul class="flex flex-col gap-1">
@@ -182,6 +182,6 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
         boton.focus();
       }
     });
-    matchMedia('(min-width: 48rem)').addEventListener('change', (e) => e.matches && cambiar(false));
+    matchMedia('(min-width: 64rem)').addEventListener('change', (e) => e.matches && cambiar(false));
   }
 </script>

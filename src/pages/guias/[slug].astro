@@ -1,0 +1,14 @@
+---
+import type { GetStaticPaths } from 'astro';
+import DetalleEntrada from '../../components/paginas/DetalleEntrada.astro';
+import { obtenerGuias } from '../../lib/paginas';
+
+export const getStaticPaths = (async () => {
+  const entradas = await obtenerGuias();
+  return entradas.map((entrada) => ({ params: { slug: entrada.data.slug }, props: { entrada } }));
+}) satisfies GetStaticPaths;
+
+const { entrada } = Astro.props;
+---
+
+<DetalleEntrada idioma="es" entrada={entrada} />
