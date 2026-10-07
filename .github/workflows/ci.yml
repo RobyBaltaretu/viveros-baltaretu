@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Lint, tests y build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          ASTRO_TELEMETRY_DISABLED: '1'
+
+      # Valida wrangler.jsonc y el bundle del Worker sin desplegar ni usar credenciales.
+      - name: Comprobar el Worker de Cloudflare
+        run: npm run check:worker

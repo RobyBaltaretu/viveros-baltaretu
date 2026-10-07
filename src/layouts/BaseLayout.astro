@@ -1,0 +1,61 @@
+---
+import '../styles/global.css';
+import { Font } from 'astro:assets';
+import Cabecera from '../components/Cabecera.astro';
+import Pie from '../components/Pie.astro';
+import { IDIOMA_POR_DEFECTO, textos, type Idioma } from '../i18n/ui';
+
+interface Props {
+  idioma: Idioma;
+  titulo: string;
+  descripcion: string;
+  /** Ruta de esta misma página en cada idioma (para hreflang y el selector de idioma). */
+  alternativas: Record<Idioma, string>;
+  /** Para páginas que no deben indexarse (p. ej. 404): sin canonical ni hreflang. */
+  noIndexar?: boolean;
+}
+
+const { idioma, titulo, descripcion, alternativas, noIndexar = false } = Astro.props;
+const t = textos[idioma];
+const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
+---
+
+<!doctype html>
+<html lang={idioma}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0e2519" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{titulo}</title>
+    <meta name="description" content={descripcion} />
+    <!-- Solo se precarga la fuente de los titulares (suele ser el LCP). -->
+    <Font cssVariable="--font-bricolage" preload />
+    <Font cssVariable="--font-dm-sans" />
+    {
+      noIndexar ? (
+        <meta name="robots" content="noindex" />
+      ) : (
+        <>
+          <link rel="canonical" href={absoluta(alternativas[idioma])} />
+          <link rel="alternate" hreflang="es" href={absoluta(alternativas.es)} />
+          <link rel="alternate" hreflang="en" href={absoluta(alternativas.en)} />
+          <link rel="alternate" hreflang="x-default" href={absoluta(alternativas[IDIOMA_POR_DEFECTO])} />
+        </>
+      )
+    }
+  </head>
+  <body class="flex min-h-dvh flex-col">
+    <a
+      href="#contenido"
+      class="sr-only z-50 rounded-full bg-lima px-5 py-3 font-semibold text-bosque focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+    >
+      {t.saltarAlContenido}
+    </a>
+    <Cabecera idioma={idioma} alternativas={alternativas} />
+    <main id="contenido" class="flex-1">
+      <slot />
+    </main>
+    <Pie idioma={idioma} alternativas={alternativas} />
+  </body>
+</html>

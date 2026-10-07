@@ -1,0 +1,82 @@
+---
+import Silueta from './ilustraciones/Silueta.astro';
+import Contenedor from './ui/Contenedor.astro';
+import Seccion from './ui/Seccion.astro';
+import { navegacion, nombresIdioma, rutas, textos, type Idioma } from '../i18n/ui';
+import { esPlaceholder, obtenerEmpresa } from '../lib/empresa';
+
+interface Props {
+  idioma: Idioma;
+  alternativas: Record<Idioma, string>;
+}
+
+const { idioma, alternativas } = Astro.props;
+const t = textos[idioma];
+const empresa = await obtenerEmpresa();
+const otroIdioma: Idioma = idioma === 'es' ? 'en' : 'es';
+const telefonoEnlace = esPlaceholder(empresa.telefono) ? undefined : `tel:${empresa.telefono.replace(/[^\d+]/g, '')}`;
+const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa.email}`;
+---
+
+<Seccion como="footer" tono="medio" bordeOrganico espacio="ninguno" class="mt-[clamp(2rem,5vw,5rem)] pt-16 pb-10 sm:pt-24">
+    <Contenedor>
+      <div class="grid gap-12 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div class="max-w-md">
+          <p class="titular-medio">{empresa.nombre}</p>
+          <p class="mt-4 text-salvia">{t.lemaEmpresa}</p>
+        </div>
+
+        <div>
+          <h2 class="antetitulo text-salvia">{t.contacto}</h2>
+          <dl class="mt-4 space-y-3">
+            {
+              empresa.direccion && (
+                <div>
+                  <dt class="sr-only">{t.direccion}</dt>
+                  <dd class="whitespace-pre-line">{empresa.direccion}</dd>
+                </div>
+              )
+            }
+            {
+              empresa.telefono && (
+                <div>
+                  <dt class="sr-only">{t.telefono}</dt>
+                  <dd>{telefonoEnlace ? <a href={telefonoEnlace} class="underline underline-offset-4 hover:text-lima">{empresa.telefono}</a> : empresa.telefono}</dd>
+                </div>
+              )
+            }
+            {
+              empresa.email && (
+                <div>
+                  <dt class="sr-only">{t.email}</dt>
+                  <dd class="break-words">{emailEnlace ? <a href={emailEnlace} class="underline underline-offset-4 hover:text-lima">{empresa.email}</a> : empresa.email}</dd>
+                </div>
+              )
+            }
+          </dl>
+        </div>
+
+        <nav aria-label={t.navegacion}>
+          <h2 class="antetitulo text-salvia">{t.navegacion}</h2>
+          <ul class="mt-4 space-y-3">
+            <li><a href={rutas.inicio[idioma]} class="hover:text-lima">{t.inicio}</a></li>
+            {navegacion.map((clave) => <li><a href={rutas[clave][idioma]} class="hover:text-lima">{t[clave]}</a></li>)}
+          </ul>
+        </nav>
+
+        <div>
+          <h2 class="antetitulo text-salvia">{t.idioma}</h2>
+          <p class="mt-4">
+            <a href={alternativas[otroIdioma]} hreflang={otroIdioma} lang={otroIdioma} class="underline underline-offset-4 hover:text-lima">
+              {nombresIdioma[otroIdioma]}
+            </a>
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-16 flex flex-wrap items-end justify-between gap-6 border-t border-linea-oscura pt-8 text-sm text-salvia">
+        <p>© {new Date().getFullYear()} {empresa.nombre}. {t.derechos}</p>
+        <Silueta tipo="olivo" quieta class="h-12 w-auto text-lima/70" style="--tono-tronco: var(--color-salvia)" />
+      </div>
+    </Contenedor>
+</Seccion>

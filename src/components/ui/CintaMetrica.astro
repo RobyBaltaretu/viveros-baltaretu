@@ -1,0 +1,35 @@
+---
+/**
+ * Cinta métrica vertical: el motivo gráfico de la web. Marca cada 0,5 m y rotula
+ * cada metro. Ocupa toda la altura de su contenedor; `alturaMax` es la altura (en
+ * metros) que representa el borde superior.
+ */
+import type { Idioma } from '../../i18n/ui';
+
+interface Props {
+  alturaMax: number;
+  idioma: Idioma;
+  class?: string;
+}
+
+const { alturaMax, idioma, class: clase } = Astro.props;
+const marcas = Array.from({ length: Math.floor(alturaMax * 2) + 1 }, (_, i) => i / 2);
+const formato = new Intl.NumberFormat(idioma === 'es' ? 'es-ES' : 'en-GB');
+---
+
+<div class:list={['cinta-metrica relative w-12', clase]} aria-hidden="true">
+  <div class="absolute inset-y-0 left-0 w-px bg-current opacity-40"></div>
+  {
+    marcas.map((m) => (
+      <div
+        class="absolute left-0 flex items-center gap-1.5"
+        style={`bottom: ${(m / alturaMax) * 100}%; translate: 0 50%`}
+      >
+        <span class:list={['block h-px bg-current', Number.isInteger(m) ? 'w-4' : 'w-2 opacity-60']} />
+        {Number.isInteger(m) && m > 0 && (
+          <span class="text-xs font-semibold tabular-nums">{formato.format(m)} m</span>
+        )}
+      </div>
+    ))
+  }
+</div>

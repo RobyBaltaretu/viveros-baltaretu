@@ -1,0 +1,13 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+type Props = HTMLAttributes<'div'> & { ancho?: 'normal' | 'estrecho' };
+const { class: clase, ancho = 'normal', ...resto } = Astro.props;
+---
+
+<div
+  class:list={['mx-auto w-full px-4 sm:px-8 lg:px-12', ancho === 'estrecho' ? 'max-w-3xl' : 'max-w-[90rem]', clase]}
+  {...resto}
+>
+  <slot />
+</div>

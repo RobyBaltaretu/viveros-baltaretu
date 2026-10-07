@@ -1,0 +1,31 @@
+---
+// Provisional: el diseño final llega con el bloque de presupuesto.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Contenedor from './ui/Contenedor.astro';
+import Seccion from './ui/Seccion.astro';
+import { rutas, textos, type Idioma } from '../i18n/ui';
+import { obtenerEmpresa } from '../lib/empresa';
+
+interface Props {
+  idioma: Idioma;
+}
+
+const { idioma } = Astro.props;
+const t = textos[idioma];
+const empresa = await obtenerEmpresa();
+---
+
+<BaseLayout
+  idioma={idioma}
+  titulo={`${t.presupuestoEnviadoTitulo} | ${empresa.nombre}`}
+  descripcion={t.presupuestoEnviadoTexto}
+  alternativas={rutas.presupuestoEnviado}
+  noIndexar
+>
+  <Seccion espacio="amplio">
+    <Contenedor ancho="estrecho">
+      <h1 class="titular-grande">{t.presupuestoEnviadoTitulo}</h1>
+      <p class="mt-6 texto-entrada">{t.presupuestoEnviadoTexto}</p>
+    </Contenedor>
+  </Seccion>
+</BaseLayout>

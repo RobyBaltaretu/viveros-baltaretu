@@ -1,0 +1,10 @@
+# Variables de runtime del Worker para `npm run preview` (copia este archivo a .dev.vars).
+# En producción se definen en Cloudflare: Workers & Pages → (Worker) → Settings → Variables & Secrets.
+# .dev.vars está en .gitignore: nunca subas claves reales al repositorio.
+
+# Clave secreta de prueba oficial de Turnstile (siempre valida). En producción, la de tu widget.
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+# Dirección verificada en Email Routing que recibe los avisos de presupuesto.
+EMAIL_DESTINO=
+# Remitente del dominio con Email Routing, p. ej. presupuestos@tudominio.es
+EMAIL_REMITENTE=

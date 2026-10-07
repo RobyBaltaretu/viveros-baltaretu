@@ -1,0 +1,23 @@
+# build
+dist/
+.astro/
+.wrangler/
+# generado por `wrangler types`
+worker-configuration.d.ts
+
+# dependencias
+node_modules/
+
+# logs
+npm-debug.log*
+
+# variables de entorno (nunca al repositorio)
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# sistema
+.DS_Store

@@ -1,0 +1,40 @@
+---
+/**
+ * Sección de página con superficie clara u oscura. Opcionalmente dibuja un borde
+ * orgánico (curva SVG) en la parte superior, del color de la propia sección,
+ * que "muerde" la sección anterior.
+ */
+import type { HTMLAttributes } from 'astro/types';
+
+type Tono = 'oscuro' | 'medio' | 'claro';
+type Props = HTMLAttributes<'section'> & {
+  tono?: Tono;
+  bordeOrganico?: boolean;
+  /** Relleno vertical. */
+  espacio?: 'normal' | 'amplio' | 'ninguno';
+  /** Elemento HTML (p. ej. `footer` para el pie, que debe ser hijo directo de body). */
+  como?: 'section' | 'footer' | 'div';
+};
+
+const { tono = 'oscuro', bordeOrganico = false, espacio = 'normal', como: Elemento = 'section', class: clase, ...resto } = Astro.props;
+const superficie = { oscuro: 'superficie-oscura', medio: 'superficie-media', claro: 'superficie-clara' }[tono];
+const relleno = { oscuro: 'fill-bosque', medio: 'fill-superficie', claro: 'fill-claro' }[tono];
+const espacios = { normal: 'py-20 sm:py-28', amplio: 'py-28 sm:py-40', ninguno: '' }[espacio];
+---
+
+<Elemento class:list={['relative', superficie, espacios, clase]} {...resto}>
+  {
+    bordeOrganico && (
+      <svg
+        class:list={['pointer-events-none absolute inset-x-0 bottom-full block h-[clamp(2rem,5vw,5rem)] w-full', relleno]}
+        viewBox="0 0 1440 80"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path d="M0 80 L0 44 C180 6 360 2 560 30 C760 58 920 70 1120 40 C1260 20 1360 18 1440 30 L1440 80 Z" />
+      </svg>
+    )
+  }
+  <slot />
+</Elemento>

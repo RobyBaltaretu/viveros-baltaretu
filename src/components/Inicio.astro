@@ -1,0 +1,31 @@
+---
+// Provisional: la portada completa llega en el bloque 2.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Silueta from './ilustraciones/Silueta.astro';
+import Boton from './ui/Boton.astro';
+import Contenedor from './ui/Contenedor.astro';
+import Seccion from './ui/Seccion.astro';
+import { rutas, textos, type Idioma } from '../i18n/ui';
+import { obtenerEmpresa } from '../lib/empresa';
+
+interface Props {
+  idioma: Idioma;
+}
+
+const { idioma } = Astro.props;
+const t = textos[idioma];
+const empresa = await obtenerEmpresa();
+---
+
+<BaseLayout idioma={idioma} titulo={empresa.nombre} descripcion={t.lemaEmpresa} alternativas={rutas.inicio}>
+  <Seccion espacio="amplio">
+    <Contenedor class="grid items-end gap-12 md:grid-cols-[1fr_auto]">
+      <div class="min-w-0">
+        <h1 class="titular-gigante">{empresa.nombre}</h1>
+        <p class="mt-6 max-w-2xl texto-entrada text-salvia">{t.lemaEmpresa}</p>
+        <p class="mt-10"><Boton href={rutas.catalogo[idioma]} flecha tamano="grande">{t.tituloCatalogo}</Boton></p>
+      </div>
+      <Silueta tipo="palmera" class="h-72 w-auto text-lima" style="--tono-tronco: var(--color-salvia)" />
+    </Contenedor>
+  </Seccion>
+</BaseLayout>
