@@ -28,7 +28,13 @@ Español en la raíz (`/`) e inglés bajo `/en/`. Cada texto se escribe en los d
 `slug`, `familia` (palmeras, olivos, higueras, otras-ornamentales), `nombre {es,en}`, `nombreCientifico`, `descripcion {es,en}`, `alturaMin/Max` (m), `perimetroTroncoCm` (opcional), `formatos`, `disponibilidad` (disponible, bajo-pedido, agotado), `precioDesde` y `unidadPrecio`, `origen`, `destacada`, `seo {es,en}`, `revisado`.
 
 ## Comandos
-Se definirán al crear el proyecto base (dev, build, lint y test).
+Requiere Node 22.12 o superior (`.nvmrc`).
+- `npm install`: instala dependencias.
+- `npm run dev`: servidor local en http://localhost:4321 (muestra también las fichas con `revisado: false`).
+- `npm run build`: build de producción en `dist/`. Excluye las fichas sin revisar salvo en previews de Vercel (`VERCEL_ENV=preview`).
+- `npm run preview`: sirve el último build.
+- `npm run lint`: ESLint y `astro check` (tipos y esquema del contenido).
+- `npm test`: tests con Vitest (incluye la validación de todas las fichas del catálogo).
 
 ## Documentos de referencia
 Hoja de ruta, definición funcional y técnica, y estrategia SEO con el mapa de páginas.

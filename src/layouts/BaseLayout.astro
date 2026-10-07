@@ -1,0 +1,58 @@
+---
+import '../styles/global.css';
+import { IDIOMA_POR_DEFECTO, rutas, textos, type Idioma } from '../i18n/ui';
+import { empresa } from '../lib/empresa';
+
+interface Props {
+  idioma: Idioma;
+  titulo: string;
+  descripcion: string;
+  /** Ruta de esta misma página en cada idioma (para hreflang y el selector de idioma). */
+  alternativas: Record<Idioma, string>;
+}
+
+const { idioma, titulo, descripcion, alternativas } = Astro.props;
+const t = textos[idioma];
+const otroIdioma: Idioma = idioma === 'es' ? 'en' : 'es';
+const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
+---
+
+<!doctype html>
+<html lang={idioma}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titulo}</title>
+    <meta name="description" content={descripcion} />
+    <link rel="canonical" href={absoluta(alternativas[idioma])} />
+    <link rel="alternate" hreflang="es" href={absoluta(alternativas.es)} />
+    <link rel="alternate" hreflang="en" href={absoluta(alternativas.en)} />
+    <link rel="alternate" hreflang="x-default" href={absoluta(alternativas[IDIOMA_POR_DEFECTO])} />
+  </head>
+  <body class="bg-white text-stone-900">
+    <a
+      href="#contenido"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:bg-white focus:p-2"
+    >
+      {t.saltarAlContenido}
+    </a>
+    <header class="border-b border-stone-200">
+      <nav aria-label={t.navegacionPrincipal} class="mx-auto flex max-w-5xl items-center gap-4 p-4">
+        <a href={rutas.inicio[idioma]} class="font-semibold">{empresa.nombre}</a>
+        <a href={rutas.catalogo[idioma]} class="underline">{t.catalogo}</a>
+        <a
+          href={alternativas[otroIdioma]}
+          hreflang={otroIdioma}
+          lang={otroIdioma}
+          aria-label={t.cambiarIdiomaEtiqueta}
+          class="ml-auto underline"
+        >
+          {t.cambiarIdioma}
+        </a>
+      </nav>
+    </header>
+    <main id="contenido" class="mx-auto max-w-5xl p-4">
+      <slot />
+    </main>
+  </body>
+</html>

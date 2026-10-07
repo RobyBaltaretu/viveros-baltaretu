@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { rutas, textos, type Idioma } from '../i18n/ui';
+import { empresa } from '../lib/empresa';
+
+interface Props {
+  idioma: Idioma;
+}
+
+const { idioma } = Astro.props;
+const t = textos[idioma];
+---
+
+<!-- Página provisional: solo comprueba el layout, la navegación y el i18n. -->
+<BaseLayout idioma={idioma} titulo={empresa.nombre} descripcion={t.descripcionCatalogo} alternativas={rutas.inicio}>
+  <h1 class="mb-4 text-2xl font-bold">{empresa.nombre}</h1>
+  <p><a href={rutas.catalogo[idioma]} class="underline">{t.tituloCatalogo}</a></p>
+</BaseLayout>

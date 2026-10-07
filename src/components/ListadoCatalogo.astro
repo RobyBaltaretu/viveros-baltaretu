@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { familias, rutaFicha, rutas, textos, type Idioma } from '../i18n/ui';
+import { obtenerEspecies } from '../lib/catalogo';
+import { formatearPrecio } from '../lib/catalogo/formato';
+import { empresa } from '../lib/empresa';
+
+interface Props {
+  idioma: Idioma;
+}
+
+const { idioma } = Astro.props;
+const t = textos[idioma];
+const especies = await obtenerEspecies(idioma);
+---
+
+<BaseLayout
+  idioma={idioma}
+  titulo={`${t.tituloCatalogo} | ${empresa.nombre}`}
+  descripcion={t.descripcionCatalogo}
+  alternativas={rutas.catalogo}
+>
+  <h1 class="mb-4 text-2xl font-bold">{t.tituloCatalogo}</h1>
+  {
+    especies.length === 0 ? (
+      <p>{t.catalogoVacio}</p>
+    ) : (
+      <ul class="grid gap-4 sm:grid-cols-2">
+        {especies.map(({ data }) => (
+          <li class="rounded border border-stone-200 p-4">
+            <h2 class="text-lg font-semibold">
+              <a href={rutaFicha(idioma, data.slug)} class="underline">
+                {data.nombre[idioma]}
+              </a>
+            </h2>
+            <p class="italic">{data.nombreCientifico}</p>
+            <p>{familias[data.familia][idioma]}</p>
+            <p>{formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}</p>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</BaseLayout>

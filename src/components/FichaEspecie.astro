@@ -1,0 +1,64 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { disponibilidades, familias, formatos, rutaFicha, rutas, textos, type Idioma } from '../i18n/ui';
+import { formatearPrecio, formatearRango } from '../lib/catalogo/formato';
+
+interface Props {
+  idioma: Idioma;
+  especie: CollectionEntry<'catalogo'>;
+}
+
+const { idioma, especie } = Astro.props;
+const { data } = especie;
+const t = textos[idioma];
+---
+
+<BaseLayout
+  idioma={idioma}
+  titulo={data.seo[idioma].titulo}
+  descripcion={data.seo[idioma].descripcion}
+  alternativas={{ es: rutaFicha('es', data.slug), en: rutaFicha('en', data.slug) }}
+>
+  {!data.revisado && <p class="mb-4 rounded bg-amber-100 p-2 text-amber-950">{t.avisoNoRevisado}</p>}
+  <h1 class="text-2xl font-bold">{data.nombre[idioma]}</h1>
+  <p class="mb-4 italic">{data.nombreCientifico}</p>
+  <p class="mb-4 text-lg">{formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}</p>
+  <p class="mb-4">{data.descripcion[idioma]}</p>
+
+  {
+    data.fotos.length > 0 && (
+      <ul class="mb-4 grid gap-4 sm:grid-cols-2">
+        {data.fotos.map((foto) => (
+          <li>
+            <Image src={foto.imagen} alt={foto.alt[idioma]} widths={[400, 800]} sizes="(min-width: 640px) 50vw, 100vw" />
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  <dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1">
+    <dt class="font-semibold">{t.familia}</dt>
+    <dd>{familias[data.familia][idioma]}</dd>
+    <dt class="font-semibold">{t.altura}</dt>
+    <dd>{formatearRango(data.alturaMin, data.alturaMax, 'm', idioma)}</dd>
+    {
+      data.perimetroTroncoCm && (
+        <>
+          <dt class="font-semibold">{t.perimetroTronco}</dt>
+          <dd>{formatearRango(data.perimetroTroncoCm[0], data.perimetroTroncoCm[1], 'cm', idioma)}</dd>
+        </>
+      )
+    }
+    <dt class="font-semibold">{t.formatos}</dt>
+    <dd>{data.formatos.map((f) => formatos[f][idioma]).join(', ')}</dd>
+    <dt class="font-semibold">{t.disponibilidad}</dt>
+    <dd>{disponibilidades[data.disponibilidad][idioma]}</dd>
+    <dt class="font-semibold">{t.origen}</dt>
+    <dd>{data.origen}</dd>
+  </dl>
+
+  <p class="mt-6"><a href={rutas.catalogo[idioma]} class="underline">{t.volverAlCatalogo}</a></p>
+</BaseLayout>

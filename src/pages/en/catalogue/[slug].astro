@@ -1,0 +1,14 @@
+---
+import type { GetStaticPaths } from 'astro';
+import FichaEspecie from '../../../components/FichaEspecie.astro';
+import { obtenerEspecies } from '../../../lib/catalogo';
+
+export const getStaticPaths = (async () => {
+  const especies = await obtenerEspecies('en');
+  return especies.map((especie) => ({ params: { slug: especie.data.slug }, props: { especie } }));
+}) satisfies GetStaticPaths;
+
+const { especie } = Astro.props;
+---
+
+<FichaEspecie idioma="en" especie={especie} />
