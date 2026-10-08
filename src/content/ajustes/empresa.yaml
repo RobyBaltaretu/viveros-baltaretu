@@ -1,7 +1,5 @@
-# Datos de la empresa. Se editan desde el panel (/keystatic → Empresa).
-# No se inventan: lo que falte se queda como [PLACEHOLDER] hasta que se confirme.
-nombre: '[PLACEHOLDER: nombre de la empresa]'
-telefono: '[PLACEHOLDER: teléfono]'
-whatsapp: ''
-email: '[PLACEHOLDER: email]'
-direccion: '[PLACEHOLDER: dirección del vivero, provincia de Valencia]'
+nombre: Viveros Baltaretu
+telefono: +34 600 000 000
+whatsapp: '34600000000'
+email: info@example.com
+direccion: Calle Ejemplo 1, 46000 Valencia (dirección provisional)
