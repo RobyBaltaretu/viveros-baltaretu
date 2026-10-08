@@ -13,7 +13,6 @@ import ComparadorEscala from './ficha/ComparadorEscala.astro';
 import { siluetaDe } from './ilustraciones/siluetas';
 import Boton from './ui/Boton.astro';
 import Contenedor from './ui/Contenedor.astro';
-import Etiqueta from './ui/Etiqueta.astro';
 import FotoOPlaceholder from './ui/FotoOPlaceholder.astro';
 import Seccion from './ui/Seccion.astro';
 import { disponibilidades, familias, formatos, rutaFamilia, rutaFicha, rutas, textos, type Idioma } from '../i18n/ui';
@@ -35,7 +34,6 @@ const [principal, ...resto] = data.fotos;
 const relacionadas = (await obtenerEspecies(idioma))
   .filter((e) => e.data.familia === data.familia && e.data.slug !== data.slug)
   .slice(0, 3);
-const alturaRelacionadas = Math.max(2, Math.ceil(Math.max(0, ...relacionadas.map((e) => e.data.alturaMax))));
 
 const abs = (ruta: string) => new URL(ruta, Astro.site).href;
 const url = abs(rutaFicha(idioma, data.slug));
@@ -85,83 +83,99 @@ const medidas: [string, string][] = [
   imagenSocial={imagenSocial}
   mensajeWhatsapp={t.whatsappEspecie.replace('{nombre}', nombre).replace('{cientifico}', data.nombreCientifico)}
 >
-  <Seccion espacio="ninguno" class="pt-10 pb-20 sm:pt-14 sm:pb-28">
+  <Seccion espacio="ninguno" class="pt-8 pb-16 sm:pt-12 sm:pb-20">
     <Contenedor>
       <nav aria-label={t.migas}>
-        <ol class="flex flex-wrap items-center gap-2 text-sm text-salvia">
-          <li><a href={rutas.catalogo[idioma]} class="underline-offset-4 hover:text-lima hover:underline">{t.catalogo}</a></li>
+        <ol class="flex flex-wrap items-center gap-2 text-sm text-gris">
+          <li><a href={rutas.catalogo[idioma]} class="underline-offset-4 hover:text-oliva hover:underline">{t.catalogo}</a></li>
           <li aria-hidden="true">/</li>
-          <li><a href={rutaFamilia(idioma, data.familia)} class="underline-offset-4 hover:text-lima hover:underline">{familias[data.familia][idioma]}</a></li>
+          <li><a href={rutaFamilia(idioma, data.familia)} class="underline-offset-4 hover:text-oliva hover:underline">{familias[data.familia][idioma]}</a></li>
           <li aria-hidden="true">/</li>
-          <li aria-current="page" class="text-texto">{nombre}</li>
+          <li aria-current="page" class="text-tinta">{nombre}</li>
         </ol>
       </nav>
 
-      {!data.revisado && <p class="rotulo mt-6 rounded-tarjeta border border-lima p-4 text-lima">{t.avisoNoRevisado}</p>}
+      {!data.revisado && <p class="mt-6 rounded-tarjeta border border-terracota bg-papel p-4 text-sm font-medium text-terracota">{t.avisoNoRevisado}</p>}
 
-      <div class="mt-8 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
+      <div class="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-16">
+        <div class="grid min-w-0 content-start gap-4">
+          <FotoOPlaceholder
+            foto={principal && { imagen: principal.imagen, alt: principal.alt[idioma] }}
+            pendiente={nombre}
+            silueta={siluetaDe(data)}
+            proporcion="4 / 3"
+            prioridad
+            sizes="(min-width: 1024px) 50vw, 100vw"
+          />
+          {
+            resto.length > 0 && (
+              <ul class="grid grid-cols-3 gap-4">
+                {resto.map((foto) => (
+                  <li>
+                    <FotoOPlaceholder
+                      foto={{ imagen: foto.imagen, alt: foto.alt[idioma] }}
+                      pendiente={nombre}
+                      silueta={siluetaDe(data)}
+                      proporcion="1 / 1"
+                      sizes="(min-width: 1024px) 16vw, 33vw"
+                    />
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+        </div>
+
         <div class="min-w-0">
-          <div class="flex flex-wrap gap-2">
-            <Etiqueta>{familias[data.familia][idioma]}</Etiqueta>
-            <Etiqueta resaltada={data.disponibilidad === 'disponible'}>{disponibilidades[data.disponibilidad][idioma]}</Etiqueta>
-            {data.ventaUnitaria && <span class="rotulo inline-flex items-center rounded-[0.2rem] border border-lima px-2 py-1 text-lima">{t.ventaUnitaria}</span>}
-          </div>
-          <h1 class="titular-gigante mt-6 text-[clamp(2.75rem,1.4rem+5vw,6.5rem)]">{nombre}</h1>
-          <p class="mt-3 texto-entrada italic text-salvia">{data.nombreCientifico}</p>
-          <dl class="mt-8 grid gap-x-10 gap-y-3 sm:grid-flow-col sm:justify-start">
+          {data.ventaUnitaria && <p class="inline-flex rounded-full bg-verdor px-3 py-1 text-sm font-semibold text-oliva">{t.ventaUnitaria}</p>}
+          <h1 class="titular-gigante mt-4">{nombre}</h1>
+          <p class="mt-2 italic text-gris">{data.nombreCientifico}</p>
+          <p class="mt-6 texto-entrada">{data.descripcion[idioma]}</p>
+
+          <dl class="mt-8 grid gap-4 rounded-panel border border-linea bg-papel p-6 sm:grid-cols-2">
             <div>
-              <dt class="rotulo text-salvia">{t.precioMayor}</dt>
-              <dd class="font-titular text-[clamp(1.75rem,1.2rem+1.8vw,2.75rem)] font-bold leading-tight text-lima">
-                {formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}
-              </dd>
+              <dt class="text-sm font-semibold text-gris">{t.precioMayor}</dt>
+              <dd class="mt-1 font-titular text-2xl font-bold">{formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}</dd>
             </div>
             {
               data.ventaUnitaria && data.precioUnidad != null && (
                 <div>
-                  <dt class="rotulo text-salvia">{t.precioPorUnidad}</dt>
-                  <dd class="font-titular text-[clamp(1.75rem,1.2rem+1.8vw,2.75rem)] font-bold leading-tight">
-                    {formatearImporte(data.precioUnidad, idioma)} <span class="text-[0.5em] font-semibold text-salvia">{t.masEnvio}</span>
+                  <dt class="text-sm font-semibold text-gris">{t.precioPorUnidad}</dt>
+                  <dd class="mt-1 font-titular text-2xl font-bold">
+                    {formatearImporte(data.precioUnidad, idioma)} <span class="text-base font-medium text-gris">{t.masEnvio}</span>
                   </dd>
                 </div>
               )
             }
+            {
+              data.ventaUnitaria && (
+                <p class="text-sm text-gris sm:col-span-2">
+                  {t.ventaUnitariaDetalle} {condiciones.envioUnidad[idioma]}
+                </p>
+              )
+            }
           </dl>
-          {
-            data.ventaUnitaria && (
-              <p class="mt-4 max-w-prose border-l-2 border-lima pl-4 text-salvia">
-                {t.ventaUnitariaDetalle} {condiciones.envioUnidad[idioma]}
-              </p>
-            )
-          }
-          <p class="mt-6 max-w-prose texto-entrada">{data.descripcion[idioma]}</p>
-          <div class="mt-10 flex flex-wrap gap-3">
+
+          <div class="mt-8 flex flex-wrap gap-3">
             <BotonLista idioma={idioma} slug={data.slug} nombre={nombre} />
-            <Boton href={rutas.presupuesto[idioma]} tamano="grande" variante="secundario" flecha>{t.pedirPresupuesto}</Boton>
+            <Boton href={rutas.presupuesto[idioma]} tamano="grande" variante="secundario">{t.pedirPresupuesto}</Boton>
           </div>
         </div>
-
-        <ComparadorEscala
-          idioma={idioma}
-          nombre={nombre}
-          silueta={siluetaDe(data)}
-          alturaMin={data.alturaMin}
-          alturaMax={data.alturaMax}
-        />
       </div>
     </Contenedor>
   </Seccion>
 
-  <Seccion tono="claro">
-    <Contenedor class="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16">
+  <Seccion tono="papel">
+    <Contenedor class="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
       <div class="min-w-0">
         <h2 class="titular-grande">{t.medidasTitulo}</h2>
-        <table class="mt-10 w-full border-collapse text-left">
+        <table class="mt-8 w-full border-collapse text-left">
           <caption class="sr-only">{t.medidasTitulo}: {nombre}</caption>
           <tbody>
             {
               medidas.map(([etiqueta, valor]) => (
-                <tr class="border-b border-linea-clara">
-                  <th scope="row" class="w-2/5 py-4 pr-4 align-top font-medium text-musgo">{etiqueta}</th>
+                <tr class="border-b border-linea">
+                  <th scope="row" class="w-2/5 py-4 pr-4 align-top font-medium text-gris">{etiqueta}</th>
                   <td class="py-4 align-top font-semibold">{valor}</td>
                 </tr>
               ))
@@ -169,31 +183,13 @@ const medidas: [string, string][] = [
           </tbody>
         </table>
       </div>
-      <div class="grid min-w-0 content-start gap-4">
-        <FotoOPlaceholder
-          foto={principal && { imagen: principal.imagen, alt: principal.alt[idioma] }}
-          pendiente={nombre}
-          silueta={siluetaDe(data)}
-          sizes="(min-width: 1024px) 50vw, 100vw"
-        />
-        {
-          resto.length > 0 && (
-            <ul class="grid grid-cols-2 gap-4">
-              {resto.map((foto) => (
-                <li>
-                  <FotoOPlaceholder
-                    foto={{ imagen: foto.imagen, alt: foto.alt[idioma] }}
-                    pendiente={nombre}
-                    silueta={siluetaDe(data)}
-                    proporcion="1 / 1"
-                    sizes="(min-width: 1024px) 25vw, 50vw"
-                  />
-                </li>
-              ))}
-            </ul>
-          )
-        }
-      </div>
+      <ComparadorEscala
+        idioma={idioma}
+        nombre={nombre}
+        silueta={siluetaDe(data)}
+        alturaMin={data.alturaMin}
+        alturaMax={data.alturaMax}
+      />
     </Contenedor>
   </Seccion>
 
@@ -203,13 +199,13 @@ const medidas: [string, string][] = [
         <Contenedor>
           <div class="flex flex-wrap items-end justify-between gap-4">
             <h2 class="titular-grande">{t.masDeLaFamilia.replace('{familia}', familias[data.familia][idioma].toLowerCase())}</h2>
-            <a href={rutaFamilia(idioma, data.familia)} class="font-semibold underline underline-offset-4 hover:text-lima">
+            <a href={rutaFamilia(idioma, data.familia)} class="font-semibold underline underline-offset-4 hover:text-terracota">
               {familias[data.familia][idioma]}
             </a>
           </div>
           <ul class="mt-12 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
             {relacionadas.map((e) => (
-              <TarjetaEspecie especie={e} idioma={idioma} alturaReferencia={alturaRelacionadas} />
+              <TarjetaEspecie especie={e} idioma={idioma} />
             ))}
           </ul>
         </Contenedor>

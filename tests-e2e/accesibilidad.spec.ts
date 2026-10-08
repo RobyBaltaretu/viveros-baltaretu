@@ -86,15 +86,15 @@ test.describe('teclado', () => {
     await expect(page).toHaveURL(/altura=1-/);
   });
 
-  test('el buscador por altura de la portada filtra y enlaza al catálogo con el mismo rango', async ({ page, isMobile }) => {
+  test('desde la portada se llega al catálogo filtrado por las plantas que se venden por unidad', async ({ page, isMobile }) => {
     test.skip(isMobile, 'Basta con comprobarlo en escritorio');
     await page.goto('/');
-    const ver = page.getByRole('link', { name: /^Ver \d+ especies?$/ });
-    await expect(ver).toHaveAttribute('href', /altura=2-4$/);
-    await page.getByLabel('Altura máxima').focus();
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
-    await expect(ver).toHaveAttribute('href', /altura=2-3$/);
+    await page.getByRole('link', { name: 'Ver plantas por unidad' }).click();
+    await expect(page).toHaveURL(/\/catalogo\/\?unidad=1$/);
+    await expect(page.getByRole('checkbox', { name: 'También por unidad' })).toBeChecked();
+    const visibles = page.locator('.tarjeta-especie:visible');
+    await expect(visibles.first()).toBeVisible();
+    for (const tarjeta of await visibles.all()) await expect(tarjeta).toHaveAttribute('data-unidad', '1');
   });
 
   test('el panel de la lista se cierra con Esc y devuelve el foco', async ({ page }) => {

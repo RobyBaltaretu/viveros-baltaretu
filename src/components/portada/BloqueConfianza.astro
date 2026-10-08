@@ -1,9 +1,9 @@
 ---
-/** Lo que cuenta en una obra: tabla de especificaciones con los puntos del panel. */
+/** Por qué comprarnos: tres puntos con icono (textos del panel). */
 import IconoConfianza from './IconoConfianza.astro';
 import Contenedor from '../ui/Contenedor.astro';
 import Seccion from '../ui/Seccion.astro';
-import { textos, type Idioma } from '../../i18n/ui';
+import type { Idioma } from '../../i18n/ui';
 import type { Portada } from '../../lib/portada/schema';
 
 interface Props {
@@ -13,28 +13,24 @@ interface Props {
 }
 
 const { idioma, titulo, puntos } = Astro.props;
-const t = textos[idioma];
 ---
 
 {
   puntos.length > 0 && (
-    <Seccion>
-      <Contenedor class="grid gap-x-16 gap-y-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-        <div>
-          <p class="antetitulo text-salvia">{t.lamina} 05</p>
-          <h2 class="titular-grande mt-5">{titulo}</h2>
-        </div>
-        <dl class="border-t border-texto/40">
+    <Seccion tono="papel">
+      <Contenedor>
+        <h2 class="titular-grande">{titulo}</h2>
+        <ul class="mt-12 grid gap-10 md:grid-cols-3" role="list">
           {puntos.map((p) => (
-            <div class="grid gap-x-8 gap-y-2 border-b border-linea-oscura py-7 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-              <dt class="flex items-center gap-3 font-titular text-xl font-semibold">
-                <IconoConfianza icono={p.icono} class="size-5 shrink-0 text-lima" />
-                {p.titulo[idioma]}
-              </dt>
-              <dd class="text-salvia">{p.texto[idioma]}</dd>
-            </div>
+            <li>
+              <span class="flex size-12 items-center justify-center rounded-full bg-verdor text-oliva" aria-hidden="true">
+                <IconoConfianza icono={p.icono} class="size-6" />
+              </span>
+              <h3 class="titular-medio mt-5">{p.titulo[idioma]}</h3>
+              <p class="mt-2 text-gris">{p.texto[idioma]}</p>
+            </li>
           ))}
-        </dl>
+        </ul>
       </Contenedor>
     </Seccion>
   )

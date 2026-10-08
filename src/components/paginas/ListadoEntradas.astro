@@ -29,7 +29,7 @@ const enlace = (slug: string) => (tipo === 'proyectos' ? rutaProyecto(idioma, sl
   <Seccion espacio="ninguno" class="pt-14 pb-20 sm:pt-20 sm:pb-28">
     <Contenedor>
       <h1 class="titular-gigante">{titulo}</h1>
-      <p class="mt-8 max-w-2xl texto-entrada text-salvia">{entradilla}</p>
+      <p class="mt-8 max-w-2xl texto-entrada text-gris">{entradilla}</p>
       {
         entradas.length === 0 ? (
           <p class="mt-12 texto-entrada">{tipo === 'proyectos' ? t.sinProyectos : t.sinGuias}</p>
@@ -48,13 +48,13 @@ const enlace = (slug: string) => (tipo === 'proyectos' ? rutaProyecto(idioma, sl
                 )}
                 {!data.revisado && <Etiqueta class="mb-4">{t.avisoEjemplo}</Etiqueta>}
                 <h2 class="titular-medio">
-                  <a href={enlace(data.slug)} class="after:absolute after:inset-0 group-hover:text-lima">
+                  <a href={enlace(data.slug)} class="after:absolute after:inset-0 group-hover:text-terracota">
                     {data.titulo[idioma]}
                   </a>
                 </h2>
-                {'ubicacion' in data && <p class="mt-2 text-sm text-salvia">{data.ubicacion}</p>}
+                {'ubicacion' in data && <p class="mt-2 text-sm text-gris">{data.ubicacion}</p>}
                 <p class="mt-4 max-w-prose">{data.resumen[idioma]}</p>
-                <p class="mt-4 font-semibold text-lima" aria-hidden="true">
+                <p class="mt-4 font-semibold text-terracota" aria-hidden="true">
                   {tipo === 'proyectos' ? t.verProyecto : t.leerGuia} →
                 </p>
               </li>

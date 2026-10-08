@@ -60,7 +60,6 @@ const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
     <!-- Solo se precarga la fuente de los titulares (suele ser el LCP). -->
     <Font cssVariable="--font-bricolage" preload />
     <Font cssVariable="--font-dm-sans" />
-    <Font cssVariable="--font-plex-mono" />
     {
       noIndexar ? (
         <meta name="robots" content="noindex" />
@@ -87,13 +86,13 @@ const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
   <body class="flex min-h-dvh flex-col">
     <a
       href="#contenido"
-      class="sr-only z-50 rounded-tarjeta bg-lima px-5 py-3 font-semibold text-bosque focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+      class="sr-only z-50 rounded-tarjeta bg-terracota px-5 py-3 font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
     >
       {t.saltarAlContenido}
     </a>
     {
       esEntornoDePrueba() && (
-        <p role="note" class="superficie-lima rotulo px-4 py-1.5 text-center">
+        <p role="note" class="superficie-oliva rotulo px-4 py-1.5 text-center">
           {t.avisoPrueba}
         </p>
       )

@@ -62,7 +62,7 @@ const idVacio = 'sin-resultados';
             <a
               href={rutas.catalogo[idioma]}
               aria-current={!familia ? 'page' : undefined}
-              class="inline-flex min-h-11 items-center rounded-tarjeta border border-linea-oscura px-4 text-sm font-semibold hover:border-lima aria-[current=page]:border-lima aria-[current=page]:text-lima"
+              class="inline-flex min-h-11 items-center rounded-full border border-linea bg-papel px-4 text-sm font-semibold hover:border-oliva aria-[current=page]:border-oliva aria-[current=page]:bg-oliva aria-[current=page]:text-crema"
             >
               {t.todas}
             </a>
@@ -73,7 +73,7 @@ const idVacio = 'sin-resultados';
                 <a
                   href={rutaFamilia(idioma, f)}
                   aria-current={familia === f ? 'page' : undefined}
-                  class="inline-flex min-h-11 items-center rounded-tarjeta border border-linea-oscura px-4 text-sm font-semibold hover:border-lima aria-[current=page]:border-lima aria-[current=page]:text-lima"
+                  class="inline-flex min-h-11 items-center rounded-full border border-linea bg-papel px-4 text-sm font-semibold hover:border-oliva aria-[current=page]:border-oliva aria-[current=page]:bg-oliva aria-[current=page]:text-crema"
                 >
                   {familias[f][idioma]}
                 </a>
@@ -83,11 +83,11 @@ const idVacio = 'sin-resultados';
         </ul>
       </nav>
 
-      <p class="antetitulo mt-12 text-salvia">
+      <p class="antetitulo mt-10 text-oliva">
         {t.catalogo} · {especies.length === 1 ? t.resultadosUno : t.resultados.replace('{n}', String(especies.length))}
       </p>
-      <h1 class="titular-gigante mt-4">{tituloH1}</h1>
-      <p class="mt-6 max-w-2xl texto-entrada text-salvia">{textosPagina.entradilla[idioma]}</p>
+      <h1 class="titular-grande mt-3">{tituloH1}</h1>
+      <p class="mt-6 max-w-2xl texto-entrada text-gris">{textosPagina.entradilla[idioma]}</p>
 
       {
         especies.length === 0 ? (
@@ -106,12 +106,12 @@ const idVacio = 'sin-resultados';
               />
             </div>
             <h2 class="sr-only">{tituloH1}</h2>
-            <ul id={idLista} class="mt-12 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+            <ul id={idLista} class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {especies.map((especie, i) => (
-                <TarjetaEspecie especie={especie} idioma={idioma} alturaReferencia={alturaMaxima} prioridad={i === 0} />
+                <TarjetaEspecie especie={especie} idioma={idioma} prioridad={i === 0} />
               ))}
             </ul>
-            <p id={idVacio} class="mt-12 texto-entrada text-salvia" hidden>
+            <p id={idVacio} class="mt-12 texto-entrada text-gris" hidden>
               {t.sinResultados}
             </p>
           </>

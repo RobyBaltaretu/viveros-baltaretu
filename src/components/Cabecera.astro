@@ -18,11 +18,11 @@ const actual = Astro.url.pathname;
 const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idioma] && actual.startsWith(ruta));
 ---
 
-<header class="sticky top-0 z-40 border-b border-linea-oscura bg-bosque/85 backdrop-blur-md supports-[backdrop-filter]:bg-bosque/70">
+<header class="sticky top-0 z-40 border-b border-linea bg-papel/95 text-tinta backdrop-blur-md supports-[backdrop-filter]:bg-papel/85">
   <Contenedor class="flex h-18 items-center gap-6">
     <a href={rutas.inicio[idioma]} class="flex min-w-0 items-center gap-2.5 font-titular text-lg font-bold" aria-label={t.irAInicio}>
-      <Silueta tipo="palmera" quieta simple class="h-9 w-auto shrink-0 text-lima" />
-      <span class="truncate [font-stretch:85%]">{empresa.nombre}</span>
+      <Silueta tipo="palmera" quieta simple class="h-9 w-auto shrink-0 text-oliva" />
+      <span class="truncate text-oliva">{empresa.nombre}</span>
     </a>
 
     <nav aria-label={t.navegacionPrincipal} class="ml-auto hidden lg:block">
@@ -33,7 +33,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
               <a
                 href={rutas[clave][idioma]}
                 aria-current={esActual(rutas[clave][idioma]) ? 'page' : undefined}
-                class="px-3 py-2 font-medium underline-offset-[0.4em] decoration-lima decoration-2 transition-colors hover:text-lima aria-[current=page]:underline xl:px-4"
+                class="px-3 py-2 font-medium underline-offset-[0.4em] decoration-terracota decoration-2 transition-colors hover:text-oliva aria-[current=page]:text-oliva aria-[current=page]:underline xl:px-4"
               >
                 {t[clave]}
               </a>
@@ -47,7 +47,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
       href={alternativas[otroIdioma]}
       hreflang={otroIdioma}
       lang={otroIdioma}
-      class="rotulo hidden min-h-11 items-center rounded-tarjeta border border-linea-oscura px-3 uppercase hover:border-lima lg:inline-flex"
+      class="rotulo hidden min-h-11 items-center rounded-tarjeta border border-linea px-3 uppercase hover:border-oliva lg:inline-flex"
     >
       <span aria-hidden="true">{otroIdioma}</span>
       <span class="sr-only">{nombresIdioma[otroIdioma]}</span>
@@ -59,7 +59,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
         data-abrir-lista
         aria-haspopup="dialog"
         aria-controls="panel-lista"
-        class="relative inline-flex size-11 items-center justify-center rounded-tarjeta border border-linea-oscura hover:border-lima"
+        class="relative inline-flex size-11 items-center justify-center rounded-tarjeta border border-linea hover:border-oliva"
         aria-label={t.abrirLista}
       >
         <svg class="size-5" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -68,7 +68,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
         <span
           data-contador
           hidden
-          class="absolute -top-2 -right-2 inline-flex min-w-6 items-center justify-center rounded-[0.2rem] bg-lima px-1.5 font-mono text-xs font-medium leading-6 text-bosque tabular-nums"
+          class="absolute -top-2 -right-2 inline-flex min-w-6 items-center justify-center rounded-[0.2rem] bg-terracota px-1.5 text-xs font-semibold leading-6 text-white tabular-nums"
         ></span>
       </button>
     </contador-lista>
@@ -79,7 +79,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
 
     <button
       type="button"
-      class="inline-flex min-h-11 items-center gap-2 rounded-tarjeta border border-linea-oscura px-4 font-semibold lg:hidden"
+      class="inline-flex min-h-11 items-center gap-2 rounded-tarjeta border border-linea px-4 font-semibold lg:hidden"
       aria-expanded="false"
       aria-controls="menu-movil"
       data-boton-menu
@@ -93,7 +93,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
     </button>
   </Contenedor>
 
-  <div id="menu-movil" class="border-t border-linea-oscura lg:hidden" hidden data-menu-movil>
+  <div id="menu-movil" class="border-t border-linea lg:hidden" hidden data-menu-movil>
     <Contenedor class="py-6">
       <nav aria-label={t.navegacionPrincipal}>
         <ul class="flex flex-col gap-1">
@@ -103,7 +103,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
                 <a
                   href={rutas[clave][idioma]}
                   aria-current={esActual(rutas[clave][idioma]) ? 'page' : undefined}
-                  class="titular-medio block py-2 aria-[current=page]:text-lima"
+                  class="titular-medio block py-2 aria-[current=page]:text-terracota"
                 >
                   {t[clave]}
                 </a>
@@ -113,7 +113,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
         </ul>
       </nav>
       <p class="mt-6"><Boton href={rutas.presupuesto[idioma]} flecha>{t.pedirPresupuesto}</Boton></p>
-      <p class="mt-6 border-t border-linea-oscura pt-6">
+      <p class="mt-6 border-t border-linea pt-6">
         <a href={alternativas[otroIdioma]} hreflang={otroIdioma} lang={otroIdioma} class="font-semibold underline underline-offset-4">
           {nombresIdioma[otroIdioma]}
         </a>

@@ -1,0 +1,40 @@
+---
+/** Cómo se pide, en tres pasos cortos (textos del panel). */
+import Contenedor from '../ui/Contenedor.astro';
+import Seccion from '../ui/Seccion.astro';
+import type { Idioma } from '../../i18n/ui';
+import type { Portada } from '../../lib/portada/schema';
+
+interface Props {
+  idioma: Idioma;
+  portada: Portada;
+}
+
+const { idioma, portada } = Astro.props;
+---
+
+{
+  portada.pasos.length > 0 && (
+    <Seccion tono="verde">
+      <Contenedor>
+        <h2 class="titular-grande">{portada.pasosTitulo[idioma]}</h2>
+        <ol class="mt-12 grid gap-8 md:grid-cols-3" role="list">
+          {portada.pasos.map((p, i) => (
+            <li class="flex gap-5">
+              <span
+                class="flex size-12 shrink-0 items-center justify-center rounded-full bg-oliva font-titular text-xl font-bold text-crema"
+                aria-hidden="true"
+              >
+                {i + 1}
+              </span>
+              <div>
+                <h3 class="titular-medio">{p.titulo[idioma]}</h3>
+                <p class="mt-2 text-gris">{p.texto[idioma]}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </Contenedor>
+    </Seccion>
+  )
+}

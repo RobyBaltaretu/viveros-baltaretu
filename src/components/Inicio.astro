@@ -1,13 +1,14 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BloqueConfianza from './portada/BloqueConfianza.astro';
-import BuscadorAltura from './portada/BuscadorAltura.astro';
+import ComoComprar from './portada/ComoComprar.astro';
+import Familias from './portada/Familias.astro';
 import Heroe from './portada/Heroe.astro';
-import LaminaEspecies from './portada/LaminaEspecies.astro';
 import LlamadaPresupuesto from './portada/LlamadaPresupuesto.astro';
-import PerfilesPasos from './portada/PerfilesPasos.astro';
+import Pasos from './portada/Pasos.astro';
 import { rutas, type Idioma } from '../i18n/ui';
 import { obtenerEspecies } from '../lib/catalogo';
+import { obtenerCondiciones } from '../lib/condiciones';
 import { obtenerEmpresa } from '../lib/empresa';
 import { obtenerPortada } from '../lib/portada';
 import { esPlaceholder } from '../lib/empresa';
@@ -18,17 +19,22 @@ interface Props {
 }
 
 const { idioma } = Astro.props;
-const [empresa, portada, especies] = await Promise.all([obtenerEmpresa(), obtenerPortada(), obtenerEspecies(idioma)]);
+const [empresa, portada, especies, condiciones] = await Promise.all([
+  obtenerEmpresa(),
+  obtenerPortada(),
+  obtenerEspecies(idioma),
+  obtenerCondiciones(),
+]);
 const titulo = `${portada.titular[idioma]} ${portada.titularDestacado[idioma]} | ${empresa.nombre}`;
 const url = new URL(rutas.inicio[idioma], Astro.site).href;
 const datos = [organizacion(empresa, new URL('/', Astro.site).href), sitioWeb(esPlaceholder(empresa.nombre) ? null : empresa.nombre, url, idioma)];
 ---
 
 <BaseLayout idioma={idioma} titulo={titulo} descripcion={portada.entradilla[idioma]} alternativas={rutas.inicio} datosEstructurados={datos}>
-  <Heroe idioma={idioma} portada={portada} especies={especies} />
-  <LaminaEspecies idioma={idioma} titulo={portada.laminaTitulo[idioma]} texto={portada.laminaTexto[idioma]} especies={especies} />
-  <BuscadorAltura idioma={idioma} titulo={portada.alturaTitulo[idioma]} texto={portada.alturaTexto[idioma]} especies={especies} />
-  <PerfilesPasos idioma={idioma} portada={portada} />
+  <Heroe idioma={idioma} portada={portada} />
+  <Familias idioma={idioma} titulo={portada.familiasTitulo[idioma]} texto={portada.familiasTexto[idioma]} especies={especies} />
+  <ComoComprar idioma={idioma} portada={portada} condiciones={condiciones} hayVentaUnitaria={especies.some((e) => e.data.ventaUnitaria)} />
+  <Pasos idioma={idioma} portada={portada} />
   <BloqueConfianza idioma={idioma} titulo={portada.confianzaTitulo[idioma]} puntos={portada.confianza} />
   <LlamadaPresupuesto idioma={idioma} titulo={portada.llamadaTitulo[idioma]} texto={portada.llamadaTexto[idioma]} />
 </BaseLayout>

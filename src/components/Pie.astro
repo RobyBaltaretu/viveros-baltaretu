@@ -19,18 +19,17 @@ const telefonoEnlace = esPlaceholder(empresa.telefono) ? undefined : `tel:${empr
 const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa.email}`;
 ---
 
-<Seccion como="footer" tono="oscuro" espacio="ninguno" class="pb-10">
+<Seccion como="footer" tono="oliva" espacio="ninguno" class="pb-10">
     <!-- Cinta métrica horizontal: el motivo de la web, como borde superior del pie. -->
-    <div class="regla-horizontal h-7 border-t border-linea-oscura text-salvia/60" aria-hidden="true"></div>
     <Contenedor class="pt-14 sm:pt-20">
       <div class="grid gap-12 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div class="max-w-md">
           <p class="titular-medio [font-stretch:85%]">{empresa.nombre}</p>
-          <p class="mt-4 text-salvia">{t.lemaEmpresa}</p>
+          <p class="mt-4 text-verdor">{t.lemaEmpresa}</p>
         </div>
 
         <div>
-          <h2 class="antetitulo text-salvia">{t.contacto}</h2>
+          <h2 class="antetitulo text-verdor">{t.contacto}</h2>
           <dl class="mt-4 space-y-3">
             {
               empresa.direccion && (
@@ -44,7 +43,7 @@ const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa
               empresa.telefono && (
                 <div>
                   <dt class="sr-only">{t.telefono}</dt>
-                  <dd>{telefonoEnlace ? <a href={telefonoEnlace} class="underline underline-offset-4 hover:text-lima">{empresa.telefono}</a> : empresa.telefono}</dd>
+                  <dd>{telefonoEnlace ? <a href={telefonoEnlace} class="underline underline-offset-4 hover:text-white">{empresa.telefono}</a> : empresa.telefono}</dd>
                 </div>
               )
             }
@@ -52,7 +51,7 @@ const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa
               empresa.email && (
                 <div>
                   <dt class="sr-only">{t.email}</dt>
-                  <dd class="break-words">{emailEnlace ? <a href={emailEnlace} class="underline underline-offset-4 hover:text-lima">{empresa.email}</a> : empresa.email}</dd>
+                  <dd class="break-words">{emailEnlace ? <a href={emailEnlace} class="underline underline-offset-4 hover:text-white">{empresa.email}</a> : empresa.email}</dd>
                 </div>
               )
             }
@@ -60,22 +59,22 @@ const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa
         </div>
 
         <nav aria-label={t.navegacion}>
-          <h2 class="antetitulo text-salvia">{t.navegacion}</h2>
+          <h2 class="antetitulo text-verdor">{t.navegacion}</h2>
           <ul class="mt-4 space-y-3">
-            <li><a href={rutas.inicio[idioma]} class="hover:text-lima">{t.inicio}</a></li>
-            {navegacion.map((clave) => <li><a href={rutas[clave][idioma]} class="hover:text-lima">{t[clave]}</a></li>)}
+            <li><a href={rutas.inicio[idioma]} class="hover:text-white">{t.inicio}</a></li>
+            {navegacion.map((clave) => <li><a href={rutas[clave][idioma]} class="hover:text-white">{t[clave]}</a></li>)}
           </ul>
         </nav>
 
         <div class="grid content-start gap-10">
           <nav aria-label={t.legal}>
-            <h2 class="antetitulo text-salvia">{t.legal}</h2>
+            <h2 class="antetitulo text-verdor">{t.legal}</h2>
             <ul class="mt-4 space-y-3">
-              {legales.map((clave) => <li><a href={rutas[clave][idioma]} class="hover:text-lima">{t[clave]}</a></li>)}
+              {legales.map((clave) => <li><a href={rutas[clave][idioma]} class="hover:text-white">{t[clave]}</a></li>)}
               {
                 idAnalitica() && (
                   <li class="solo-js">
-                    <button type="button" data-configurar-cookies class="text-left hover:text-lima">
+                    <button type="button" data-configurar-cookies class="text-left hover:text-white">
                       {t.cookiesConfigurar}
                     </button>
                   </li>
@@ -84,9 +83,9 @@ const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa
             </ul>
           </nav>
           <div>
-          <h2 class="antetitulo text-salvia">{t.idioma}</h2>
+          <h2 class="antetitulo text-verdor">{t.idioma}</h2>
           <p class="mt-4">
-            <a href={alternativas[otroIdioma]} hreflang={otroIdioma} lang={otroIdioma} class="underline underline-offset-4 hover:text-lima">
+            <a href={alternativas[otroIdioma]} hreflang={otroIdioma} lang={otroIdioma} class="underline underline-offset-4 hover:text-white">
               {nombresIdioma[otroIdioma]}
             </a>
           </p>
@@ -94,9 +93,9 @@ const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa
         </div>
       </div>
 
-      <div class="mt-16 flex flex-wrap items-end justify-between gap-6 border-t border-linea-oscura pt-8 text-sm text-salvia">
+      <div class="mt-16 flex flex-wrap items-end justify-between gap-6 border-t border-crema/25 pt-8 text-sm text-verdor">
         <p>© {new Date().getFullYear()} {empresa.nombre}. {t.derechos}</p>
-        <Silueta tipo="palmera" quieta simple class="h-12 w-auto text-lima" />
+        <Silueta tipo="palmera" quieta simple class="h-12 w-auto text-verdor" />
       </div>
     </Contenedor>
 </Seccion>

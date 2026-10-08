@@ -1,9 +1,5 @@
 ---
-/**
- * Llamada final a presupuesto: el único bloque con fondo lima de la web, con una
- * palmera dibujada a escala sobre la cuadrícula.
- */
-import Silueta from '../ilustraciones/Silueta.astro';
+/** Llamada final a presupuesto, en la banda oliva, con WhatsApp si hay número en el panel. */
 import Boton from '../ui/Boton.astro';
 import Contenedor from '../ui/Contenedor.astro';
 import { rutas, textos, type Idioma } from '../../i18n/ui';
@@ -23,26 +19,21 @@ const enlaceWhatsapp = esPlaceholder(whatsapp)
   : `https://wa.me/${whatsapp}?text=${encodeURIComponent(t.whatsappGeneral)}`;
 ---
 
-<section class="superficie-lima cuadricula relative overflow-hidden [--paso-cuadricula:clamp(2.5rem,5vw,4.5rem)]">
-  <Contenedor class="relative grid min-h-[min(44rem,90svh)] items-end gap-10 py-20 sm:py-28 md:grid-cols-[minmax(0,1fr)_auto]">
-    <div class="min-w-0">
-      <h2 class="titular-gigante max-w-5xl text-[clamp(3.4rem,1rem+7vw,9rem)]">{titulo}</h2>
-      <p class="mt-8 max-w-xl texto-entrada">{texto}</p>
-      <div class="mt-10 flex flex-wrap gap-3">
-        <Boton href={rutas.presupuesto[idioma]} tamano="grande" flecha>{t.pedirPresupuesto}</Boton>
-        {
-          enlaceWhatsapp ? (
-            <Boton href={enlaceWhatsapp} tamano="grande" variante="secundario" target="_blank" rel="noopener">
-              {t.escribirWhatsapp}
-            </Boton>
-          ) : (
-            <Boton href={rutas.catalogo[idioma]} tamano="grande" variante="secundario">
-              {t.verCatalogo}
-            </Boton>
-          )
-        }
-      </div>
+<section class="superficie-oliva">
+  <Contenedor class="flex flex-col items-start gap-8 py-16 sm:py-20 lg:flex-row lg:items-center lg:justify-between">
+    <div class="max-w-2xl">
+      <h2 class="titular-grande">{titulo}</h2>
+      <p class="mt-4 texto-entrada text-verdor">{texto}</p>
     </div>
-    <Silueta tipo="palmera" class="pointer-events-none hidden h-[clamp(20rem,60svh,36rem)] w-auto text-bosque md:block" />
+    <div class="flex flex-wrap gap-3">
+      <Boton href={rutas.presupuesto[idioma]} tamano="grande" flecha>{t.pedirPresupuesto}</Boton>
+      {
+        enlaceWhatsapp && (
+          <Boton href={enlaceWhatsapp} tamano="grande" variante="secundario" target="_blank" rel="noopener">
+            {t.escribirWhatsapp}
+          </Boton>
+        )
+      }
+    </div>
   </Contenedor>
 </section>

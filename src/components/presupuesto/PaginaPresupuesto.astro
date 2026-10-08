@@ -30,7 +30,7 @@ const contactos = [
     enlace: esPlaceholder(empresa.telefono) ? undefined : `tel:${empresa.telefono.replace(/[^\d+]/g, '')}`,
   },
 ].filter((c) => c.valor);
-const campo = 'mt-2 block w-full rounded-tarjeta border-2 border-linea-clara bg-white px-4 py-3 text-bosque aria-[invalid=true]:border-[#9b2c1d]';
+const campo = 'mt-2 block w-full rounded-tarjeta border-2 border-linea bg-white px-4 py-3 text-oliva aria-[invalid=true]:border-[#9b2c1d]';
 const etiqueta = 'font-semibold';
 const textosScript = {
   enviando: t.enviando,
@@ -52,11 +52,11 @@ const textosScript = {
   <Seccion espacio="ninguno" class="pt-12 pb-16 sm:pt-16">
     <Contenedor>
       <h1 class="titular-gigante">{t.presupuestoTitulo}</h1>
-      <p class="mt-6 max-w-2xl texto-entrada text-salvia">{t.presupuestoEntradilla}</p>
+      <p class="mt-6 max-w-2xl texto-entrada text-gris">{t.presupuestoEntradilla}</p>
     </Contenedor>
   </Seccion>
 
-  <Seccion tono="claro">
+  <Seccion tono="papel">
     <Contenedor class="grid gap-12 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:gap-16">
       <formulario-presupuesto
         class="min-w-0"
@@ -66,7 +66,7 @@ const textosScript = {
         data-textos={JSON.stringify(textosScript)}
       >
         <noscript>
-          <div class="rounded-panel border-2 border-bosque p-6">
+          <div class="rounded-panel border-2 border-oliva p-6">
             <p>{t.sinJsFormulario}</p>
             <ul class="mt-3">{contactos.map((c) => <li><strong>{c.etiqueta}:</strong> {c.valor}</li>)}</ul>
           </div>
@@ -83,8 +83,8 @@ const textosScript = {
                   ['mayor', t.tipoPedidoMayor],
                   ['unidad', t.tipoPedidoUnidad],
                 ].map(([valor, texto]) => (
-                  <label class="inline-flex min-h-12 cursor-pointer items-center gap-3 rounded-tarjeta border-2 border-linea-clara bg-white px-4 has-[:checked]:border-bosque has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-bosque">
-                    <input type="radio" name="tipoPedido" value={valor} checked={valor === 'mayor'} class="size-4 accent-bosque" />
+                  <label class="inline-flex min-h-12 cursor-pointer items-center gap-3 rounded-tarjeta border-2 border-linea bg-white px-4 has-[:checked]:border-oliva has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-oliva">
+                    <input type="radio" name="tipoPedido" value={valor} checked={valor === 'mayor'} class="size-4 accent-oliva" />
                     {texto}
                   </label>
                 ))
@@ -93,7 +93,7 @@ const textosScript = {
           </fieldset>
           <div class="grid gap-6 sm:grid-cols-2">
             <div>
-              <label for="campo-nombre" class={etiqueta}>{t.campoNombre} <span class="font-normal text-musgo">({t.obligatorio})</span></label>
+              <label for="campo-nombre" class={etiqueta}>{t.campoNombre} <span class="font-normal text-gris">({t.obligatorio})</span></label>
               <input id="campo-nombre" name="nombre" type="text" required minlength="2" maxlength="100" autocomplete="name" class={campo} />
             </div>
             <div>
@@ -101,7 +101,7 @@ const textosScript = {
               <input id="campo-empresa" name="empresa" type="text" maxlength="120" autocomplete="organization" class={campo} />
             </div>
             <div>
-              <label for="campo-email" class={etiqueta}>{t.campoEmail} <span class="font-normal text-musgo">({t.obligatorio})</span></label>
+              <label for="campo-email" class={etiqueta}>{t.campoEmail} <span class="font-normal text-gris">({t.obligatorio})</span></label>
               <input id="campo-email" name="email" type="email" required maxlength="254" autocomplete="email" class={campo} />
             </div>
             <div>
@@ -115,7 +115,7 @@ const textosScript = {
           </div>
           <div>
             <label for="campo-mensaje" class={etiqueta}>{t.campoMensaje}</label>
-            <p id="ayuda-mensaje" class="mt-1 text-sm text-musgo">{t.ayudaMensaje}</p>
+            <p id="ayuda-mensaje" class="mt-1 text-sm text-gris">{t.ayudaMensaje}</p>
             <textarea id="campo-mensaje" name="mensaje" rows="5" maxlength="3000" aria-describedby="ayuda-mensaje" class={campo}></textarea>
           </div>
 
@@ -128,7 +128,7 @@ const textosScript = {
           <input type="hidden" name="lineas" value="[]" />
 
           <div class="flex items-start gap-3">
-            <input id="campo-consentimiento" name="consentimiento" type="checkbox" required class="mt-1 size-5 shrink-0 accent-bosque" />
+            <input id="campo-consentimiento" name="consentimiento" type="checkbox" required class="mt-1 size-5 shrink-0 accent-oliva" />
             <label for="campo-consentimiento">
               {t.campoConsentimiento.split(t.politicaPrivacidad)[0]}<a href={rutas.privacidad[idioma]} class="font-semibold underline underline-offset-4">{t.politicaPrivacidad}</a>{t.campoConsentimiento.split(t.politicaPrivacidad)[1]}
             </label>
@@ -138,7 +138,7 @@ const textosScript = {
             claveTurnstile ? (
               <div class="cf-turnstile" data-sitekey={claveTurnstile} data-language={idioma} data-theme="light" />
             ) : (
-              <p class="text-sm text-musgo">{t.antispamPendiente}</p>
+              <p class="text-sm text-gris">{t.antispamPendiente}</p>
             )
           }
 
@@ -149,10 +149,10 @@ const textosScript = {
       </formulario-presupuesto>
 
       <aside class="min-w-0 lg:sticky lg:top-28 lg:self-start" aria-labelledby="resumen-lista">
-        <div class="rounded-panel superficie-media p-6 sm:p-8">
+        <div class="rounded-panel superficie-verde p-6 sm:p-8">
           <h2 id="resumen-lista" class="titular-medio">{t.resumenLista}</h2>
           <ul data-resumen class="mt-6 grid gap-3"></ul>
-          <p data-resumen-vacio class="mt-6 text-salvia">{t.sinEspeciesFormulario}</p>
+          <p data-resumen-vacio class="mt-6 text-gris">{t.sinEspeciesFormulario}</p>
           <p data-resumen-total class="mt-6 font-semibold" hidden></p>
           <p class="solo-js mt-6">
             <Boton type="button" variante="secundario" data-abrir-lista>{t.editarLista}</Boton>
@@ -163,7 +163,7 @@ const textosScript = {
             <dl class="mt-8 grid gap-4">
               {contactos.map((c) => (
                 <div>
-                  <dt class="antetitulo text-musgo">{c.etiqueta}</dt>
+                  <dt class="antetitulo text-gris">{c.etiqueta}</dt>
                   <dd class="mt-1 font-semibold break-words">
                     {c.enlace ? <a href={c.enlace} class="underline underline-offset-4">{c.valor}</a> : c.valor}
                   </dd>
@@ -172,16 +172,16 @@ const textosScript = {
             </dl>
           )
         }
-        <h2 class="antetitulo mt-10 text-musgo">{t.condicionesVenta}</h2>
-        <dl class="mt-3 border-t border-linea-clara">
+        <h2 class="antetitulo mt-10 text-gris">{t.condicionesVenta}</h2>
+        <dl class="mt-3 border-t border-linea">
           {
             [
               [t.pedidoMinimo, condiciones.pedidoMinimo[idioma]],
               [t.plazosMayor, condiciones.plazosMayor[idioma]],
               [t.envioUnidad, condiciones.envioUnidad[idioma]],
             ].map(([etiqueta, valor]) => (
-              <div class="border-b border-linea-clara py-3">
-                <dt class="rotulo text-musgo">{etiqueta}</dt>
+              <div class="border-b border-linea py-3">
+                <dt class="rotulo text-gris">{etiqueta}</dt>
                 <dd class="mt-1 text-sm">{valor}</dd>
               </div>
             ))
@@ -225,7 +225,7 @@ const textosScript = {
         resumen.replaceChildren(
           ...lista.map((l) => {
             const li = document.createElement('li');
-            li.className = 'flex justify-between gap-4 border-b border-linea-oscura pb-3';
+            li.className = 'flex justify-between gap-4 border-b border-linea pb-3';
             const nombre = document.createElement('span');
             nombre.textContent = indice[l.slug]?.nombre[idioma] ?? l.slug;
             const cantidad = document.createElement('span');

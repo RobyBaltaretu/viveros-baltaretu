@@ -1,15 +1,15 @@
 # Textos del catálogo y de cada familia. Se editan desde el panel (/keystatic → Textos del catálogo).
 catalogo:
   entradilla:
-    es: Elige por tamaño con la regla de altura y afina por familia, perímetro de tronco y formato. Todas las alturas son reales.
-    en: Choose by size with the height ruler, then narrow down by family, trunk girth and format. Every height shown is real.
+    es: Palmeras, olivos, higueras y ornamentales de hasta 4 m. Filtra por familia o por altura.
+    en: Palms, olive trees, fig trees and ornamentals up to 4 m. Filter by family or by height.
   seoDescripcion:
     es: Catálogo mayorista de palmeras, olivos, higueras y plantas ornamentales con altura real de cada ejemplar. Reparto a toda España.
     en: Wholesale catalogue of palms, olive trees, fig trees and ornamental plants, with the real height of each specimen. Delivery across Spain.
 palmeras:
   entradilla:
-    es: Palmeras de distintos portes para avenidas, rotondas, jardines y proyectos de paisajismo.
-    en: Palms in a range of sizes for avenues, roundabouts, gardens and landscaping projects.
+    es: Palmeras de distintos tamaños para jardines, rotondas y paisajismo.
+    en: Palms in a range of sizes for gardens, roundabouts and landscaping.
   seoDescripcion:
     es: Palmeras al por mayor con altura real de cada ejemplar. Reparto a toda España desde la provincia de Valencia.
     en: Wholesale palm trees with the real height of each specimen. Delivery across Spain from the province of Valencia.

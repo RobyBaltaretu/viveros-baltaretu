@@ -29,14 +29,14 @@ const [pagina, empresa] = await Promise.all([obtenerPagina(clave), obtenerEmpres
   <Seccion espacio="ninguno" class="pt-14 pb-20 sm:pt-20 sm:pb-24">
     <Contenedor>
       <h1 class="titular-gigante max-w-5xl">{pagina.titulo[idioma]}</h1>
-      <p class="mt-8 max-w-2xl texto-entrada text-salvia">{pagina.entradilla[idioma]}</p>
-      {pagina.pendienteRevision && <p class="mt-8 max-w-2xl rounded-tarjeta border border-lima p-4 text-lima">{t.textoLegalPendiente}</p>}
+      <p class="mt-8 max-w-2xl texto-entrada text-gris">{pagina.entradilla[idioma]}</p>
+      {pagina.pendienteRevision && <p class="mt-8 max-w-2xl rounded-tarjeta border border-terracota p-4 text-terracota">{t.textoLegalPendiente}</p>}
     </Contenedor>
   </Seccion>
   <slot />
   {
     pagina.secciones.length > 0 && (
-      <Seccion tono="claro">
+      <Seccion tono="papel">
         <Contenedor>
           <Secciones secciones={pagina.secciones} idioma={idioma} />
         </Contenedor>
