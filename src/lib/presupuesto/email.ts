@@ -26,6 +26,7 @@ export function componerEmail(
   });
 
   const datos: [string, string | undefined][] = [
+    ['Tipo de pedido', solicitud.tipoPedido === 'unidad' ? 'Por unidad, con envío' : 'Al por mayor'],
     ['Nombre', solicitud.nombre],
     ['Empresa', solicitud.empresa],
     ['Email', solicitud.email],

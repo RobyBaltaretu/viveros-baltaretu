@@ -4,7 +4,7 @@ import { FAMILIAS, FORMATOS } from './schema';
 /**
  * Filtros del catálogo. Lógica pura (sin DOM) compartida por el script del
  * navegador y los tests. El estado vive en la URL para poder compartirlo:
- * ?altura=2-5&familia=olivos,palmeras&formato=cepellon&perimetro=30-80
+ * ?altura=2-5&familia=olivos,palmeras&formato=cepellon&perimetro=30-80&unidad=1
  */
 
 export const RANGOS_PERIMETRO = {
@@ -20,6 +20,8 @@ export interface EstadoFiltros {
   familias: Familia[];
   formatos: Formato[];
   perimetro: RangoPerimetro | null;
+  /** Solo especies que también se venden por unidad. */
+  unidad: boolean;
 }
 
 export interface DatosFiltrables {
@@ -28,9 +30,10 @@ export interface DatosFiltrables {
   alturaMax: number;
   formatos: readonly Formato[];
   perimetro?: readonly [number, number] | undefined;
+  ventaUnitaria?: boolean;
 }
 
-export const SIN_FILTROS: EstadoFiltros = { altura: null, familias: [], formatos: [], perimetro: null };
+export const SIN_FILTROS: EstadoFiltros = { altura: null, familias: [], formatos: [], perimetro: null, unidad: false };
 
 const solapan = (a: readonly [number, number], b: readonly [number, number]) => a[0] <= b[1] && a[1] >= b[0];
 
@@ -39,6 +42,7 @@ export function cumpleFiltros(d: DatosFiltrables, e: EstadoFiltros): boolean {
   if (e.altura && !solapan([d.alturaMin, d.alturaMax], e.altura)) return false;
   if (e.familias.length && !e.familias.includes(d.familia)) return false;
   if (e.formatos.length && !d.formatos.some((f) => e.formatos.includes(f))) return false;
+  if (e.unidad && !d.ventaUnitaria) return false;
   if (e.perimetro) {
     if (!d.perimetro) return false;
     if (!solapan(d.perimetro, RANGOS_PERIMETRO[e.perimetro])) return false;
@@ -47,7 +51,7 @@ export function cumpleFiltros(d: DatosFiltrables, e: EstadoFiltros): boolean {
 }
 
 export const contarActivos = (e: EstadoFiltros) =>
-  (e.altura ? 1 : 0) + e.familias.length + e.formatos.length + (e.perimetro ? 1 : 0);
+  (e.altura ? 1 : 0) + e.familias.length + e.formatos.length + (e.perimetro ? 1 : 0) + (e.unidad ? 1 : 0);
 
 const lista = <T extends string>(valor: string | null, validos: readonly T[]): T[] =>
   (valor ?? '')
@@ -69,6 +73,7 @@ export function leerFiltros(params: URLSearchParams, alturaMaxima: number): Esta
     familias: lista(params.get('familia'), FAMILIAS),
     formatos: lista(params.get('formato'), FORMATOS),
     perimetro: perimetro && perimetro in RANGOS_PERIMETRO ? (perimetro as RangoPerimetro) : null,
+    unidad: params.get('unidad') === '1',
   };
 }
 
@@ -78,5 +83,6 @@ export function escribirFiltros(e: EstadoFiltros): URLSearchParams {
   if (e.familias.length) params.set('familia', e.familias.join(','));
   if (e.formatos.length) params.set('formato', e.formatos.join(','));
   if (e.perimetro) params.set('perimetro', e.perimetro);
+  if (e.unidad) params.set('unidad', '1');
   return params;
 }

@@ -57,6 +57,8 @@ export function crearEsquemaEspecie<TImagen extends z.ZodType>(imagen: TImagen) 
       unidadPrecio: z.enum(UNIDADES_PRECIO).default('unidad'),
       origen: z.string().trim().min(1),
       destacada: z.boolean().default(false),
+      // La venta es al por mayor; algunas especies también se venden por unidad con envío al destino.
+      ventaUnitaria: z.boolean().default(false),
       // Dibujo que representa la especie mientras no haya fotos. Si falta, se usa el de su familia.
       silueta: z.preprocess((v) => (v === '' || v === null ? undefined : v), z.enum(SILUETAS).optional()),
       fotos: z

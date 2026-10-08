@@ -1,40 +1,40 @@
 # Guía de ejemplo para ver el diseño. Revisar antes de publicar (revisado: false).
 slug: como-elegir-la-altura
 titulo:
-  es: Cómo elegir la altura de un ejemplar para tu proyecto
-  en: How to choose the right specimen height for your project
+  es: Cómo elegir la altura de una planta
+  en: How to choose the right plant height
 resumen:
-  es: Qué medir antes de pedir presupuesto para que el ejemplar encaje en el espacio y llegue sin problemas a la obra.
-  en: What to measure before asking for a quote, so the specimen fits the space and reaches the site without trouble.
+  es: Qué medir antes de pedir presupuesto para que la planta encaje en el espacio y llegue sin problemas.
+  en: What to measure before asking for a quote, so the plant fits the space and arrives without trouble.
 secciones:
   - titulo:
       es: Mide el espacio, no solo el hueco
       en: Measure the space, not just the planting hole
     texto:
       es: >-
-        Ten en cuenta la altura libre (balcones, cables, aleros) y el ancho que ocupará la copa o las hojas cuando el ejemplar esté plantado.
+        Ten en cuenta la altura libre (balcones, cables, aleros) y el ancho que ocupará la copa o las hojas cuando la planta crezca.
 
 
-        En la ficha de cada especie puedes ver su silueta junto a una persona de 1,8 m para hacerte una idea de la escala.
+        En la ficha de cada especie puedes ver su silueta junto a una persona de 1,80 m para hacerte una idea de la escala.
       en: >-
-        Check the clear height (balconies, cables, eaves) and how wide the crown or fronds will be once the specimen is planted.
+        Check the clear height (balconies, cables, eaves) and how wide the crown or fronds will be as the plant grows.
 
 
-        Each species page shows its silhouette next to a 1.8 m person so you can get a feel for the scale.
+        Each species page shows its silhouette next to a 1.80 m person so you can get a feel for the scale.
   - titulo:
-      es: Piensa en el acceso a la obra
-      en: Think about site access
+      es: Piensa en la entrega
+      en: Think about delivery
     texto:
-      es: Los ejemplares grandes viajan en camión y suelen necesitar medios de descarga. Indica en tu petición si hay accesos estrechos, pendientes o límites de peso.
-      en: Large specimens travel by truck and usually need lifting equipment. Mention narrow access, slopes or weight limits in your request.
+      es: Indica en tu petición dónde se entrega (obra, tienda o domicilio) y si hay accesos estrechos, escaleras o pendientes.
+      en: Tell us in your request where it is going (site, shop or home) and whether there are narrow access points, stairs or slopes.
   - titulo:
       es: Cuéntanos el uso
       en: Tell us what it is for
     texto:
-      es: Una avenida, una rotonda o un jardín privado piden tamaños distintos. Con esa información te podemos proponer alternativas dentro del rango de alturas de cada especie.
-      en: An avenue, a roundabout or a private garden each call for different sizes. With that information we can suggest options within each species' height range.
+      es: Una tienda, una rotonda o un jardín privado piden tamaños distintos. Con esa información te podemos proponer alternativas dentro del rango de alturas de cada especie.
+      en: A shop, a roundabout or a private garden each call for different sizes. With that information we can suggest options within each species' height range.
 seoDescripcion:
-  es: Qué medir antes de pedir un ejemplar de gran porte para tu obra.
-  en: What to measure before ordering a large specimen for your project.
+  es: Qué medir antes de pedir una planta, para tu jardín, tu tienda o tu obra.
+  en: What to measure before ordering a plant for your garden, shop or project.
 datosDeEjemplo: true
 revisado: false

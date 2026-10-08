@@ -73,7 +73,8 @@ const indice = FAMILIAS.map((familia) => {
           <EscenaEscala
             elementos={elementos}
             idioma={idioma}
-            alto="clamp(18rem, 52vh, 32rem)"
+            alto="clamp(16rem, 42vh, 26rem)"
+            alturaEscena={Math.ceil(Math.max(...representantes.map((e) => e.data.alturaMax)) + 1)}
             class="min-w-max [--color-planta:var(--color-bosque)] [--color-persona:var(--color-musgo)]"
           />
     </div>

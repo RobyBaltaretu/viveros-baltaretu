@@ -74,6 +74,22 @@ const textosScript = {
         <form method="post" action="/api/presupuesto" class="solo-js grid gap-6" novalidate>
           <div role="alert" data-error class="rounded-tarjeta border-2 border-[#9b2c1d] bg-white p-4 font-semibold text-[#9b2c1d]" hidden></div>
 
+          <fieldset>
+            <legend class={etiqueta}>{t.campoTipoPedido}</legend>
+            <div class="mt-3 flex flex-wrap gap-3">
+              {
+                [
+                  ['mayor', t.tipoPedidoMayor],
+                  ['unidad', t.tipoPedidoUnidad],
+                ].map(([valor, texto]) => (
+                  <label class="inline-flex min-h-12 cursor-pointer items-center gap-3 rounded-tarjeta border-2 border-linea-clara bg-white px-4 has-[:checked]:border-bosque has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-bosque">
+                    <input type="radio" name="tipoPedido" value={valor} checked={valor === 'mayor'} class="size-4 accent-bosque" />
+                    {texto}
+                  </label>
+                ))
+              }
+            </div>
+          </fieldset>
           <div class="grid gap-6 sm:grid-cols-2">
             <div>
               <label for="campo-nombre" class={etiqueta}>{t.campoNombre} <span class="font-normal text-musgo">({t.obligatorio})</span></label>

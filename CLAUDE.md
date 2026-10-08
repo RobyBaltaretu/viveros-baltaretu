@@ -1,7 +1,11 @@
 # CLAUDE.md: web del vivero mayorista
 
 ## Proyecto
-Web corporativa y de catálogo para un vivero mayorista de plantas ornamentales (provincia de Valencia, reparto a toda España). Objetivos: posicionar en Google, mostrar el catálogo con fotos reales y convertir visitas en peticiones de presupuesto o contactos por WhatsApp. No es una tienda online.
+Web corporativa y de catálogo de **Viveros Baltaretu**, vivero mayorista de plantas ornamentales (provincia de Valencia, reparto a toda España). Objetivos: posicionar en Google, mostrar el catálogo con fotos reales y convertir visitas en peticiones de presupuesto o contactos por WhatsApp. No es una tienda online.
+
+Negocio (confirmado por el propietario):
+- Planta pequeña y mediana, **hasta 4 m** de altura. Nada de "gran porte".
+- Venta normalmente **al por mayor**. Algunas especies también se venden **por unidad** y se envían al destino (campo `ventaUnitaria` de cada ficha). Ambos casos pasan por la lista y la petición de presupuesto, que indica el tipo de pedido.
 
 ## Stack
 - Astro (páginas estáticas, JavaScript solo en componentes interactivos) y Tailwind CSS.
@@ -27,7 +31,7 @@ Español en la raíz (`/`) e inglés bajo `/en/`. Cada texto se escribe en los d
 - Textos legales: los revisa un asesor. No presentarlos como definitivos.
 
 ## Esquema de cada especie
-`slug`, `familia` (palmeras, olivos, higueras, otras-ornamentales), `nombre {es,en}`, `nombreCientifico`, `descripcion {es,en}`, `alturaMin/Max` (m), `perimetroTroncoCm` (opcional), `formatos`, `disponibilidad` (disponible, bajo-pedido, agotado), `precioDesde` y `unidadPrecio`, `origen`, `destacada`, `seo {es,en}`, `revisado`. Opcionales añadidos para la web: `fotos` (imagen + `alt {es,en}`), `silueta` (dibujo provisional; por defecto el de la familia) y `datosDeEjemplo`.
+`slug`, `familia` (palmeras, olivos, higueras, otras-ornamentales), `nombre {es,en}`, `nombreCientifico`, `descripcion {es,en}`, `alturaMin/Max` (m), `perimetroTroncoCm` (opcional), `formatos`, `disponibilidad` (disponible, bajo-pedido, agotado), `precioDesde` y `unidadPrecio`, `origen`, `destacada`, `ventaUnitaria` (también se vende por unidad, con envío), `seo {es,en}`, `revisado`. Opcionales añadidos para la web: `fotos` (imagen + `alt {es,en}`), `silueta` (dibujo provisional; por defecto el de la familia) y `datosDeEjemplo`.
 
 ## Diseño
 - Dirección: "plano de paisajismo". La web se lee como una lámina técnica: alzados a línea, cotas, cuadrícula de 1 m, rótulos en mono. Nada de manchas planas, ondas ni burbujas.

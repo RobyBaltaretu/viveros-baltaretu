@@ -1,64 +1,62 @@
 # Textos de la portada. Se editan desde el panel (/keystatic → Portada).
 # Los datos de la empresa que falten se quedan como [PLACEHOLDER] hasta que se confirmen.
 titular:
-  es: Árboles que llegan
-  en: Mature trees,
+  es: Planta ornamental al por mayor.
+  en: Wholesale ornamental plants.
 titularDestacado:
-  es: con los años ya puestos.
-  en: ready the day they land.
+  es: Y por unidad, con envío.
+  en: Single plants too, delivered.
 entradilla:
   es: >-
-    Palmeras, olivos, higueras y ornamentales de gran porte para paisajistas, constructoras y jardinerías.
-    Mide cada ejemplar junto a una persona de 1,80 m, haz tu lista y te preparamos el presupuesto.
-    Lo llevamos a tu obra, en cualquier punto de España.
+    Palmeras, olivos, higueras y ornamentales de hasta 4 m para jardinerías, paisajistas y obra. Compra por volumen
+    o, en las especies marcadas, por unidad: te la enviamos a cualquier punto de España.
   en: >-
-    Large palms, olive trees, fig trees and ornamentals for landscape architects, contractors and garden centres.
-    Size up every specimen next to a 1.80 m person, build your list and we will price it for you.
-    We deliver to your site anywhere in Spain.
+    Palms, olive trees, fig trees and ornamentals up to 4 m for garden centres, landscapers and contractors. Buy in
+    volume or, for the species marked, by the single plant, delivered anywhere in Spain.
 laminaTitulo:
   es: Antes de pedirlo, mídelo.
   en: Measure it before you order it.
 laminaTexto:
   es: >-
-    Cada especie del catálogo, dibujada a escala junto a una persona de 1,80 m. Sabes lo que llega antes de que
-    llegue el camión.
+    Cada especie del catálogo, dibujada a escala junto a una persona de 1,80 m. Sabes qué tamaño llega antes de
+    que llegue.
   en: >-
-    Every species in the catalogue, drawn to scale next to a 1.80 m person. You know what is coming before the
-    lorry pulls in.
+    Every species in the catalogue, drawn to scale next to a 1.80 m person. You know the size before it
+    arrives.
 alturaTitulo:
-  es: ¿Qué altura pide tu proyecto?
-  en: How tall does your project need?
+  es: ¿Qué altura buscas?
+  en: What height are you after?
 alturaTexto:
   es: Marca el rango y te enseñamos las especies que lo cubren.
   en: Set the range and we will show you the species that fit it.
 perfilesTitulo:
-  es: Para quien planta a lo grande
-  en: For people who plant big
+  es: Para tu negocio o para tu jardín
+  en: For your business or your garden
 perfiles:
-  - titulo:
-      es: Paisajismo y arquitectura
-      en: Landscape architects
-    texto:
-      es: Medidas reales para proyectar sin margen de error, del render a la plantación.
-      en: Real dimensions you can design with, from the render to the planting day.
-  - titulo:
-      es: Constructoras y promotoras
-      en: Contractors and developers
-    texto:
-      es: Zonas verdes con aspecto de terminadas desde el primer día de entrega.
-      en: Green areas that look finished from handover day.
   - titulo:
       es: Jardinerías y garden centers
       en: Garden centres
     texto:
-      es: Ejemplares de gran porte para tu cliente final, a precio de vivero mayorista.
-      en: Statement specimens for your customers, at wholesale nursery prices.
+      es: Planta lista para la venta, con reposición por volumen durante toda la temporada.
+      en: Plants ready for the shop floor, restocked in volume all season.
+  - titulo:
+      es: Paisajismo y obra
+      en: Landscapers and contractors
+    texto:
+      es: Las cantidades y alturas que pide el proyecto, en una sola entrega.
+      en: The quantities and heights the project calls for, in a single delivery.
   - titulo:
       es: Ayuntamientos y empresas públicas
       en: Councils and public bodies
     texto:
-      es: Arbolado para plazas, rotondas y parques, con la altura que pide el pliego.
-      en: Trees for squares, roundabouts and parks, at the height the tender asks for.
+      es: Planta para plazas, rotondas y parques, con la medida que pide el pliego.
+      en: Plants for squares, roundabouts and parks, at the size the tender specifies.
+  - titulo:
+      es: Particulares
+      en: Private buyers
+    texto:
+      es: En las especies marcadas puedes pedir una sola planta y te la enviamos a casa.
+      en: For the species marked, order a single plant and we deliver it to your door.
 pasosTitulo:
   es: Del catálogo a tu obra
   en: From catalogue to site
@@ -67,20 +65,20 @@ pasos:
       es: Elige con la medida real
       en: Choose by real size
     texto:
-      es: Filtra por altura, perímetro de tronco y formato. Cada ficha compara el ejemplar con una persona.
-      en: Filter by height, trunk girth and format. Every page sets the specimen next to a person.
+      es: Filtra por altura, perímetro de tronco y formato. Cada ficha compara la planta con una persona.
+      en: Filter by height, trunk girth and format. Every page sets the plant next to a person.
   - titulo:
-      es: Envía tu lista
-      en: Send your list
+      es: Haz tu lista
+      en: Build your list
     texto:
-      es: Añade especies y cantidades a tu lista y mándala en un minuto. O escríbenos por WhatsApp.
-      en: Add species and quantities to your list and send it in a minute. Or message us on WhatsApp.
+      es: Por volumen o por unidad, en las especies marcadas. Mándala en un minuto o escríbenos por WhatsApp.
+      en: In volume, or by the single plant where marked. Send it in a minute or message us on WhatsApp.
   - titulo:
-      es: Recíbelo en obra
-      en: Take delivery on site
+      es: Recíbelo donde lo necesites
+      en: Delivered where you need it
     texto:
-      es: 'Te enviamos el presupuesto y lo llevamos a cualquier punto de España. [PLACEHOLDER: plazos de entrega]'
-      en: 'We send you the quote and deliver anywhere in Spain. [PLACEHOLDER: delivery times]'
+      es: 'Te enviamos el presupuesto y lo llevamos a tu obra, tu tienda o tu casa, en toda España. [PLACEHOLDER: plazos y pedido mínimo]'
+      en: 'We send you the quote and deliver to your site, shop or home, anywhere in Spain. [PLACEHOLDER: delivery times and minimum order]'
 confianzaTitulo:
   es: Lo que cuenta en una obra
   en: What matters on site
@@ -113,8 +111,8 @@ vision:
   es: '[PLACEHOLDER: visión de la empresa]'
   en: '[PLACEHOLDER: company vision]'
 llamadaTitulo:
-  es: Dinos cuántos metros necesitas.
-  en: Tell us how many metres you need.
+  es: Dinos qué necesitas y cuántas.
+  en: Tell us what you need, and how many.
 llamadaTexto:
-  es: Especies, alturas y cantidades. Con eso te preparamos el presupuesto.
-  en: Species, heights and quantities. That is all we need to put a quote together.
+  es: Especies, alturas y cantidades, aunque sea una sola planta. Con eso te preparamos el presupuesto.
+  en: Species, heights and quantities, even if it is just one plant. That is all we need to put a quote together.

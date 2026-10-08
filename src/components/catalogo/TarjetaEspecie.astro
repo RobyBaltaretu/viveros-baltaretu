@@ -39,6 +39,7 @@ const filas: [string, string][] = [
   data-altura-max={data.alturaMax}
   data-formatos={data.formatos.join(',')}
   data-perimetro={data.perimetroTroncoCm?.join('-')}
+  data-unidad={data.ventaUnitaria ? '1' : undefined}
 >
   <div class="relative">
     <FotoOPlaceholder
@@ -50,7 +51,7 @@ const filas: [string, string][] = [
       sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
       class="transition-[border-color] duration-300 group-hover:border-lima"
     />
-    <p class="rotulo absolute top-3 left-3 flex gap-2">
+    <p class="rotulo absolute top-3 right-3 left-3 flex flex-wrap gap-2">
       <span class="rounded-[0.2rem] bg-bosque/85 px-2 py-1 text-salvia">{familias[data.familia][idioma]}</span>
       <span
         class:list={[
@@ -60,6 +61,7 @@ const filas: [string, string][] = [
       >
         {disponibilidades[data.disponibilidad][idioma]}
       </span>
+      {data.ventaUnitaria && <span class="rounded-[0.2rem] border border-lima bg-bosque/85 px-2 py-1 text-lima">{t.ventaUnitaria}</span>}
     </p>
   </div>
 

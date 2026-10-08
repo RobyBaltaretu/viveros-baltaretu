@@ -363,6 +363,10 @@ export default config({
         }),
         origen: fields.text({ label: 'Origen', validation: { isRequired: true } }),
         destacada: fields.checkbox({ label: 'Destacada', description: 'Se mostrará en la portada.' }),
+        ventaUnitaria: fields.checkbox({
+          label: 'También por unidad',
+          description: 'Marca si esta especie se puede comprar por unidad y enviar al destino (además de al por mayor).',
+        }),
         silueta: fields.select({
           label: 'Dibujo provisional',
           description: 'Silueta que se muestra mientras no haya fotos y en el comparador de escala.',

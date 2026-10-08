@@ -18,9 +18,11 @@ interface Props {
   familiaFija?: Familia;
   /** Familias presentes, para no ofrecer opciones vacías. */
   familiasDisponibles: Familia[];
+  /** Si alguna especie se vende también por unidad, se ofrece ese filtro. */
+  hayVentaUnitaria?: boolean;
 }
 
-const { idioma, alturaMaxima, idLista, idVacio, familiaFija, familiasDisponibles } = Astro.props;
+const { idioma, alturaMaxima, idLista, idVacio, familiaFija, familiasDisponibles, hayVentaUnitaria = false } = Astro.props;
 const t = textos[idioma];
 const formato = new Intl.NumberFormat(idioma === 'es' ? 'es-ES' : 'en-GB', { maximumFractionDigits: 1 });
 const pasoEtiquetas = alturaMaxima > 12 ? 2 : 1;
@@ -78,7 +80,7 @@ const chip =
       </div>
     </fieldset>
 
-    <div class="grid gap-8 lg:grid-cols-3">
+    <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-4">
       {
         !familiaFija && (
           <fieldset>
@@ -120,6 +122,19 @@ const chip =
           }
         </div>
       </fieldset>
+      {
+        hayVentaUnitaria && (
+          <fieldset>
+            <legend class="antetitulo text-salvia">{t.filtroCompra}</legend>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <label class={chip}>
+                <input type="checkbox" name="unidad" value="1" class="size-4 accent-bosque" />
+                {t.soloUnidad}
+              </label>
+            </div>
+          </fieldset>
+        )
+      }
     </div>
 
     <div class="flex flex-wrap items-center justify-between gap-4 border-t border-linea-oscura pt-6">
@@ -168,6 +183,7 @@ const chip =
           familias: marcados('familia') as Familia[],
           formatos: marcados('formato') as Formato[],
           perimetro: perimetro ? (perimetro as RangoPerimetro) : null,
+          unidad: marcados('unidad').length > 0,
         };
       };
 
@@ -178,6 +194,7 @@ const chip =
           if (i.name === 'familia') i.checked = e.familias.includes(i.value as Familia);
           if (i.name === 'formato') i.checked = e.formatos.includes(i.value as Formato);
           if (i.name === 'perimetro') i.checked = i.value === (e.perimetro ?? '');
+          if (i.name === 'unidad') i.checked = e.unidad;
         }
       };
 
@@ -202,6 +219,7 @@ const chip =
               alturaMax: Number(d.alturaMax),
               formatos: (d.formatos ?? '').split(',') as Formato[],
               perimetro,
+              ventaUnitaria: d.unidad === '1',
             },
             e,
           );

@@ -6,7 +6,7 @@
  */
 import type { CollectionEntry } from 'astro:content';
 import EscenaEscala, { type ElementoEscena } from '../ilustraciones/EscenaEscala.astro';
-import { siluetaDe } from '../ilustraciones/siluetas';
+import { esbeltez, siluetaDe } from '../ilustraciones/siluetas';
 import Boton from '../ui/Boton.astro';
 import Contenedor from '../ui/Contenedor.astro';
 import { familias, rutaFicha, rutas, textos, type Idioma } from '../../i18n/ui';
@@ -23,7 +23,10 @@ const { idioma, portada, especies } = Astro.props;
 const t = textos[idioma];
 const metros = new Intl.NumberFormat(idioma === 'es' ? 'es-ES' : 'en-GB', { maximumFractionDigits: 1 });
 
-const masAlta = representantesPorFamilia(especies).sort((a, b) => b.data.alturaMax - a.data.alturaMax)[0];
+// La más alta y, a igual altura, la de dibujo más esbelto (una copa ancha no cabe junto al titular).
+const masAlta = representantesPorFamilia(especies).sort(
+  (a, b) => b.data.alturaMax - a.data.alturaMax || esbeltez(siluetaDe(a.data)) - esbeltez(siluetaDe(b.data)),
+)[0];
 const persona: ElementoEscena = { tipo: 'persona', altura: 1.8, etiqueta: t.persona, detalle: t.alturaPersona };
 const planta: ElementoEscena = masAlta
   ? {
@@ -38,9 +41,11 @@ const planta: ElementoEscena = masAlta
 
 // Datos reales del catálogo publicado (nada inventado): número de especies y altura máxima.
 const alturaMaxima = Math.max(0, ...especies.map((e) => e.data.alturaMax));
+const porUnidad = especies.filter((e) => e.data.ventaUnitaria).length;
 const datos = [
   especies.length > 0 && (especies.length === 1 ? t.datoEspeciesUno : t.datoEspecies.replace('{n}', String(especies.length))),
   alturaMaxima > 0 && t.datoAltura.replace('{n}', metros.format(alturaMaxima)),
+  porUnidad > 0 && (porUnidad === 1 ? t.datoUnidadUna : t.datoUnidad.replace('{n}', String(porUnidad))),
   t.datoReparto,
 ].filter((d): d is string => Boolean(d));
 ---
@@ -83,7 +88,7 @@ const datos = [
       </div>
     </div>
 
-    <ul class="grid min-w-0 gap-x-8 gap-y-3 border-t border-linea-oscura pt-5 sm:grid-cols-3 lg:col-start-1 lg:row-start-2" role="list">
+    <ul class="grid min-w-0 gap-x-8 gap-y-3 border-t border-linea-oscura pt-5 sm:grid-cols-2 lg:col-start-1 lg:row-start-2" role="list">
       {
         datos.map((dato, i) => (
           <li class="rotulo flex gap-3 text-salvia">

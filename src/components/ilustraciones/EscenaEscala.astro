@@ -45,7 +45,7 @@ const columnas = `3rem repeat(${elementos.length}, auto)`;
 ---
 
 <figure
-  class:list={['escena-escala grid items-end pt-3 gap-x-[clamp(1.5rem,4vw,3.5rem)]', cotas && 'pr-8', trazar && 'trazar', clase]}
+  class:list={['escena-escala grid items-end pt-3 gap-x-[clamp(2rem,4.5vw,4.5rem)]', cotas && 'pr-12', trazar && 'trazar', clase]}
   style={`grid-template-rows: ${alto} auto; grid-template-columns: ${columnas}; --alto-escena: ${alto}; --paso-cuadricula: calc(var(--alto-escena) / ${alturaEscena})`}
 >
   <!-- Cuadrícula de 1 m y suelo. -->

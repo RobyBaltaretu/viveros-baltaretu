@@ -66,11 +66,11 @@ test.describe('teclado', () => {
     test.skip(isMobile, 'Basta con comprobarlo en escritorio');
     await page.goto('/');
     const ver = page.getByRole('link', { name: /^Ver \d+ especies?$/ });
-    await expect(ver).toHaveAttribute('href', /altura=6-10$/);
+    await expect(ver).toHaveAttribute('href', /altura=2-4$/);
     await page.getByLabel('Altura máxima').focus();
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowLeft');
-    await expect(ver).toHaveAttribute('href', /altura=6-9$/);
+    await expect(ver).toHaveAttribute('href', /altura=2-3$/);
   });
 
   test('el panel de la lista se cierra con Esc y devuelve el foco', async ({ page }) => {

@@ -102,6 +102,13 @@ describe('componerEmail', () => {
     expect(html).toContain('Obra en Alicante &lt;urgente&gt;');
     expect(html).not.toContain('<urgente>');
   });
+
+  it('indica si el pedido es al por mayor (por defecto) o por unidad', () => {
+    expect(componerEmail(esquemaPresupuesto.parse(valida), especies).texto).toContain('Tipo de pedido: Al por mayor');
+    const unidad = componerEmail(esquemaPresupuesto.parse({ ...valida, tipoPedido: 'unidad' }), especies);
+    expect(unidad.texto).toContain('Tipo de pedido: Por unidad, con envío');
+    expect(esquemaPresupuesto.safeParse({ ...valida, tipoPedido: 'tienda' }).success).toBe(false);
+  });
 });
 
 describe('verificarTurnstile', () => {

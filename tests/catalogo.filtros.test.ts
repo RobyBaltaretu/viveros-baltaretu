@@ -37,15 +37,25 @@ describe('cumpleFiltros', () => {
     expect(cumpleFiltros(olivo, { ...SIN_FILTROS, perimetro: 'hasta-30' })).toBe(false);
     expect(cumpleFiltros(palmera, { ...SIN_FILTROS, perimetro: '30-80' })).toBe(false);
   });
+  it('venta por unidad: solo las especies marcadas', () => {
+    expect(cumpleFiltros({ ...palmera, ventaUnitaria: true }, { ...SIN_FILTROS, unidad: true })).toBe(true);
+    expect(cumpleFiltros(palmera, { ...SIN_FILTROS, unidad: true })).toBe(false);
+  });
 });
 
 describe('estado en la URL', () => {
   it('ida y vuelta', () => {
-    const estado = { altura: [2, 5] as [number, number], familias: ['olivos' as const], formatos: ['cepellon' as const], perimetro: '30-80' as const };
+    const estado = {
+      altura: [2, 5] as [number, number],
+      familias: ['olivos' as const],
+      formatos: ['cepellon' as const],
+      perimetro: '30-80' as const,
+      unidad: true,
+    };
     const params = escribirFiltros(estado);
-    expect(params.toString()).toBe('altura=2-5&familia=olivos&formato=cepellon&perimetro=30-80');
+    expect(params.toString()).toBe('altura=2-5&familia=olivos&formato=cepellon&perimetro=30-80&unidad=1');
     expect(leerFiltros(params, 10)).toEqual(estado);
-    expect(contarActivos(estado)).toBe(4);
+    expect(contarActivos(estado)).toBe(5);
   });
   it('ignora valores no válidos y rangos que no filtran nada', () => {
     const e = leerFiltros(new URLSearchParams('altura=0-10&familia=cactus,olivos&formato=x&perimetro=enorme'), 10);
