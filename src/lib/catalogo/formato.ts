@@ -26,6 +26,15 @@ export function formatearPrecio(
   return `${prefijo} ${importe} ${porUnidad} ${UNIDADES[unidad][idioma]}`;
 }
 
+/** Importe suelto: "24 €" o "€24". */
+export function formatearImporte(importe: number, idioma: Idioma): string {
+  return new Intl.NumberFormat(LOCALES[idioma], {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: Number.isInteger(importe) ? 0 : 2,
+  }).format(importe);
+}
+
 export function formatearRango(min: number, max: number, unidad: string, idioma: Idioma): string {
   const numero = new Intl.NumberFormat(LOCALES[idioma], { maximumFractionDigits: 2 });
   if (min === max) return `${numero.format(min)} ${unidad}`;

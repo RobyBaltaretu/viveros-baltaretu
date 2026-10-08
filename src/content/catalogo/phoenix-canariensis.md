@@ -18,6 +18,15 @@ unidadPrecio: unidad
 origen: "Vivero en la provincia de Valencia (POR CONFIRMAR)"
 destacada: false
 ventaUnitaria: false
+fotos:
+  - imagen: ../../assets/catalogo/phoenix-canariensis/foto-prueba-1.jpg
+    alt:
+      es: "Foto de prueba de una palmera canaria"
+      en: "Test photo of a Canary Island date palm"
+  - imagen: ../../assets/catalogo/phoenix-canariensis/foto-prueba-2.jpg
+    alt:
+      es: "Foto de prueba: detalle de la palmera canaria"
+      en: "Test photo: Canary Island date palm detail"
 seo:
   es:
     titulo: "Palmera canaria al por mayor | Viveros Baltaretu"

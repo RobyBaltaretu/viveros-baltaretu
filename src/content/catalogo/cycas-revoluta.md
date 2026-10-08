@@ -14,10 +14,16 @@ alturaMax: 1.5
 formatos: ["contenedor"]
 disponibilidad: bajo-pedido
 precioDesde: 15
+precioUnidad: 24
 unidadPrecio: unidad
 origen: "Vivero en la provincia de Valencia (POR CONFIRMAR)"
 destacada: false
 ventaUnitaria: true
+fotos:
+  - imagen: ../../assets/catalogo/cycas-revoluta/foto-prueba-1.jpg
+    alt:
+      es: "Foto de prueba de una cica en contenedor"
+      en: "Test photo of a sago palm in a container"
 seo:
   es:
     titulo: "Cica al por mayor | Viveros Baltaretu"

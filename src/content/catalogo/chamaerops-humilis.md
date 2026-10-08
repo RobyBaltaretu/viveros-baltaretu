@@ -14,6 +14,7 @@ alturaMax: 2.5
 formatos: ["contenedor"]
 disponibilidad: bajo-pedido
 precioDesde: 12
+precioUnidad: 19
 unidadPrecio: unidad
 origen: "Vivero en la provincia de Valencia (POR CONFIRMAR)"
 destacada: false

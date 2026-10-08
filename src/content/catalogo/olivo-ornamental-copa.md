@@ -14,10 +14,16 @@ perimetroTroncoCm: [20, 60]
 formatos: ["contenedor"]
 disponibilidad: bajo-pedido
 precioDesde: 60
+precioUnidad: 85
 unidadPrecio: unidad
 origen: "Vivero en la provincia de Valencia (POR CONFIRMAR)"
 destacada: false
 ventaUnitaria: true
+fotos:
+  - imagen: ../../assets/catalogo/olivo-ornamental-copa/foto-prueba-1.jpg
+    alt:
+      es: "Foto de prueba de un olivo ornamental de copa"
+      en: "Test photo of an ornamental olive tree"
 seo:
   es:
     titulo: "Olivo ornamental de copa al por mayor | Viveros Baltaretu"

@@ -8,7 +8,7 @@ import type { CollectionEntry } from 'astro:content';
 import { siluetaDe } from '../ilustraciones/siluetas';
 import FotoOPlaceholder from '../ui/FotoOPlaceholder.astro';
 import { disponibilidades, familias, formatos, rutaFicha, textos, type Idioma } from '../../i18n/ui';
-import { formatearPrecio, formatearRango } from '../../lib/catalogo/formato';
+import { formatearImporte, formatearPrecio, formatearRango } from '../../lib/catalogo/formato';
 
 interface Props {
   especie: CollectionEntry<'catalogo'>;
@@ -29,6 +29,9 @@ const filas: [string, string][] = [
     ? [[t.perimetroTronco, formatearRango(data.perimetroTroncoCm[0], data.perimetroTroncoCm[1], 'cm', idioma)] as [string, string]]
     : []),
   [t.formatos, data.formatos.map((f) => formatos[f][idioma]).join(', ')],
+  ...(data.ventaUnitaria && data.precioUnidad != null
+    ? [[t.precioPorUnidad, `${formatearImporte(data.precioUnidad, idioma)} ${t.masEnvio}`] as [string, string]]
+    : []),
 ];
 ---
 

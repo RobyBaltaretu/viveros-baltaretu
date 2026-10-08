@@ -57,7 +57,10 @@ describe('esquema de especie', () => {
   it('rechaza un formato desconocido', () => rechaza({ formatos: ['maceta'] }));
   it('rechaza un slug con mayúsculas o espacios', () => rechaza({ slug: 'Palmera Canaria' }));
   it('rechaza textos sin traducción', () => rechaza({ nombre: { es: 'Palmito' } }));
-  it('rechaza alturaMin mayor que alturaMax', () => rechaza({ alturaMin: 5, alturaMax: 2 }));
+  it('rechaza alturaMin mayor que alturaMax', () => rechaza({ alturaMin: 3, alturaMax: 2 }));
+  it('rechaza plantas de más de 4 m (el vivero trabaja hasta 4 m)', () => rechaza({ alturaMin: 2, alturaMax: 4.5 }));
+  it('rechaza precio por unidad en especies que no se venden por unidad', () =>
+    rechaza({ ventaUnitaria: false, precioUnidad: 30 }));
   it('rechaza un perímetro con un solo valor', () => rechaza({ perimetroTroncoCm: [20] }));
   it('rechaza un perímetro invertido', () => rechaza({ perimetroTroncoCm: [50, 20] }));
   it('rechaza una foto sin texto alternativo', () =>

@@ -5,7 +5,8 @@ Web corporativa y de catálogo de **Viveros Baltaretu**, vivero mayorista de pla
 
 Negocio (confirmado por el propietario):
 - Planta pequeña y mediana, **hasta 4 m** de altura. Nada de "gran porte".
-- Venta normalmente **al por mayor**. Algunas especies también se venden **por unidad** y se envían al destino (campo `ventaUnitaria` de cada ficha). Ambos casos pasan por la lista y la petición de presupuesto, que indica el tipo de pedido.
+- Venta normalmente **al por mayor**. Algunas especies también se venden **por unidad** y se envían al destino (campos `ventaUnitaria` y `precioUnidad` de cada ficha). Ambos casos pasan por la lista y la petición de presupuesto, que indica el tipo de pedido.
+- Pedido mínimo, plazos y envío por unidad: singleton "Condiciones de venta" (`src/content/ajustes/condiciones.yaml`).
 
 ## Stack
 - Astro (páginas estáticas, JavaScript solo en componentes interactivos) y Tailwind CSS.
@@ -27,11 +28,12 @@ Español en la raíz (`/`) e inglés bajo `/en/`. Cada texto se escribe en los d
 - Ejecutar lint, tests y build antes de dar una tarea por terminada.
 - Claves y secretos solo como variables de entorno, nunca en el repositorio.
 - Accesibilidad WCAG 2.1 AA: etiquetas en formularios, contraste, navegación con teclado, textos alternativos.
-- Cookies: Google Analytics 4 solo se carga tras el consentimiento del usuario.
+- Cookies: Google Analytics 4 solo se carga tras el consentimiento del usuario (`AvisoCookies.astro`, ID en `PUBLIC_GA4_ID`; sin ID no hay aviso ni analítica).
 - Textos legales: los revisa un asesor. No presentarlos como definitivos.
+- Datos de prueba: `src/lib/pruebas/datos.ts` rellena los huecos pendientes (`[PLACEHOLDER]` o vacíos) solo en desarrollo y en builds de ramas que no son `main`, con un aviso visible "Vista de prueba". Nunca pisan un dato real ni llegan a producción. Los contactos de prueba usan valores que no llevan a nadie (email en example.com).
 
 ## Esquema de cada especie
-`slug`, `familia` (palmeras, olivos, higueras, otras-ornamentales), `nombre {es,en}`, `nombreCientifico`, `descripcion {es,en}`, `alturaMin/Max` (m), `perimetroTroncoCm` (opcional), `formatos`, `disponibilidad` (disponible, bajo-pedido, agotado), `precioDesde` y `unidadPrecio`, `origen`, `destacada`, `ventaUnitaria` (también se vende por unidad, con envío), `seo {es,en}`, `revisado`. Opcionales añadidos para la web: `fotos` (imagen + `alt {es,en}`), `silueta` (dibujo provisional; por defecto el de la familia) y `datosDeEjemplo`.
+`slug`, `familia` (palmeras, olivos, higueras, otras-ornamentales), `nombre {es,en}`, `nombreCientifico`, `descripcion {es,en}`, `alturaMin/Max` (m), `perimetroTroncoCm` (opcional), `formatos`, `disponibilidad` (disponible, bajo-pedido, agotado), `precioDesde` y `unidadPrecio`, `origen`, `destacada`, `ventaUnitaria` (también se vende por unidad, con envío), `precioUnidad` (solo con `ventaUnitaria`), `seo {es,en}`, `revisado`. `alturaMax` no puede pasar de 4 m (`ALTURA_MAXIMA`). Opcionales añadidos para la web: `fotos` (imagen + `alt {es,en}`), `silueta` (dibujo provisional; por defecto el de la familia) y `datosDeEjemplo`.
 
 ## Diseño
 - Dirección: "plano de paisajismo". La web se lee como una lámina técnica: alzados a línea, cotas, cuadrícula de 1 m, rótulos en mono. Nada de manchas planas, ondas ni burbujas.

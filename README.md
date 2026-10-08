@@ -95,6 +95,7 @@ En **Workers & Pages → viveros-baltaretu → Settings → Build**:
    | `SITE_URL` | `https://tudominio.es` sin barra final. Hasta tener dominio, la URL `https://viveros-baltaretu.<tu-subdominio>.workers.dev` |
    | `PUBLIC_TURNSTILE_SITE_KEY` | La *Site Key* del paso 3 |
    | `PUBLIC_KEYSTATIC_CLOUD_PROJECT` | El valor `equipo/proyecto` del paso 4.4 |
+   | `PUBLIC_GA4_ID` | Opcional. ID de medición de Google Analytics 4 (`G-…`). Si lo pones, sale el aviso de cookies y GA4 solo se carga cuando la persona acepta. Vacío = sin analítica. |
 
 2. **Branch control:** rama de producción `main`. Desmarca **Enable Preview Builds**.
 3. **Build cache:** actívala.
@@ -146,7 +147,8 @@ En **Workers & Pages → viveros-baltaretu → Settings → Variables & Secrets*
 
 1. En `/keystatic`, abre **Empresa** y completa el teléfono, el email y la dirección (el nombre ya está). Mientras no estén, la web muestra `[PLACEHOLDER]`.
 2. En **WhatsApp**, escribe el número con el prefijo del país, solo dígitos (por ejemplo `34600000000`). Con el campo vacío no aparece el botón flotante de WhatsApp.
-3. Revisa también **Portada** y **Textos del catálogo**.
+3. Revisa también **Portada**, **Textos del catálogo** y **Condiciones de venta** (pedido mínimo, plazos y envío por unidad).
+4. En las vistas previas de rama y en local verás datos de prueba (teléfono, email, condiciones…) donde falte un dato, con el aviso "Vista de prueba". En producción no aparecen: allí se ve `[PLACEHOLDER]` hasta que rellenes el dato real.
 
 ### 13. Invitar al gerente
 

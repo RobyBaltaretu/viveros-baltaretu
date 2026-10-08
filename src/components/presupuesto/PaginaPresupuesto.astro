@@ -9,6 +9,7 @@ import Boton from '../ui/Boton.astro';
 import Contenedor from '../ui/Contenedor.astro';
 import Seccion from '../ui/Seccion.astro';
 import { rutas, textos, type Idioma } from '../../i18n/ui';
+import { obtenerCondiciones } from '../../lib/condiciones';
 import { esPlaceholder, obtenerEmpresa } from '../../lib/empresa';
 import { CAMPO_TRAMPA } from '../../lib/presupuesto/esquema';
 import { TURNSTILE_PRUEBA } from '../../lib/presupuesto/turnstile';
@@ -19,7 +20,7 @@ interface Props {
 
 const { idioma } = Astro.props;
 const t = textos[idioma];
-const empresa = await obtenerEmpresa();
+const [empresa, condiciones] = await Promise.all([obtenerEmpresa(), obtenerCondiciones()]);
 const claveTurnstile = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || (import.meta.env.DEV ? TURNSTILE_PRUEBA.claveSitio : '');
 const contactos = [
   { etiqueta: t.email, valor: empresa.email, enlace: esPlaceholder(empresa.email) ? undefined : `mailto:${empresa.email}` },
@@ -171,6 +172,21 @@ const textosScript = {
             </dl>
           )
         }
+        <h2 class="antetitulo mt-10 text-musgo">{t.condicionesVenta}</h2>
+        <dl class="mt-3 border-t border-linea-clara">
+          {
+            [
+              [t.pedidoMinimo, condiciones.pedidoMinimo[idioma]],
+              [t.plazosMayor, condiciones.plazosMayor[idioma]],
+              [t.envioUnidad, condiciones.envioUnidad[idioma]],
+            ].map(([etiqueta, valor]) => (
+              <div class="border-b border-linea-clara py-3">
+                <dt class="rotulo text-musgo">{etiqueta}</dt>
+                <dd class="mt-1 text-sm">{valor}</dd>
+              </div>
+            ))
+          }
+        </dl>
       </aside>
     </Contenedor>
   </Seccion>

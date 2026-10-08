@@ -1,5 +1,5 @@
 import { collection, config, fields, singleton } from '@keystatic/core';
-import { SLUG_REGEX } from './src/lib/catalogo/schema';
+import { ALTURA_MAXIMA, SLUG_REGEX } from './src/lib/catalogo/schema';
 import { WHATSAPP_REGEX } from './src/lib/empresa/schema';
 import { ICONOS_CONFIANZA } from './src/lib/portada/schema';
 
@@ -148,6 +148,19 @@ export default config({
         }),
         email: fields.text({ label: 'Email de contacto' }),
         direccion: fields.text({ label: 'Dirección', multiline: true }),
+      },
+    }),
+    condiciones: singleton({
+      label: 'Condiciones de venta',
+      path: 'src/content/ajustes/condiciones',
+      format: { data: 'yaml' },
+      schema: {
+        pedidoMinimo: textoBilingue('Pedido mínimo al por mayor', { multilinea: true }),
+        plazosMayor: textoBilingue('Plazos de entrega al por mayor', { multilinea: true }),
+        envioUnidad: textoBilingue('Envío por unidad: gastos y plazos', {
+          multilinea: true,
+          descripcion: 'Se muestra en las fichas que se venden por unidad.',
+        }),
       },
     }),
     textosCatalogo: singleton({
@@ -316,12 +329,13 @@ export default config({
         alturaMin: fields.number({
           label: 'Altura mínima (m)',
           step: 0.1,
-          validation: { isRequired: true, min: 0.1 },
+          validation: { isRequired: true, min: 0.1, max: ALTURA_MAXIMA },
         }),
         alturaMax: fields.number({
           label: 'Altura máxima (m)',
+          description: `El vivero trabaja planta de hasta ${ALTURA_MAXIMA} m.`,
           step: 0.1,
-          validation: { isRequired: true, min: 0.1 },
+          validation: { isRequired: true, min: 0.1, max: ALTURA_MAXIMA },
         }),
         perimetroTroncoCm: fields.array(
           fields.integer({ label: 'Perímetro (cm)', validation: { isRequired: true, min: 1 } }),
@@ -352,7 +366,13 @@ export default config({
         }),
         precioDesde: fields.number({
           label: 'Precio desde (€)',
-          description: 'Se muestra como "desde X €". Déjalo vacío para mostrar "precio bajo presupuesto".',
+          description: 'Precio al por mayor. Se muestra como "desde X €". Déjalo vacío para mostrar "precio bajo presupuesto".',
+          step: 0.01,
+          validation: { min: 0.01 },
+        }),
+        precioUnidad: fields.number({
+          label: 'Precio por unidad (€)',
+          description: 'Solo si se vende también por unidad. Precio de una planta suelta, sin el envío.',
           step: 0.01,
           validation: { min: 0.01 },
         }),

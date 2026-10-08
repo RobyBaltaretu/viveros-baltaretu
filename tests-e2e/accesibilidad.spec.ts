@@ -20,6 +20,10 @@ const PAGINAS = [
   '/404.html',
 ];
 
+/** Elección de cookies ya hecha, para que el aviso no tape botones en las pruebas de interacción. */
+const sinAvisoCookies = (page: Page) =>
+  page.addInitScript(() => localStorage.setItem('vivero:consentimiento-cookies', 'rechazado'));
+
 async function auditar(page: Page) {
   const resultado = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   const resumen = resultado.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`);
@@ -36,6 +40,7 @@ test.describe('WCAG 2.1 AA (axe)', () => {
   }
 
   test('panel de la lista abierto', async ({ page }) => {
+    await sinAvisoCookies(page);
     await page.goto('/catalogo/phoenix-canariensis/');
     await page.getByRole('button', { name: 'Añadir a la lista de presupuesto' }).click();
     await page.locator('[data-abrir-lista]').click();
@@ -44,7 +49,26 @@ test.describe('WCAG 2.1 AA (axe)', () => {
   });
 });
 
+test.describe('aviso de cookies', () => {
+  test('sale al entrar, se puede rechazar con el teclado y se recuerda', async ({ page }) => {
+    await page.goto('/');
+    const aviso = page.getByRole('region', { name: 'Cookies de analítica' });
+    await expect(aviso).toBeVisible();
+    await aviso.getByRole('button', { name: 'Rechazar' }).focus();
+    await page.keyboard.press('Enter');
+    await expect(aviso).toBeHidden();
+    await page.reload();
+    await expect(page.getByRole('region', { name: 'Cookies de analítica' })).toBeHidden();
+    // Con ID de prueba nunca se carga Google Analytics.
+    expect(await page.evaluate(() => Boolean(document.querySelector('script[src*="googletagmanager"]')))).toBe(false);
+    await page.getByRole('button', { name: 'Configurar cookies' }).click();
+    await expect(page.getByRole('region', { name: 'Cookies de analítica' })).toBeVisible();
+  });
+});
+
 test.describe('teclado', () => {
+  test.beforeEach(({ page }) => sinAvisoCookies(page));
+
   test('el enlace "Saltar al contenido" es lo primero y lleva al contenido', async ({ page }) => {
     await page.goto('/catalogo/');
     await page.keyboard.press('Tab');

@@ -3,6 +3,7 @@ import Silueta from './ilustraciones/Silueta.astro';
 import Contenedor from './ui/Contenedor.astro';
 import Seccion from './ui/Seccion.astro';
 import { legales, navegacion, nombresIdioma, rutas, textos, type Idioma } from '../i18n/ui';
+import { idAnalitica } from '../lib/cookies';
 import { esPlaceholder, obtenerEmpresa } from '../lib/empresa';
 
 interface Props {
@@ -71,6 +72,15 @@ const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa
             <h2 class="antetitulo text-salvia">{t.legal}</h2>
             <ul class="mt-4 space-y-3">
               {legales.map((clave) => <li><a href={rutas[clave][idioma]} class="hover:text-lima">{t[clave]}</a></li>)}
+              {
+                idAnalitica() && (
+                  <li class="solo-js">
+                    <button type="button" data-configurar-cookies class="text-left hover:text-lima">
+                      {t.cookiesConfigurar}
+                    </button>
+                  </li>
+                )
+              }
             </ul>
           </nav>
           <div>

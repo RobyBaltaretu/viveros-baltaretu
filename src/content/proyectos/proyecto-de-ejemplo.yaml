@@ -1,12 +1,12 @@
-# Proyecto de ejemplo para ver el diseño. No se publica (revisado: false).
+# Proyecto de PRUEBA para ver el diseño (datos inventados). No se publica (revisado: false).
 slug: proyecto-de-ejemplo
 titulo:
-  es: '[PLACEHOLDER: nombre del proyecto]'
-  en: '[PLACEHOLDER: project name]'
+  es: Jardín de una urbanización en la costa (proyecto de prueba)
+  en: Coastal housing estate garden (test project)
 resumen:
-  es: '[PLACEHOLDER: resumen del proyecto en una o dos frases]'
-  en: '[PLACEHOLDER: one or two sentence project summary]'
-ubicacion: '[PLACEHOLDER: municipio y provincia]'
+  es: Palmeras y olivos para las zonas comunes de una urbanización, entregados en un solo viaje.
+  en: Palms and olive trees for the shared gardens of a housing estate, delivered in a single trip.
+ubicacion: Municipio de prueba (Valencia)
 especies:
   - phoenix-canariensis
   - olivo-gran-perimetro
@@ -16,16 +16,16 @@ secciones:
       es: El encargo
       en: The brief
     texto:
-      es: '[PLACEHOLDER: qué pedía el cliente]'
-      en: '[PLACEHOLDER: what the client needed]'
+      es: La constructora necesitaba que las zonas verdes estuvieran terminadas para la entrega de las viviendas.
+      en: The contractor needed the green areas finished in time for handing over the homes.
   - titulo:
       es: Lo que suministramos
       en: What we supplied
     texto:
-      es: '[PLACEHOLDER: especies, tamaños y cantidades]'
-      en: '[PLACEHOLDER: species, sizes and quantities]'
+      es: 12 palmeras canarias de 3 a 4 m y 6 olivos de 2,5 a 3 m, con cepellón, en un camión con plataforma.
+      en: 12 Canary Island date palms of 3 to 4 m and 6 olive trees of 2.5 to 3 m, root-balled, on one flatbed lorry.
 seoDescripcion:
-  es: '[PLACEHOLDER: descripción del proyecto para Google]'
-  en: '[PLACEHOLDER: project description for Google]'
+  es: Proyecto de prueba con palmeras y olivos para una urbanización.
+  en: Test project with palms and olive trees for a housing estate.
 datosDeEjemplo: true
 revisado: false

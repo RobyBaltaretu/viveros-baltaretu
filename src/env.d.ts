@@ -3,6 +3,8 @@ interface ImportMetaEnv {
   readonly PUBLIC_KEYSTATIC_CLOUD_PROJECT?: string;
   /** Clave de sitio (pública) del widget de Turnstile. */
   readonly PUBLIC_TURNSTILE_SITE_KEY?: string;
+  /** ID de medición de Google Analytics 4 (G-XXXXXXX). Solo se carga tras el consentimiento. */
+  readonly PUBLIC_GA4_ID?: string;
   /** Inyectadas en astro.config.mjs (ver src/lib/catalogo/index.ts). */
   readonly WORKERS_CI_BRANCH: string;
   readonly PRODUCTION_BRANCH: string;

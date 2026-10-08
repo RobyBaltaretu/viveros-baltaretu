@@ -1,0 +1,11 @@
+# Condiciones de venta. Se editan desde el panel (/keystatic → Condiciones de venta).
+# No se inventan: lo que falte se queda como [PLACEHOLDER] hasta que se confirme.
+pedidoMinimo:
+  es: '[PLACEHOLDER: pedido mínimo al por mayor]'
+  en: '[PLACEHOLDER: minimum wholesale order]'
+plazosMayor:
+  es: '[PLACEHOLDER: plazos de entrega al por mayor]'
+  en: '[PLACEHOLDER: wholesale delivery times]'
+envioUnidad:
+  es: '[PLACEHOLDER: gastos y plazos de envío por unidad]'
+  en: '[PLACEHOLDER: shipping costs and times for single plants]'

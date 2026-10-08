@@ -4,9 +4,11 @@ import { Font } from 'astro:assets';
 import Cabecera from '../components/Cabecera.astro';
 import Pie from '../components/Pie.astro';
 import PanelLista from '../components/presupuesto/PanelLista.astro';
+import AvisoCookies from '../components/AvisoCookies.astro';
 import BotonWhatsApp from '../components/BotonWhatsApp.astro';
 import { IDIOMA_POR_DEFECTO, textos, type Idioma } from '../i18n/ui';
 import { esPlaceholder, obtenerEmpresa } from '../lib/empresa';
+import { esEntornoDePrueba } from '../lib/entorno';
 import { aJsonLd } from '../lib/seo/datos-estructurados';
 
 interface Props {
@@ -89,6 +91,13 @@ const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
     >
       {t.saltarAlContenido}
     </a>
+    {
+      esEntornoDePrueba() && (
+        <p role="note" class="superficie-lima rotulo px-4 py-1.5 text-center">
+          {t.avisoPrueba}
+        </p>
+      )
+    }
     <Cabecera idioma={idioma} alternativas={alternativas} />
     <main id="contenido" class="flex-1">
       <slot />
@@ -96,5 +105,6 @@ const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
     <Pie idioma={idioma} alternativas={alternativas} />
     <PanelLista idioma={idioma} />
     <BotonWhatsApp idioma={idioma} mensaje={mensajeWhatsapp ?? t.whatsappGeneral} />
+    <AvisoCookies idioma={idioma} />
   </body>
 </html>

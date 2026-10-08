@@ -14,6 +14,7 @@ perimetroTroncoCm: [8, 25]
 formatos: ["contenedor", "cepellon"]
 disponibilidad: bajo-pedido
 precioDesde: 40
+precioUnidad: 59
 unidadPrecio: unidad
 origen: "Vivero en la provincia de Valencia (POR CONFIRMAR)"
 destacada: false
