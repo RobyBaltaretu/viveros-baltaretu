@@ -8,6 +8,9 @@ import { z } from 'astro/zod';
  * como en los tests (con un validador de texto simple).
  */
 
+/** El vivero trabaja planta de hasta 4 m (dato confirmado por el propietario). */
+export const ALTURA_MAXIMA = 4;
+
 export const FAMILIAS = ['palmeras', 'olivos', 'higueras', 'otras-ornamentales'] as const;
 export const DISPONIBILIDADES = ['disponible', 'bajo-pedido', 'agotado'] as const;
 export const FORMATOS = ['contenedor', 'cepellon', 'raiz-desnuda'] as const;
@@ -48,15 +51,19 @@ export function crearEsquemaEspecie<TImagen extends z.ZodType>(imagen: TImagen) 
       nombreCientifico: z.string().trim().min(1),
       descripcion: textoBilingue,
       alturaMin: z.number().positive(),
-      alturaMax: z.number().positive(),
+      alturaMax: z.number().positive().max(ALTURA_MAXIMA, `La altura máxima no puede pasar de ${ALTURA_MAXIMA} m`),
       perimetroTroncoCm: perimetroTronco,
       formatos: z.array(z.enum(FORMATOS)).min(1),
       disponibilidad: z.enum(DISPONIBILIDADES),
       // Si falta, la web muestra "precio bajo presupuesto".
       precioDesde: z.number().positive().nullish(),
+      // Precio de una planta suelta (sin envío). Solo tiene sentido con ventaUnitaria.
+      precioUnidad: z.number().positive().nullish(),
       unidadPrecio: z.enum(UNIDADES_PRECIO).default('unidad'),
       origen: z.string().trim().min(1),
       destacada: z.boolean().default(false),
+      // La venta es al por mayor; algunas especies también se venden por unidad con envío al destino.
+      ventaUnitaria: z.boolean().default(false),
       // Dibujo que representa la especie mientras no haya fotos. Si falta, se usa el de su familia.
       silueta: z.preprocess((v) => (v === '' || v === null ? undefined : v), z.enum(SILUETAS).optional()),
       fotos: z
@@ -74,5 +81,9 @@ export function crearEsquemaEspecie<TImagen extends z.ZodType>(imagen: TImagen) 
     .refine((d) => d.alturaMin <= d.alturaMax, {
       message: 'alturaMin no puede ser mayor que alturaMax',
       path: ['alturaMin'],
+    })
+    .refine((d) => d.precioUnidad == null || d.ventaUnitaria, {
+      message: 'precioUnidad solo se usa en especies que también se venden por unidad (ventaUnitaria)',
+      path: ['precioUnidad'],
     });
 }

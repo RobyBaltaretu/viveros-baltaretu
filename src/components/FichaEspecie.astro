@@ -18,7 +18,8 @@ import FotoOPlaceholder from './ui/FotoOPlaceholder.astro';
 import Seccion from './ui/Seccion.astro';
 import { disponibilidades, familias, formatos, rutaFamilia, rutaFicha, rutas, textos, type Idioma } from '../i18n/ui';
 import { obtenerEspecies } from '../lib/catalogo';
-import { formatearPrecio, formatearRango } from '../lib/catalogo/formato';
+import { obtenerCondiciones } from '../lib/condiciones';
+import { formatearImporte, formatearPrecio, formatearRango } from '../lib/catalogo/formato';
 
 interface Props {
   idioma: Idioma;
@@ -26,6 +27,7 @@ interface Props {
 }
 
 const { idioma, especie } = Astro.props;
+const condiciones = await obtenerCondiciones();
 const { data } = especie;
 const t = textos[idioma];
 const nombre = data.nombre[idioma];
@@ -65,8 +67,12 @@ const medidas: [string, string][] = [
     : []),
   [t.formatos, data.formatos.map((f) => formatos[f][idioma]).join(', ')],
   [t.disponibilidad, disponibilidades[data.disponibilidad][idioma]],
+  [t.filtroCompra, data.ventaUnitaria ? t.compraMayorYUnidad : t.compraMayor],
   [t.origen, data.origen],
   [t.precio, formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)],
+  ...(data.ventaUnitaria && data.precioUnidad != null
+    ? [[t.precioPorUnidad, `${formatearImporte(data.precioUnidad, idioma)} ${t.masEnvio}`] as [string, string]]
+    : []),
 ];
 ---
 
@@ -91,17 +97,42 @@ const medidas: [string, string][] = [
         </ol>
       </nav>
 
-      {!data.revisado && <p class="mt-6 rounded-2xl border border-lima p-4 text-lima">{t.avisoNoRevisado}</p>}
+      {!data.revisado && <p class="rotulo mt-6 rounded-tarjeta border border-lima p-4 text-lima">{t.avisoNoRevisado}</p>}
 
       <div class="mt-8 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
         <div class="min-w-0">
           <div class="flex flex-wrap gap-2">
             <Etiqueta>{familias[data.familia][idioma]}</Etiqueta>
             <Etiqueta resaltada={data.disponibilidad === 'disponible'}>{disponibilidades[data.disponibilidad][idioma]}</Etiqueta>
+            {data.ventaUnitaria && <span class="rotulo inline-flex items-center rounded-[0.2rem] border border-lima px-2 py-1 text-lima">{t.ventaUnitaria}</span>}
           </div>
           <h1 class="titular-gigante mt-6 text-[clamp(2.75rem,1.4rem+5vw,6.5rem)]">{nombre}</h1>
           <p class="mt-3 texto-entrada italic text-salvia">{data.nombreCientifico}</p>
-          <p class="mt-8 font-titular text-[clamp(1.75rem,1.2rem+1.8vw,2.75rem)] font-bold leading-tight text-lima">{formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}</p>
+          <dl class="mt-8 grid gap-x-10 gap-y-3 sm:grid-flow-col sm:justify-start">
+            <div>
+              <dt class="rotulo text-salvia">{t.precioMayor}</dt>
+              <dd class="font-titular text-[clamp(1.75rem,1.2rem+1.8vw,2.75rem)] font-bold leading-tight text-lima">
+                {formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}
+              </dd>
+            </div>
+            {
+              data.ventaUnitaria && data.precioUnidad != null && (
+                <div>
+                  <dt class="rotulo text-salvia">{t.precioPorUnidad}</dt>
+                  <dd class="font-titular text-[clamp(1.75rem,1.2rem+1.8vw,2.75rem)] font-bold leading-tight">
+                    {formatearImporte(data.precioUnidad, idioma)} <span class="text-[0.5em] font-semibold text-salvia">{t.masEnvio}</span>
+                  </dd>
+                </div>
+              )
+            }
+          </dl>
+          {
+            data.ventaUnitaria && (
+              <p class="mt-4 max-w-prose border-l-2 border-lima pl-4 text-salvia">
+                {t.ventaUnitariaDetalle} {condiciones.envioUnidad[idioma]}
+              </p>
+            )
+          }
           <p class="mt-6 max-w-prose texto-entrada">{data.descripcion[idioma]}</p>
           <div class="mt-10 flex flex-wrap gap-3">
             <BotonLista idioma={idioma} slug={data.slug} nombre={nombre} />
@@ -120,7 +151,7 @@ const medidas: [string, string][] = [
     </Contenedor>
   </Seccion>
 
-  <Seccion tono="claro" bordeOrganico>
+  <Seccion tono="claro">
     <Contenedor class="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16">
       <div class="min-w-0">
         <h2 class="titular-grande">{t.medidasTitulo}</h2>
@@ -168,7 +199,7 @@ const medidas: [string, string][] = [
 
   {
     relacionadas.length > 0 && (
-      <Seccion bordeOrganico>
+      <Seccion>
         <Contenedor>
           <div class="flex flex-wrap items-end justify-between gap-4">
             <h2 class="titular-grande">{t.masDeLaFamilia.replace('{familia}', familias[data.familia][idioma].toLowerCase())}</h2>

@@ -1,14 +1,14 @@
 ---
 /**
- * Tarjeta de especie del catálogo. Los atributos data-* permiten filtrarla en el
- * navegador sin volver a renderizar (ver FiltrosCatalogo).
+ * Tarjeta de especie del catálogo, como una ficha técnica: dibujo o foto, nombre y
+ * una tabla de medidas. Los atributos data-* permiten filtrarla en el navegador sin
+ * volver a renderizar (ver FiltrosCatalogo).
  */
 import type { CollectionEntry } from 'astro:content';
 import { siluetaDe } from '../ilustraciones/siluetas';
-import Etiqueta from '../ui/Etiqueta.astro';
 import FotoOPlaceholder from '../ui/FotoOPlaceholder.astro';
-import { disponibilidades, familias, rutaFicha, textos, type Idioma } from '../../i18n/ui';
-import { formatearPrecio, formatearRango } from '../../lib/catalogo/formato';
+import { disponibilidades, familias, formatos, rutaFicha, textos, type Idioma } from '../../i18n/ui';
+import { formatearImporte, formatearPrecio, formatearRango } from '../../lib/catalogo/formato';
 
 interface Props {
   especie: CollectionEntry<'catalogo'>;
@@ -23,6 +23,16 @@ const { data } = especie;
 const t = textos[idioma];
 const foto = data.fotos[0];
 const porcentaje = (m: number) => `${(m / alturaReferencia) * 100}%`;
+const filas: [string, string][] = [
+  [t.alturaEjemplar, formatearRango(data.alturaMin, data.alturaMax, 'm', idioma)],
+  ...(data.perimetroTroncoCm
+    ? [[t.perimetroTronco, formatearRango(data.perimetroTroncoCm[0], data.perimetroTroncoCm[1], 'cm', idioma)] as [string, string]]
+    : []),
+  [t.formatos, data.formatos.map((f) => formatos[f][idioma]).join(', ')],
+  ...(data.ventaUnitaria && data.precioUnidad != null
+    ? [[t.precioPorUnidad, `${formatearImporte(data.precioUnidad, idioma)} ${t.masEnvio}`] as [string, string]]
+    : []),
+];
 ---
 
 <li
@@ -32,39 +42,55 @@ const porcentaje = (m: number) => `${(m / alturaReferencia) * 100}%`;
   data-altura-max={data.alturaMax}
   data-formatos={data.formatos.join(',')}
   data-perimetro={data.perimetroTroncoCm?.join('-')}
+  data-unidad={data.ventaUnitaria ? '1' : undefined}
 >
-  <FotoOPlaceholder
-    foto={foto && { imagen: foto.imagen, alt: foto.alt[idioma] }}
-    pendiente={data.nombre[idioma]}
-    silueta={siluetaDe(data)}
-    prioridad={prioridad}
-    proporcion="1 / 1"
-    sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
-    class="transition-[border-color] duration-300 group-hover:border-lima"
-  />
-  <div class="mt-5 flex flex-wrap items-center gap-2">
-    <Etiqueta>{familias[data.familia][idioma]}</Etiqueta>
-    <Etiqueta resaltada={data.disponibilidad === 'disponible'}>{disponibilidades[data.disponibilidad][idioma]}</Etiqueta>
+  <div class="relative">
+    <FotoOPlaceholder
+      foto={foto && { imagen: foto.imagen, alt: foto.alt[idioma] }}
+      pendiente={data.nombre[idioma]}
+      silueta={siluetaDe(data)}
+      prioridad={prioridad}
+      proporcion="1 / 1"
+      sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
+      class="transition-[border-color] duration-300 group-hover:border-lima"
+    />
+    <p class="rotulo absolute top-3 right-3 left-3 flex flex-wrap gap-2">
+      <span class="rounded-[0.2rem] bg-bosque/85 px-2 py-1 text-salvia">{familias[data.familia][idioma]}</span>
+      <span
+        class:list={[
+          'rounded-[0.2rem] px-2 py-1',
+          data.disponibilidad === 'disponible' ? 'bg-lima text-bosque' : 'bg-bosque/85 text-texto',
+        ]}
+      >
+        {disponibilidades[data.disponibilidad][idioma]}
+      </span>
+      {data.ventaUnitaria && <span class="rounded-[0.2rem] border border-lima bg-bosque/85 px-2 py-1 text-lima">{t.ventaUnitaria}</span>}
+    </p>
   </div>
-  <h3 class="titular-medio mt-4">
-    <a href={rutaFicha(idioma, data.slug)} class="after:absolute after:inset-0 after:rounded-(--radius-organico) group-hover:text-lima">
+
+  <h3 class="titular-medio mt-5">
+    <a href={rutaFicha(idioma, data.slug)} class="subrayado-hover after:absolute after:inset-0 after:rounded-tarjeta">
       {data.nombre[idioma]}
     </a>
   </h3>
   <p class="mt-1 italic text-salvia">{data.nombreCientifico}</p>
 
-  <div class="mt-4">
-    <p class="flex justify-between text-sm">
-      <span class="text-salvia">{t.alturaEjemplar}</span>
-      <span class="font-semibold tabular-nums">{formatearRango(data.alturaMin, data.alturaMax, 'm', idioma)}</span>
-    </p>
-    <div class="relative mt-2 h-1.5 rounded-full bg-linea-oscura" aria-hidden="true">
-      <div
-        class="absolute inset-y-0 rounded-full bg-lima"
-        style={`left: ${porcentaje(data.alturaMin)}; width: ${porcentaje(data.alturaMax - data.alturaMin)}`}
-      >
-      </div>
-    </div>
+  <dl class="mt-5 border-t border-linea-oscura">
+    {
+      filas.map(([etiqueta, valor]) => (
+        <div class="flex justify-between gap-4 border-b border-linea-oscura py-2">
+          <dt class="rotulo text-salvia">{etiqueta}</dt>
+          <dd class="rotulo text-right">{valor}</dd>
+        </div>
+      ))
+    }
+  </dl>
+  <!-- Barra de altura: dónde cae la especie en la regla del catálogo. -->
+  <div class="relative mt-3 h-1 bg-linea-oscura" aria-hidden="true">
+    <div class="absolute inset-y-0 bg-lima" style={`left: ${porcentaje(data.alturaMin)}; width: ${porcentaje(data.alturaMax - data.alturaMin)}`}></div>
   </div>
-  <p class="mt-4 text-lg font-semibold">{formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}</p>
+  <p class="mt-4 flex items-center justify-between gap-4 font-semibold">
+    <span>{formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}</span>
+    <span class="text-lima transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">→</span>
+  </p>
 </li>

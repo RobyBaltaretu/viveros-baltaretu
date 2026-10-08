@@ -1,9 +1,13 @@
 ---
+/**
+ * Llamada final a presupuesto: el único bloque con fondo lima de la web, con una
+ * palmera dibujada a escala sobre la cuadrícula.
+ */
 import Silueta from '../ilustraciones/Silueta.astro';
 import Boton from '../ui/Boton.astro';
 import Contenedor from '../ui/Contenedor.astro';
-import Seccion from '../ui/Seccion.astro';
 import { rutas, textos, type Idioma } from '../../i18n/ui';
+import { esPlaceholder, obtenerEmpresa } from '../../lib/empresa';
 
 interface Props {
   idioma: Idioma;
@@ -13,21 +17,32 @@ interface Props {
 
 const { idioma, titulo, texto } = Astro.props;
 const t = textos[idioma];
+const { whatsapp } = await obtenerEmpresa();
+const enlaceWhatsapp = esPlaceholder(whatsapp)
+  ? null
+  : `https://wa.me/${whatsapp}?text=${encodeURIComponent(t.whatsappGeneral)}`;
 ---
 
-<Seccion bordeOrganico espacio="amplio" class="overflow-hidden">
-  <Contenedor class="relative grid items-end gap-10 md:grid-cols-[minmax(0,1fr)_auto]">
+<section class="superficie-lima cuadricula relative overflow-hidden [--paso-cuadricula:clamp(2.5rem,5vw,4.5rem)]">
+  <Contenedor class="relative grid min-h-[min(44rem,90svh)] items-end gap-10 py-20 sm:py-28 md:grid-cols-[minmax(0,1fr)_auto]">
     <div class="min-w-0">
-      <h2 class="titular-gigante max-w-4xl">{titulo}</h2>
-      <p class="mt-8 max-w-xl texto-entrada text-salvia">{texto}</p>
+      <h2 class="titular-gigante max-w-5xl text-[clamp(3.4rem,1rem+7vw,9rem)]">{titulo}</h2>
+      <p class="mt-8 max-w-xl texto-entrada">{texto}</p>
       <div class="mt-10 flex flex-wrap gap-3">
         <Boton href={rutas.presupuesto[idioma]} tamano="grande" flecha>{t.pedirPresupuesto}</Boton>
-        <Boton href={rutas.catalogo[idioma]} tamano="grande" variante="secundario">{t.verCatalogo}</Boton>
+        {
+          enlaceWhatsapp ? (
+            <Boton href={enlaceWhatsapp} tamano="grande" variante="secundario" target="_blank" rel="noopener">
+              {t.escribirWhatsapp}
+            </Boton>
+          ) : (
+            <Boton href={rutas.catalogo[idioma]} tamano="grande" variante="secundario">
+              {t.verCatalogo}
+            </Boton>
+          )
+        }
       </div>
     </div>
-    <div class="hidden items-end gap-4 md:flex" aria-hidden="true">
-      <Silueta tipo="cica" class="h-24 w-auto text-lima" style="--tono-tronco: var(--color-salvia)" />
-      <Silueta tipo="palmera" class="h-80 w-auto text-lima" style="--tono-tronco: var(--color-salvia)" />
-    </div>
+    <Silueta tipo="palmera" class="pointer-events-none hidden h-[clamp(20rem,60svh,36rem)] w-auto text-bosque md:block" />
   </Contenedor>
-</Seccion>
+</section>

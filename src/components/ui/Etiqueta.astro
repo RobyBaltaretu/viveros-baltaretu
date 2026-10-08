@@ -7,7 +7,7 @@ const { resaltada = false, class: clase, ...resto } = Astro.props;
 
 <span
   class:list={[
-    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium',
+    'rotulo inline-flex items-center gap-1.5 rounded-[0.2rem] border px-2 py-1',
     resaltada ? 'border-(--boton-fondo) bg-(--boton-fondo) text-(--boton-texto)' : 'border-(--color-linea) text-(--color-secundario)',
     clase,
   ]}

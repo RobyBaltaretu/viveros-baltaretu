@@ -1,7 +1,12 @@
 # CLAUDE.md: web del vivero mayorista
 
 ## Proyecto
-Web corporativa y de catálogo para un vivero mayorista de plantas ornamentales (provincia de Valencia, reparto a toda España). Objetivos: posicionar en Google, mostrar el catálogo con fotos reales y convertir visitas en peticiones de presupuesto o contactos por WhatsApp. No es una tienda online.
+Web corporativa y de catálogo de **Viveros Baltaretu**, vivero mayorista de plantas ornamentales (provincia de Valencia, reparto a toda España). Objetivos: posicionar en Google, mostrar el catálogo con fotos reales y convertir visitas en peticiones de presupuesto o contactos por WhatsApp. No es una tienda online.
+
+Negocio (confirmado por el propietario):
+- Planta pequeña y mediana, **hasta 4 m** de altura. Nada de "gran porte".
+- Venta normalmente **al por mayor**. Algunas especies también se venden **por unidad** y se envían al destino (campos `ventaUnitaria` y `precioUnidad` de cada ficha). Ambos casos pasan por la lista y la petición de presupuesto, que indica el tipo de pedido.
+- Pedido mínimo, plazos y envío por unidad: singleton "Condiciones de venta" (`src/content/ajustes/condiciones.yaml`).
 
 ## Stack
 - Astro (páginas estáticas, JavaScript solo en componentes interactivos) y Tailwind CSS.
@@ -23,17 +28,21 @@ Español en la raíz (`/`) e inglés bajo `/en/`. Cada texto se escribe en los d
 - Ejecutar lint, tests y build antes de dar una tarea por terminada.
 - Claves y secretos solo como variables de entorno, nunca en el repositorio.
 - Accesibilidad WCAG 2.1 AA: etiquetas en formularios, contraste, navegación con teclado, textos alternativos.
-- Cookies: Google Analytics 4 solo se carga tras el consentimiento del usuario.
+- Cookies: Google Analytics 4 solo se carga tras el consentimiento del usuario (`AvisoCookies.astro`, ID en `PUBLIC_GA4_ID`; sin ID no hay aviso ni analítica).
 - Textos legales: los revisa un asesor. No presentarlos como definitivos.
+- Datos de prueba: `src/lib/pruebas/datos.ts` rellena los huecos pendientes (`[PLACEHOLDER]` o vacíos) solo en desarrollo y en builds de ramas que no son `main`, con un aviso visible "Vista de prueba". Nunca pisan un dato real ni llegan a producción. Los contactos de prueba usan valores que no llevan a nadie (email en example.com).
 
 ## Esquema de cada especie
-`slug`, `familia` (palmeras, olivos, higueras, otras-ornamentales), `nombre {es,en}`, `nombreCientifico`, `descripcion {es,en}`, `alturaMin/Max` (m), `perimetroTroncoCm` (opcional), `formatos`, `disponibilidad` (disponible, bajo-pedido, agotado), `precioDesde` y `unidadPrecio`, `origen`, `destacada`, `seo {es,en}`, `revisado`. Opcionales añadidos para la web: `fotos` (imagen + `alt {es,en}`), `silueta` (dibujo provisional; por defecto el de la familia) y `datosDeEjemplo`.
+`slug`, `familia` (palmeras, olivos, higueras, otras-ornamentales), `nombre {es,en}`, `nombreCientifico`, `descripcion {es,en}`, `alturaMin/Max` (m), `perimetroTroncoCm` (opcional), `formatos`, `disponibilidad` (disponible, bajo-pedido, agotado), `precioDesde` y `unidadPrecio`, `origen`, `destacada`, `ventaUnitaria` (también se vende por unidad, con envío), `precioUnidad` (solo con `ventaUnitaria`), `seo {es,en}`, `revisado`. `alturaMax` no puede pasar de 4 m (`ALTURA_MAXIMA`). Opcionales añadidos para la web: `fotos` (imagen + `alt {es,en}`), `silueta` (dibujo provisional; por defecto el de la familia) y `datosDeEjemplo`.
 
 ## Diseño
-- Tokens en `src/styles/global.css` (`@theme` de Tailwind 4): bosque, superficie, lima, claro, texto, salvia y musgo. Los contrastes se comprueban en `tests/tokens.test.ts`.
-- El lima es el único acento. Solo va sobre fondos oscuros (texto o borde) o como relleno con texto bosque, nunca como texto sobre claro. Las superficies (`superficie-oscura`, `superficie-media`, `superficie-clara`) ajustan el foco, el acento y el botón principal.
-- Componentes base en `src/components/ui/`, siluetas SVG a escala en `src/components/ilustraciones/`. Las fotos van con `FotoOPlaceholder`: muestra la foto optimizada o "[FOTO: …]" ocupando el mismo hueco.
-- Movimiento solo con CSS y dentro de `prefers-reduced-motion: no-preference`. Las transiciones entre páginas son View Transitions nativas.
+- Dirección: "plano de paisajismo". La web se lee como una lámina técnica: alzados a línea, cotas, cuadrícula de 1 m, rótulos en mono. Nada de manchas planas, ondas ni burbujas.
+- Tokens en `src/styles/global.css` (`@theme` de Tailwind 4): bosque, superficie, lima, claro, texto, salvia y musgo; radios `tarjeta` y `panel` (casi rectos). Los contrastes se comprueban en `tests/tokens.test.ts`.
+- Tipografía: Bricolage Grotesque condensada (eje de anchura al 75 %) para titulares, DM Sans para texto e IBM Plex Mono para rótulos y medidas (`antetitulo`, `rotulo`). Las unidades van siempre en minúscula (m, cm).
+- El lima es el único acento. Solo va sobre fondos oscuros (texto, borde o cota) o como relleno con texto bosque (botón principal y la llamada final, `superficie-lima`), nunca como texto sobre claro. Las superficies (`superficie-oscura`, `superficie-media`, `superficie-clara`, `superficie-lima`) ajustan el foco, el acento, el botón principal, la cuadrícula y el fondo de los dibujos.
+- Componentes base en `src/components/ui/`. Alzados a escala en `src/components/ilustraciones/`: `Silueta` (dibujo a línea, base en el suelo, altura del SVG = altura real), `Cota` y `EscenaEscala` (lámina con cuadrícula de 1 m, cinta métrica y cotas). Las fotos van con `FotoOPlaceholder`: muestra la foto optimizada o "[FOTO: …]" ocupando el mismo hueco.
+- Portada: titular, lámina a escala, buscador por altura, perfiles de cliente, pasos, confianza y llamada final. Todos los textos están en el singleton "Portada"; las cifras (número de especies, altura máxima) salen del catálogo publicado.
+- Movimiento solo con CSS y dentro de `prefers-reduced-motion: no-preference`: el dibujo del héroe se traza al cargar (`.trazar`) y la cota cuenta hasta la altura real (`.contador-cota`). Las transiciones entre páginas son View Transitions nativas.
 - Revisión visual: `/estilo-interno/` (solo en dev y ramas que no son `main`).
 
 ## Comandos

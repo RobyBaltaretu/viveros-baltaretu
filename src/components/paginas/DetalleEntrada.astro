@@ -54,7 +54,7 @@ const datos = [
           <li aria-current="page" class="text-texto">{data.titulo[idioma]}</li>
         </ol>
       </nav>
-      {!data.revisado && <p class="mt-6 rounded-2xl border border-lima p-4 text-lima">{t.avisoEjemplo}</p>}
+      {!data.revisado && <p class="rotulo mt-6 rounded-tarjeta border border-lima p-4 text-lima">{t.avisoEjemplo}</p>}
       <h1 class="titular-gigante mt-8 max-w-5xl text-[clamp(2.5rem,1.4rem+4.5vw,6rem)]">{data.titulo[idioma]}</h1>
       {proyecto && <p class="mt-4 text-salvia"><span class="sr-only">{t.ubicacion}: </span>{proyecto.ubicacion}</p>}
       <p class="mt-8 max-w-2xl texto-entrada text-salvia">{data.resumen[idioma]}</p>
@@ -76,7 +76,7 @@ const datos = [
 
   {
     data.secciones.length > 0 && (
-      <Seccion tono="claro" bordeOrganico>
+      <Seccion tono="claro">
         <Contenedor>
           <Secciones secciones={data.secciones} idioma={idioma} />
         </Contenedor>
@@ -86,7 +86,7 @@ const datos = [
 
   {
     especies.length > 0 && (
-      <Seccion bordeOrganico>
+      <Seccion>
         <Contenedor>
           <h2 class="titular-grande">{t.especiesUsadas}</h2>
           <ul class="mt-12 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">

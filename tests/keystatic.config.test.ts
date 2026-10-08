@@ -46,6 +46,19 @@ describe('singleton Empresa', () => {
   });
 });
 
+describe('singleton Condiciones de venta', () => {
+  it('escribe en src/content/ajustes/condiciones.yaml con los campos del esquema y el archivo es válido', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { parse } = await import('yaml');
+    const { esquemaCondiciones } = await import('../src/lib/condiciones/schema');
+    const condiciones = keystaticConfig.singletons!.condiciones!;
+    expect(condiciones.path).toBe('src/content/ajustes/condiciones');
+    expect(Object.keys(condiciones.schema).sort()).toEqual(Object.keys(esquemaCondiciones.shape).sort());
+    const datos = parse(readFileSync(new URL('../src/content/ajustes/condiciones.yaml', import.meta.url), 'utf8'));
+    expect(esquemaCondiciones.safeParse(datos).error?.issues ?? []).toEqual([]);
+  });
+});
+
 describe('singleton Portada', () => {
   it('escribe en src/content/ajustes/portada.yaml con los campos del esquema', async () => {
     const { esquemaPortada } = await import('../src/lib/portada/schema');

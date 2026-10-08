@@ -1,0 +1,49 @@
+---
+/**
+ * Cota vertical de plano: línea con trazos oblicuos en los extremos y la medida
+ * rotulada en vertical. Ocupa toda la altura de su contenedor (posicionado).
+ *
+ * Con `contar`, la medida sube de 0 a su valor al cargar (solo CSS, ver
+ * `.contador-cota` en global.css); con "reducir movimiento" sale ya fija.
+ */
+import type { Idioma } from '../../i18n/ui';
+
+interface Props {
+  metros: number;
+  idioma: Idioma;
+  contar?: boolean;
+  class?: string;
+}
+
+const { metros, idioma, contar = false, class: clase } = Astro.props;
+const locale = idioma === 'es' ? 'es-ES' : 'en-GB';
+const texto = `${new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(metros)} m`;
+const centimetros = Math.round(metros * 100);
+---
+
+<span class:list={['cota pointer-events-none absolute inset-y-0 w-4', clase]} aria-hidden="true">
+  <span class="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-current"></span>
+  <span class="cota-extremo top-0"></span>
+  <span class="cota-extremo bottom-0"></span>
+  <span class="rotulo absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 bg-(--fondo-dibujo) px-1.5 whitespace-nowrap">
+    {
+      contar ? (
+        <span class="contador-cota" style={`--objetivo: ${centimetros}; --separador: "${idioma === 'es' ? ',' : '.'}"`} />
+      ) : (
+        texto
+      )
+    }
+  </span>
+</span>
+
+<style>
+  .cota-extremo {
+    position: absolute;
+    left: 50%;
+    width: 0.9rem;
+    height: 1px;
+    background: currentColor;
+    translate: -50% 0;
+    rotate: -45deg;
+  }
+</style>

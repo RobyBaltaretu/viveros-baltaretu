@@ -15,7 +15,11 @@ const textoOpcional = (max: number) =>
     .optional()
     .transform((valor) => (valor ? valor : undefined));
 
+/** Venta al por mayor (profesionales) o por unidad con envío (particulares). */
+export const TIPOS_PEDIDO = ['mayor', 'unidad'] as const;
+
 export const esquemaPresupuesto = z.object({
+  tipoPedido: z.enum(TIPOS_PEDIDO).default('mayor'),
   nombre: z.string().trim().min(2).max(100),
   empresa: textoOpcional(120),
   email: z.string().trim().toLowerCase().pipe(z.email()).pipe(z.string().max(254)),

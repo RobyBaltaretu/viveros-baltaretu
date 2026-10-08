@@ -27,7 +27,7 @@ const formato = new Intl.NumberFormat(idioma === 'es' ? 'es-ES' : 'en-GB');
       >
         <span class:list={['block h-px bg-current', Number.isInteger(m) ? 'w-4' : 'w-2 opacity-60']} />
         {Number.isInteger(m) && m > 0 && (
-          <span class="whitespace-nowrap text-xs font-semibold tabular-nums">{formato.format(m)} m</span>
+          <span class="rotulo whitespace-nowrap">{formato.format(m)} m</span>
         )}
       </div>
     ))

@@ -1,0 +1,113 @@
+---
+/**
+ * Aviso de cookies de analítica. Google Analytics 4 solo se carga después de
+ * pulsar "Aceptar" (regla de CLAUDE.md). Solo aparece si hay ID de GA4
+ * (PUBLIC_GA4_ID) o en las vistas de prueba, donde se usa un ID de prueba que
+ * nunca carga nada. El pie tiene un botón para cambiar la elección.
+ */
+import { rutas, textos, type Idioma } from '../i18n/ui';
+import { idAnalitica } from '../lib/cookies';
+
+interface Props {
+  idioma: Idioma;
+}
+
+const { idioma } = Astro.props;
+const t = textos[idioma];
+const idMedicion = idAnalitica();
+---
+
+{
+  idMedicion && (
+    <aviso-cookies data-id={idMedicion}>
+      <section
+        hidden
+        data-panel
+        aria-labelledby="aviso-cookies-titulo"
+        class="superficie-media fixed inset-x-3 bottom-3 z-50 mx-auto max-w-3xl rounded-panel border border-linea-oscura p-5 shadow-[0_20px_50px_-20px_rgb(0_0_0/0.7)] sm:inset-x-6 sm:bottom-6 sm:p-6"
+      >
+        <h2 id="aviso-cookies-titulo" class="antetitulo text-salvia">
+          {t.cookiesTitulo}
+        </h2>
+        <p class="mt-2 max-w-prose">
+          {t.cookiesTexto}{' '}
+          <a href={rutas.cookies[idioma]} class="underline underline-offset-4 hover:text-lima">
+            {t.cookiesMas}
+          </a>
+        </p>
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button type="button" data-elegir="aceptado" class="min-h-11 rounded-tarjeta bg-lima px-5 font-semibold text-bosque">
+            {t.cookiesAceptar}
+          </button>
+          <button type="button" data-elegir="rechazado" class="min-h-11 rounded-tarjeta border border-current/60 px-5 font-semibold hover:border-current">
+            {t.cookiesRechazar}
+          </button>
+        </div>
+      </section>
+    </aviso-cookies>
+  )
+}
+
+<script>
+  import { debeCargarAnalitica, guardarConsentimiento, leerConsentimiento, type Consentimiento } from '../lib/cookies/consentimiento';
+
+  type Ventana = Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void };
+
+  function cargarAnalitica(id: string) {
+    const w = window as Ventana;
+    if (w.gtag) return;
+    w.dataLayer = w.dataLayer ?? [];
+    // gtag usa el objeto `arguments`, no un array.
+    w.gtag = function () {
+      // eslint-disable-next-line prefer-rest-params
+      w.dataLayer!.push(arguments);
+    };
+    w.gtag('js', new Date());
+    w.gtag('config', id);
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`;
+    document.head.append(script);
+  }
+
+  class AvisoCookies extends HTMLElement {
+    connectedCallback() {
+      const id = this.dataset.id ?? '';
+      const panel = this.querySelector<HTMLElement>('[data-panel]');
+      if (!panel) return;
+      const almacen = (() => {
+        try {
+          return window.localStorage;
+        } catch {
+          return undefined;
+        }
+      })();
+
+      const aplicar = (consentimiento: Consentimiento | null) => {
+        if (debeCargarAnalitica(consentimiento, id)) cargarAnalitica(id);
+      };
+
+      const actual = leerConsentimiento(almacen);
+      panel.hidden = actual !== null;
+      aplicar(actual);
+
+      for (const boton of panel.querySelectorAll<HTMLButtonElement>('[data-elegir]')) {
+        boton.addEventListener('click', () => {
+          const eleccion = boton.dataset.elegir as Consentimiento;
+          guardarConsentimiento(almacen, eleccion);
+          panel.hidden = true;
+          aplicar(eleccion);
+        });
+      }
+
+      // Botón "Configurar cookies" del pie: vuelve a mostrar el aviso.
+      document.addEventListener('click', (evento) => {
+        const objetivo = (evento.target as HTMLElement | null)?.closest('[data-configurar-cookies]');
+        if (!objetivo) return;
+        panel.hidden = false;
+        panel.querySelector<HTMLButtonElement>('[data-elegir]')?.focus();
+      });
+    }
+  }
+  customElements.define('aviso-cookies', AvisoCookies);
+</script>

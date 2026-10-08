@@ -21,8 +21,12 @@
   --font-titular: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
 
-  --radius-organico: 2rem;
-  --radius-amplio: 3rem;
+  /* Rótulos y datos técnicos, como en un plano de paisajismo. */
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Esquinas casi rectas: láminas y fichas técnicas, no burbujas. */
+  --radius-tarjeta: 0.375rem;
+  --radius-panel: 0.5rem;
 
   --ease-suave: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -30,30 +34,33 @@
 /* Escala tipográfica fluida (móvil → escritorio). */
 @utility titular-gigante {
   font-family: var(--font-titular);
-  font-weight: 800;
-  font-size: clamp(3rem, 1.6rem + 7vw, 9rem);
-  line-height: 0.9;
-  letter-spacing: -0.035em;
+  font-weight: 700;
+  font-stretch: 75%;
+  font-size: clamp(3.25rem, 1.4rem + 8vw, 10rem);
+  line-height: 0.86;
+  letter-spacing: -0.025em;
   text-wrap: balance;
   overflow-wrap: break-word;
   hyphens: auto;
 }
 @utility titular-grande {
   font-family: var(--font-titular);
-  font-weight: 750;
-  font-size: clamp(2.25rem, 1.4rem + 4vw, 5rem);
-  line-height: 0.95;
-  letter-spacing: -0.03em;
+  font-weight: 700;
+  font-stretch: 75%;
+  font-size: clamp(2.5rem, 1.4rem + 4.6vw, 5.75rem);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
   text-wrap: balance;
   overflow-wrap: break-word;
   hyphens: auto;
 }
 @utility titular-medio {
   font-family: var(--font-titular);
-  font-weight: 700;
+  font-weight: 650;
+  font-stretch: 85%;
   font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.25rem);
-  line-height: 1.05;
-  letter-spacing: -0.02em;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
   text-wrap: balance;
   overflow-wrap: break-word;
   hyphens: auto;
@@ -69,11 +76,27 @@
   text-wrap: pretty;
 }
 @utility antetitulo {
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
   font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+/* Rótulo técnico pequeño (cotas, referencias de lámina, datos de ficha). */
+@utility rotulo {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+/* Cuadrícula de plano. --paso-cuadricula marca la distancia entre líneas (p. ej. 1 m de la escena). */
+@utility cuadricula {
+  background-image:
+    linear-gradient(to right, var(--color-cuadricula) 1px, transparent 1px),
+    linear-gradient(to top, var(--color-cuadricula) 1px, transparent 1px);
+  background-size: var(--paso-cuadricula, 3rem) var(--paso-cuadricula, 3rem);
+  background-position: left bottom;
 }
 
 /*
@@ -87,6 +110,8 @@
   --color-linea: var(--color-linea-oscura);
   --boton-fondo: var(--color-lima);
   --boton-texto: var(--color-bosque);
+  --fondo-dibujo: var(--color-bosque);
+  --color-cuadricula: rgb(238 243 230 / 0.06);
   background-color: var(--color-bosque);
   color: var(--color-texto);
 }
@@ -97,6 +122,8 @@
   --color-linea: var(--color-linea-oscura);
   --boton-fondo: var(--color-lima);
   --boton-texto: var(--color-bosque);
+  --fondo-dibujo: var(--color-superficie);
+  --color-cuadricula: rgb(238 243 230 / 0.07);
   background-color: var(--color-superficie);
   color: var(--color-texto);
 }
@@ -108,7 +135,22 @@
   /* Sobre claro el botón principal es bosque: el lima no contrasta con el fondo. */
   --boton-fondo: var(--color-bosque);
   --boton-texto: var(--color-claro);
+  --fondo-dibujo: var(--color-claro);
+  --color-cuadricula: rgb(14 37 25 / 0.07);
   background-color: var(--color-claro);
+  color: var(--color-bosque);
+}
+/* Relleno lima con texto bosque: solo para la llamada final (el único bloque lima de la web). */
+@utility superficie-lima {
+  --color-foco: var(--color-bosque);
+  --color-acento: var(--color-bosque);
+  --color-secundario: var(--color-bosque);
+  --color-linea: rgb(14 37 25 / 0.25);
+  --boton-fondo: var(--color-bosque);
+  --boton-texto: var(--color-lima);
+  --fondo-dibujo: var(--color-lima);
+  --color-cuadricula: rgb(14 37 25 / 0.08);
+  background-color: var(--color-lima);
   color: var(--color-bosque);
 }
 
@@ -124,6 +166,8 @@
     --color-linea: var(--color-linea-oscura);
     --boton-fondo: var(--color-lima);
     --boton-texto: var(--color-bosque);
+    --fondo-dibujo: var(--color-bosque);
+    --color-cuadricula: rgb(238 243 230 / 0.06);
     background-color: var(--color-bosque);
     color: var(--color-texto);
     font-family: var(--font-sans);
@@ -134,7 +178,7 @@
   :focus-visible {
     outline: 3px solid var(--color-foco);
     outline-offset: 3px;
-    border-radius: 0.5rem;
+    border-radius: 0.25rem;
   }
   ::selection {
     background-color: var(--color-lima);
@@ -144,6 +188,34 @@
   .sin-js .solo-js {
     display: none !important;
   }
+  /* Regla horizontal: marca larga cada 10 rayas, como una cinta métrica. */
+  .regla-horizontal {
+    background-image:
+      repeating-linear-gradient(to right, currentColor 0 1px, transparent 1px 5rem),
+      repeating-linear-gradient(to right, currentColor 0 1px, transparent 1px 0.5rem);
+    background-size:
+      100% 100%,
+      100% 40%;
+    background-repeat: no-repeat;
+    background-position: left top;
+  }
+  /* Contenido alternativo para quien navega sin JavaScript. */
+  html:not(.sin-js) .solo-sin-js {
+    display: none !important;
+  }
+  /* Subrayado lima al pasar por un enlace de lista (decorativo: el texto mantiene su color). */
+  .subrayado-hover {
+    text-decoration-line: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 0.14em;
+    text-underline-offset: 0.14em;
+    text-decoration-skip-ink: none;
+    transition: text-decoration-color 0.25s;
+  }
+  .group:hover .subrayado-hover,
+  .group:focus-visible .subrayado-hover {
+    text-decoration-color: var(--color-lima);
+  }
   /* Subrayado de acento en secciones claras: el "guiño" lima sin perder contraste. */
   .subrayado-lima {
     text-decoration-line: underline;
@@ -152,6 +224,88 @@
     text-underline-offset: 0.12em;
     text-decoration-skip-ink: none;
   }
+}
+
+/* Regla de altura: dos controles deslizantes superpuestos (catálogo y portada). */
+@layer components {
+  /* Dos controles deslizantes superpuestos: solo los tiradores reciben el puntero. */
+  .regla-pista input[type='range'] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    margin: 0;
+    background: none;
+    pointer-events: none;
+    appearance: none;
+  }
+  .regla-pista input[type='range']::-webkit-slider-thumb {
+    appearance: none;
+    pointer-events: auto;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.25rem;
+    background: var(--color-lima);
+    border: 4px solid var(--color-bosque);
+    box-shadow: 0 0 0 2px var(--color-lima);
+    cursor: grab;
+  }
+  .regla-pista input[type='range']::-moz-range-thumb {
+    pointer-events: auto;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.25rem;
+    background: var(--color-lima);
+    border: 4px solid var(--color-bosque);
+    box-shadow: 0 0 0 2px var(--color-lima);
+    cursor: grab;
+  }
+  .regla-pista input[type='range']:focus-visible {
+    outline: none;
+  }
+  .regla-pista input[type='range']:focus-visible::-webkit-slider-thumb {
+    outline: 3px solid var(--color-texto);
+    outline-offset: 3px;
+  }
+  .regla-pista input[type='range']:focus-visible::-moz-range-thumb {
+    outline: 3px solid var(--color-texto);
+    outline-offset: 3px;
+  }
+  /* La banda va de un tirador al otro (0,875 rem = medio tirador a cada lado). */
+  .banda {
+    left: calc(0.875rem + (100% - 1.75rem) * var(--desde-n, 0));
+    right: calc(0.875rem + (100% - 1.75rem) * (1 - var(--hasta-n, 1)));
+  }
+}
+
+/*
+ * Contador de cotas en centímetros: --objetivo es la medida final. Sin animación
+ * (o con "reducir movimiento") muestra directamente el valor final.
+ */
+@property --cm-total {
+  syntax: '<integer>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --cota-m {
+  syntax: '<integer>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --cota-cm {
+  syntax: '<integer>';
+  inherits: true;
+  initial-value: 0;
+}
+.contador-cota {
+  --cm-total: var(--objetivo, 0);
+  /* Entero redondeado: restar 49 antes de dividir equivale a truncar. */
+  --cota-m: calc((var(--cm-total) - 49) / 100);
+  --cota-cm: calc(var(--cm-total) - var(--cota-m) * 100);
+  counter-reset: metros var(--cota-m) centimetros var(--cota-cm);
+  font-variant-numeric: tabular-nums;
+}
+.contador-cota::after {
+  content: counter(metros) var(--separador, ',') counter(centimetros, decimal-leading-zero) ' m';
 }
 
 /* Movimiento: solo si la persona no ha pedido reducirlo. */
@@ -180,6 +334,55 @@
     }
     50% {
       rotate: 1.6deg;
+    }
+  }
+
+  .contador-cota {
+    animation: contar-cota var(--duracion-cota, 2.6s) cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--retraso-cota, 0.4s);
+  }
+  @keyframes contar-cota {
+    from {
+      --cm-total: 0;
+    }
+  }
+
+  /* Dibujo a mano alzada: los trazos con pathLength="1" se dibujan al cargar. */
+  .trazar :is(path, line, circle, ellipse, polyline) {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    /* Al terminar se quita el discontinuo: con vector-effect el largo del trazo no es exacto. */
+    animation:
+      trazar var(--duracion-trazo, 1.6s) var(--ease-suave) forwards,
+      trazo-completo 0s linear forwards;
+    animation-delay:
+      calc(var(--retraso-trazo, 0s) + var(--retraso-base, 0s)),
+      calc(var(--retraso-trazo, 0s) + var(--retraso-base, 0s) + var(--duracion-trazo, 1.6s));
+  }
+  .trazar :is(path, circle, ellipse)[fill]:not([fill='none']) {
+    fill-opacity: 0;
+    animation:
+      trazar var(--duracion-trazo, 1.6s) var(--ease-suave) forwards,
+      trazo-completo 0s linear forwards,
+      rellenar 0.6s ease-out forwards;
+    animation-delay:
+      calc(var(--retraso-trazo, 0s) + var(--retraso-base, 0s)),
+      calc(var(--retraso-trazo, 0s) + var(--retraso-base, 0s) + var(--duracion-trazo, 1.6s)),
+      calc(var(--retraso-trazo, 0s) + var(--retraso-base, 0s) + 0.9s);
+  }
+  @keyframes trazar {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes trazo-completo {
+    to {
+      stroke-dasharray: none;
+    }
+  }
+  @keyframes rellenar {
+    to {
+      fill-opacity: 1;
     }
   }
 

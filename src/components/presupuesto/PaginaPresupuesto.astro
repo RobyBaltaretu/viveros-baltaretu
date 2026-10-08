@@ -9,6 +9,7 @@ import Boton from '../ui/Boton.astro';
 import Contenedor from '../ui/Contenedor.astro';
 import Seccion from '../ui/Seccion.astro';
 import { rutas, textos, type Idioma } from '../../i18n/ui';
+import { obtenerCondiciones } from '../../lib/condiciones';
 import { esPlaceholder, obtenerEmpresa } from '../../lib/empresa';
 import { CAMPO_TRAMPA } from '../../lib/presupuesto/esquema';
 import { TURNSTILE_PRUEBA } from '../../lib/presupuesto/turnstile';
@@ -19,7 +20,7 @@ interface Props {
 
 const { idioma } = Astro.props;
 const t = textos[idioma];
-const empresa = await obtenerEmpresa();
+const [empresa, condiciones] = await Promise.all([obtenerEmpresa(), obtenerCondiciones()]);
 const claveTurnstile = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || (import.meta.env.DEV ? TURNSTILE_PRUEBA.claveSitio : '');
 const contactos = [
   { etiqueta: t.email, valor: empresa.email, enlace: esPlaceholder(empresa.email) ? undefined : `mailto:${empresa.email}` },
@@ -29,7 +30,7 @@ const contactos = [
     enlace: esPlaceholder(empresa.telefono) ? undefined : `tel:${empresa.telefono.replace(/[^\d+]/g, '')}`,
   },
 ].filter((c) => c.valor);
-const campo = 'mt-2 block w-full rounded-2xl border-2 border-linea-clara bg-white px-4 py-3 text-bosque aria-[invalid=true]:border-[#9b2c1d]';
+const campo = 'mt-2 block w-full rounded-tarjeta border-2 border-linea-clara bg-white px-4 py-3 text-bosque aria-[invalid=true]:border-[#9b2c1d]';
 const etiqueta = 'font-semibold';
 const textosScript = {
   enviando: t.enviando,
@@ -55,7 +56,7 @@ const textosScript = {
     </Contenedor>
   </Seccion>
 
-  <Seccion tono="claro" bordeOrganico>
+  <Seccion tono="claro">
     <Contenedor class="grid gap-12 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:gap-16">
       <formulario-presupuesto
         class="min-w-0"
@@ -65,15 +66,31 @@ const textosScript = {
         data-textos={JSON.stringify(textosScript)}
       >
         <noscript>
-          <div class="rounded-3xl border-2 border-bosque p-6">
+          <div class="rounded-panel border-2 border-bosque p-6">
             <p>{t.sinJsFormulario}</p>
             <ul class="mt-3">{contactos.map((c) => <li><strong>{c.etiqueta}:</strong> {c.valor}</li>)}</ul>
           </div>
         </noscript>
 
         <form method="post" action="/api/presupuesto" class="solo-js grid gap-6" novalidate>
-          <div role="alert" data-error class="rounded-2xl border-2 border-[#9b2c1d] bg-white p-4 font-semibold text-[#9b2c1d]" hidden></div>
+          <div role="alert" data-error class="rounded-tarjeta border-2 border-[#9b2c1d] bg-white p-4 font-semibold text-[#9b2c1d]" hidden></div>
 
+          <fieldset>
+            <legend class={etiqueta}>{t.campoTipoPedido}</legend>
+            <div class="mt-3 flex flex-wrap gap-3">
+              {
+                [
+                  ['mayor', t.tipoPedidoMayor],
+                  ['unidad', t.tipoPedidoUnidad],
+                ].map(([valor, texto]) => (
+                  <label class="inline-flex min-h-12 cursor-pointer items-center gap-3 rounded-tarjeta border-2 border-linea-clara bg-white px-4 has-[:checked]:border-bosque has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-bosque">
+                    <input type="radio" name="tipoPedido" value={valor} checked={valor === 'mayor'} class="size-4 accent-bosque" />
+                    {texto}
+                  </label>
+                ))
+              }
+            </div>
+          </fieldset>
           <div class="grid gap-6 sm:grid-cols-2">
             <div>
               <label for="campo-nombre" class={etiqueta}>{t.campoNombre} <span class="font-normal text-musgo">({t.obligatorio})</span></label>
@@ -132,7 +149,7 @@ const textosScript = {
       </formulario-presupuesto>
 
       <aside class="min-w-0 lg:sticky lg:top-28 lg:self-start" aria-labelledby="resumen-lista">
-        <div class="rounded-(--radius-amplio) superficie-media p-6 sm:p-8">
+        <div class="rounded-panel superficie-media p-6 sm:p-8">
           <h2 id="resumen-lista" class="titular-medio">{t.resumenLista}</h2>
           <ul data-resumen class="mt-6 grid gap-3"></ul>
           <p data-resumen-vacio class="mt-6 text-salvia">{t.sinEspeciesFormulario}</p>
@@ -155,6 +172,21 @@ const textosScript = {
             </dl>
           )
         }
+        <h2 class="antetitulo mt-10 text-musgo">{t.condicionesVenta}</h2>
+        <dl class="mt-3 border-t border-linea-clara">
+          {
+            [
+              [t.pedidoMinimo, condiciones.pedidoMinimo[idioma]],
+              [t.plazosMayor, condiciones.plazosMayor[idioma]],
+              [t.envioUnidad, condiciones.envioUnidad[idioma]],
+            ].map(([etiqueta, valor]) => (
+              <div class="border-b border-linea-clara py-3">
+                <dt class="rotulo text-musgo">{etiqueta}</dt>
+                <dd class="mt-1 text-sm">{valor}</dd>
+              </div>
+            ))
+          }
+        </dl>
       </aside>
     </Contenedor>
   </Seccion>

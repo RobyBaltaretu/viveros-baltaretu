@@ -1,5 +1,5 @@
 import { collection, config, fields, singleton } from '@keystatic/core';
-import { SLUG_REGEX } from './src/lib/catalogo/schema';
+import { ALTURA_MAXIMA, SLUG_REGEX } from './src/lib/catalogo/schema';
 import { WHATSAPP_REGEX } from './src/lib/empresa/schema';
 import { ICONOS_CONFIANZA } from './src/lib/portada/schema';
 
@@ -150,6 +150,19 @@ export default config({
         direccion: fields.text({ label: 'Dirección', multiline: true }),
       },
     }),
+    condiciones: singleton({
+      label: 'Condiciones de venta',
+      path: 'src/content/ajustes/condiciones',
+      format: { data: 'yaml' },
+      schema: {
+        pedidoMinimo: textoBilingue('Pedido mínimo al por mayor', { multilinea: true }),
+        plazosMayor: textoBilingue('Plazos de entrega al por mayor', { multilinea: true }),
+        envioUnidad: textoBilingue('Envío por unidad: gastos y plazos', {
+          multilinea: true,
+          descripcion: 'Se muestra en las fichas que se venden por unidad.',
+        }),
+      },
+    }),
     textosCatalogo: singleton({
       label: 'Textos del catálogo',
       path: 'src/content/ajustes/catalogo',
@@ -174,10 +187,34 @@ export default config({
       schema: {
         titular: textoBilingue('Titular', { descripcion: 'Primera parte del titular principal.' }),
         titularDestacado: textoBilingue('Final del titular (resaltado)', {
-          descripcion: 'Se muestra en color lima justo después del titular.',
+          descripcion: 'Se muestra resaltado justo después del titular.',
         }),
         entradilla: textoBilingue('Entradilla', { multilinea: true }),
-        tituloFranja: textoBilingue('Título de la franja de especies'),
+        laminaTitulo: textoBilingue('Lámina a escala: título'),
+        laminaTexto: textoBilingue('Lámina a escala: texto', { multilinea: true }),
+        alturaTitulo: textoBilingue('Buscador por altura: título'),
+        alturaTexto: textoBilingue('Buscador por altura: texto', { multilinea: true }),
+        perfilesTitulo: textoBilingue('Para quién: título'),
+        perfiles: fields.array(
+          fields.object({ titulo: textoBilingue('Título'), texto: textoBilingue('Texto', { multilinea: true }) }),
+          {
+            label: 'Para quién',
+            description: 'Hasta 6 tipos de cliente. No menciones clientes concretos si no está confirmado.',
+            itemLabel: (props) => props.fields.titulo.fields.es.value || 'Perfil sin título',
+            validation: { length: { max: 6 } },
+          },
+        ),
+        pasosTitulo: textoBilingue('Pasos: título'),
+        pasos: fields.array(
+          fields.object({ titulo: textoBilingue('Título'), texto: textoBilingue('Texto', { multilinea: true }) }),
+          {
+            label: 'Pasos para pedir',
+            description: 'Hasta 4 pasos.',
+            itemLabel: (props) => props.fields.titulo.fields.es.value || 'Paso sin título',
+            validation: { length: { max: 4 } },
+          },
+        ),
+        confianzaTitulo: textoBilingue('Bloque de confianza: título'),
         confianza: fields.array(
           fields.object({
             icono: fields.select({
@@ -200,8 +237,8 @@ export default config({
             validation: { length: { max: 6 } },
           },
         ),
-        mision: textoBilingue('Misión', { multilinea: true }),
-        vision: textoBilingue('Visión', { multilinea: true }),
+        mision: textoBilingue('Misión', { multilinea: true, descripcion: 'Se muestra en la página Nosotros.' }),
+        vision: textoBilingue('Visión', { multilinea: true, descripcion: 'Se muestra en la página Nosotros.' }),
         llamadaTitulo: textoBilingue('Llamada a presupuesto: título'),
         llamadaTexto: textoBilingue('Llamada a presupuesto: texto', { multilinea: true }),
       },
@@ -292,12 +329,13 @@ export default config({
         alturaMin: fields.number({
           label: 'Altura mínima (m)',
           step: 0.1,
-          validation: { isRequired: true, min: 0.1 },
+          validation: { isRequired: true, min: 0.1, max: ALTURA_MAXIMA },
         }),
         alturaMax: fields.number({
           label: 'Altura máxima (m)',
+          description: `El vivero trabaja planta de hasta ${ALTURA_MAXIMA} m.`,
           step: 0.1,
-          validation: { isRequired: true, min: 0.1 },
+          validation: { isRequired: true, min: 0.1, max: ALTURA_MAXIMA },
         }),
         perimetroTroncoCm: fields.array(
           fields.integer({ label: 'Perímetro (cm)', validation: { isRequired: true, min: 1 } }),
@@ -328,7 +366,13 @@ export default config({
         }),
         precioDesde: fields.number({
           label: 'Precio desde (€)',
-          description: 'Se muestra como "desde X €". Déjalo vacío para mostrar "precio bajo presupuesto".',
+          description: 'Precio al por mayor. Se muestra como "desde X €". Déjalo vacío para mostrar "precio bajo presupuesto".',
+          step: 0.01,
+          validation: { min: 0.01 },
+        }),
+        precioUnidad: fields.number({
+          label: 'Precio por unidad (€)',
+          description: 'Solo si se vende también por unidad. Precio de una planta suelta, sin el envío.',
           step: 0.01,
           validation: { min: 0.01 },
         }),
@@ -339,6 +383,10 @@ export default config({
         }),
         origen: fields.text({ label: 'Origen', validation: { isRequired: true } }),
         destacada: fields.checkbox({ label: 'Destacada', description: 'Se mostrará en la portada.' }),
+        ventaUnitaria: fields.checkbox({
+          label: 'También por unidad',
+          description: 'Marca si esta especie se puede comprar por unidad y enviar al destino (además de al por mayor).',
+        }),
         silueta: fields.select({
           label: 'Dibujo provisional',
           description: 'Silueta que se muestra mientras no haya fotos y en el comparador de escala.',

@@ -2,8 +2,8 @@ titulo:
   es: Reparto a toda España
   en: Delivery across Spain
 entradilla:
-  es: Servimos desde la provincia de Valencia a obras de toda España.
-  en: We supply projects all over Spain from the province of Valencia.
+  es: Servimos desde la provincia de Valencia a toda España, en pedidos al por mayor y, en algunas especies, por unidad.
+  en: We ship from the province of Valencia all over Spain, wholesale and, for some species, by the single plant.
 secciones:
   - titulo:
       es: Zonas y plazos
@@ -12,17 +12,23 @@ secciones:
       es: '[PLACEHOLDER: zonas de reparto y plazos habituales]'
       en: '[PLACEHOLDER: delivery areas and usual lead times]'
   - titulo:
-      es: Transporte de ejemplares grandes
-      en: Moving large specimens
+      es: Pedidos al por mayor
+      en: Wholesale orders
     texto:
-      es: '[PLACEHOLDER: tipo de vehículos, grúa, preparación del cepellón o del contenedor]'
-      en: '[PLACEHOLDER: vehicles, crane, root ball or container preparation]'
+      es: '[PLACEHOLDER: pedido mínimo, transporte y preparación de la planta (contenedor o cepellón)]'
+      en: '[PLACEHOLDER: minimum order, transport and how plants are prepared (container or root ball)]'
   - titulo:
-      es: Descarga en obra
-      en: Unloading on site
+      es: Envíos por unidad
+      en: Single-plant shipping
     texto:
-      es: '[PLACEHOLDER: qué hace falta en obra para la descarga (acceso, espacio, medios)]'
-      en: '[PLACEHOLDER: what is needed on site for unloading (access, space, equipment)]'
+      es: '[PLACEHOLDER: qué especies se envían por unidad, embalaje, gastos y plazos de envío]'
+      en: '[PLACEHOLDER: which species ship as single plants, packaging, shipping costs and times]'
+  - titulo:
+      es: Entrega y descarga
+      en: Delivery and unloading
+    texto:
+      es: '[PLACEHOLDER: qué hace falta para la descarga en obra, tienda o domicilio]'
+      en: '[PLACEHOLDER: what is needed to unload at a site, shop or home]'
   - titulo:
       es: Documentación
       en: Paperwork
