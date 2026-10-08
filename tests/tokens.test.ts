@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 // color y rompe el contraste mínimo WCAG 2.1 AA.
 const css = readFileSync(new URL('../src/styles/global.css', import.meta.url), 'utf8');
 const color = (nombre: string): string => {
+  if (nombre === 'blanco') return '#ffffff';
   const encontrado = css.match(new RegExp(`--color-${nombre}:\\s*(#[0-9a-f]{6})`, 'i'));
   if (!encontrado) throw new Error(`No existe --color-${nombre}`);
   return encontrado[1]!;
@@ -22,24 +23,24 @@ function contraste(a: string, b: string): number {
 
 // [texto, fondo, mínimo]. 4.5 = texto normal (AA).
 const combinaciones: [string, string, number][] = [
-  ['texto', 'bosque', 4.5],
-  ['texto', 'superficie', 4.5],
-  ['lima', 'bosque', 4.5],
-  ['lima', 'superficie', 4.5],
-  ['bosque', 'lima', 4.5],
-  ['salvia', 'bosque', 4.5],
-  ['salvia', 'superficie', 4.5],
-  ['bosque', 'claro', 4.5],
-  ['musgo', 'claro', 4.5],
-  ['claro', 'bosque', 4.5],
+  ['tinta', 'crema', 4.5],
+  ['tinta', 'papel', 4.5],
+  ['tinta', 'verdor', 4.5],
+  ['gris', 'crema', 4.5],
+  ['gris', 'papel', 4.5],
+  ['gris', 'verdor', 4.5],
+  ['oliva', 'crema', 4.5],
+  ['oliva', 'papel', 4.5],
+  ['oliva', 'verdor', 4.5],
+  ['terracota', 'crema', 4.5],
+  ['terracota', 'papel', 4.5],
+  ['blanco', 'terracota', 4.5],
+  ['crema', 'oliva', 4.5],
+  ['verdor', 'oliva', 4.5],
 ];
 
 describe('contraste de los tokens de color (WCAG 2.1 AA)', () => {
   it.each(combinaciones)('%s sobre %s ≥ %d:1', (texto, fondo, minimo) => {
     expect(contraste(color(texto), color(fondo))).toBeGreaterThanOrEqual(minimo);
-  });
-
-  it('el lima NO es legible sobre claro (por eso nunca se usa así)', () => {
-    expect(contraste(color('lima'), color('claro'))).toBeLessThan(3);
   });
 });

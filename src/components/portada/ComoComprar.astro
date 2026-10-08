@@ -1,0 +1,73 @@
+---
+/**
+ * Dos formas de comprar, una por público: al por mayor (profesionales) y por
+ * unidad con envío (particulares). Las condiciones salen del panel.
+ */
+import Boton from '../ui/Boton.astro';
+import Contenedor from '../ui/Contenedor.astro';
+import Seccion from '../ui/Seccion.astro';
+import { rutas, textos, type Idioma } from '../../i18n/ui';
+import type { Condiciones } from '../../lib/condiciones/schema';
+import type { Portada } from '../../lib/portada/schema';
+
+interface Props {
+  idioma: Idioma;
+  portada: Portada;
+  condiciones: Condiciones;
+  /** Si no hay ninguna especie a la venta por unidad, solo se muestra la venta al por mayor. */
+  hayVentaUnitaria: boolean;
+}
+
+const { idioma, portada, condiciones, hayVentaUnitaria } = Astro.props;
+const t = textos[idioma];
+const opciones = [
+  {
+    publico: t.paraProfesionales,
+    titulo: portada.mayorTitulo[idioma],
+    texto: portada.mayorTexto[idioma],
+    detalles: [condiciones.pedidoMinimo[idioma], condiciones.plazosMayor[idioma]],
+    boton: { href: rutas.presupuesto[idioma], texto: t.pedirPresupuesto },
+  },
+  ...(hayVentaUnitaria
+    ? [
+        {
+          publico: t.paraParticulares,
+          titulo: portada.unidadTitulo[idioma],
+          texto: portada.unidadTexto[idioma],
+          detalles: [condiciones.envioUnidad[idioma]],
+          boton: { href: `${rutas.catalogo[idioma]}?unidad=1`, texto: t.verPlantasPorUnidad },
+        },
+      ]
+    : []),
+];
+---
+
+<Seccion>
+  <Contenedor>
+    <h2 class="titular-grande">{portada.comprarTitulo[idioma]}</h2>
+    <div class:list={['mt-12 grid gap-6', opciones.length > 1 && 'md:grid-cols-2']}>
+      {
+        opciones.map((o) => (
+          <article class="flex flex-col rounded-panel border border-linea bg-papel p-7 sm:p-9">
+            <p class="antetitulo text-oliva">{o.publico}</p>
+            <h3 class="titular-grande mt-3">{o.titulo}</h3>
+            <p class="mt-4 texto-entrada">{o.texto}</p>
+            <ul class="mt-6 grid gap-2 text-gris" role="list">
+              {o.detalles.map((d) => (
+                <li class="flex gap-2">
+                  <span class="mt-2.5 size-1.5 shrink-0 rounded-full bg-oliva" aria-hidden="true" />
+                  {d}
+                </li>
+              ))}
+            </ul>
+            <p class="mt-auto pt-8">
+              <Boton href={o.boton.href} flecha>
+                {o.boton.texto}
+              </Boton>
+            </p>
+          </article>
+        ))
+      }
+    </div>
+  </Contenedor>
+</Seccion>

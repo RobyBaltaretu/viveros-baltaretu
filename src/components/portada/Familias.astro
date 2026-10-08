@@ -1,0 +1,63 @@
+---
+/** Qué cultivamos: una tarjeta por familia con su dibujo y su rango de alturas (datos del catálogo publicado). */
+import type { CollectionEntry } from 'astro:content';
+import Silueta from '../ilustraciones/Silueta.astro';
+import { SILUETA_POR_FAMILIA } from '../ilustraciones/siluetas';
+import Contenedor from '../ui/Contenedor.astro';
+import Seccion from '../ui/Seccion.astro';
+import { familias, rutaFamilia, textos, type Idioma } from '../../i18n/ui';
+import { FAMILIAS } from '../../lib/catalogo/schema';
+import { formatearRango } from '../../lib/catalogo/formato';
+
+interface Props {
+  idioma: Idioma;
+  titulo: string;
+  texto: string;
+  especies: CollectionEntry<'catalogo'>[];
+}
+
+const { idioma, titulo, texto, especies } = Astro.props;
+const t = textos[idioma];
+
+const tarjetas = FAMILIAS.map((familia) => {
+  const deFamilia = especies.filter((e) => e.data.familia === familia);
+  return {
+    familia,
+    cantidad: deFamilia.length,
+    rango: deFamilia.length
+      ? formatearRango(
+          Math.min(...deFamilia.map((e) => e.data.alturaMin)),
+          Math.max(...deFamilia.map((e) => e.data.alturaMax)),
+          'm',
+          idioma,
+        )
+      : '',
+  };
+}).filter((f) => f.cantidad > 0);
+---
+
+{
+  tarjetas.length > 0 && (
+    <Seccion tono="papel">
+      <Contenedor>
+        <h2 class="titular-grande">{titulo}</h2>
+        <p class="mt-4 max-w-xl texto-entrada text-gris">{texto}</p>
+        <ul class="mt-10 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4" role="list">
+          {tarjetas.map((f) => (
+            <li>
+              <a href={rutaFamilia(idioma, f.familia)} class="group block h-full rounded-panel border border-linea bg-crema p-3 transition-colors hover:border-oliva sm:p-5">
+                <div class="superficie-verde flex aspect-[4/3] items-end justify-center rounded-tarjeta pt-5 text-oliva" aria-hidden="true">
+                  <Silueta tipo={SILUETA_POR_FAMILIA[f.familia]} quieta class="h-[85%] w-auto" />
+                </div>
+                <h3 class="titular-medio subrayado-hover mt-4">{familias[f.familia][idioma]}</h3>
+                <p class="mt-1 text-gris">
+                  {f.cantidad === 1 ? t.resultadosUno : t.resultados.replace('{n}', String(f.cantidad))} · {f.rango}
+                </p>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </Contenedor>
+    </Seccion>
+  )
+}

@@ -29,30 +29,30 @@ const id = 'comparador-altura';
 ---
 
 <comparador-escala
-  class="block rounded-panel border border-linea-oscura bg-superficie p-6 sm:p-8"
+  class="superficie-verde block rounded-panel p-6 sm:p-8"
   style={`--escena: ${escena}; --altura: ${alturaMax}`}
   data-locale={locale}
   data-veces={t.vecesPersona}
 >
   <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-    <h2 class="antetitulo text-salvia">{t.comparadorTitulo}</h2>
-    <p class="titular-grande text-lima" aria-hidden="true"><span data-valor>{metros.format(alturaMax)}</span> m</p>
+    <h2 class="antetitulo text-gris">{t.comparadorTitulo}</h2>
+    <p class="titular-grande text-oliva" aria-hidden="true"><span data-valor>{metros.format(alturaMax)}</span> m</p>
   </div>
-  <p class="mt-1 text-right text-sm text-salvia" data-veces-texto aria-hidden="true">{textoVeces(alturaMax)}</p>
+  <p class="mt-1 text-right text-sm text-gris" data-veces-texto aria-hidden="true">{textoVeces(alturaMax)}</p>
 
   <figure class="mt-6">
     <div
-      class="cuadricula grid grid-cols-[3rem_auto_minmax(0,1fr)] items-end gap-x-[clamp(1rem,4vw,3rem)] border-b border-texto/50"
-      style={`height: clamp(16rem, 52vh, 26rem); grid-template-rows: minmax(0, 1fr); --paso-cuadricula: calc(clamp(16rem, 52vh, 26rem) / ${escena})`}
+      class="grid grid-cols-[3rem_auto_minmax(0,1fr)] items-end gap-x-[clamp(1rem,4vw,3rem)] border-b-2 border-oliva/30"
+      style="height: clamp(16rem, 46vh, 22rem); grid-template-rows: minmax(0, 1fr)"
     >
-      <CintaMetrica alturaMax={escena} idioma={idioma} class="h-full text-salvia" />
+      <CintaMetrica alturaMax={escena} idioma={idioma} class="h-full text-gris" />
       <div class="flex h-full flex-col justify-end">
-        <Silueta tipo="persona" titulo={`${t.persona}, ${t.alturaPersona}`} class="w-auto text-lima" style={`height: ${(1.8 / escena) * 100}%`} />
+        <Silueta tipo="persona" titulo={`${t.persona}, ${t.alturaPersona}`} class="w-auto text-gris" style={`height: ${(1.8 / escena) * 100}%`} />
       </div>
       <div class="flex h-full min-w-0 items-end justify-center">
         <Silueta
           tipo={silueta}
-          class="planta w-auto max-w-full text-texto"
+          class="planta w-auto max-w-full text-oliva"
         />
       </div>
     </div>
@@ -75,13 +75,13 @@ const id = 'comparador-altura';
           step={paso}
           value={alturaMax}
           aria-valuetext={`${metros.format(alturaMax)} m`}
-          class="mt-3 block w-full accent-lima"
+          class="mt-3 block w-full accent-oliva"
         />
-        <div class="mt-1 flex justify-between text-sm tabular-nums text-salvia" aria-hidden="true">
+        <div class="mt-1 flex justify-between text-sm tabular-nums text-gris" aria-hidden="true">
           <span>{metros.format(alturaMin)} m</span>
           <span>{metros.format(alturaMax)} m</span>
         </div>
-        <p class="mt-4 text-sm text-salvia">{t.comparadorAyuda}</p>
+        <p class="mt-4 text-sm text-gris">{t.comparadorAyuda}</p>
       </div>
     )
   }

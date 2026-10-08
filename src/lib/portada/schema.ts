@@ -10,15 +10,15 @@ export const esquemaPortada = z.object({
   /** Parte final del titular, resaltada en lima. */
   titularDestacado: bilingue,
   entradilla: bilingue,
-  /** Lámina con las especies dibujadas a escala. */
-  laminaTitulo: bilingue,
-  laminaTexto: bilingue,
-  /** Buscador por altura. */
-  alturaTitulo: bilingue,
-  alturaTexto: bilingue,
-  /** Para quién trabaja el vivero. */
-  perfilesTitulo: bilingue,
-  perfiles: z.array(z.object({ titulo: bilingue, texto: bilingue })).max(6),
+  /** Las familias del catálogo. */
+  familiasTitulo: bilingue,
+  familiasTexto: bilingue,
+  /** Cómo comprar: al por mayor (profesionales) o por unidad (particulares). */
+  comprarTitulo: bilingue,
+  mayorTitulo: bilingue,
+  mayorTexto: bilingue,
+  unidadTitulo: bilingue,
+  unidadTexto: bilingue,
   /** Cómo se pide, paso a paso. */
   pasosTitulo: bilingue,
   pasos: z.array(z.object({ titulo: bilingue, texto: bilingue })).max(4),

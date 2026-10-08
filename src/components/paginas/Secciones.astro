@@ -17,7 +17,7 @@ const Titulo = `h${nivel}` as 'h2' | 'h3';
 <div class="grid gap-12">
   {
     secciones.map((s) => (
-      <section class="aparecer grid gap-4 border-t border-(--color-linea) pt-8 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-10">
+      <section class="aparecer grid gap-4 border-t border-(--color-linea-actual) pt-8 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-10">
         {s.titulo?.[idioma] ? <Titulo class="titular-medio">{s.titulo[idioma]}</Titulo> : <span />}
         <div class="grid max-w-prose gap-4 texto-entrada">
           {parrafos(s.texto[idioma]).map((p) => (

@@ -34,7 +34,7 @@ const {
 ---
 
 <figure
-  class:list={['relative overflow-hidden rounded-tarjeta', !foto && 'superficie-media cuadricula border border-linea-oscura [--paso-cuadricula:1.5rem]', clase]}
+  class:list={['relative overflow-hidden rounded-tarjeta', !foto && 'superficie-verde', clase]}
   style={`aspect-ratio: ${proporcion}`}
 >
   {
@@ -50,9 +50,9 @@ const {
         class="size-full object-cover"
       />
     ) : (
-      <div class="flex size-full flex-col items-center justify-end gap-4 p-6">
-        <Silueta tipo={silueta} quieta class="h-[68%] w-auto max-w-full text-texto" />
-        <figcaption class="rotulo text-center text-salvia normal-case">[FOTO: {pendiente}]</figcaption>
+      <div class="flex size-full flex-col items-center justify-end gap-3 p-5">
+        <Silueta tipo={silueta} quieta class="h-[66%] w-auto max-w-full text-oliva" />
+        <figcaption class="text-center text-sm text-gris">[FOTO: {pendiente}]</figcaption>
       </div>
     )
   }

@@ -1,12 +1,12 @@
 ---
 /**
- * Sección de página con superficie clara u oscura. Las secciones se separan por
+ * Sección de página con su superficie (crema, verde, papel u oliva). Las secciones se separan por
  * el cambio de superficie y, opcionalmente, por una línea fina (`filete`), como
  * las láminas de un plano.
  */
 import type { HTMLAttributes } from 'astro/types';
 
-type Tono = 'oscuro' | 'medio' | 'claro';
+type Tono = 'crema' | 'verde' | 'papel' | 'oliva';
 type Props = HTMLAttributes<'section'> & {
   tono?: Tono;
   /** Línea fina en el borde superior. */
@@ -17,11 +17,11 @@ type Props = HTMLAttributes<'section'> & {
   como?: 'section' | 'footer' | 'div';
 };
 
-const { tono = 'oscuro', filete = false, espacio = 'normal', como: Elemento = 'section', class: clase, ...resto } = Astro.props;
-const superficie = { oscuro: 'superficie-oscura', medio: 'superficie-media', claro: 'superficie-clara' }[tono];
+const { tono = 'crema', filete = false, espacio = 'normal', como: Elemento = 'section', class: clase, ...resto } = Astro.props;
+const superficie = { crema: 'superficie-crema', verde: 'superficie-verde', papel: 'superficie-papel', oliva: 'superficie-oliva' }[tono];
 const espacios = { normal: 'py-20 sm:py-28', amplio: 'py-28 sm:py-40', ninguno: '' }[espacio];
 ---
 
-<Elemento class:list={['relative', superficie, espacios, filete && 'border-t border-(--color-linea)', clase]} {...resto}>
+<Elemento class:list={['relative', superficie, espacios, filete && 'border-t border-(--color-linea-actual)', clase]} {...resto}>
   <slot />
 </Elemento>

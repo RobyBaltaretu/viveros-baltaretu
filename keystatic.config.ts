@@ -190,20 +190,19 @@ export default config({
           descripcion: 'Se muestra resaltado justo después del titular.',
         }),
         entradilla: textoBilingue('Entradilla', { multilinea: true }),
-        laminaTitulo: textoBilingue('Lámina a escala: título'),
-        laminaTexto: textoBilingue('Lámina a escala: texto', { multilinea: true }),
-        alturaTitulo: textoBilingue('Buscador por altura: título'),
-        alturaTexto: textoBilingue('Buscador por altura: texto', { multilinea: true }),
-        perfilesTitulo: textoBilingue('Para quién: título'),
-        perfiles: fields.array(
-          fields.object({ titulo: textoBilingue('Título'), texto: textoBilingue('Texto', { multilinea: true }) }),
-          {
-            label: 'Para quién',
-            description: 'Hasta 6 tipos de cliente. No menciones clientes concretos si no está confirmado.',
-            itemLabel: (props) => props.fields.titulo.fields.es.value || 'Perfil sin título',
-            validation: { length: { max: 6 } },
-          },
-        ),
+        familiasTitulo: textoBilingue('Familias: título'),
+        familiasTexto: textoBilingue('Familias: texto', { multilinea: true }),
+        comprarTitulo: textoBilingue('Cómo comprar: título'),
+        mayorTitulo: textoBilingue('Al por mayor: título'),
+        mayorTexto: textoBilingue('Al por mayor: texto', {
+          multilinea: true,
+          descripcion: 'Debajo se muestran el pedido mínimo y los plazos de "Condiciones de venta".',
+        }),
+        unidadTitulo: textoBilingue('Por unidad: título'),
+        unidadTexto: textoBilingue('Por unidad: texto', {
+          multilinea: true,
+          descripcion: 'Debajo se muestra el envío por unidad de "Condiciones de venta".',
+        }),
         pasosTitulo: textoBilingue('Pasos: título'),
         pasos: fields.array(
           fields.object({ titulo: textoBilingue('Título'), texto: textoBilingue('Texto', { multilinea: true }) }),

@@ -26,16 +26,16 @@ const empresa = await obtenerEmpresa();
   <Seccion espacio="amplio">
     <Contenedor class="grid items-end gap-12 md:grid-cols-[minmax(0,1fr)_auto]">
       <div class="min-w-0">
-        <p class="antetitulo text-salvia">{t.presupuestoTitulo}</p>
+        <p class="antetitulo text-gris">{t.presupuestoTitulo}</p>
         <h1 class="titular-gigante mt-4">{t.presupuestoEnviadoTitulo}</h1>
         <p class="mt-8 max-w-xl texto-entrada">{t.presupuestoEnviadoTexto}</p>
-        <p class="mt-3 max-w-xl text-salvia">{t.siguientesPasos}</p>
+        <p class="mt-3 max-w-xl text-gris">{t.siguientesPasos}</p>
         <div class="mt-10 flex flex-wrap gap-3">
           <Boton href={rutas.catalogo[idioma]} tamano="grande" flecha>{t.verCatalogo}</Boton>
           <Boton href={rutas.inicio[idioma]} tamano="grande" variante="secundario">{t.inicio}</Boton>
         </div>
       </div>
-      <Silueta tipo="olivo" class="h-56 w-auto text-lima" style="--tono-tronco: var(--color-salvia)" />
+      <Silueta tipo="olivo" class="h-56 w-auto text-oliva" />
     </Contenedor>
   </Seccion>
 </BaseLayout>

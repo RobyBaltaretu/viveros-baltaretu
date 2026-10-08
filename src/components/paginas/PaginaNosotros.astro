@@ -17,17 +17,17 @@ const portada = await obtenerPortada();
 ---
 
 <PaginaFija idioma={idioma} clave="nosotros" ruta="nosotros">
-  <Seccion tono="medio">
+  <Seccion tono="verde">
     <Contenedor class="grid gap-12 md:grid-cols-[1fr_1fr_auto] md:gap-16">
       <div>
-        <h2 class="antetitulo text-salvia">{t.mision}</h2>
+        <h2 class="antetitulo text-gris">{t.mision}</h2>
         <p class="titular-medio titular-ligero mt-4">{portada.mision[idioma]}</p>
       </div>
       <div>
-        <h2 class="antetitulo text-salvia">{t.vision}</h2>
+        <h2 class="antetitulo text-gris">{t.vision}</h2>
         <p class="titular-medio titular-ligero mt-4">{portada.vision[idioma]}</p>
       </div>
-      <Silueta tipo="olivo" class="hidden h-40 w-auto text-lima md:block" style="--tono-tronco: var(--color-salvia)" />
+      <Silueta tipo="olivo" class="hidden h-40 w-auto text-oliva md:block" />
     </Contenedor>
   </Seccion>
 </PaginaFija>

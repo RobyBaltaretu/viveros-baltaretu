@@ -42,8 +42,8 @@ export const portadaDePrueba: Parcial<Portada> = {
     undefined,
     {
       texto: texto(
-        'Te enviamos el presupuesto y lo llevamos a tu obra, tu tienda o tu casa, en toda España. Al por mayor, en 3 a 7 días laborables.',
-        'We send you the quote and deliver to your site, shop or home, anywhere in Spain. Wholesale orders arrive in 3 to 7 working days.',
+        'A tu obra, tu tienda o tu casa, en toda España. Al por mayor en 3 a 7 días laborables; por unidad, en 48 a 72 h.',
+        'To your site, shop or home, anywhere in Spain. Wholesale in 3 to 7 working days; single plants in 48 to 72 hours.',
       ),
     },
   ],

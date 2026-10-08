@@ -1,102 +1,57 @@
 ---
 /**
- * Primera pantalla: el titular y, al lado, el alzado de la especie más alta del
- * catálogo junto a una persona de 1,80 m. Al cargar, el dibujo se traza y la cota
- * sube de 0 a la altura real (solo CSS; quieto con "reducir movimiento").
+ * Primera pantalla: qué vendemos, a quién y cómo se compra, en una sola frase,
+ * con dos botones. A la derecha, un dibujo sencillo de las plantas del vivero.
  */
-import type { CollectionEntry } from 'astro:content';
-import EscenaEscala, { type ElementoEscena } from '../ilustraciones/EscenaEscala.astro';
-import { esbeltez, siluetaDe } from '../ilustraciones/siluetas';
+import Silueta from '../ilustraciones/Silueta.astro';
 import Boton from '../ui/Boton.astro';
 import Contenedor from '../ui/Contenedor.astro';
-import { familias, rutaFicha, rutas, textos, type Idioma } from '../../i18n/ui';
+import { rutas, textos, type Idioma } from '../../i18n/ui';
 import type { Portada } from '../../lib/portada/schema';
-import { representantesPorFamilia } from '../../lib/portada/seleccion';
 
 interface Props {
   idioma: Idioma;
   portada: Portada;
-  especies: CollectionEntry<'catalogo'>[];
 }
 
-const { idioma, portada, especies } = Astro.props;
+const { idioma, portada } = Astro.props;
 const t = textos[idioma];
-const metros = new Intl.NumberFormat(idioma === 'es' ? 'es-ES' : 'en-GB', { maximumFractionDigits: 1 });
-
-// La más alta y, a igual altura, la de dibujo más esbelto (una copa ancha no cabe junto al titular).
-const masAlta = representantesPorFamilia(especies).sort(
-  (a, b) => b.data.alturaMax - a.data.alturaMax || esbeltez(siluetaDe(a.data)) - esbeltez(siluetaDe(b.data)),
-)[0];
-const persona: ElementoEscena = { tipo: 'persona', altura: 1.8, etiqueta: t.persona, detalle: t.alturaPersona };
-const planta: ElementoEscena = masAlta
-  ? {
-      tipo: siluetaDe(masAlta.data),
-      altura: masAlta.data.alturaMax,
-      etiqueta: masAlta.data.nombre[idioma],
-      detalle: masAlta.data.nombreCientifico !== masAlta.data.nombre[idioma] ? masAlta.data.nombreCientifico : undefined,
-      href: rutaFicha(idioma, masAlta.data.slug),
-    }
-  : // Sin especies publicadas: dibujo ilustrativo, sin cifras de catálogo.
-    { tipo: 'palmera', altura: 6, etiqueta: familias.palmeras[idioma] };
-
-// Datos reales del catálogo publicado (nada inventado): número de especies y altura máxima.
-const alturaMaxima = Math.max(0, ...especies.map((e) => e.data.alturaMax));
-const porUnidad = especies.filter((e) => e.data.ventaUnitaria).length;
-const datos = [
-  especies.length > 0 && (especies.length === 1 ? t.datoEspeciesUno : t.datoEspecies.replace('{n}', String(especies.length))),
-  alturaMaxima > 0 && t.datoAltura.replace('{n}', metros.format(alturaMaxima)),
-  porUnidad > 0 && (porUnidad === 1 ? t.datoUnidadUna : t.datoUnidad.replace('{n}', String(porUnidad))),
-  t.datoReparto,
-].filter((d): d is string => Boolean(d));
+const ventajas = [t.ventajaMayor, t.ventajaUnidad, t.datoReparto];
 ---
 
-<section class="heroe superficie-oscura relative overflow-hidden">
-  <Contenedor
-    class="grid min-h-[calc(100svh-4.5rem)] gap-x-12 gap-y-10 pt-10 pb-10 sm:pt-14 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:grid-rows-[1fr_auto] lg:pb-12"
-  >
-    <div class="flex min-w-0 flex-col justify-center lg:row-span-1">
-      <p class="antetitulo text-salvia">{t.antetituloPortada}</p>
-      <h1 class="titular-gigante mt-6 text-[clamp(3.4rem,0.9rem+6.4vw,7.5rem)]">
-        {portada.titular[idioma]} <span class="text-lima">{portada.titularDestacado[idioma]}</span>
+<section class="superficie-crema">
+  <Contenedor class="grid items-center gap-x-16 gap-y-12 py-14 sm:py-20 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:py-24">
+    <div class="min-w-0">
+      <p class="antetitulo text-oliva">{t.antetituloPortada}</p>
+      <h1 class="titular-gigante mt-5">
+        {portada.titular[idioma]} <span class="text-oliva">{portada.titularDestacado[idioma]}</span>
       </h1>
-      <p class="mt-8 max-w-[38rem] texto-entrada text-salvia max-lg:hidden">{portada.entradilla[idioma]}</p>
-      <div class="mt-10 flex flex-wrap gap-3 max-lg:hidden">
-        <Boton href={rutas.presupuesto[idioma]} tamano="grande" flecha>{t.pedirPresupuesto}</Boton>
-        <Boton href={rutas.catalogo[idioma]} tamano="grande" variante="secundario">{t.verCatalogo}</Boton>
-      </div>
-    </div>
-
-    <div class="min-w-0 self-end [--alto-heroe:clamp(17rem,46svh,26rem)] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:[--alto-heroe:clamp(24rem,calc(100svh-15rem),48rem)]">
-      <p class="sr-only">{t.escenaPortada}</p>
-      <EscenaEscala
-        elementos={[persona, planta]}
-        idioma={idioma}
-        alto="var(--alto-heroe)"
-        alturaEscena={Math.max(2, Math.ceil(planta.altura + 0.6))}
-        contar={Boolean(masAlta)}
-        cotas={Boolean(masAlta)}
-        trazar
-        class="[--color-planta:var(--color-texto)] [--color-persona:var(--color-lima)]"
-      />
-    </div>
-
-    <div class="min-w-0 lg:hidden">
-      <p class="texto-entrada text-salvia">{portada.entradilla[idioma]}</p>
+      <p class="mt-6 max-w-xl texto-entrada text-gris">{portada.entradilla[idioma]}</p>
       <div class="mt-8 flex flex-wrap gap-3">
-        <Boton href={rutas.presupuesto[idioma]} tamano="grande" flecha>{t.pedirPresupuesto}</Boton>
-        <Boton href={rutas.catalogo[idioma]} tamano="grande" variante="secundario">{t.verCatalogo}</Boton>
+        <Boton href={rutas.catalogo[idioma]} tamano="grande" flecha>{t.verCatalogo}</Boton>
+        <Boton href={rutas.presupuesto[idioma]} tamano="grande" variante="secundario">{t.pedirPresupuesto}</Boton>
       </div>
+      <ul class="mt-10 grid gap-3 sm:grid-cols-3" role="list">
+        {
+          ventajas.map((v) => (
+            <li class="flex items-start gap-2 font-medium">
+              <svg class="mt-1 size-5 shrink-0 text-oliva" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                <path fill="currentColor" d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.6l7.3-7.3a1 1 0 0 1 1.4 0Z" />
+              </svg>
+              {v}
+            </li>
+          ))
+        }
+      </ul>
     </div>
 
-    <ul class="grid min-w-0 gap-x-8 gap-y-3 border-t border-linea-oscura pt-5 sm:grid-cols-2 lg:col-start-1 lg:row-start-2" role="list">
-      {
-        datos.map((dato, i) => (
-          <li class="rotulo flex gap-3 text-salvia">
-            <span class="text-lima">{String(i + 1).padStart(2, '0')}</span>
-            {dato}
-          </li>
-        ))
-      }
-    </ul>
+    <div
+      class="superficie-verde relative flex aspect-[5/4] items-end justify-center gap-[5%] overflow-hidden rounded-panel px-[6%] pt-[6%] text-oliva"
+      aria-hidden="true"
+    >
+      <Silueta tipo="olivo" class="h-[52%] w-auto" />
+      <Silueta tipo="palmera" class="h-[90%] w-auto" />
+      <div class="absolute inset-x-0 bottom-0 h-[3%] bg-oliva/15"></div>
+    </div>
   </Contenedor>
 </section>

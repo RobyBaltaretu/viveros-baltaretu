@@ -25,13 +25,13 @@ export const getStaticPaths = (() => {
 }) satisfies GetStaticPaths;
 
 const colores = [
-  ['bosque', '#0E2519', 'bg-bosque text-texto'],
-  ['superficie', '#143323', 'bg-superficie text-texto'],
-  ['lima', '#D4F25A', 'bg-lima text-bosque'],
-  ['claro', '#F2F5EC', 'bg-claro text-bosque'],
-  ['texto', '#EEF3E6', 'bg-texto text-bosque'],
-  ['salvia', '#A9BBA6', 'bg-salvia text-bosque'],
-  ['musgo', '#4A5E51', 'bg-musgo text-claro'],
+  ['crema', '#F7F2E8', 'bg-crema text-tinta'],
+  ['papel', '#FFFDF8', 'bg-papel text-tinta'],
+  ['verdor', '#E9EEDC', 'bg-verdor text-oliva'],
+  ['oliva', '#2F4A2C', 'bg-oliva text-crema'],
+  ['tinta', '#1F2A1C', 'bg-tinta text-crema'],
+  ['gris', '#5A634F', 'bg-gris text-crema'],
+  ['terracota', '#A64B28', 'bg-terracota text-white'],
 ] as const;
 const alturaEscena = 4;
 ---
@@ -39,29 +39,29 @@ const alturaEscena = 4;
 <BaseLayout idioma="es" titulo="Sistema de diseño (interno)" descripcion="Página interna" alternativas={{ es: '/estilo-interno/', en: '/estilo-interno/' }} noIndexar>
   <Seccion>
     <Contenedor>
-      <p class="antetitulo text-salvia">Interno · no indexado</p>
+      <p class="antetitulo text-gris">Interno · no indexado</p>
       <h1 class="titular-gigante mt-4">Sistema de diseño</h1>
-      <p class="mt-6 max-w-2xl texto-entrada text-salvia">Plano de paisajismo: alzados a línea, cotas, cuadrícula de 1 m, titulares condensados y rótulos en mono. Un único acento lima.</p>
+      <p class="mt-6 max-w-2xl texto-entrada text-gris">Vivero mediterráneo: fondo crema, verde oliva de marca y terracota solo para lo que se pulsa. Dibujos a línea sencillos.</p>
 
       <h2 class="titular-medio mt-20">Color</h2>
       <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
         {colores.map(([nombre, hex, clases]) => (
-          <li class:list={['flex aspect-square flex-col justify-end rounded-tarjeta border border-linea-oscura p-4', clases]}>
+          <li class:list={['flex aspect-square flex-col justify-end rounded-tarjeta border border-linea p-4', clases]}>
             <span class="font-semibold">{nombre}</span>
-            <span class="font-mono text-xs">{hex}</span>
+            <span class="text-xs">{hex}</span>
           </li>
         ))}
       </ul>
 
       <h2 class="titular-medio mt-20">Tipografía</h2>
       <div class="mt-6 space-y-6">
-        <p class="titular-gigante">Gigante condensada</p>
+        <p class="titular-gigante">Gigante</p>
         <p class="titular-grande">Grande <span class="titular-ligero">con contraste 300</span></p>
-        <p class="rotulo">Rótulo IBM Plex Mono · 10,00 m · Ø 80 cm</p>
+        <p class="rotulo">Rótulo · 4 m · 80 cm</p>
         <p class="titular-medio">Medio · Bricolage Grotesque</p>
         <p class="texto-entrada max-w-2xl">Entrada en DM Sans. Ejemplares de gran porte con su altura real, preparados para proyectos de paisajismo.</p>
-        <p class="max-w-2xl">Texto normal en DM Sans con <a href="#" class="underline underline-offset-4 hover:text-lima">un enlace</a>.</p>
-        <p class="antetitulo text-salvia">Antetítulo</p>
+        <p class="max-w-2xl">Texto normal en DM Sans con <a href="#" class="underline underline-offset-4 hover:text-terracota">un enlace</a>.</p>
+        <p class="antetitulo text-gris">Antetítulo</p>
       </div>
 
       <h2 class="titular-medio mt-20">Botones y etiquetas (oscuro)</h2>
@@ -76,10 +76,10 @@ const alturaEscena = 4;
     </Contenedor>
   </Seccion>
 
-  <Seccion tono="claro">
+  <Seccion tono="papel">
     <Contenedor>
       <h2 class="titular-grande">Sección <span class="subrayado-lima">clara</span></h2>
-      <p class="mt-4 max-w-2xl text-musgo">En superficies claras el acento es el bosque y el lima solo aparece como subrayado decorativo.</p>
+      <p class="mt-4 max-w-2xl text-gris">En superficies claras el acento es el bosque y el lima solo aparece como subrayado decorativo.</p>
       <div class="mt-8 flex flex-wrap items-center gap-4">
         <Boton href="#" flecha>Pedir presupuesto</Boton>
         <Boton href="#" variante="secundario">Ver catálogo</Boton>
@@ -89,13 +89,13 @@ const alturaEscena = 4;
     </Contenedor>
   </Seccion>
 
-  <Seccion tono="medio">
+  <Seccion tono="verde">
     <Contenedor>
       <h2 class="titular-grande">Siluetas a escala</h2>
-      <p class="mt-4 max-w-2xl text-salvia">Persona de 1,8 m junto a ejemplares de altura máxima de su ficha de ejemplo. Escena de {alturaEscena} m.</p>
-      <div class="muestra-siluetas mt-10 flex h-[26rem] items-end gap-6 overflow-x-auto border-b border-linea-oscura pt-4 pb-px text-lima" style="--tono-tronco: var(--color-salvia)">
-        <CintaMetrica alturaMax={alturaEscena} idioma="es" class="h-full shrink-0 text-salvia" />
-        <Silueta tipo="persona" titulo="Persona de 1,8 m" class="shrink-0 text-texto" style={`height: ${(1.8 / alturaEscena) * 100}%`} />
+      <p class="mt-4 max-w-2xl text-gris">Persona de 1,8 m junto a ejemplares de altura máxima de su ficha de ejemplo. Escena de {alturaEscena} m.</p>
+      <div class="muestra-siluetas mt-10 flex h-[26rem] items-end gap-6 overflow-x-auto border-b border-linea pt-4 pb-px text-terracota" style="--tono-tronco: var(--color-gris)">
+        <CintaMetrica alturaMax={alturaEscena} idioma="es" class="h-full shrink-0 text-gris" />
+        <Silueta tipo="persona" titulo="Persona de 1,8 m" class="shrink-0 text-tinta" style={`height: ${(1.8 / alturaEscena) * 100}%`} />
         <Silueta tipo="palmera" titulo="Palmera de 4 m" class="shrink-0" style="height: 100%" />
         <Silueta tipo="olivo" titulo="Olivo de 3,5 m" class="shrink-0" style={`height: ${(3.5 / alturaEscena) * 100}%`} />
         <Silueta tipo="higuera" titulo="Higuera de 3 m" class="shrink-0" style={`height: ${(3 / alturaEscena) * 100}%`} />
@@ -114,7 +114,7 @@ const alturaEscena = 4;
   <Seccion>
     <Contenedor>
       <h2 class="titular-medio aparecer">Aparición al hacer scroll</h2>
-      <p class="aparecer mt-4 max-w-2xl text-salvia">Solo con CSS (animation-timeline). Desactivada con prefers-reduced-motion.</p>
+      <p class="aparecer mt-4 max-w-2xl text-gris">Solo con CSS (animation-timeline). Desactivada con prefers-reduced-motion.</p>
     </Contenedor>
   </Seccion>
 </BaseLayout>

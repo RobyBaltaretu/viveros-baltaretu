@@ -24,19 +24,19 @@ const idMedicion = idAnalitica();
         hidden
         data-panel
         aria-labelledby="aviso-cookies-titulo"
-        class="superficie-media fixed inset-x-3 bottom-3 z-50 mx-auto max-w-3xl rounded-panel border border-linea-oscura p-5 shadow-[0_20px_50px_-20px_rgb(0_0_0/0.7)] sm:inset-x-6 sm:bottom-6 sm:p-6"
+        class="superficie-papel fixed inset-x-3 bottom-3 z-50 mx-auto max-w-3xl rounded-panel border border-linea p-5 shadow-[0_20px_50px_-20px_rgb(31_42_28/0.45)] sm:inset-x-6 sm:bottom-6 sm:p-6"
       >
-        <h2 id="aviso-cookies-titulo" class="antetitulo text-salvia">
+        <h2 id="aviso-cookies-titulo" class="antetitulo text-gris">
           {t.cookiesTitulo}
         </h2>
         <p class="mt-2 max-w-prose">
           {t.cookiesTexto}{' '}
-          <a href={rutas.cookies[idioma]} class="underline underline-offset-4 hover:text-lima">
+          <a href={rutas.cookies[idioma]} class="underline underline-offset-4 hover:text-terracota">
             {t.cookiesMas}
           </a>
         </p>
         <div class="mt-4 flex flex-wrap gap-3">
-          <button type="button" data-elegir="aceptado" class="min-h-11 rounded-tarjeta bg-lima px-5 font-semibold text-bosque">
+          <button type="button" data-elegir="aceptado" class="min-h-11 rounded-tarjeta bg-terracota px-5 font-semibold text-white">
             {t.cookiesAceptar}
           </button>
           <button type="button" data-elegir="rechazado" class="min-h-11 rounded-tarjeta border border-current/60 px-5 font-semibold hover:border-current">

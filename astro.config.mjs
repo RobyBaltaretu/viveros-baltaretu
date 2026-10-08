@@ -45,7 +45,6 @@ export default defineConfig({
           {
             src: ['./node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wdth-normal.woff2'],
             weight: '200 800',
-            // Eje de anchura: los titulares van condensados (75 %), como troncos.
             stretch: '75% 100%',
             style: 'normal',
           },
@@ -65,20 +64,6 @@ export default defineConfig({
             weight: '100 1000',
             style: 'normal',
           },
-        ],
-      },
-    },
-    {
-      // Datos técnicos (alturas, perímetros, rótulos de plano).
-      provider: fontProviders.local(),
-      name: 'IBM Plex Mono',
-      cssVariable: '--font-plex-mono',
-      fallbacks: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
-      display: 'swap',
-      options: {
-        variants: [
-          { src: ['./node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2'], weight: '400', style: 'normal' },
-          { src: ['./node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2'], weight: '500', style: 'normal' },
         ],
       },
     },
