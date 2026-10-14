@@ -28,3 +28,4 @@ Resumen para retomar el trabajo en una sesión nueva. Actualizado el 14 de octub
 ## Panel propio y asistente (en curso)
 Plan aprobado por el propietario y en ejecución por fases: `docs/panel-propio/` (definición, hoja de ruta, [plan técnico](panel-propio/plan-tecnico.md), [decisiones](panel-propio/decisiones.md) y [pasos manuales](panel-propio/pasos-manuales.md)). Keystatic sigue siendo el panel en uso hasta la tarea 5.3.
 - 0.2 Plan técnico: hecho. Prueba de concepto sin diferencias entre el build actual y el que pasa por el formato de D1.
+- 1.1 Esquema de D1: migraciones versionadas en `src/server/data/d1/migraciones.ts`, aplicadas por el Worker al primer uso; D1 local en el entorno `desarrollo` de `wrangler.jsonc`.
