@@ -22,5 +22,14 @@
   "keep_vars": true,
   "observability": {
     "enabled": true
+  },
+  // Entorno local (CLOUDFLARE_ENV=desarrollo): `npm run dev`, tests y e2e con D1 en
+  // modo local de wrangler, sin tocar recursos reales. En producción no hay binding de D1
+  // hasta que el propietario cree la base (docs/panel-propio/pasos-manuales.md).
+  "env": {
+    "desarrollo": {
+      "send_email": [{ "name": "EMAIL" }],
+      "d1_databases": [{ "binding": "DB", "database_name": "viveros-baltaretu-local", "database_id": "00000000-0000-0000-0000-000000000000" }]
+    }
   }
 }
