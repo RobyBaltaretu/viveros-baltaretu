@@ -3,7 +3,7 @@ import { auditar, controlesGrandes } from './ayudas';
 
 // El build de los e2e usa el entorno `desarrollo`: D1 local con el contenido importado
 // y entrada al panel sin Access desde localhost como propietario@example.com.
-const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos'];
+const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/publicar', '/panel/cambios', '/panel/plantas/washingtonia-robusta/vista', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos'];
 
 test.describe('panel: accesibilidad y tamaño de los controles', () => {
   for (const ruta of PANTALLAS) {
@@ -134,4 +134,23 @@ test('textos: cambiar condiciones, añadir un paso y crear una guía', async ({ 
   await expect(page.getByRole('status')).toContainText('Guardado');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(`Guía de riego ${p}`);
   await auditar(page);
+});
+
+test('publicar cambios y deshacer', async ({ page }) => {
+  const [id, nombre] = test.info().project.name === 'movil' ? ['cycas-revoluta', 'Cica'] : ['higuera-comun', 'Higuera'];
+  await page.goto(`/panel/plantas/${id}/precio`);
+  await page.getByLabel(/Precio al por mayor/).fill('77');
+  await page.getByRole('button', { name: 'Guardar el precio' }).click();
+  await page.goto('/panel/publicar');
+  await expect(page.getByRole('listitem').filter({ hasText: new RegExp(`Planta: ${nombre}.*cambiada`) })).toBeVisible();
+  await page.getByRole('button', { name: /Sí, publicar/ }).click();
+  // En local no hay Deploy Hook: los cambios quedan listos y el panel lo explica.
+  await expect(page.getByRole('status')).toContainText('falta configurar la publicación automática');
+
+  await page.goto('/panel/cambios');
+  const fila = page.getByRole('listitem').filter({ hasText: new RegExp(`Planta: ${nombre}.*: cambiada`) }).first();
+  await fila.getByRole('button', { name: 'Deshacer' }).click();
+  await expect(page.getByRole('status')).toContainText('Deshecho');
+  await page.goto(`/panel/plantas/${id}`);
+  await expect(page.getByText('desde 77 €')).toHaveCount(0);
 });

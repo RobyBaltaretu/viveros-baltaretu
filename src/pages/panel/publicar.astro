@@ -1,0 +1,63 @@
+---
+import { env } from 'cloudflare:workers';
+import PaginaPanel from '../../components/panel/PaginaPanel.astro';
+import { sesionCon } from '../../server/panel/pagina.ts';
+import { describirPendiente, publicarCambios, type EntornoPublicar } from '../../server/panel/publicar.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'publicar');
+if (s && Astro.request.method === 'POST') {
+  const r = await publicarCambios(s.repos, s.usuario.email, env as EntornoPublicar);
+  return Astro.redirect(`/panel/publicar?resultado=${r.estado}&n=${r.cambios}`, 303);
+}
+const pendientes = s ? await s.repos.contenido.pendientes() : [];
+const ultimas = s ? await s.repos.publicaciones.listar(5) : [];
+const resultado = Astro.url.searchParams.get('resultado');
+const n = Number(Astro.url.searchParams.get('n') ?? 0);
+const MENSAJES: Record<string, string> = {
+  lanzada: `Hecho: ${n} ${n === 1 ? 'cambio enviado' : 'cambios enviados'}. La web se está preparando (unos minutos) y saldrá en cuanto el propietario la apruebe en Cloudflare.`,
+  'sin-cambios': 'No había cambios que publicar.',
+  'sin-configurar': 'Los cambios están listos, pero falta configurar la publicación automática. Avisa a la persona que lleva la web.',
+  error: 'Los cambios están listos, pero no se pudo avisar para actualizar la web. Prueba otra vez en unos minutos.',
+};
+const fecha = (iso: string) => new Date(iso).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Madrid' });
+---
+
+<PaginaPanel titulo="Publicar cambios" permiso="publicar">
+  <h1 class="titular-grande">Publicar cambios</h1>
+  {resultado && MENSAJES[resultado] && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{MENSAJES[resultado]}</p>}
+  {
+    pendientes.length === 0 ? (
+      <p class="mt-6">No hay cambios pendientes: la web ya tiene todo lo que has guardado.</p>
+    ) : (
+      <>
+        <p class="mt-6">Esto es lo que cambiará en la web:</p>
+        <ul class="mt-3 grid gap-2" role="list">
+          {pendientes.map((e) => (
+            <li class="rounded-tarjeta border-2 border-linea bg-papel p-3">{describirPendiente(e)}</li>
+          ))}
+        </ul>
+        <form method="post" class="mt-6">
+          <button class="boton-panel">Sí, publicar {pendientes.length} {pendientes.length === 1 ? 'cambio' : 'cambios'}</button>
+        </form>
+        <p class="mt-3 text-gris">Las plantas sin revisar o de ejemplo no salen en la web aunque las publiques.</p>
+      </>
+    )
+  }
+  {
+    ultimas.length > 0 && (
+      <>
+        <h2 class="titular-medio mt-10">Últimas publicaciones</h2>
+        <ul class="mt-3 grid gap-1" role="list">
+          {ultimas.map((p) => (
+            <li>
+              {fecha(p.fecha)} · {p.estado === 'lanzada' ? 'enviada' : p.estado === 'sin-cambios' ? 'sin cambios' : 'pendiente de configurar o con error'}
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+  <p class="mt-8"><a class="enlace-panel" href="/panel/cambios">Ver los cambios recientes y deshacer</a></p>
+</PaginaPanel>

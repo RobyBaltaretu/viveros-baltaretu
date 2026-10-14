@@ -1,0 +1,44 @@
+---
+import PaginaPanel from '../../components/panel/PaginaPanel.astro';
+import { campo, sesionCon } from '../../server/panel/pagina.ts';
+import { describirCambio } from '../../server/panel/publicar.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'editar');
+if (s && Astro.request.method === 'POST') {
+  const deshecho = await s.repos.contenido.deshacer(Number(campo(await Astro.request.formData(), 'cambio')), { email: s.usuario.email });
+  if (deshecho) await s.repos.auditoria.registrar(s.usuario.email, 'deshacer', `${deshecho.coleccion}/${deshecho.entradaId}`);
+  return Astro.redirect(`/panel/cambios?hecho=${deshecho ? 1 : 0}`, 303);
+}
+const cambios = s ? await s.repos.contenido.historial({ limite: 30 }) : [];
+const hecho = Astro.url.searchParams.get('hecho');
+const fecha = (iso: string) => new Date(iso).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Madrid' });
+---
+
+<PaginaPanel titulo="Cambios recientes" permiso="editar">
+  <h1 class="titular-grande">Cambios recientes</h1>
+  {hecho === '1' && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">Deshecho. Está como antes de ese cambio (como borrador, hasta que publiques).</p>}
+  <p class="mt-4">«Deshacer» deja la planta o el texto como estaba justo antes de ese cambio.</p>
+  {cambios.length === 0 && <p class="mt-6">Todavía no hay cambios.</p>}
+  <ol class="mt-6 grid gap-3" role="list">
+    {
+      cambios.map((c) => (
+        <li class="flex flex-wrap items-center justify-between gap-3 rounded-tarjeta border-2 border-linea bg-papel p-4">
+          <span>
+            <span class="block font-semibold">{describirCambio(c)}</span>
+            <span class="block text-gris">
+              {fecha(c.fecha)} · {c.email}
+            </span>
+          </span>
+          {c.origen !== 'importacion' && (
+            <form method="post">
+              <input type="hidden" name="cambio" value={c.id} />
+              <button class="boton-panel boton-panel-secundario">Deshacer</button>
+            </form>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</PaginaPanel>

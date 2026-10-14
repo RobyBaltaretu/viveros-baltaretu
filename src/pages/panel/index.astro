@@ -10,6 +10,7 @@ export const prerender = false;
 const s = sesionCon(Astro.locals);
 const rol = s?.usuario.rol ?? 'editor';
 const nuevos = s && puede(rol, 'presupuestos') ? await s.repos.presupuestos.contar('nuevo') : 0;
+const pendientes = s ? (await s.repos.contenido.pendientes()).length : 0;
 const t = tp.tarjetas;
 ---
 
@@ -19,11 +20,17 @@ const t = tp.tarjetas;
     <span class="mt-2 block text-lg font-normal text-gris">{s && tp.roles[s.usuario.rol]}</span>
   </h1>
   <ul class="mt-8 grid gap-4" role="list">
+    {
+      puede(rol, 'publicar') && (
+        <Tarjeta href="/panel/publicar" titulo="Publicar cambios" texto={pendientes ? 'Hay cambios guardados que aún no están en la web' : 'La web está al día'} aviso={pendientes ? `${pendientes}` : undefined} />
+      )
+    }
     <Tarjeta href="/panel/plantas" titulo={t.plantas[0]} texto={t.plantas[1]} />
     {puede(rol, 'presupuestos') && <Tarjeta href="/panel/presupuestos" titulo={t.presupuestos[0]} texto={t.presupuestos[1]} aviso={nuevos ? tp.nuevos(nuevos) : undefined} />}
     <Tarjeta href="/panel/fotos" titulo={t.fotos[0]} texto={t.fotos[1]} />
     <Tarjeta href="/panel/textos" titulo={t.textos[0]} texto={t.textos[1]} />
     <Tarjeta href="/panel/ayuda" titulo={t.ayuda[0]} texto={t.ayuda[1]} />
+    <Tarjeta href="/panel/cambios" titulo="Cambios recientes" texto="Ver lo que se ha cambiado y deshacer" />
     {puede(rol, 'personas') && <Tarjeta href="/panel/personas" titulo={t.personas[0]} texto={t.personas[1]} />}
   </ul>
 </PaginaPanel>
