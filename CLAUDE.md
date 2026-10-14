@@ -70,3 +70,10 @@ La CI (`.github/workflows/ci.yml`) ejecuta `npm run lint`, `npm test`, `npm run 
 Hoja de ruta, definición funcional y técnica, y estrategia SEO con el mapa de páginas.
 
 Estado actual, preferencias del propietario y pendientes: `docs/estado.md`. Leerlo al empezar una sesión y actualizarlo al cerrar cada PR.
+
+## Próxima fase: panel propio y asistente (propuesta, aún no implementada)
+El propietario quiere sustituir Keystatic por un panel propio ultra simple, con D1 y R2 de Cloudflare, y añadir un asistente de chat. Todavía **no está aprobado el plan técnico**: hasta entonces, lo de arriba sigue siendo la realidad del repositorio. Definición, hoja de ruta y prompt de arranque: `docs/panel-propio/`. Reglas que ya valen para ese trabajo:
+- La web pública sigue estática y el diseño aceptado no se cambia.
+- Todo el acceso a datos irá detrás de una capa de repositorios (`src/server/data/`), para poder migrar de base de datos sin tocar el panel ni la web.
+- Se reutilizan los esquemas existentes. Keystatic se retira solo cuando haya paridad comprobada, en un PR aparte.
+
