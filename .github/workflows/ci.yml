@@ -62,3 +62,24 @@ jobs:
         run: npm run test:e2e
         env:
           ASTRO_TELEMETRY_DISABLED: '1'
+
+  equivalencia:
+    name: Build desde D1 igual al actual
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Importa el contenido a una D1 local, lo exporta como el build de producción y
+      # compara páginas, sitemap y JSON-LD con el build desde los archivos.
+      - name: Equivalencia del build desde D1
+        run: npm run contenido:equivalencia
+        env:
+          ASTRO_TELEMETRY_DISABLED: '1'

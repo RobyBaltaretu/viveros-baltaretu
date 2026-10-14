@@ -69,3 +69,14 @@ describe('seguridad de /api/contenido', () => {
     expect(esRutaFotoValida('catalogo/a.exe')).toBe(false);
   });
 });
+
+describe('exportación para el build', async () => {
+  const { exportarPublicado, faltantes } = await import('../../src/server/contenido/exportacion.ts');
+  it('exporta lo publicado con sus fotos y detecta si falta algo obligatorio', async () => {
+    const exp = await exportarPublicado(repos);
+    expect(exp.entradas).toHaveLength(entradas.length);
+    expect(exp.fotos.length).toBe(fotos.size);
+    expect(faltantes(exp)).toEqual([]);
+    expect(faltantes({ entradas: [], fotos: [] })).toContain('ajustes/empresa');
+  });
+});
