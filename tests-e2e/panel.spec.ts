@@ -3,7 +3,7 @@ import { auditar, controlesGrandes } from './ayudas';
 
 // El build de los e2e usa el entorno `desarrollo`: D1 local con el contenido importado
 // y entrada al panel sin Access desde localhost como propietario@example.com.
-const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/publicar', '/panel/cambios', '/panel/plantas/washingtonia-robusta/vista', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos'];
+const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/publicar', '/panel/cambios', '/panel/plantas/washingtonia-robusta/vista', '/panel/presupuestos?estado=archivado', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos'];
 
 test.describe('panel: accesibilidad y tamaño de los controles', () => {
   for (const ruta of PANTALLAS) {
@@ -163,4 +163,26 @@ test('la ayuda se abre con el teclado', async ({ page }) => {
   await expect(tema).toHaveAttribute('open', '');
   await expect(tema.getByRole('link', { name: 'Ir a Publicar cambios' })).toBeVisible();
   await auditar(page);
+});
+
+test('bandeja de presupuestos: ver, marcar como respondido y descargar', async ({ page }) => {
+  const nombre = `Cliente de prueba ${test.info().project.name}`;
+  await page.goto('/panel/presupuestos');
+  await page.getByRole('link', { name: new RegExp(nombre) }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(nombre);
+  await expect(page.getByText('20 × Palmera canaria')).toBeVisible();
+  await auditar(page);
+  await controlesGrandes(page);
+  await page.getByRole('button', { name: 'Marcar como respondido' }).click();
+  await expect(page.getByRole('status')).toHaveText('Marcado como respondido.');
+  await page.goto('/panel/presupuestos?estado=respondido');
+  await expect(page.getByRole('link', { name: new RegExp(nombre) })).toBeVisible();
+  const descarga = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Descargar todos en una hoja de cálculo' }).click();
+  const csv = await (await descarga).createReadStream();
+  let texto = '';
+  for await (const trozo of csv) texto += trozo;
+  expect(texto).toContain(nombre);
+  // Un texto que empieza por "=" no se convierte en fórmula al abrirlo en Excel.
+  expect(texto).toContain(`"'=Necesito 20 palmeras`);
 });

@@ -1,0 +1,64 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import { ESTADOS_PRESUPUESTO, type EstadoPresupuesto } from '../../../server/data/tipos.ts';
+import { campo, sesionCon } from '../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'presupuestos');
+const id = Astro.params.id ?? '';
+if (s && Astro.request.method === 'POST') {
+  const estado = campo(await Astro.request.formData(), 'estado');
+  if ((ESTADOS_PRESUPUESTO as readonly string[]).includes(estado) && (await s.repos.presupuestos.cambiarEstado(id, estado as EstadoPresupuesto))) {
+    await s.repos.auditoria.registrar(s.usuario.email, 'presupuesto', `${id} → ${estado}`);
+  }
+  return Astro.redirect(`/panel/presupuestos/${id}?hecho=${estado}`, 303);
+}
+const p = s ? await s.repos.presupuestos.obtener(id) : null;
+if (s && !p) return Astro.redirect('/panel/presupuestos', 303);
+const hecho = Astro.url.searchParams.get('hecho');
+const MENSAJE: Record<string, string> = { respondido: 'Marcado como respondido.', archivado: 'Archivado.', nuevo: 'Vuelve a estar entre los nuevos.' };
+const fecha = (iso: string) => new Date(iso).toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Europe/Madrid' });
+const asunto = encodeURIComponent('Tu presupuesto de Viveros Baltaretu');
+const telefono = p?.telefono.replace(/[^\d+]/g, '');
+---
+
+<PaginaPanel titulo="Presupuesto" permiso="presupuestos" volver={`/panel/presupuestos?estado=${p?.estado ?? 'nuevo'}`}>
+  {
+    p && (
+      <>
+        <h1 class="titular-grande">{p.nombre}</h1>
+        <p class="mt-1 text-gris">{fecha(p.fecha)}</p>
+        {hecho && MENSAJE[hecho] && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{MENSAJE[hecho]}</p>}
+        <dl class="mt-6 grid gap-2 rounded-tarjeta border-2 border-linea bg-papel p-4">
+          <div><dt class="inline font-semibold">Pedido: </dt><dd class="inline">{p.tipoPedido === 'unidad' ? 'por unidad (con envío)' : 'al por mayor'}</dd></div>
+          {p.empresa && <div><dt class="inline font-semibold">Empresa: </dt><dd class="inline">{p.empresa}</dd></div>}
+          <div><dt class="inline font-semibold">Correo: </dt><dd class="inline">{p.email}</dd></div>
+          {p.telefono && <div><dt class="inline font-semibold">Teléfono: </dt><dd class="inline">{p.telefono}</dd></div>}
+          {p.provincia && <div><dt class="inline font-semibold">Provincia: </dt><dd class="inline">{p.provincia}</dd></div>}
+        </dl>
+        <h2 class="titular-medio mt-6">Plantas</h2>
+        {p.lineas.length === 0 ? <p class="mt-2">No ha elegido plantas concretas.</p> : (
+          <ul class="mt-2 grid gap-1" role="list">
+            {p.lineas.map((l) => <li><strong>{l.cantidad}</strong> × {l.nombre}</li>)}
+          </ul>
+        )}
+        {p.mensaje && (
+          <>
+            <h2 class="titular-medio mt-6">Mensaje</h2>
+            <p class="mt-2 whitespace-pre-line rounded-tarjeta border-2 border-linea bg-papel p-4">{p.mensaje}</p>
+          </>
+        )}
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a class="boton-panel" href={`mailto:${p.email}?subject=${asunto}`}>Responder por correo</a>
+          {telefono && <a class="boton-panel boton-panel-secundario" href={`tel:${telefono}`}>Llamar</a>}
+        </div>
+        <form method="post" class="mt-4 flex flex-wrap gap-3">
+          {p.estado !== 'respondido' && <button class="boton-panel boton-panel-secundario" name="estado" value="respondido">Marcar como respondido</button>}
+          {p.estado !== 'archivado' && <button class="boton-panel boton-panel-secundario" name="estado" value="archivado">Archivar</button>}
+          {p.estado !== 'nuevo' && <button class="boton-panel boton-panel-secundario" name="estado" value="nuevo">Volver a nuevos</button>}
+        </form>
+      </>
+    )
+  }
+</PaginaPanel>
