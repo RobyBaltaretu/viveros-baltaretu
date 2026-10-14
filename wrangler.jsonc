@@ -11,7 +11,7 @@
     "not_found_handling": "404-page",
     // Rutas que siempre ejecutan el Worker. Sin esto, las navegaciones del navegador
     // (incluido enviar un formulario sin JavaScript) reciben la 404 estática.
-    "run_worker_first": ["/api/*", "/keystatic", "/keystatic/*"]
+    "run_worker_first": ["/api/*", "/keystatic", "/keystatic/*", "/panel", "/panel/*"]
   },
   // Envío de avisos de presupuesto con Cloudflare Email Service. Sin restricciones
   // en el binding: el plan gratuito solo permite enviar a direcciones de destino
@@ -29,6 +29,8 @@
   "env": {
     "desarrollo": {
       "send_email": [{ "name": "EMAIL" }],
+      // Entrar al panel sin Access, solo desde localhost (ver src/server/panel/acceso.ts).
+      "vars": { "PANEL_PRUEBA_EMAIL": "propietario@example.com", "PROPIETARIO_EMAIL": "propietario@example.com" },
       "d1_databases": [{ "binding": "DB", "database_name": "viveros-baltaretu-local", "database_id": "00000000-0000-0000-0000-000000000000" }]
     }
   }

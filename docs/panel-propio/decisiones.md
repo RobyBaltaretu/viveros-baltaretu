@@ -13,3 +13,7 @@ Decisiones tomadas durante la implementación, con su motivo. Las del propietari
 | 7 | Migraciones aplicadas por el Worker al primer uso | Un paso manual menos y las migraciones futuras se aplican solas |
 | 8 | Panel en páginas Astro renderizadas en el servidor, sin React, con JavaScript solo para fotos y guardado | Menos CPU (límite de 10 ms), funciona en móviles modestos y es más fácil de hacer accesible |
 | 9 | Modelo `@cf/meta/llama-3.3-70b-instruct-fp8-fast` con modo JSON | Está en la lista oficial de modelos con salida estructurada y entiende español; ~270 órdenes/día gratis |
+| 10 | Textos del panel en `src/i18n/panel.ts`, solo en español | El panel es interno y lo usan personas de aquí; `ui.ts` sigue siendo el de la web pública bilingüe |
+| 11 | Además de Access, el Worker valida el JWT (firma, emisor, audiencia y caducidad con `jose`) y el rol en D1 en cada petición, y comprueba el origen en los envíos | Defensa en profundidad: si Access se configura mal, el panel sigue cerrado |
+| 12 | Modo de prueba sin Access (`PANEL_PRUEBA_EMAIL`) solo en el entorno `desarrollo` y solo desde localhost | Poder probar el panel en local y en los e2e sin abrirlo en producción |
+| 13 | Permisos: propietario todo; gerente todo salvo personas; editor solo prepara cambios (no publica ni ve presupuestos) | Lo más simple que cubre los tres roles decididos |

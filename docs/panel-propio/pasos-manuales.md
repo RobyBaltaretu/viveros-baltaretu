@@ -20,3 +20,18 @@ Desde tu ordenador, con el repositorio al día:
 CONTENIDO_TOKEN=<el token> npm run contenido:importar -- --url https://<tu web>
 ```
 Importa todas las fichas, ajustes, páginas, proyectos, guías y fotos. Si algo no pasa la validación, no importa nada y dice qué falla.
+
+## 4. Cloudflare Access para el panel (gratis hasta 50 usuarios)
+1. *Zero Trust* (en el panel de Cloudflare). Si es la primera vez, elige el plan **Free** y un nombre de equipo (*team name*), por ejemplo `viveros-baltaretu`.
+2. *Settings → Authentication → Login methods → Add new → One-time PIN*.
+3. *Access → Applications → Add an application → Self-hosted*:
+   - Nombre: `Panel del vivero`. Duración de la sesión: 1 semana (`168h`).
+   - Destinos (*public hostname*): tu dominio (o `viveros-baltaretu.<cuenta>.workers.dev`) con las rutas `panel` y `api/panel`. Añade una línea por cada ruta, y también `panel/*` y `api/panel/*`.
+   - Política: *Allow*, regla *Emails* con tu correo y el del gerente (y el del editor si lo hay). Método de acceso: One-time PIN.
+4. Copia el **Application Audience (AUD) Tag** (*Additional settings* de la aplicación).
+5. En el Worker (*Settings → Variables and Secrets*, runtime), añade como variables de texto:
+   - `ACCESS_EQUIPO` = el nombre del equipo (lo que va antes de `.cloudflareaccess.com`).
+   - `ACCESS_AUD` = el AUD Tag.
+   - `PROPIETARIO_EMAIL` = tu correo. La primera vez que entres quedarás como propietario y podrás dar de alta al gerente.
+
+Mientras falte alguna de estas variables o la base D1, `/panel` responde "El panel todavía no está activado" y no deja entrar a nadie.

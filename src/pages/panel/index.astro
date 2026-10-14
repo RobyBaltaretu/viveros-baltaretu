@@ -1,0 +1,23 @@
+---
+import Aviso from '../../components/panel/Aviso.astro';
+import PanelLayout from '../../layouts/PanelLayout.astro';
+import { tp } from '../../i18n/panel';
+
+export const prerender = false;
+
+const sesion = Astro.locals.panel!;
+if (sesion.estado !== 'ok') Astro.response.status = sesion.estado === 'sin-activar' ? 503 : 403;
+---
+
+<PanelLayout titulo={tp.inicio} volver={false}>
+  {sesion.estado === 'sin-activar' && <Aviso titulo={tp.sinActivarTitulo} texto={tp.sinActivarTexto} />}
+  {sesion.estado === 'sin-acceso' && <Aviso titulo={tp.sinAccesoTitulo} texto={tp.sinAccesoTexto} />}
+  {
+    sesion.estado === 'ok' && (
+      <h1 class="titular-grande">
+        {tp.hola(sesion.usuario.nombre)}
+        <span class="mt-2 block text-lg font-normal text-gris">{tp.roles[sesion.usuario.rol]}</span>
+      </h1>
+    )
+  }
+</PanelLayout>
