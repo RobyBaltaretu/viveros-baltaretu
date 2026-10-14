@@ -147,6 +147,7 @@ export interface Presupuesto {
   email: string;
   telefono: string;
   empresa: string;
+  provincia: string;
   mensaje: string;
   lineas: LineaPresupuesto[];
 }

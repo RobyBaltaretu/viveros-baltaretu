@@ -69,7 +69,7 @@ describe('otros repositorios', () => {
 
     await repos.presupuestos.guardar({
       id: 'p1', fecha: '2026-10-14T10:00:00Z', estado: 'nuevo', idioma: 'es', tipoPedido: 'mayor', nombre: 'Ana',
-      email: 'ana@example.com', telefono: '', empresa: '', mensaje: 'Hola', lineas: [{ especie: 'olivo', nombre: 'Olivo', cantidad: 3 }],
+      email: 'ana@example.com', telefono: '', empresa: '', provincia: '', mensaje: 'Hola', lineas: [{ especie: 'olivo', nombre: 'Olivo', cantidad: 3 }],
     });
     expect(await repos.presupuestos.contar('nuevo')).toBe(1);
     expect(await repos.presupuestos.cambiarEstado('p1', 'respondido')).toBe(true);

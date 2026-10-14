@@ -68,6 +68,7 @@ interface FilaPresupuesto {
   email: string;
   telefono: string;
   empresa: string;
+  provincia: string;
   mensaje: string;
   lineas: string;
 }
@@ -82,6 +83,7 @@ const aPresupuesto = (f: FilaPresupuesto): Presupuesto => ({
   email: f.email,
   telefono: f.telefono,
   empresa: f.empresa,
+  provincia: f.provincia ?? '',
   mensaje: f.mensaje,
   lineas: JSON.parse(f.lineas),
 });
@@ -262,10 +264,10 @@ export function crearRepositoriosD1(db: BaseD1): Repositorios {
       async guardar(p) {
         await db
           .prepare(
-            `INSERT INTO presupuestos (id, fecha, estado, idioma, tipo_pedido, nombre, email, telefono, empresa, mensaje, lineas)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO presupuestos (id, fecha, estado, idioma, tipo_pedido, nombre, email, telefono, empresa, provincia, mensaje, lineas)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
-          .bind(p.id, p.fecha, p.estado, p.idioma, p.tipoPedido, p.nombre, p.email, p.telefono, p.empresa, p.mensaje, JSON.stringify(p.lineas))
+          .bind(p.id, p.fecha, p.estado, p.idioma, p.tipoPedido, p.nombre, p.email, p.telefono, p.empresa, p.provincia, p.mensaje, JSON.stringify(p.lineas))
           .run();
       },
       async obtener(id) {
