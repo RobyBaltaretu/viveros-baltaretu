@@ -40,3 +40,12 @@ Cuando el contenido ya esté importado (paso 3):
 4. Publica la versión. Desde entonces, "Publicar cambios" en el panel lanza un build; la versión nueva aparece en *Deployments* y tú la publicas como siempre.
 
 Sin `DEPLOY_HOOK_URL`, el panel guarda los cambios como listos para publicar y avisa de que falta configurarlo.
+
+## 6. Copia diaria del contenido
+1. En GitHub, *Settings → Secrets and variables → Actions*: además del secreto `CONTENIDO_TOKEN` (paso 3), en la pestaña *Variables* crea `WEB_URL` con la dirección pública de la web (sin barra final).
+2. Cada noche, la acción *Copia diaria del contenido* guarda una copia de 30 días (fichas, textos y fotos; sin presupuestos). También se puede lanzar a mano con *Run workflow*.
+
+**Para recuperar contenido:**
+- Un cambio concreto: en el panel, *Cambios recientes → Deshacer*.
+- Toda la base a un momento de los últimos 7 días (incluidos los presupuestos): D1 Time Travel, `npx wrangler d1 time-travel restore viveros-baltaretu --timestamp=<fecha ISO>`.
+- Desde una copia diaria: descarga el artefacto de la acción y ejecuta `CONTENIDO_TOKEN=<token> npm run contenido:restaurar -- copia-contenido.json --url https://<tu web>`. Sin `--url` la carga en la base local para revisarla antes.

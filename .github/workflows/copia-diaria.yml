@@ -1,0 +1,42 @@
+name: Copia diaria del contenido
+
+# Descarga cada noche el contenido publicado del panel (fichas, textos y fotos, sin
+# presupuestos) y lo guarda como artefacto 30 días. Necesita el secreto del repositorio
+# CONTENIDO_TOKEN y la variable WEB_URL (Settings → Secrets and variables → Actions).
+# Para restaurar: descarga el artefacto y ejecuta `npm run contenido:restaurar -- <archivo>`.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  copia:
+    name: Copia del contenido
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Descargar la copia
+        run: npm run contenido:copia -- --url "$WEB_URL" --salida copia-contenido.json
+        env:
+          WEB_URL: ${{ vars.WEB_URL }}
+          CONTENIDO_TOKEN: ${{ secrets.CONTENIDO_TOKEN }}
+
+      - name: Guardar la copia
+        if: hashFiles('copia-contenido.json') != ''
+        uses: actions/upload-artifact@v6
+        with:
+          name: copia-contenido
+          path: copia-contenido.json
+          retention-days: 30
