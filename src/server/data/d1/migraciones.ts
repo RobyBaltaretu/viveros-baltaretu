@@ -82,6 +82,11 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       )`,
     ],
   },
+  {
+    version: 2,
+    nombre: 'provincia en los presupuestos',
+    sql: [`ALTER TABLE presupuestos ADD COLUMN provincia TEXT NOT NULL DEFAULT ''`],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

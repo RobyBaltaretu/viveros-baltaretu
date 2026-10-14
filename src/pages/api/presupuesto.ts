@@ -4,6 +4,8 @@ import { rutas } from '../../i18n/ui';
 import { obtenerEspecies } from '../../lib/catalogo';
 import { procesarPresupuesto } from '../../lib/presupuesto/procesar';
 import { TURNSTILE_PRUEBA, verificarTurnstile } from '../../lib/presupuesto/turnstile';
+import { repositorios } from '../../server/data/index.ts';
+import { presupuestoDesde } from '../../server/panel/presupuestos.ts';
 
 // Única ruta del sitio, junto al panel, que se ejecuta en el Worker.
 export const prerender = false;
@@ -25,6 +27,8 @@ interface EntornoPresupuesto {
   EMAIL_DESTINO?: string;
   EMAIL_REMITENTE?: string;
   TURNSTILE_SECRET_KEY?: string;
+  /** Base del panel: si existe, cada petición se guarda también para la bandeja. */
+  DB?: unknown;
 }
 
 const json = (cuerpo: unknown, estado: number) =>
@@ -63,6 +67,12 @@ export const POST: APIRoute = async ({ request, url, redirect }) => {
 
   const resultado = await procesarPresupuesto(cuerpo, {
     especies,
+    guardar: entorno.DB
+      ? async (solicitud) => {
+          const repos = await repositorios(entorno);
+          await repos?.presupuestos.guardar(presupuestoDesde(solicitud, especies));
+        }
+      : undefined,
     verificarTurnstile: (token) =>
       verificarTurnstile(token, secreto, request.headers.get('CF-Connecting-IP') ?? undefined),
     enviarEmail: async ({ asunto, texto, html, responderA }) => {

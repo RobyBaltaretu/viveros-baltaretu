@@ -130,3 +130,42 @@ describe('verificarTurnstile', () => {
     expect(await verificarTurnstile('t', 's', undefined, negativo as unknown as typeof fetch)).toBe(false);
   });
 });
+
+describe('guardar presupuestos para la bandeja del panel', () => {
+  const fallo = async () => {
+    throw new Error('fallo');
+  };
+
+  it('guarda la petición válida y además envía el email', async () => {
+    const guardar = vi.fn(async () => {});
+    const d = { ...deps(), guardar };
+    expect(await procesarPresupuesto(valida, d)).toEqual({ ok: true });
+    expect(guardar).toHaveBeenCalledOnce();
+    expect(d.enviarEmail).toHaveBeenCalledOnce();
+  });
+
+  it('no guarda nada si salta el campo trampa o falla Turnstile', async () => {
+    const guardar = vi.fn(async () => {});
+    await procesarPresupuesto({ ...valida, sitio_web: 'spam' }, { ...deps(), guardar });
+    await procesarPresupuesto(valida, { ...deps({ verificarTurnstile: async () => false }), guardar });
+    expect(guardar).not.toHaveBeenCalled();
+  });
+
+  it('si falla el email pero se guardó, la petición no se pierde', async () => {
+    expect(await procesarPresupuesto(valida, { ...deps({ enviarEmail: fallo }), guardar: async () => {} })).toEqual({ ok: true });
+    expect(await procesarPresupuesto(valida, { ...deps({ enviarEmail: fallo }), guardar: fallo })).toMatchObject({ ok: false, codigo: 'envio' });
+  });
+
+  it('si falla el guardado, el email sigue saliendo', async () => {
+    const d = { ...deps(), guardar: fallo };
+    expect(await procesarPresupuesto(valida, d)).toEqual({ ok: true });
+    expect(d.enviarEmail).toHaveBeenCalledOnce();
+  });
+
+  it('convierte la petición en un presupuesto de la bandeja', async () => {
+    const { presupuestoDesde } = await import('../src/server/panel/presupuestos.ts');
+    const p = presupuestoDesde(esquemaPresupuesto.parse(valida), especies, new Date('2026-10-14T10:00:00Z'), 'p1');
+    expect(p).toMatchObject({ id: 'p1', estado: 'nuevo', email: 'ana@ejemplo.com', provincia: 'Valencia', tipoPedido: 'mayor' });
+    expect(p.lineas).toEqual([{ especie: 'phoenix-canariensis', nombre: 'Palmera canaria', cantidad: 4 }]);
+  });
+});

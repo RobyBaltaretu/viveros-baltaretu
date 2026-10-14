@@ -1,5 +1,5 @@
 import { componerEmail, type EspecieEmail, type MensajeEmail } from './email';
-import { CAMPO_TRAMPA, esquemaPresupuesto, normalizarEntrada } from './esquema';
+import { CAMPO_TRAMPA, esquemaPresupuesto, normalizarEntrada, type SolicitudPresupuesto } from './esquema';
 
 export type ResultadoPresupuesto =
   | { ok: true }
@@ -11,6 +11,8 @@ export interface DependenciasPresupuesto {
   especies: ReadonlyMap<string, EspecieEmail>;
   verificarTurnstile: (token: string) => Promise<boolean>;
   enviarEmail: (mensaje: MensajeEmail & { responderA: string }) => Promise<void>;
+  /** Guarda la petición para la bandeja del panel. Si falla, sigue valiendo el email. */
+  guardar?: (solicitud: SolicitudPresupuesto) => Promise<void>;
 }
 
 /** Valida, comprueba el anti-spam y envía el aviso. Sin dependencias de Cloudflare: se prueba con Vitest. */
@@ -40,11 +42,22 @@ export async function procesarPresupuesto(
     return { ok: false, estado: 403, codigo: 'antispam' };
   }
 
+  // Primero se guarda (si hay panel): así la petición no se pierde aunque falle el email.
+  let guardado = false;
+  if (deps.guardar) {
+    try {
+      await deps.guardar(solicitud);
+      guardado = true;
+    } catch (error) {
+      console.error('Error al guardar el presupuesto', error);
+    }
+  }
+
   try {
     await deps.enviarEmail({ ...componerEmail(solicitud, deps.especies), responderA: solicitud.email });
   } catch (error) {
     console.error('Error al enviar el aviso de presupuesto', error);
-    return { ok: false, estado: 502, codigo: 'envio' };
+    if (!guardado) return { ok: false, estado: 502, codigo: 'envio' };
   }
   return { ok: true };
 }
