@@ -7,6 +7,7 @@ export const tp = {
   saltar: 'Saltar al contenido',
   salir: 'Salir',
   inicio: 'Inicio',
+  volver: 'Volver',
   sinActivarTitulo: 'El panel todavía no está activado',
   sinActivarTexto: 'Falta terminar la configuración. Avisa a la persona que lleva la web.',
   sinAccesoTitulo: 'No tienes acceso al panel',

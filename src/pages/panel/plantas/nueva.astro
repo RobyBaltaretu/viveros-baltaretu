@@ -15,7 +15,7 @@ export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'editar');
 const estado = s ? await pasoAlta(s, Astro.request) : null;
-if (estado?.creada) return Astro.redirect(`/panel/plantas/${estado.creada}?hecho=1`, 303);
+if (estado?.creada) return Astro.redirect(`/panel/plantas/${estado.creada}/fotos?hecho=nueva`, 303);
 const paso = estado?.paso ?? 0;
 const d = estado?.datos ?? {};
 const error = (c: string) => estado?.errores.find((e) => e.campo === c)?.mensaje;

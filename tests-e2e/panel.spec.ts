@@ -3,7 +3,7 @@ import { auditar, controlesGrandes } from './ayudas';
 
 // El build de los e2e usa el entorno `desarrollo`: D1 local con el contenido importado
 // y entrada al panel sin Access desde localhost como propietario@example.com.
-const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos'];
+const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos'];
 
 test.describe('panel: accesibilidad y tamaño de los controles', () => {
   for (const ruta of PANTALLAS) {
@@ -67,8 +67,20 @@ test('alta guiada de una planta, paso a paso', async ({ page }) => {
   await page.getByLabel('Origen de la planta').fill('Valencia');
   await auditar(page);
   await page.getByRole('button', { name: 'Guardar la planta' }).click();
+  // Tras el alta, el panel lleva a añadir fotos.
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(`Fotos de ${nombre}`);
+  await expect(page.getByRole('status').first()).toContainText('Ahora añade una foto');
+  await page.getByLabel('Añadir una foto').setInputFiles('src/assets/catalogo/phoenix-canariensis/foto-prueba-1.jpg');
+  await page.getByRole('button', { name: 'Subir la foto' }).click();
+  await expect(page.getByRole('status').first()).toContainText('Foto subida');
+  await expect(page.getByRole('img', { name: `${nombre} en el vivero` })).toBeVisible();
+  await expect.poll(() => page.getByRole('img').first().evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
+  await page.getByLabel('Qué se ve en la foto').fill('Olivo joven en maceta');
+  await page.getByRole('button', { name: 'Guardar el texto' }).click();
+  await expect(page.getByRole('img', { name: 'Olivo joven en maceta' })).toBeVisible();
+  await auditar(page);
+  await page.getByRole('link', { name: '← Volver' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(nombre);
-  await expect(page.getByRole('status')).toContainText('Guardado');
   await expect(page.getByText('Falta marcarla como revisada')).toBeVisible();
 
   await page.getByRole('link', { name: 'Cambiar el precio' }).click();

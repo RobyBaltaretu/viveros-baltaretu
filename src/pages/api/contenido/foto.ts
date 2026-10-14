@@ -1,11 +1,11 @@
 import type { APIRoute } from 'astro';
 import { accesoContenido, respuestaJson } from '../../../server/contenido/api.ts';
 import { esRutaFotoValida } from '../../../server/contenido/validacion.ts';
+import { MAXIMO_FOTO } from '../../../server/panel/fotos.ts';
 
 export const prerender = false;
 
 const TIPOS: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', avif: 'image/avif' };
-export const MAXIMO_FOTO = 1_900_000;
 
 /** Descarga una foto (build y copias). */
 export const GET: APIRoute = async ({ request, url }) => {

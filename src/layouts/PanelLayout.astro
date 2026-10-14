@@ -47,7 +47,7 @@ const usuario = sesion?.estado === 'ok' ? sesion.usuario : null;
         volver && (
           <p class="mb-4">
             <a href={volver} class="enlace-panel">
-              ← {tp.inicio}
+              ← {volver === '/panel' ? tp.inicio : tp.volver}
             </a>
           </p>
         )
