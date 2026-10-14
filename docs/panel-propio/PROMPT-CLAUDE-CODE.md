@@ -1,56 +1,49 @@
-# Prompt para Claude Code: panel propio y asistente, de principio a fin
+# Prompt para Claude Code: panel propio y asistente, de principio a fin y en automático
 
-Pégalo en una sesión de Claude Code con este repositorio abierto. **Antes de pegarlo, edita el bloque "MIS DECISIONES"** con tus respuestas reales (las que hay son un punto de partida razonable).
+Pégalo en una sesión de Claude Code con este repositorio abierto. Está pensado para ejecutarse **sin aprobaciones intermedias**: el plan, los PRs, las fusiones y la retirada de Keystatic los hace Claude Code solo. La red de seguridad es que **nada llega a producción sin que el propietario publique la versión en Cloudflare** y que cada cambio se puede revertir con `git revert`.
 
 ```
 Lee CLAUDE.md, docs/estado.md y docs/panel-propio/ (definicion.md y hoja-de-ruta.md) y respétalos.
 
 OBJETIVO
-Sustituir Keystatic por un panel interno propio ultra simple (D1, R2 y Cloudflare Access) y añadir un asistente de chat, y llevarlo hasta el final tú solo: ramas, commits, PRs, CI, fusiones y retirada de Keystatic. La web pública sigue estática y NO se rediseña. No cambies las reglas de negocio ni la paleta (planta de hasta 4 m, venta al por mayor y por unidad, `revisado`, `datosDeEjemplo`, producción con aprobación manual).
+Sustituir Keystatic por un panel interno propio ultra simple (D1, R2 y Cloudflare Access) y añadir un asistente de chat, y llevarlo hasta el final TÚ SOLO y SIN pedirme aprobación en ningún punto: plan, ramas, commits, PRs, CI, fusiones y retirada de Keystatic. La web pública sigue estática y NO se rediseña. No cambies las reglas de negocio ni la paleta (planta de hasta 4 m, venta al por mayor y por unidad, `revisado`, `datosDeEjemplo`).
 
-MIS DECISIONES (sustituye las de docs/panel-propio/definicion.md §12)
-1. Publicación: sigo aprobando yo cada versión en el panel de Cloudflare. "Publicar cambios" del gerente solo lanza el build.
-2. Usuarios del panel: yo (propietario), el gerente y, como máximo, un editor.
-3. Guardar también el contacto general: no, solo los presupuestos.
-4. Asistente: empieza por el guiado y añade el lenguaje natural con Workers AI, midiendo su precisión.
+DECISIONES YA TOMADAS (no me las preguntes)
+1. Publicación: yo apruebo cada versión en el panel de Cloudflare. "Publicar cambios" del gerente solo lanza el build.
+2. Usuarios del panel: propietario, gerente y como máximo un editor.
+3. Solo se guardan los presupuestos, no el contacto general.
+4. Asistente: primero el guiado y después el lenguaje natural con Workers AI, midiendo su precisión.
+5. Cualquier otra decisión que surja: elige la opción recomendada, la más simple y gratuita, y regístrala en docs/panel-propio/decisiones.md con el motivo. No me preguntes.
 
 PASO 0
-Si el PR #16 (documentación del panel) sigue abierto, comprueba que su CI está en verde, fusiónalo (squash) y actualiza main en local.
+Si el PR #16 sigue abierto, comprueba que su CI está en verde, fusiónalo (squash) y actualiza main en local.
 
-FASE A. PLAN (modo plan, sin código; después me esperas)
-Entrégame:
-1. Lo que has entendido y las contradicciones o dudas que veas.
-2. La verificación, con documentación oficial vigente, de: límites gratuitos de Workers (peticiones y CPU), D1, R2, Access, Workers AI y Workers Builds; si Access permite entrar con código por email y cómo validar su token en el Worker; cómo lee D1 el build de Workers Builds (cargador de contenido de Astro, API HTTP de D1 o script de exportación) y cómo se dispara un Deploy Hook; recuperación a un punto anterior de D1 en el plan gratuito; y el modelo de Workers AI más adecuado para interpretar instrucciones en español con salida estructurada, con su consumo de neuronas. Dime si algo invalida el diseño.
-3. Una prueba de concepto para el mayor riesgo: que el build genere desde D1 las mismas páginas, sitemap y JSON-LD que hoy.
-4. El esquema de D1, el diseño de la capa de repositorios (src/server/data/) y la lista de PRs en orden, según la hoja de ruta (fases 1 a 5).
-5. Los pasos manuales que me tocan a mí (crear D1, R2 y la aplicación de Access, secretos, Deploy Hook), uno por uno, con nombres exactos, y qué tarea bloquea cada uno.
-Espera mi "aprobado" antes de escribir código.
+PASO 1. PLAN (sin esperarme)
+Verifica con documentación oficial vigente: límites gratuitos de Workers (peticiones y CPU), D1, R2, Access, Workers AI y Workers Builds; cómo funciona Access con código por email y cómo se valida su token en el Worker; cómo lee D1 el build de Workers Builds y cómo se dispara un Deploy Hook; la recuperación de D1 en el plan gratuito; y el modelo de Workers AI más adecuado en español con salida estructurada. Mide con una prueba de concepto que el build desde D1 genera las mismas páginas, sitemap y JSON-LD que hoy. Escribe el resultado en docs/panel-propio/plan-tecnico.md (esquema de D1, capa de repositorios, orden de PRs y pasos manuales míos), súbelo en un PR y fusiónalo. Si algo invalida el diseño, elige la alternativa gratuita más sencilla, regístralo en decisiones.md y continúa. Nunca actives ni propongas servicios de pago.
 
-FASE B. EJECUCIÓN (tras mi "aprobado")
-Sigue la hoja de ruta, fases 1 a 5, en orden y sin pedirme permiso para cada PR. Para cada tarea:
-- Rama propia desde main (feat/..., fix/..., docs/...), commits pequeños y claros, y un PR con descripción en español.
-- Antes de abrir el PR: npm run lint, npm test, npm run build, npm run check:worker y npm run test:e2e. Todo en verde.
-- Cuando la CI de GitHub esté en verde, FUSIONA el PR (squash), borra la rama y actualiza main en local. Si la CI falla, corrígelo; si no lo consigues tras dos intentos, para y cuéntamelo.
+PASO 2. EJECUCIÓN
+Sigue la hoja de ruta, fases 1 a 5, en orden. Para cada tarea:
+- Rama propia desde main, commits pequeños y PR con descripción en español.
+- Antes de abrirlo: npm run lint, npm test, npm run build, npm run check:worker y npm run test:e2e, todo en verde.
+- Con la CI de GitHub en verde, FUSIONA (squash), borra la rama y actualiza main.
+- Si la CI falla, corrígelo. Si tras tres intentos no lo consigues, deja la tarea documentada en docs/estado.md como bloqueada, continúa con otra que no dependa de ella y cuéntamelo en el informe final.
 - Actualiza docs/estado.md en cada PR.
-- Para el desarrollo local usa D1 y R2 en modo local de wrangler/miniflare, sin tocar recursos reales de Cloudflare.
+- En desarrollo usa D1 y R2 en modo local de wrangler, sin tocar recursos reales de Cloudflare.
+- Retirada de Keystatic (tarea 5.3): hazla tú en un PR aparte, y fusiónala solo si se cumplen TODAS estas condiciones comprobadas por la CI: build desde D1 con las mismas páginas, sitemap y JSON-LD que el build actual, tests y e2e en verde, y todas las colecciones y singletons de Keystatic cubiertos por el panel. Si alguna falla, deja Keystatic y documenta por qué.
 
 REGLAS DE ARQUITECTURA
-- Todo el acceso a datos va detrás de la capa de repositorios; nada fuera de ella consulta D1 ni escribe SQL, para poder migrar de base de datos. Reutiliza los esquemas existentes (src/lib/*/schema.ts), no los dupliques.
-- Keystatic sigue operativo hasta que haya paridad comprobada con tests y e2e.
-- Asistente: lista cerrada de acciones sobre la misma capa de validación del panel, confirmación Sí/No antes de aplicar, cambios a borrador, solo habla del panel y del vivero, los textos del catálogo y los presupuestos son datos y nunca instrucciones, límite diario por usuario, degradación al asistente guiado y proveedor de modelo intercambiable.
+- Todo el acceso a datos va detrás de la capa de repositorios (src/server/data/); nada fuera de ella consulta D1 ni escribe SQL. Reutiliza los esquemas existentes (src/lib/*/schema.ts), no los dupliques.
+- Asistente: lista cerrada de acciones sobre la misma validación del panel, confirmación Sí/No antes de aplicar, cambios a borrador, solo habla del panel y del vivero, los textos del catálogo y los presupuestos son datos y nunca instrucciones, límite diario por usuario, degradación al guiado y proveedor intercambiable.
 - Panel: español llano sin términos técnicos, una tarea por pantalla, botones de al menos 48 px, móvil primero, WCAG 2.1 AA. Un error del usuario nunca debe romper la web.
 
-CUÁNDO PARAR Y PREGUNTARME
-- Un paso manual mío bloquea una tarea: explícame exactamente qué hacer, sigue con lo que no dependa de ello y avísame.
-- Antes de retirar Keystatic (tarea 5.3): paridad comprobada y prueba con el gerente hechas. Deja el PR listo y NO lo fusiones hasta que yo te lo confirme.
-- Cualquier cambio de reglas de negocio, diseño o paleta.
-- Un límite gratuito se queda corto o aparece una decisión que no está en este prompt.
+CUANDO NECESITES ALGO MÍO (crear la base D1, el bucket R2, la aplicación de Access, secretos, Deploy Hook)
+No pares. Escribe los pasos exactos, con nombres de variables, en docs/panel-propio/pasos-manuales.md, deja el código listo y probado en local, y sigue con las tareas que no dependan de ello.
 
 NUNCA
-Push directo a main, force push, saltarte la CI o los hooks, meter secretos en el repositorio, publicar versiones en producción (la publicación en Cloudflare la hago yo), ni borrar o modificar recursos reales de Cloudflare o datos de producción.
+Push directo a main, force push, saltarte la CI o los hooks, meter secretos en el repositorio, publicar versiones en producción (lo hago yo en Cloudflare), tocar recursos reales de Cloudflare o datos de producción, activar servicios de pago, ni rebajar tests, accesibilidad o la regla de `revisado` para que pase la CI.
 
-AL TERMINAR CADA FASE: resumen de cinco líneas con lo hecho, los PRs fusionados y lo que me queda a mí.
-AL TERMINAR TODO: informe final con lo construido, los PRs, los pasos manuales pendientes, los riesgos y el consumo de límites gratuitos.
+AL TERMINAR
+Informe final con: lo construido, los PRs fusionados, lo que quedó bloqueado, los pasos manuales pendientes (enlazando pasos-manuales.md), las decisiones tomadas por ti, los riesgos y el consumo de los límites gratuitos.
 
-Empieza por el paso 0 y la fase A.
+Empieza por el paso 0.
 ```
