@@ -1,0 +1,102 @@
+---
+/**
+ * Plantilla del panel interno: letra grande, mucho contraste, una tarea por
+ * pantalla y nada de la cabecera ni el pie de la web pública.
+ */
+import '../styles/global.css';
+import { Font } from 'astro:assets';
+import { tp } from '../i18n/panel';
+
+interface Props {
+  titulo: string;
+  /** Enlace "volver" (por defecto, al inicio del panel). `false` en el inicio. */
+  volver?: string | false;
+}
+
+const { titulo, volver = '/panel' } = Astro.props;
+const sesion = Astro.locals.panel;
+const usuario = sesion?.estado === 'ok' ? sesion.usuario : null;
+---
+
+<html lang="es" class="sin-js">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{titulo} · {tp.tituloPanel}</title>
+    <script is:inline>document.documentElement.classList.remove('sin-js');</script>
+    <Font cssVariable="--font-bricolage" preload />
+    <Font cssVariable="--font-dm-sans" />
+  </head>
+  <body class="panel min-h-dvh text-lg">
+    <a href="#principal" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-tarjeta focus:bg-papel focus:p-3">{tp.saltar}</a>
+    <header class="superficie-oliva">
+      <div class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <a href="/panel" class="font-titular text-xl font-bold text-crema no-underline">{tp.tituloPanel}</a>
+        {
+          usuario && (
+            <a href="/cdn-cgi/access/logout" class="boton-panel boton-panel-claro">
+              {tp.salir}
+            </a>
+          )
+        }
+      </div>
+    </header>
+    <main id="principal" class="mx-auto max-w-3xl px-4 pt-6 pb-16">
+      {
+        volver && (
+          <p class="mb-4">
+            <a href={volver} class="enlace-panel">
+              ← {tp.inicio}
+            </a>
+          </p>
+        )
+      }
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  /* Controles del panel: al menos 48 px de alto y foco bien visible. */
+  .boton-panel {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-tarjeta);
+    padding: 0.625rem 1.25rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: var(--color-terracota);
+    color: #fff;
+  }
+  .boton-panel-secundario {
+    background: var(--color-papel);
+    color: var(--color-tinta);
+    border: 2px solid var(--color-oliva);
+  }
+  .boton-panel-claro {
+    background: var(--color-crema);
+    color: var(--color-oliva);
+  }
+  .enlace-panel {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    font-weight: 600;
+    color: var(--color-oliva);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .campo-panel {
+    min-height: 3rem;
+    width: 100%;
+    border: 2px solid var(--color-gris);
+    border-radius: 0.5rem;
+    background: var(--color-papel);
+    padding: 0.5rem 0.75rem;
+    font-size: 1.125rem;
+  }
+</style>

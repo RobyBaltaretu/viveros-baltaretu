@@ -22,3 +22,10 @@ interface ImportMeta {
 declare module 'cloudflare:workers' {
   export const env: Record<string, unknown>;
 }
+
+declare namespace App {
+  interface Locals {
+    /** Sesión del panel (solo en `/panel` y `/api/panel/*`, ver src/middleware.ts). */
+    panel?: import('./server/panel/acceso.ts').SesionPanel;
+  }
+}
