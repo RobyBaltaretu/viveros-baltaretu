@@ -17,6 +17,8 @@
   // en el binding: el plan gratuito solo permite enviar a direcciones de destino
   // verificadas en Email Routing (EMAIL_DESTINO).
   "send_email": [{ "name": "EMAIL" }],
+  // Base de datos del panel propio (contenido, fotos, presupuestos). Las tablas las crea el Worker.
+  "d1_databases": [{ "binding": "DB", "database_name": "viveros-baltaretu", "database_id": "6b9bb52c-f194-405d-ac4a-86bb6370cb35" }],
   // Conserva las variables y secretos definidos en el panel de Cloudflare
   // (EMAIL_DESTINO, EMAIL_REMITENTE, TURNSTILE_SECRET_KEY) al desplegar.
   "keep_vars": true,
@@ -24,8 +26,7 @@
     "enabled": true
   },
   // Entorno local (CLOUDFLARE_ENV=desarrollo): `npm run dev`, tests y e2e con D1 en
-  // modo local de wrangler, sin tocar recursos reales. En producción no hay binding de D1
-  // hasta que el propietario cree la base (docs/panel-propio/pasos-manuales.md).
+  // modo local de wrangler, sin tocar recursos reales.
   "env": {
     "desarrollo": {
       "send_email": [{ "name": "EMAIL" }],

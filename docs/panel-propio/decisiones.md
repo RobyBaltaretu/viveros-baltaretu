@@ -19,3 +19,4 @@ Decisiones tomadas durante la implementación, con su motivo. Las del propietari
 | 13 | Permisos: propietario todo; gerente todo salvo personas; editor solo prepara cambios (no publica ni ve presupuestos) | Lo más simple que cubre los tres roles decididos |
 | 14 | Los textos para buscadores (título y descripción) se generan solos al guardar cada planta, con la misma plantilla que las fichas actuales | El gerente no tiene que entender qué es SEO y nunca quedan desfasados respecto al nombre o al precio |
 | 15 | Si se escribe un precio por unidad sin marcar "también se vende por unidad", el panel lo explica en vez de borrarlo | Nunca se pierde en silencio algo que la persona ha escrito; la regla del esquema se mantiene |
+| 16 | Para probar sin dominio propio, Access solo en las *Preview URLs* del Worker | En `*.workers.dev` Access protege la dirección entera; activarlo ahí cerraría la web pública |
