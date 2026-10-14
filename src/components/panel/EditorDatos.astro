@@ -1,0 +1,115 @@
+---
+/**
+ * Formulario de un dato del contenido, dibujado según su forma: texto, sí/no,
+ * número, español + inglés, grupo o lista. Se llama a sí mismo para los grupos.
+ * Los nombres de los campos son `d:ruta.con.puntos` (ver src/server/panel/textos.ts).
+ */
+import { esBilingue, etiqueta, LARGOS, NOMBRES_ICONO, OCULTOS, OPCIONES } from '../../server/panel/textos.ts';
+
+interface Props {
+  valor: unknown;
+  ruta: string;
+  /** Plantas para elegir en los proyectos. */
+  especies?: { id: string; nombre: string }[];
+  errores?: Record<string, string>;
+}
+
+const { valor, ruta, especies = [], errores = {} } = Astro.props;
+const clave = ruta.split('.').filter((p) => !/^\d+$/.test(p)).at(-1) ?? '';
+const nombre = etiqueta(ruta);
+const id = `c-${ruta.replace(/\W/g, '-')}`;
+const pendiente = (v: unknown) => typeof v === 'string' && v.trim().startsWith('[PLACEHOLDER');
+const largo = (v: unknown) => LARGOS.has(clave) || (typeof v === 'string' && v.length > 90);
+const error = (r: string) => errores[r];
+---
+
+{
+  OCULTOS.has(clave) ? null : typeof valor === 'boolean' ? (
+    <label class="flex min-h-12 items-center gap-3 font-semibold">
+      <input type="hidden" name="casilla" value={ruta} />
+      <input type="checkbox" name={`d:${ruta}`} value="1" checked={valor} class="size-6" />
+      {nombre}
+    </label>
+  ) : esBilingue(valor) ? (
+    <fieldset class="grid gap-3 rounded-tarjeta border-2 border-linea p-4">
+      <legend class="px-1 font-semibold">{nombre}</legend>
+      {(['es', 'en'] as const).map((idioma) => {
+        const r = `${ruta}.${idioma}`;
+        const v = valor[idioma];
+        const idCampo = `${id}-${idioma}`;
+        return (
+          <div class="grid gap-1">
+            <label for={idCampo} class="font-semibold">{idioma === 'es' ? 'En español' : 'En inglés'}</label>
+            {pendiente(v) && <p class="text-base font-semibold text-terracota">Falta este dato: cámbialo por el texto real.</p>}
+            {largo(v) ? (
+              <textarea id={idCampo} name={`d:${r}`} rows="4" class="campo-panel" aria-invalid={error(r) ? 'true' : undefined}>{v}</textarea>
+            ) : (
+              <input id={idCampo} name={`d:${r}`} value={v} class="campo-panel" autocomplete="off" aria-invalid={error(r) ? 'true' : undefined} />
+            )}
+            {error(r) && <p class="font-semibold text-terracota">{error(r)}</p>}
+          </div>
+        );
+      })}
+    </fieldset>
+  ) : clave === 'especies' && Array.isArray(valor) ? (
+    <fieldset class="grid gap-1">
+      <legend class="mb-1 font-semibold">{nombre}</legend>
+      <input type="hidden" name="lista" value={ruta} />
+      {especies.map((e) => (
+        <label class="flex min-h-12 items-center gap-3">
+          <input type="checkbox" name={`l:${ruta}`} value={e.id} checked={(valor as string[]).includes(e.id)} class="size-6" />
+          {e.nombre}
+        </label>
+      ))}
+    </fieldset>
+  ) : Array.isArray(valor) ? (
+    <fieldset class="grid gap-4">
+      <legend class="mb-1 font-titular text-xl font-bold">{nombre}</legend>
+      {valor.map((elemento, i) => (
+        <fieldset class="grid gap-3 rounded-panel border-2 border-linea bg-papel p-4">
+          <legend class="px-1 font-semibold">
+            {nombre} · {i + 1}
+          </legend>
+          {elemento && typeof elemento === 'object' && !esBilingue(elemento) ? (
+            Object.entries(elemento as Record<string, unknown>).map(([k, v]) => <Astro.self valor={v} ruta={`${ruta}.${i}.${k}`} especies={especies} errores={errores} />)
+          ) : (
+            <Astro.self valor={elemento} ruta={`${ruta}.${i}`} especies={especies} errores={errores} />
+          )}
+          <p>
+            <button class="boton-panel boton-panel-secundario" name="accion" value={`quitar:${ruta}.${i}`} formnovalidate>
+              Quitar este
+            </button>
+          </p>
+        </fieldset>
+      ))}
+      <p>
+        <button class="boton-panel boton-panel-secundario" name="accion" value={`agregar:${ruta}`} formnovalidate>
+          Añadir otro
+        </button>
+      </p>
+    </fieldset>
+  ) : valor && typeof valor === 'object' ? (
+    <fieldset class="grid gap-3">
+      <legend class="mb-1 font-titular text-xl font-bold">{nombre}</legend>
+      {Object.entries(valor as Record<string, unknown>).map(([k, v]) => <Astro.self valor={v} ruta={`${ruta}.${k}`} especies={especies} errores={errores} />)}
+    </fieldset>
+  ) : OPCIONES[clave] ? (
+    <div class="grid gap-1">
+      <label for={id} class="font-semibold">{nombre}</label>
+      <select id={id} name={`d:${ruta}`} class="campo-panel">
+        {OPCIONES[clave].map((o) => <option value={o} selected={o === valor}>{NOMBRES_ICONO[o] ?? o}</option>)}
+      </select>
+    </div>
+  ) : (
+    <div class="grid gap-1">
+      <label for={id} class="font-semibold">{nombre}</label>
+      {pendiente(valor) && <p class="text-base font-semibold text-terracota">Falta este dato: cámbialo por el dato real.</p>}
+      {largo(valor) ? (
+        <textarea id={id} name={`d:${ruta}`} rows="4" class="campo-panel" aria-invalid={error(ruta) ? 'true' : undefined}>{String(valor ?? '')}</textarea>
+      ) : (
+        <input id={id} name={`d:${ruta}`} value={valor == null ? '' : String(valor)} inputmode={typeof valor === 'number' ? 'decimal' : undefined} class="campo-panel" autocomplete="off" aria-invalid={error(ruta) ? 'true' : undefined} />
+      )}
+      {error(ruta) && <p class="font-semibold text-terracota">{error(ruta)}</p>}
+    </div>
+  )
+}

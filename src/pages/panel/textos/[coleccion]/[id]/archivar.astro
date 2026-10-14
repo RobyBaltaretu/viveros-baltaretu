@@ -1,0 +1,29 @@
+---
+import PaginaPanel from '../../../../../components/panel/PaginaPanel.astro';
+import { sesionCon } from '../../../../../server/panel/pagina.ts';
+import { esLista } from '../../../../../server/panel/textos.ts';
+
+export const prerender = false;
+
+const coleccion = Astro.params.coleccion ?? '';
+const id = Astro.params.id ?? '';
+if (!esLista(coleccion)) return Astro.redirect('/panel/textos', 303);
+const s = sesionCon(Astro.locals, 'editar');
+const entrada = s ? await s.repos.contenido.obtener(coleccion, id) : null;
+if (s && (!entrada || entrada.archivada)) return Astro.redirect(`/panel/textos/${coleccion}`, 303);
+if (s && Astro.request.method === 'POST') {
+  await s.repos.contenido.archivar(coleccion, id, true, { email: s.usuario.email });
+  return Astro.redirect(`/panel/textos/${coleccion}?hecho=1`, 303);
+}
+const titulo = (entrada?.borrador.datos as { titulo?: { es?: string } } | undefined)?.titulo?.es;
+const volver = `/panel/textos/${coleccion}/${id}`;
+---
+
+<PaginaPanel titulo="Quitar de la web" permiso="editar" volver={volver}>
+  <h1 class="titular-grande">¿Quitar «{titulo}» de la web?</h1>
+  <p class="mt-4">Dejará de verse cuando publiques los cambios. No se borra: se puede recuperar con «Deshacer».</p>
+  <form method="post" class="mt-6 flex flex-wrap gap-3">
+    <button class="boton-panel">Sí, quitarlo</button>
+    <a href={volver} class="boton-panel boton-panel-secundario">No, volver</a>
+  </form>
+</PaginaPanel>
