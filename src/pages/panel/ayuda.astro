@@ -1,11 +1,60 @@
 ---
 import PaginaPanel from '../../components/panel/PaginaPanel.astro';
 import { tp } from '../../i18n/panel';
+import { TEMAS } from '../../server/panel/ayuda.ts';
 
 export const prerender = false;
 ---
 
 <PaginaPanel titulo={tp.tarjetas.ayuda[0]}>
   <h1 class="titular-grande">{tp.tarjetas.ayuda[0]}</h1>
-  <p class="mt-4">{tp.enPreparacion}</p>
+  <p class="mt-4">Elige lo que quieres hacer. Si algo no sale, avisa al propietario: nada de lo que hagas aquí puede romper la web.</p>
+  <div class="mt-6 grid gap-3">
+    {
+      TEMAS.map((t) => (
+        <details id={t.id} class="ayuda rounded-panel border-2 border-linea bg-papel">
+          <summary class="flex min-h-14 cursor-pointer items-center justify-between gap-3 px-5 py-3 font-titular text-xl font-bold">
+            {t.titulo}
+            <svg class="flecha size-6 shrink-0 text-oliva" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </summary>
+          <ol class="grid gap-3 px-5 pb-5" role="list">
+            {t.pasos.map((p, i) => (
+              <li class="flex gap-3">
+                <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-oliva font-bold text-crema" aria-hidden="true">
+                  {i + 1}
+                </span>
+                <span class="pt-0.5">{p}</span>
+              </li>
+            ))}
+            {t.enlace && (
+              <li>
+                <a href={t.enlace.href} class="boton-panel boton-panel-secundario">
+                  {t.enlace.texto}
+                </a>
+              </li>
+            )}
+          </ol>
+        </details>
+      ))
+    }
+  </div>
 </PaginaPanel>
+
+<style>
+  .ayuda summary::-webkit-details-marker {
+    display: none;
+  }
+  .ayuda summary {
+    list-style: none;
+  }
+  .ayuda[open] .flecha {
+    rotate: 180deg;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .flecha {
+      transition: rotate 200ms var(--ease-suave);
+    }
+  }
+</style>
