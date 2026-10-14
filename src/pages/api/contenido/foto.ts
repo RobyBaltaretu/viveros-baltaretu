@@ -1,0 +1,20 @@
+import type { APIRoute } from 'astro';
+import { accesoContenido, respuestaJson } from '../../../server/contenido/api.ts';
+import { esRutaFotoValida } from '../../../server/contenido/validacion.ts';
+
+export const prerender = false;
+
+const TIPOS: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', avif: 'image/avif' };
+export const MAXIMO_FOTO = 1_900_000;
+
+/** Sube una foto (importación y restauración). */
+export const PUT: APIRoute = async ({ request, url }) => {
+  const repos = await accesoContenido(request);
+  if (repos instanceof Response) return repos;
+  const ruta = url.searchParams.get('ruta') ?? '';
+  if (!esRutaFotoValida(ruta)) return respuestaJson({ ok: false, codigo: 'ruta' }, 400);
+  const bytes = new Uint8Array(await request.arrayBuffer());
+  if (bytes.byteLength === 0 || bytes.byteLength > MAXIMO_FOTO) return respuestaJson({ ok: false, codigo: 'tamano' }, 413);
+  await repos.fotos.guardar({ ruta, tipo: TIPOS[ruta.split('.').pop()!.toLowerCase()], bytes }, 'importacion');
+  return respuestaJson({ ok: true });
+};

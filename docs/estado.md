@@ -30,3 +30,4 @@ Plan aprobado por el propietario y en ejecución por fases: `docs/panel-propio/`
 - 0.2 Plan técnico: hecho. Prueba de concepto sin diferencias entre el build actual y el que pasa por el formato de D1.
 - 1.1 Esquema de D1: migraciones versionadas en `src/server/data/d1/migraciones.ts`, aplicadas por el Worker al primer uso; D1 local en el entorno `desarrollo` de `wrangler.jsonc`.
 - 1.2 Capa de repositorios: interfaces en `src/server/data/tipos.ts` e implementación de D1 en `src/server/data/d1/` (el único sitio con SQL; un test lo comprueba).
+- 1.3 Importación: `npm run contenido:importar` (D1 local) o con `--url` a la base real a través de `/api/contenido/*` (token `CONTENIDO_TOKEN`). Valida con los esquemas del build y no importa nada si algo falla.
