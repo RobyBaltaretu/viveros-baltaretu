@@ -1,0 +1,52 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import { tp } from '../../../i18n/panel';
+import { ESTADOS_PRESUPUESTO, type EstadoPresupuesto } from '../../../server/data/tipos.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+import { NOMBRES_ESTADO } from '../../../server/panel/presupuestos.ts';
+
+export const prerender = false;
+
+const pedido = Astro.url.searchParams.get('estado');
+const estado: EstadoPresupuesto = (ESTADOS_PRESUPUESTO as readonly string[]).includes(pedido ?? '') ? (pedido as EstadoPresupuesto) : 'nuevo';
+const s = sesionCon(Astro.locals, 'presupuestos');
+const lista = s ? await s.repos.presupuestos.listar({ estado }) : [];
+const cuentas = s ? Object.fromEntries(await Promise.all(ESTADOS_PRESUPUESTO.map(async (e) => [e, await s.repos.presupuestos.contar(e)] as const))) : {};
+const fecha = (iso: string) => new Date(iso).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Madrid' });
+---
+
+<PaginaPanel titulo={tp.tarjetas.presupuestos[0]} permiso="presupuestos">
+  <h1 class="titular-grande">{tp.tarjetas.presupuestos[0]}</h1>
+  <nav aria-label="Estado" class="mt-6">
+    <ul class="flex flex-wrap gap-2" role="list">
+      {
+        ESTADOS_PRESUPUESTO.map((e) => (
+          <li>
+            <a href={`/panel/presupuestos?estado=${e}`} class:list={['boton-panel', e !== estado && 'boton-panel-secundario']} aria-current={e === estado ? 'page' : undefined}>
+              {NOMBRES_ESTADO[e]} ({cuentas[e] ?? 0})
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+  {lista.length === 0 && <p class="mt-6">No hay presupuestos {NOMBRES_ESTADO[estado].toLowerCase()}.</p>}
+  <ul class="mt-6 grid gap-3" role="list">
+    {
+      lista.map((p) => (
+        <li>
+          <a href={`/panel/presupuestos/${p.id}`} class="group flex min-h-12 flex-col gap-1 rounded-tarjeta border-2 border-linea bg-papel p-4 no-underline hover:border-oliva">
+            <span class="font-titular text-xl font-bold text-tinta group-hover:underline">
+              {p.nombre}
+              {p.empresa && ` · ${p.empresa}`}
+            </span>
+            <span class="text-gris">
+              {fecha(p.fecha)} · {p.tipoPedido === 'unidad' ? 'por unidad' : 'al por mayor'} · {p.lineas.length} {p.lineas.length === 1 ? 'planta' : 'plantas'}
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+  <p class="mt-8"><a class="boton-panel boton-panel-secundario" href="/api/panel/presupuestos.csv" download>Descargar todos en una hoja de cálculo</a></p>
+</PaginaPanel>
