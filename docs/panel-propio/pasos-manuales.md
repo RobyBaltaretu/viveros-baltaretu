@@ -10,7 +10,9 @@ La base `viveros-baltaretu` está creada y conectada en `wrangler.jsonc`. Si el 
 2. Guárdalo como **secreto** `CONTENIDO_TOKEN` en *Workers & Pages → viveros-baltaretu → Settings → Variables and Secrets* (runtime) y también en *Settings → Build → Variables and secrets* (build).
 
 ## 3. Importar el contenido actual (una vez, con la base y el token creados y la versión publicada)
-Desde tu ordenador, con el repositorio al día:
+Opción sin instalar nada: en GitHub, *Settings → Secrets and variables → Actions → New repository secret*, nombre `CONTENIDO_TOKEN` y el mismo valor que en Cloudflare. Después, *Actions → Importar contenido al panel → Run workflow*, con la dirección normal de la web (no la *Preview URL*, que está detrás de Access).
+
+Opción desde tu ordenador:
 ```bash
 CONTENIDO_TOKEN=<el token> npm run contenido:importar -- --url https://<tu web>
 ```
