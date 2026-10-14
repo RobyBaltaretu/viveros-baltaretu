@@ -154,3 +154,13 @@ test('publicar cambios y deshacer', async ({ page }) => {
   await page.goto(`/panel/plantas/${id}`);
   await expect(page.getByText('desde 77 €')).toHaveCount(0);
 });
+
+test('la ayuda se abre con el teclado', async ({ page }) => {
+  await page.goto('/panel/ayuda');
+  const tema = page.locator('details#publicar');
+  await tema.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(tema).toHaveAttribute('open', '');
+  await expect(tema.getByRole('link', { name: 'Ir a Publicar cambios' })).toBeVisible();
+  await auditar(page);
+});
