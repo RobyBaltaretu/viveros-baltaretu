@@ -25,6 +25,6 @@ Resumen para retomar el trabajo en una sesión nueva. Actualizado el 14 de octub
 - `.claude/settings.json` activa el plugin [Impeccable](https://impeccable.style) (`pbakaus/impeccable`), con comandos `/impeccable audit`, `critique`, `polish`, etc. Sus hooks revisan la interfaz al empezar la sesión, tras cada edición y al terminar cada respuesta. En sesiones en la nube solo se instala si la red del entorno permite `github.com`; si no, se puede clonar el repositorio y ejecutar `plugin/skills/impeccable/scripts/impeccable detect` a mano.
 - `.claude/skills/` contiene las habilidades de [emilkowalski/skills](https://github.com/emilkowalski/skills) (licencia MIT, commit `2d22863`): `emil-design-eng`, `review-animations`, `find-animation-opportunities`, `animate`, `mobile-native`, `break-ui`, etc. Para actualizarlas, se vuelven a copiar desde ese repositorio.
 
-## Siguiente fase: panel propio y asistente (propuesta)
-Documentada en `docs/panel-propio/` (definición, hoja de ruta y prompt de arranque). Pendiente de aprobar el plan técnico y de responder las decisiones abiertas del apartado 12 de la definición. Keystatic sigue siendo el panel en uso hasta entonces.
-
+## Panel propio y asistente (en curso)
+Plan aprobado por el propietario y en ejecución por fases: `docs/panel-propio/` (definición, hoja de ruta, [plan técnico](panel-propio/plan-tecnico.md), [decisiones](panel-propio/decisiones.md) y [pasos manuales](panel-propio/pasos-manuales.md)). Keystatic sigue siendo el panel en uso hasta la tarea 5.3.
+- 0.2 Plan técnico: hecho. Prueba de concepto sin diferencias entre el build actual y el que pasa por el formato de D1.
