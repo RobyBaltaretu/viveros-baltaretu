@@ -7,6 +7,15 @@ export const prerender = false;
 const TIPOS: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', avif: 'image/avif' };
 export const MAXIMO_FOTO = 1_900_000;
 
+/** Descarga una foto (build y copias). */
+export const GET: APIRoute = async ({ request, url }) => {
+  const repos = await accesoContenido(request);
+  if (repos instanceof Response) return repos;
+  const foto = await repos.fotos.obtener(url.searchParams.get('ruta') ?? '');
+  if (!foto) return respuestaJson({ ok: false, codigo: 'no-existe' }, 404);
+  return new Response(foto.bytes as Uint8Array<ArrayBuffer>, { headers: { 'Content-Type': foto.tipo, 'Cache-Control': 'no-store' } });
+};
+
 /** Sube una foto (importación y restauración). */
 export const PUT: APIRoute = async ({ request, url }) => {
   const repos = await accesoContenido(request);

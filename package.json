@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "wrangler types --include-runtime=false && astro dev",
     "panel:local": "node scripts/panel-local.mjs",
-    "build": "astro build",
+    "build": "tsx scripts/contenido/descargar.ts && astro build",
     "preview": "astro preview",
     "types": "wrangler types --include-runtime=false",
     "check": "astro check",
@@ -18,7 +18,8 @@
     "check:worker": "wrangler deploy --dry-run",
     "astro": "astro",
     "test:e2e": "playwright test",
-    "contenido:importar": "tsx scripts/contenido/importar.ts"
+    "contenido:importar": "tsx scripts/contenido/importar.ts",
+    "contenido:equivalencia": "tsx scripts/contenido/equivalencia.ts && WORKERS_CI_BRANCH=pruebas tsx scripts/contenido/equivalencia.ts"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.4",
