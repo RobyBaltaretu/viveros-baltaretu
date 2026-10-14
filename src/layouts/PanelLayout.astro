@@ -32,7 +32,7 @@ const usuario = sesion?.estado === 'ok' ? sesion.usuario : null;
     <a href="#principal" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-tarjeta focus:bg-papel focus:p-3">{tp.saltar}</a>
     <header class="superficie-oliva">
       <div class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <a href="/panel" class="font-titular text-xl font-bold text-crema no-underline">{tp.tituloPanel}</a>
+        <a href="/panel" class="inline-flex min-h-12 items-center font-titular text-xl font-bold text-crema no-underline">{tp.tituloPanel}</a>
         {
           usuario && (
             <a href="/cdn-cgi/access/logout" class="boton-panel boton-panel-claro">

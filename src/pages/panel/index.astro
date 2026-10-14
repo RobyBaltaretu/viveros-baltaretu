@@ -1,23 +1,29 @@
 ---
-import Aviso from '../../components/panel/Aviso.astro';
-import PanelLayout from '../../layouts/PanelLayout.astro';
+import PaginaPanel from '../../components/panel/PaginaPanel.astro';
+import Tarjeta from '../../components/panel/Tarjeta.astro';
 import { tp } from '../../i18n/panel';
+import { sesionCon } from '../../server/panel/pagina.ts';
+import { puede } from '../../server/panel/permisos.ts';
 
 export const prerender = false;
 
-const sesion = Astro.locals.panel!;
-if (sesion.estado !== 'ok') Astro.response.status = sesion.estado === 'sin-activar' ? 503 : 403;
+const s = sesionCon(Astro.locals);
+const rol = s?.usuario.rol ?? 'editor';
+const nuevos = s && puede(rol, 'presupuestos') ? await s.repos.presupuestos.contar('nuevo') : 0;
+const t = tp.tarjetas;
 ---
 
-<PanelLayout titulo={tp.inicio} volver={false}>
-  {sesion.estado === 'sin-activar' && <Aviso titulo={tp.sinActivarTitulo} texto={tp.sinActivarTexto} />}
-  {sesion.estado === 'sin-acceso' && <Aviso titulo={tp.sinAccesoTitulo} texto={tp.sinAccesoTexto} />}
-  {
-    sesion.estado === 'ok' && (
-      <h1 class="titular-grande">
-        {tp.hola(sesion.usuario.nombre)}
-        <span class="mt-2 block text-lg font-normal text-gris">{tp.roles[sesion.usuario.rol]}</span>
-      </h1>
-    )
-  }
-</PanelLayout>
+<PaginaPanel titulo={tp.inicio} volver={false}>
+  <h1 class="titular-grande">
+    {tp.hola(s?.usuario.nombre ?? '')}
+    <span class="mt-2 block text-lg font-normal text-gris">{s && tp.roles[s.usuario.rol]}</span>
+  </h1>
+  <ul class="mt-8 grid gap-4" role="list">
+    <Tarjeta href="/panel/plantas" titulo={t.plantas[0]} texto={t.plantas[1]} />
+    {puede(rol, 'presupuestos') && <Tarjeta href="/panel/presupuestos" titulo={t.presupuestos[0]} texto={t.presupuestos[1]} aviso={nuevos ? tp.nuevos(nuevos) : undefined} />}
+    <Tarjeta href="/panel/fotos" titulo={t.fotos[0]} texto={t.fotos[1]} />
+    <Tarjeta href="/panel/textos" titulo={t.textos[0]} texto={t.textos[1]} />
+    <Tarjeta href="/panel/ayuda" titulo={t.ayuda[0]} texto={t.ayuda[1]} />
+    {puede(rol, 'personas') && <Tarjeta href="/panel/personas" titulo={t.personas[0]} texto={t.personas[1]} />}
+  </ul>
+</PaginaPanel>

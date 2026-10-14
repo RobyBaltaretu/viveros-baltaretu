@@ -1,0 +1,29 @@
+---
+/** Tarjeta grande del inicio del panel: todo el recuadro es el enlace. */
+interface Props {
+  href: string;
+  titulo: string;
+  texto: string;
+  /** Número destacado (por ejemplo, presupuestos nuevos). */
+  aviso?: string | undefined;
+}
+const { href, titulo, texto, aviso } = Astro.props;
+---
+
+<li>
+  <a href={href} class="tarjeta-panel group flex min-h-24 items-center gap-4 rounded-panel border-2 border-linea bg-papel p-5 no-underline">
+    <span class="flex-1">
+      <span class="block font-titular text-2xl font-bold text-tinta group-hover:underline">{titulo}</span>
+      <span class="mt-1 block text-gris">{texto}</span>
+    </span>
+    {aviso && <span class="rounded-full bg-terracota px-3 py-1 font-semibold text-white">{aviso}</span>}
+    <span aria-hidden="true" class="text-2xl text-oliva">→</span>
+  </a>
+</li>
+
+<style>
+  .tarjeta-panel:hover,
+  .tarjeta-panel:focus-visible {
+    border-color: var(--color-oliva);
+  }
+</style>

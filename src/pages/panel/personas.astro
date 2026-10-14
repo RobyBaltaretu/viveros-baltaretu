@@ -1,0 +1,87 @@
+---
+import PaginaPanel from '../../components/panel/PaginaPanel.astro';
+import { tp } from '../../i18n/panel';
+import { campo, sesionCon } from '../../server/panel/pagina.ts';
+import { MAXIMO_EDITORES } from '../../server/panel/permisos.ts';
+
+export const prerender = false;
+
+const t = tp.personas;
+const s = sesionCon(Astro.locals, 'personas');
+let error = '';
+if (s && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const email = campo(form, 'email').toLowerCase();
+  const accion = campo(form, 'accion');
+  const usuarios = await s.repos.usuarios.listar();
+  if (email === s.usuario.email) error = t.errorPropio;
+  else if (accion === 'alta') {
+    const rol = campo(form, 'rol') === 'editor' ? 'editor' : 'gerente';
+    const editores = usuarios.filter((u) => u.rol === 'editor' && u.activo && u.email !== email).length;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) error = t.errorEmail;
+    else if (rol === 'editor' && editores >= MAXIMO_EDITORES) error = t.errorEditor;
+    else {
+      await s.repos.usuarios.guardar({ email, nombre: campo(form, 'nombre').slice(0, 60), rol, activo: true });
+      await s.repos.auditoria.registrar(s.usuario.email, 'dar acceso', `${email} (${rol})`);
+    }
+  } else if (accion === 'quitar' || accion === 'devolver') {
+    const u = usuarios.find((x) => x.email === email);
+    if (u && u.rol !== 'propietario') {
+      await s.repos.usuarios.guardar({ ...u, activo: accion === 'devolver' });
+      await s.repos.auditoria.registrar(s.usuario.email, accion === 'quitar' ? 'quitar acceso' : 'devolver acceso', email);
+    }
+  }
+  if (!error) return Astro.redirect('/panel/personas?hecho=1', 303);
+}
+const usuarios = s ? await s.repos.usuarios.listar() : [];
+const hecho = Astro.url.searchParams.has('hecho');
+---
+
+<PaginaPanel titulo={t.titulo} permiso="personas">
+  <h1 class="titular-grande">{t.titulo}</h1>
+  {hecho && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{t.hecho}</p>}
+  {error && <p role="alert" class="mt-4 rounded-tarjeta border-2 border-terracota bg-papel p-3 font-semibold">{error}</p>}
+  <ul class="mt-6 grid gap-3" role="list">
+    {
+      usuarios.map((u) => (
+        <li class="flex flex-wrap items-center justify-between gap-3 rounded-tarjeta border-2 border-linea bg-papel p-4">
+          <span>
+            <span class="block font-semibold">{u.nombre || u.email}</span>
+            <span class="block text-gris">
+              {u.email} · {tp.roles[u.rol]}
+              {!u.activo && ` · ${t.sinAcceso}`}
+              {u.email === s?.usuario.email && ` · ${t.tu}`}
+            </span>
+          </span>
+          {u.rol !== 'propietario' && (
+            <form method="post">
+              <input type="hidden" name="email" value={u.email} />
+              <input type="hidden" name="accion" value={u.activo ? 'quitar' : 'devolver'} />
+              <button class="boton-panel boton-panel-secundario">{u.activo ? t.quitar : t.devolver}</button>
+            </form>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+
+  <h2 class="titular-medio mt-10">{t.alta}</h2>
+  <form method="post" class="mt-4 grid gap-4">
+    <input type="hidden" name="accion" value="alta" />
+    <label class="grid gap-1 font-semibold">
+      {t.email}
+      <input class="campo-panel font-normal" type="email" name="email" required autocomplete="off" />
+    </label>
+    <label class="grid gap-1 font-semibold">
+      {t.nombre}
+      <input class="campo-panel font-normal" type="text" name="nombre" maxlength="60" autocomplete="off" />
+    </label>
+    <fieldset class="grid gap-2">
+      <legend class="font-semibold">{t.rol}</legend>
+      <label class="flex min-h-12 items-center gap-3"><input type="radio" name="rol" value="gerente" checked class="size-6" /> {t.rolGerente}</label>
+      <label class="flex min-h-12 items-center gap-3"><input type="radio" name="rol" value="editor" class="size-6" /> {t.rolEditor}</label>
+    </fieldset>
+    <p class="text-gris">{t.recuerda}</p>
+    <p><button class="boton-panel">{t.guardar}</button></p>
+  </form>
+</PaginaPanel>

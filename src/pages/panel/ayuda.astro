@@ -1,0 +1,11 @@
+---
+import PaginaPanel from '../../components/panel/PaginaPanel.astro';
+import { tp } from '../../i18n/panel';
+
+export const prerender = false;
+---
+
+<PaginaPanel titulo={tp.tarjetas.ayuda[0]}>
+  <h1 class="titular-grande">{tp.tarjetas.ayuda[0]}</h1>
+  <p class="mt-4">{tp.enPreparacion}</p>
+</PaginaPanel>
