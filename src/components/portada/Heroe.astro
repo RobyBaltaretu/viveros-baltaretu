@@ -22,8 +22,7 @@ const ventajas = [t.ventajaMayor, t.ventajaUnidad, t.datoReparto];
 <section class="superficie-crema">
   <Contenedor class="grid items-center gap-x-16 gap-y-12 py-14 sm:py-20 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:py-24">
     <div class="min-w-0">
-      <p class="antetitulo text-oliva">{t.antetituloPortada}</p>
-      <h1 class="titular-gigante mt-5">
+      <h1 class="titular-gigante">
         {portada.titular[idioma]} <span class="text-oliva">{portada.titularDestacado[idioma]}</span>
       </h1>
       <p class="mt-6 max-w-xl texto-entrada text-gris">{portada.entradilla[idioma]}</p>
@@ -49,8 +48,8 @@ const ventajas = [t.ventajaMayor, t.ventajaUnidad, t.datoReparto];
       class="superficie-verde relative flex aspect-[5/4] items-end justify-center gap-[5%] overflow-hidden rounded-panel px-[6%] pt-[6%] text-oliva"
       aria-hidden="true"
     >
-      <Silueta tipo="olivo" class="h-[52%] w-auto" />
-      <Silueta tipo="palmera" class="h-[90%] w-auto" />
+      <Silueta tipo="olivo" class="brote h-[52%] w-auto" />
+      <Silueta tipo="palmera" class="brote brote-tarde h-[90%] w-auto" />
       <div class="absolute inset-x-0 bottom-0 h-[3%] bg-oliva/15"></div>
     </div>
   </Contenedor>
