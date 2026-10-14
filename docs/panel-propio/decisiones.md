@@ -17,3 +17,5 @@ Decisiones tomadas durante la implementación, con su motivo. Las del propietari
 | 11 | Además de Access, el Worker valida el JWT (firma, emisor, audiencia y caducidad con `jose`) y el rol en D1 en cada petición, y comprueba el origen en los envíos | Defensa en profundidad: si Access se configura mal, el panel sigue cerrado |
 | 12 | Modo de prueba sin Access (`PANEL_PRUEBA_EMAIL`) solo en el entorno `desarrollo` y solo desde localhost | Poder probar el panel en local y en los e2e sin abrirlo en producción |
 | 13 | Permisos: propietario todo; gerente todo salvo personas; editor solo prepara cambios (no publica ni ve presupuestos) | Lo más simple que cubre los tres roles decididos |
+| 14 | Los textos para buscadores (título y descripción) se generan solos al guardar cada planta, con la misma plantilla que las fichas actuales | El gerente no tiene que entender qué es SEO y nunca quedan desfasados respecto al nombre o al precio |
+| 15 | Si se escribe un precio por unidad sin marcar "también se vende por unidad", el panel lo explica en vez de borrarlo | Nunca se pierde en silencio algo que la persona ha escrito; la regla del esquema se mantiene |

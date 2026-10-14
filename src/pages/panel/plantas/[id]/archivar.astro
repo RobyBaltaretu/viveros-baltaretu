@@ -1,0 +1,25 @@
+---
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+import { plantaActual } from '../../../../server/panel/planta-actual.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'editar');
+const planta = await plantaActual(s, Astro.params.id);
+if (s && !planta) return Astro.redirect('/panel/plantas', 303);
+if (s && planta && Astro.request.method === 'POST') {
+  await s.repos.contenido.archivar('catalogo', planta.entrada.id, true, { email: s.usuario.email });
+  return Astro.redirect('/panel/plantas?hecho=archivada', 303);
+}
+const volver = `/panel/plantas/${Astro.params.id}`;
+---
+
+<PaginaPanel titulo="Quitar de la web" permiso="editar" volver={volver}>
+  <h1 class="titular-grande">¿Quitar {planta?.datos.nombre?.es} de la web?</h1>
+  <p class="mt-4">Dejará de verse en la web cuando publiques los cambios. No se borra: se puede recuperar desde «Cambios recientes» con «Deshacer».</p>
+  <form method="post" class="mt-6 flex flex-wrap gap-3">
+    <button class="boton-panel">Sí, quitarla</button>
+    <a href={volver} class="boton-panel boton-panel-secundario">No, volver</a>
+  </form>
+</PaginaPanel>

@@ -1,0 +1,22 @@
+---
+/** Confirmación ("Guardado") o resumen de errores al principio del formulario. */
+interface Props {
+  hecho?: string | undefined;
+  errores?: { campo: string; mensaje: string }[];
+}
+const { hecho, errores = [] } = Astro.props;
+---
+
+{hecho && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{hecho}</p>}
+{
+  errores.length > 0 && (
+    <div role="alert" class="mt-4 rounded-tarjeta border-2 border-terracota bg-papel p-4">
+      <p class="font-semibold">Revisa estos datos antes de guardar:</p>
+      <ul class="mt-2 list-disc pl-6">
+        {errores.map((e) => (
+          <li>{e.mensaje}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}

@@ -20,7 +20,7 @@ export default defineConfig({
   ],
   webServer: {
     // --ignore-lock: servidor en primer plano también cuando Astro detecta un agente.
-    command: 'tsx scripts/contenido/importar.ts && astro build && astro preview --port 4329 --ignore-lock',
+    command: 'rm -rf .wrangler/state/v3/d1 && tsx scripts/contenido/importar.ts && astro build && astro preview --port 4329 --ignore-lock',
     // Entorno `desarrollo`: D1 local (con el contenido importado) para probar el panel.
     env: { WORKERS_CI_BRANCH: 'pruebas-e2e', ASTRO_TELEMETRY_DISABLED: '1', CLOUDFLARE_ENV: 'desarrollo' },
     url: 'http://localhost:4329/',

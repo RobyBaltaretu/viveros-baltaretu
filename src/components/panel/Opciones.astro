@@ -1,0 +1,26 @@
+---
+/** Grupo de opciones (radio o casillas) con leyenda, en filas de 48 px. */
+interface Props {
+  nombre: string;
+  leyenda: string;
+  opciones: { valor: string; texto: string }[];
+  elegidas: string[];
+  multiple?: boolean;
+  error?: string | undefined;
+}
+const { nombre, leyenda, opciones, elegidas, multiple = false, error } = Astro.props;
+const idError = `error-${nombre}`;
+---
+
+<fieldset class="grid gap-1" aria-describedby={error ? idError : undefined}>
+  <legend class="mb-1 font-semibold">{leyenda}</legend>
+  {
+    opciones.map((o) => (
+      <label class="flex min-h-12 items-center gap-3 rounded-tarjeta px-2 hover:bg-verdor">
+        <input type={multiple ? 'checkbox' : 'radio'} name={nombre} value={o.valor} checked={elegidas.includes(o.valor)} class="size-6 shrink-0" />
+        {o.texto}
+      </label>
+    ))
+  }
+  {error && <p id={idError} class="font-semibold text-terracota">{error}</p>}
+</fieldset>

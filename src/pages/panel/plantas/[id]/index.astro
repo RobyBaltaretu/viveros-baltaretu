@@ -1,0 +1,42 @@
+---
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { disponibilidades } from '../../../../i18n/ui';
+import { formatearPrecio, formatearRango } from '../../../../lib/catalogo/formato';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+import { plantaActual } from '../../../../server/panel/planta-actual.ts';
+import { avisosPublicacion } from '../../../../server/panel/plantas.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'editar');
+const planta = await plantaActual(s, Astro.params.id);
+if (s && !planta) return Astro.redirect('/panel/plantas', 303);
+const d = planta?.datos;
+const base = `/panel/plantas/${Astro.params.id}`;
+const hecho = Astro.url.searchParams.get('hecho');
+---
+
+<PaginaPanel titulo={d?.nombre?.es ?? 'Planta'} permiso="editar" volver="/panel/plantas">
+  {
+    d && (
+      <>
+        <h1 class="titular-grande">{d.nombre?.es}</h1>
+        {hecho && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{hecho === 'archivada' ? 'Planta archivada.' : 'Guardado. Saldrá en la web cuando publiques los cambios.'}</p>}
+        {avisosPublicacion(d).map((a) => <p class="mt-3 font-semibold text-terracota">{a}</p>)}
+        <dl class="mt-6 grid gap-2 rounded-tarjeta border-2 border-linea bg-papel p-4">
+          <div><dt class="inline font-semibold">Precio: </dt><dd class="inline">{formatearPrecio(d.precioDesde ?? null, 'unidad', 'es')}</dd></div>
+          <div><dt class="inline font-semibold">Hay ahora: </dt><dd class="inline">{disponibilidades[d.disponibilidad as keyof typeof disponibilidades]?.es}</dd></div>
+          <div><dt class="inline font-semibold">Alturas: </dt><dd class="inline">{formatearRango(Number(d.alturaMin), Number(d.alturaMax), 'm', 'es')}</dd></div>
+          <div><dt class="inline font-semibold">Por unidad: </dt><dd class="inline">{d.ventaUnitaria ? `sí${d.precioUnidad ? `, ${formatearPrecio(d.precioUnidad, 'unidad', 'es')}` : ''}` : 'no'}</dd></div>
+        </dl>
+        <h2 class="titular-medio mt-8">¿Qué quieres hacer?</h2>
+        <ul class="mt-4 grid gap-3" role="list">
+          <li><a class="boton-panel w-full" href={`${base}/precio`}>Cambiar el precio</a></li>
+          <li><a class="boton-panel w-full" href={`${base}/disponibilidad`}>Cambiar si hay o no hay</a></li>
+          <li><a class="boton-panel boton-panel-secundario w-full" href={`${base}/datos`}>Cambiar nombre, textos y medidas</a></li>
+          <li><a class="boton-panel boton-panel-secundario w-full" href={`${base}/archivar`}>Quitar de la web (archivar)</a></li>
+        </ul>
+      </>
+    )
+  }
+</PaginaPanel>

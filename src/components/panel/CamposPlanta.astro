@@ -1,0 +1,63 @@
+---
+/** Campos de la ficha (nombre, textos y medidas), comunes a la edición y al alta. */
+import Campo from './Campo.astro';
+import Opciones from './Opciones.astro';
+import { familias, formatos } from '../../i18n/ui';
+import { aTexto } from '../../server/panel/form-planta.ts';
+import { FAMILIAS, FORMATOS, type DatosPlanta } from '../../server/panel/plantas.ts';
+
+interface Props {
+  d: DatosPlanta;
+  error: (campo: string) => string | undefined;
+  /** Grupos que se muestran. */
+  grupos: ('nombres' | 'familia' | 'alturas' | 'entrega' | 'textos' | 'otros')[];
+}
+const { d, error, grupos } = Astro.props;
+const desc = (d.descripcion ?? {}) as { es?: string; en?: string };
+const per = Array.isArray(d.perimetroTroncoCm) ? (d.perimetroTroncoCm as number[]) : [];
+---
+
+{
+  grupos.includes('nombres') && (
+    <>
+      <Campo nombre="nombre.es" etiqueta="Nombre en la web" valor={d.nombre?.es} requerido error={error('nombre.es')} ayuda="Como lo dicen tus clientes, por ejemplo «Olivo de copa»." />
+      <Campo nombre="nombreCientifico" etiqueta="Nombre científico" valor={d.nombreCientifico} requerido error={error('nombreCientifico')} ayuda="Por ejemplo «Olea europaea»." />
+    </>
+  )
+}
+{grupos.includes('familia') && <Opciones nombre="familia" leyenda="Familia" opciones={FAMILIAS.map((f) => ({ valor: f, texto: familias[f].es }))} elegidas={[String(d.familia ?? '')]} error={error('familia')} />}
+{
+  grupos.includes('alturas') && (
+    <>
+      <Campo nombre="alturaMin" etiqueta="Altura más baja que tienes (m)" tipo="number-texto" valor={aTexto(d.alturaMin)} requerido error={error('alturaMin')} ayuda="Por ejemplo 1,5." />
+      <Campo nombre="alturaMax" etiqueta="Altura más alta que tienes (m)" tipo="number-texto" valor={aTexto(d.alturaMax)} requerido error={error('alturaMax')} ayuda="Hasta 4 m." />
+      <Campo nombre="perimetroMin" etiqueta="Grosor del tronco, mínimo (cm)" tipo="number-texto" modoTeclado="numeric" valor={aTexto(per[0])} error={error('perimetroTroncoCm')} />
+      <Campo nombre="perimetroMax" etiqueta="Grosor del tronco, máximo (cm)" tipo="number-texto" modoTeclado="numeric" valor={aTexto(per[1])} />
+    </>
+  )
+}
+{grupos.includes('entrega') && <Opciones nombre="formatos" leyenda="Cómo se entrega" multiple opciones={FORMATOS.map((f) => ({ valor: f, texto: formatos[f].es }))} elegidas={(d.formatos as string[]) ?? []} error={error('formatos')} />}
+{
+  grupos.includes('textos') && (
+    <>
+      <Campo nombre="descripcion.es" etiqueta="Descripción" tipo="textarea" valor={desc.es} requerido error={error('descripcion.es')} ayuda="Dos o tres frases: cómo es y para qué se usa." />
+      <Campo nombre="nombre.en" etiqueta="Nombre en inglés" valor={d.nombre?.en} requerido error={error('nombre.en')} />
+      <Campo nombre="descripcion.en" etiqueta="Descripción en inglés" tipo="textarea" valor={desc.en} requerido error={error('descripcion.en')} />
+    </>
+  )
+}
+{
+  grupos.includes('otros') && (
+    <>
+      <Campo nombre="origen" etiqueta="Origen de la planta" valor={d.origen as string} requerido error={error('origen')} />
+      <label class="flex min-h-12 items-center gap-3 font-semibold">
+        <input type="checkbox" name="destacada" value="1" checked={Boolean(d.destacada)} class="size-6" />
+        Destacarla en la web
+      </label>
+      <label class="flex min-h-12 items-center gap-3 font-semibold">
+        <input type="checkbox" name="revisado" value="1" checked={Boolean(d.revisado)} class="size-6" />
+        Está revisada y se puede publicar
+      </label>
+    </>
+  )
+}

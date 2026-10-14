@@ -1,0 +1,73 @@
+---
+import Campo from '../../../components/panel/Campo.astro';
+import CamposPlanta from '../../../components/panel/CamposPlanta.astro';
+import Mensajes from '../../../components/panel/Mensajes.astro';
+import Opciones from '../../../components/panel/Opciones.astro';
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import { disponibilidades } from '../../../i18n/ui';
+import { formatearPrecio, formatearRango } from '../../../lib/catalogo/formato';
+import { PASOS, pasoAlta } from '../../../server/panel/alta-planta.ts';
+import { aTexto } from '../../../server/panel/form-planta.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+import { DISPONIBILIDADES } from '../../../server/panel/plantas.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'editar');
+const estado = s ? await pasoAlta(s, Astro.request) : null;
+if (estado?.creada) return Astro.redirect(`/panel/plantas/${estado.creada}?hecho=1`, 303);
+const paso = estado?.paso ?? 0;
+const d = estado?.datos ?? {};
+const error = (c: string) => estado?.errores.find((e) => e.campo === c)?.mensaje;
+---
+
+<PaginaPanel titulo="Añadir una planta" permiso="editar" volver="/panel/plantas">
+  <p class="font-semibold text-gris">Paso {paso + 1} de {PASOS.length}</p>
+  <h1 class="titular-grande mt-1">{PASOS[paso].titulo}</h1>
+  <Mensajes errores={estado?.errores} />
+  <form method="post" class="mt-6 grid gap-6">
+    <input type="hidden" name="paso" value={paso} />
+    <input type="hidden" name="estado" value={JSON.stringify(d)} />
+    <input type="hidden" name="presentes" value={PASOS[paso].presentes} />
+    {paso === 0 && <CamposPlanta d={d} error={error} grupos={['nombres']} />}
+    {paso === 1 && <CamposPlanta d={d} error={error} grupos={['familia']} />}
+    {paso === 2 && <CamposPlanta d={d} error={error} grupos={['alturas']} />}
+    {
+      paso === 3 && (
+        <>
+          <Campo nombre="precioDesde" etiqueta="Precio al por mayor, desde (€)" tipo="number-texto" valor={aTexto(d.precioDesde)} ayuda="Si lo dejas vacío, en la web pondrá «precio bajo presupuesto»." error={error('precioDesde')} />
+          <label class="flex min-h-12 items-center gap-3 font-semibold">
+            <input type="checkbox" name="ventaUnitaria" value="1" checked={Boolean(d.ventaUnitaria)} class="size-6" />
+            También se vende por unidad, con envío
+          </label>
+          <Campo nombre="precioUnidad" etiqueta="Precio de una planta suelta (€)" tipo="number-texto" valor={aTexto(d.precioUnidad)} ayuda="Solo si se vende por unidad." error={error('precioUnidad')} />
+        </>
+      )
+    }
+    {
+      paso === 4 && (
+        <>
+          <Opciones nombre="disponibilidad" leyenda="Ahora mismo" opciones={DISPONIBILIDADES.map((v) => ({ valor: v, texto: disponibilidades[v].es }))} elegidas={[String(d.disponibilidad ?? '')]} error={error('disponibilidad')} />
+          <CamposPlanta d={d} error={error} grupos={['entrega']} />
+        </>
+      )
+    }
+    {paso === 5 && <CamposPlanta d={d} error={error} grupos={['textos']} />}
+    {
+      paso === 6 && (
+        <>
+          <dl class="grid gap-2 rounded-tarjeta border-2 border-linea bg-papel p-4">
+            <div><dt class="inline font-semibold">Nombre: </dt><dd class="inline">{d.nombre?.es} ({d.nombreCientifico})</dd></div>
+            <div><dt class="inline font-semibold">Alturas: </dt><dd class="inline">{formatearRango(Number(d.alturaMin), Number(d.alturaMax), 'm', 'es')}</dd></div>
+            <div><dt class="inline font-semibold">Precio: </dt><dd class="inline">{formatearPrecio(d.precioDesde ?? null, 'unidad', 'es')}</dd></div>
+          </dl>
+          <CamposPlanta d={d} error={error} grupos={['otros']} />
+        </>
+      )
+    }
+    <div class="flex flex-wrap gap-3">
+      <button class="boton-panel" name="accion" value="siguiente">{paso === PASOS.length - 1 ? 'Guardar la planta' : 'Siguiente'}</button>
+      {paso > 0 && <button class="boton-panel boton-panel-secundario" name="accion" value="atras" formnovalidate>Atrás</button>}
+    </div>
+  </form>
+</PaginaPanel>

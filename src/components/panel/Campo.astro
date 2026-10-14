@@ -1,0 +1,44 @@
+---
+/**
+ * Campo de formulario del panel: etiqueta visible, ayuda y error asociados
+ * (aria-describedby) y controles de al menos 48 px.
+ */
+interface Props {
+  nombre: string;
+  etiqueta: string;
+  valor?: string | number | null | undefined;
+  tipo?: 'text' | 'textarea' | 'number-texto' | 'email';
+  ayuda?: string;
+  error?: string | undefined;
+  requerido?: boolean;
+  modoTeclado?: 'decimal' | 'numeric' | 'text';
+  filas?: number;
+}
+const { nombre, etiqueta, valor, tipo = 'text', ayuda, error, requerido = false, modoTeclado, filas = 4 } = Astro.props;
+const id = `campo-${nombre.replace(/\W/g, '-')}`;
+const describe = [ayuda && `${id}-ayuda`, error && `${id}-error`].filter(Boolean).join(' ') || undefined;
+---
+
+<div class="grid gap-1">
+  <label for={id} class="font-semibold">{etiqueta}{!requerido && <span class="font-normal text-gris"> (opcional)</span>}</label>
+  {ayuda && <p id={`${id}-ayuda`} class="text-base text-gris">{ayuda}</p>}
+  {
+    tipo === 'textarea' ? (
+      <textarea id={id} name={nombre} rows={filas} class="campo-panel" required={requerido} aria-invalid={error ? 'true' : undefined} aria-describedby={describe}>{valor ?? ''}</textarea>
+    ) : (
+      <input
+        id={id}
+        name={nombre}
+        type={tipo === 'email' ? 'email' : 'text'}
+        inputmode={modoTeclado ?? (tipo === 'number-texto' ? 'decimal' : undefined)}
+        value={valor ?? ''}
+        class="campo-panel"
+        required={requerido}
+        autocomplete="off"
+        aria-invalid={error ? 'true' : undefined}
+        aria-describedby={describe}
+      />
+    )
+  }
+  {error && <p id={`${id}-error`} class="font-semibold text-terracota">{error}</p>}
+</div>
