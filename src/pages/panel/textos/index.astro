@@ -1,0 +1,49 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import { tp } from '../../../i18n/panel';
+import { LISTAS, SECCIONES } from '../../../server/panel/textos.ts';
+
+export const prerender = false;
+---
+
+<PaginaPanel titulo={tp.tarjetas.textos[0]} permiso="editar">
+  <h1 class="titular-grande">{tp.tarjetas.textos[0]}</h1>
+  <p class="mt-4">Elige qué quieres cambiar. Los cambios se guardan como borrador y salen en la web al publicar.</p>
+  <ul class="mt-6 grid gap-3" role="list">
+    {
+      SECCIONES.map((s) => (
+        <li class="rounded-tarjeta border-2 border-linea bg-papel p-4">
+          {s.partes ? (
+            <>
+              <h2 class="font-titular text-xl font-bold">{s.titulo}</h2>
+              <ul class="mt-2 grid gap-1" role="list">
+                {s.partes.map((p) => (
+                  <li>
+                    <a class="enlace-panel" href={`/panel/textos/${s.coleccion}/${s.id}?parte=${p.clave}`}>
+                      {p.titulo}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <a class="group flex min-h-12 flex-col no-underline" href={`/panel/textos/${s.coleccion}/${s.id}`}>
+              <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{s.titulo}</span>
+              <span class="text-gris">{s.ayuda}</span>
+            </a>
+          )}
+        </li>
+      ))
+    }
+    {
+      Object.entries(LISTAS).map(([c, l]) => (
+        <li class="rounded-tarjeta border-2 border-linea bg-papel p-4">
+          <a class="group flex min-h-12 flex-col no-underline" href={`/panel/textos/${c}`}>
+            <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{l.titulo}</span>
+            <span class="text-gris">{l.ayuda}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</PaginaPanel>

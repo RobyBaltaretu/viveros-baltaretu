@@ -1,0 +1,36 @@
+---
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+import { esLista, LISTAS } from '../../../../server/panel/textos.ts';
+
+export const prerender = false;
+
+const coleccion = Astro.params.coleccion ?? '';
+if (!esLista(coleccion)) return Astro.redirect('/panel/textos', 303);
+const lista = LISTAS[coleccion];
+const s = sesionCon(Astro.locals, 'editar');
+const entradas = s ? await s.repos.contenido.listar(coleccion) : [];
+const hecho = Astro.url.searchParams.get('hecho');
+---
+
+<PaginaPanel titulo={lista.titulo} permiso="editar" volver="/panel/textos">
+  <h1 class="titular-grande">{lista.titulo}</h1>
+  {hecho && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">Quitado de la web. Saldrá así cuando publiques los cambios.</p>}
+  <p class="mt-6"><a href={`/panel/textos/${coleccion}/nuevo`} class="boton-panel">Añadir {lista.singular === 'guía' ? 'una guía' : 'un proyecto'}</a></p>
+  {entradas.length === 0 && <p class="mt-6">Todavía no hay ninguno.</p>}
+  <ul class="mt-6 grid gap-3" role="list">
+    {
+      entradas.map((e) => {
+        const d = e.borrador.datos as { titulo?: { es?: string }; revisado?: boolean; datosDeEjemplo?: boolean };
+        return (
+          <li>
+            <a href={`/panel/textos/${coleccion}/${e.id}`} class="group flex min-h-12 flex-col gap-1 rounded-tarjeta border-2 border-linea bg-papel p-4 no-underline hover:border-oliva">
+              <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{d.titulo?.es}</span>
+              {(d.datosDeEjemplo || !d.revisado) && <span class="font-semibold text-terracota">{d.datosDeEjemplo ? 'Es un ejemplo: no se publica.' : 'Falta marcarlo como revisado: no se publica.'}</span>}
+            </a>
+          </li>
+        );
+      })
+    }
+  </ul>
+</PaginaPanel>

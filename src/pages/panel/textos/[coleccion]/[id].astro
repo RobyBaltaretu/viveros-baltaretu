@@ -1,0 +1,80 @@
+---
+import EditorDatos from '../../../../components/panel/EditorDatos.astro';
+import Mensajes from '../../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import type { ErrorCampo } from '../../../../server/contenido/validacion.ts';
+import type { Coleccion } from '../../../../server/data/tipos.ts';
+import { campo, sesionCon } from '../../../../server/panel/pagina.ts';
+import type { DatosPlanta } from '../../../../server/panel/plantas.ts';
+import { aplicarFormulario, esLista, guardarTextos, idNuevo, LISTAS, plantilla, seccionDe } from '../../../../server/panel/textos.ts';
+
+export const prerender = false;
+
+const coleccion = (Astro.params.coleccion ?? '') as Coleccion;
+const idUrl = Astro.params.id ?? '';
+const nuevo = idUrl === 'nuevo' && esLista(coleccion);
+const seccion = seccionDe(coleccion, idUrl);
+if (!nuevo && !seccion && !esLista(coleccion)) return Astro.redirect('/panel/textos', 303);
+const parte = seccion?.partes?.find((p) => p.clave === Astro.url.searchParams.get('parte')) ?? seccion?.partes?.[0];
+
+const s = sesionCon(Astro.locals, 'editar');
+const entrada = s && !nuevo ? await s.repos.contenido.obtener(coleccion, idUrl) : null;
+if (s && !nuevo && (!entrada || entrada.archivada)) return Astro.redirect(esLista(coleccion) ? `/panel/textos/${coleccion}` : '/panel/textos', 303);
+
+let datos: Record<string, unknown> = nuevo && esLista(coleccion) ? plantilla(coleccion) : ((entrada?.borrador.datos as Record<string, unknown>) ?? {});
+let errores: ErrorCampo[] = [];
+let aviso = '';
+if (s && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const base = (() => {
+    try {
+      // El estado viaja con el formulario para no perder los apartados añadidos antes de guardar.
+      const estado = JSON.parse(campo(form, 'estado')) as Record<string, unknown>;
+      return estado && typeof estado === 'object' && !Array.isArray(estado) ? estado : datos;
+    } catch {
+      return datos;
+    }
+  })();
+  datos = aplicarFormulario(form, base);
+  if (campo(form, 'accion').startsWith('agregar:')) aviso = 'Rellena el nuevo apartado y guarda.';
+  else if (!campo(form, 'accion').startsWith('quitar:')) {
+    const titulo = (datos.titulo as { es?: string } | undefined)?.es ?? '';
+    const id = nuevo ? await idNuevo(s.repos, coleccion, titulo) : idUrl;
+    if (esLista(coleccion)) datos = { ...datos, slug: id };
+    const r = await guardarTextos(s.repos, coleccion, id, datos, entrada?.borrador.cuerpo ?? '', { email: s.usuario.email });
+    if (r.ok) {
+      const destino = esLista(coleccion) ? `/panel/textos/${coleccion}/${id}?` : `/panel/textos/${coleccion}/${idUrl}?${parte ? `parte=${parte.clave}&` : ''}`;
+      return Astro.redirect(`${destino}hecho=1`, 303);
+    }
+    errores = r.errores;
+  }
+}
+
+const especies = s && coleccion === 'proyectos'
+  ? (await s.repos.contenido.listar('catalogo')).map((e) => ({ id: e.id, nombre: String((e.borrador.datos as DatosPlanta).nombre?.es ?? e.id) }))
+  : [];
+const claves = parte ? parte.campos : Object.keys(datos);
+const porCampo = Object.fromEntries(errores.map((e) => [e.campo, e.mensaje]));
+const titulo = nuevo ? `Nuevo: ${LISTAS[coleccion as 'proyectos' | 'guias'].singular}` : seccion ? (parte ? `${seccion.titulo}: ${parte.titulo}` : seccion.titulo) : String((datos.titulo as { es?: string })?.es ?? '');
+const volver = esLista(coleccion) ? `/panel/textos/${coleccion}` : '/panel/textos';
+const hecho = Astro.url.searchParams.has('hecho');
+---
+
+<PaginaPanel titulo={titulo} permiso="editar" volver={volver}>
+  <h1 class="titular-grande">{titulo}</h1>
+  <Mensajes hecho={hecho ? 'Guardado. Saldrá en la web cuando publiques los cambios.' : aviso || undefined} errores={errores} />
+  <form method="post" class="mt-6 grid gap-6">
+    <input type="hidden" name="estado" value={JSON.stringify(datos)} />
+    {claves.filter((k) => k in datos).map((k) => <EditorDatos valor={datos[k]} ruta={k} especies={especies} errores={porCampo} />)}
+    <p><button class="boton-panel" name="accion" value="guardar">Guardar</button></p>
+  </form>
+  {
+    esLista(coleccion) && !nuevo && (
+      <p class="mt-8">
+        <a class="boton-panel boton-panel-secundario" href={`/panel/textos/${coleccion}/${idUrl}/archivar`}>
+          Quitar de la web
+        </a>
+      </p>
+    )
+  }
+</PaginaPanel>

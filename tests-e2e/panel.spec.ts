@@ -3,7 +3,7 @@ import { auditar, controlesGrandes } from './ayudas';
 
 // El build de los e2e usa el entorno `desarrollo`: D1 local con el contenido importado
 // y entrada al panel sin Access desde localhost como propietario@example.com.
-const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos'];
+const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos'];
 
 test.describe('panel: accesibilidad y tamaño de los controles', () => {
   for (const ruta of PANTALLAS) {
@@ -95,4 +95,43 @@ test('alta guiada de una planta, paso a paso', async ({ page }) => {
   await page.getByRole('button', { name: 'Sí, quitarla' }).click();
   await expect(page.getByRole('status')).toContainText('Planta quitada');
   await expect(page.getByRole('link', { name: new RegExp(nombre) })).toHaveCount(0);
+});
+
+test('textos: cambiar condiciones, añadir un paso y crear una guía', async ({ page }) => {
+  const p = test.info().project.name;
+  await page.goto('/panel/textos/ajustes/condiciones');
+  const minimo = page.getByRole('group', { name: 'Pedido mínimo' }).getByLabel('En español');
+  await minimo.fill('');
+  await page.getByRole('button', { name: 'Guardar' }).click();
+  await expect(page.getByRole('alert')).toContainText('Falta: Pedido mínimo (en español).');
+  await page.getByRole('group', { name: 'Pedido mínimo' }).getByLabel('En español').fill(`Mínimo 10 plantas (${p})`);
+  await page.getByRole('button', { name: 'Guardar' }).click();
+  await expect(page.getByRole('status')).toContainText('Guardado');
+  await expect(page.getByRole('group', { name: 'Pedido mínimo' }).getByLabel('En español')).toHaveValue(`Mínimo 10 plantas (${p})`);
+
+  await page.goto('/panel/textos/guias/nuevo');
+  await page.getByRole('group', { name: 'Título', exact: true }).first().getByLabel('En español').fill(`Guía de riego ${p}`);
+  await page.getByRole('button', { name: 'Añadir otro' }).click();
+  await expect(page.getByRole('status')).toContainText('Rellena el nuevo apartado');
+  await expect(page.getByRole('group', { name: 'Apartados · 2' })).toBeVisible();
+  await page.getByRole('button', { name: 'Quitar este' }).nth(1).click();
+  await expect(page.getByRole('group', { name: 'Apartados · 2' })).toHaveCount(0);
+  for (const [grupo, es, en] of [
+    ['Título', `Guía de riego ${p}`, 'Watering guide'],
+    ['Resumen', 'Cuándo regar.', 'When to water.'],
+    ['Resumen para Google (una o dos frases)', 'Guía de riego.', 'Watering guide.'],
+  ]) {
+    const g = page.getByRole('group', { name: grupo, exact: true }).first();
+    await g.getByLabel('En español').fill(es);
+    await g.getByLabel('En inglés').fill(en);
+  }
+  const apartado = page.getByRole('group', { name: 'Apartados · 1' });
+  await apartado.getByRole('group', { name: 'Título' }).getByLabel('En español').fill('Verano');
+  await apartado.getByRole('group', { name: 'Título' }).getByLabel('En inglés').fill('Summer');
+  await apartado.getByRole('group', { name: 'Texto' }).getByLabel('En español').fill('Riega al atardecer.');
+  await apartado.getByRole('group', { name: 'Texto' }).getByLabel('En inglés').fill('Water at dusk.');
+  await page.getByRole('button', { name: 'Guardar' }).click();
+  await expect(page.getByRole('status')).toContainText('Guardado');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(`Guía de riego ${p}`);
+  await auditar(page);
 });
