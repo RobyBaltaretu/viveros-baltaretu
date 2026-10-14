@@ -33,6 +33,7 @@ const hecho = Astro.url.searchParams.get('hecho');
         <ul class="mt-4 grid gap-3" role="list">
           <li><a class="boton-panel w-full" href={`${base}/precio`}>Cambiar el precio</a></li>
           <li><a class="boton-panel w-full" href={`${base}/disponibilidad`}>Cambiar si hay o no hay</a></li>
+          <li><a class="boton-panel boton-panel-secundario w-full" href={`${base}/vista`}>Así se verá en la web</a></li>
           <li><a class="boton-panel w-full" href={`${base}/fotos`}>Fotos ({Array.isArray(d.fotos) ? d.fotos.length : 0})</a></li>
           <li><a class="boton-panel boton-panel-secundario w-full" href={`${base}/datos`}>Cambiar nombre, textos y medidas</a></li>
           <li><a class="boton-panel boton-panel-secundario w-full" href={`${base}/archivar`}>Quitar de la web (archivar)</a></li>

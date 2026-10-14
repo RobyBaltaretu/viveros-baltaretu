@@ -31,3 +31,12 @@ Importa todas las fichas, ajustes, páginas, proyectos, guías y fotos. Si algo 
    - `PROPIETARIO_EMAIL` = tu correo. La primera vez que entres quedarás como propietario y podrás dar de alta al gerente.
 
 Mientras falte alguna de estas variables o la base D1, `/panel` responde "El panel todavía no está activado" y no deja entrar a nadie.
+
+## 5. "Publicar cambios" (Deploy Hook y lectura del contenido en el build)
+Cuando el contenido ya esté importado (paso 3):
+1. En el Worker, *Settings → Build → Variables and secrets*: añade el **secreto** `CONTENIDO_TOKEN` con el mismo valor del paso 2. Desde ese momento, cada build construye la web con el contenido publicado del panel.
+2. *Settings → Builds → Deploy Hooks*: crea uno llamado `Panel del vivero` para la rama `main` y copia su dirección (`https://api.cloudflare.com/client/v4/workers/builds/deploy_hooks/...`).
+3. *Settings → Variables and Secrets* (runtime): añade el **secreto** `DEPLOY_HOOK_URL` con esa dirección.
+4. Publica la versión. Desde entonces, "Publicar cambios" en el panel lanza un build; la versión nueva aparece en *Deployments* y tú la publicas como siempre.
+
+Sin `DEPLOY_HOOK_URL`, el panel guarda los cambios como listos para publicar y avisa de que falta configurarlo.

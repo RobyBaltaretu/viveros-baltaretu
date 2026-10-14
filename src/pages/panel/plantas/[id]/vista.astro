@@ -1,0 +1,51 @@
+---
+/**
+ * Vista previa del borrador de una planta, con el estilo de la ficha pública
+ * (versión simplificada: la ficha real se genera al publicar).
+ */
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { disponibilidades, familias, formatos } from '../../../../i18n/ui';
+import { formatearPrecio, formatearRango } from '../../../../lib/catalogo/formato';
+import { fotosDeFicha, rutaDeImagen } from '../../../../server/panel/fotos.ts';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+import { plantaActual } from '../../../../server/panel/planta-actual.ts';
+import { avisosPublicacion } from '../../../../server/panel/plantas.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'editar');
+const planta = await plantaActual(s, Astro.params.id);
+if (s && !planta) return Astro.redirect('/panel/plantas', 303);
+const d = planta?.datos;
+const foto = d ? fotosDeFicha(d)[0] : undefined;
+const desc = (d?.descripcion ?? {}) as { es?: string };
+---
+
+<PaginaPanel titulo="Así se verá en la web" permiso="editar" volver={`/panel/plantas/${Astro.params.id}`}>
+  <p class="font-semibold text-gris">Así se verá en la web</p>
+  {d && avisosPublicacion(d).map((a) => <p class="mt-2 font-semibold text-terracota">{a}</p>)}
+  {
+    d && (
+      <article class="superficie-crema mt-4 overflow-hidden rounded-panel border-2 border-linea">
+        {foto ? (
+          <img src={`/api/panel/foto?ruta=${encodeURIComponent(rutaDeImagen(foto.imagen))}`} alt={foto.alt.es} class="aspect-[4/3] w-full object-cover" />
+        ) : (
+          <p class="flex aspect-[4/3] items-center justify-center bg-verdor p-4 text-center text-gris">Sin foto: en la web se verá un dibujo de {familias[d.familia as keyof typeof familias]?.es.toLowerCase()}</p>
+        )}
+        <div class="p-5">
+          <p class="rotulo text-oliva">{familias[d.familia as keyof typeof familias]?.es}</p>
+          <h1 class="titular-grande mt-1">{d.nombre?.es}</h1>
+          <p class="mt-1 italic text-gris">{d.nombreCientifico}</p>
+          <p class="mt-4 font-titular text-2xl font-bold">{formatearPrecio(d.precioDesde ?? null, 'unidad', 'es')}</p>
+          {d.ventaUnitaria && <p class="mt-1">También por unidad{d.precioUnidad ? `: ${formatearPrecio(d.precioUnidad, 'unidad', 'es')}` : ''}, con envío.</p>}
+          <p class="mt-4 texto-entrada">{desc.es}</p>
+          <dl class="mt-4 grid gap-1">
+            <div><dt class="inline font-semibold">Alturas: </dt><dd class="inline">{formatearRango(Number(d.alturaMin), Number(d.alturaMax), 'm', 'es')}</dd></div>
+            <div><dt class="inline font-semibold">Disponibilidad: </dt><dd class="inline">{disponibilidades[d.disponibilidad as keyof typeof disponibilidades]?.es}</dd></div>
+            <div><dt class="inline font-semibold">Formatos: </dt><dd class="inline">{(d.formatos as string[] | undefined)?.map((f) => formatos[f as keyof typeof formatos]?.es).join(', ')}</dd></div>
+          </dl>
+        </div>
+      </article>
+    )
+  }
+</PaginaPanel>
