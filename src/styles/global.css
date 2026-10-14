@@ -135,6 +135,13 @@
   html {
     -webkit-text-size-adjust: 100%;
     scroll-padding-top: 6rem;
+    scrollbar-color: color-mix(in srgb, var(--color-oliva) 45%, transparent) var(--color-crema);
+    accent-color: var(--color-oliva);
+    caret-color: var(--color-terracota);
+  }
+  a {
+    text-underline-offset: 0.18em;
+    text-decoration-thickness: 0.08em;
   }
   body {
     --color-foco: var(--color-oliva);
@@ -240,6 +247,25 @@
   ::view-transition-new(root) {
     animation-duration: 280ms;
     animation-timing-function: var(--ease-suave);
+  }
+
+  /* Momento de la portada: las plantas del héroe brotan desde el suelo al cargar. */
+  .brote {
+    transform-origin: 50% 100%;
+    animation: brotar 1.1s var(--ease-suave) both;
+  }
+  .brote-tarde {
+    animation-delay: 140ms;
+  }
+  @keyframes brotar {
+    from {
+      clip-path: inset(100% 0 0 0);
+      scale: 0.96 0.9;
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+      scale: 1;
+    }
   }
 
   /* Balanceo suave de hojas en los dibujos. */

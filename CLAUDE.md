@@ -68,3 +68,5 @@ La CI (`.github/workflows/ci.yml`) ejecuta `npm run lint`, `npm test`, `npm run 
 
 ## Documentos de referencia
 Hoja de ruta, definición funcional y técnica, y estrategia SEO con el mapa de páginas.
+
+Estado actual, preferencias del propietario y pendientes: `docs/estado.md`. Leerlo al empezar una sesión y actualizarlo al cerrar cada PR.

@@ -83,10 +83,10 @@ const idVacio = 'sin-resultados';
         </ul>
       </nav>
 
-      <p class="antetitulo mt-10 text-oliva">
-        {t.catalogo} · {especies.length === 1 ? t.resultadosUno : t.resultados.replace('{n}', String(especies.length))}
+      <h1 class="titular-grande mt-10">{tituloH1}</h1>
+      <p class="rotulo mt-3 text-oliva">
+        {especies.length === 1 ? t.resultadosUno : t.resultados.replace('{n}', String(especies.length))}
       </p>
-      <h1 class="titular-grande mt-3">{tituloH1}</h1>
       <p class="mt-6 max-w-2xl texto-entrada text-gris">{textosPagina.entradilla[idioma]}</p>
 
       {

@@ -12,7 +12,7 @@ type Props = Comun & HTMLAttributes<'a'> & Pick<HTMLAttributes<'button'>, 'type'
 const { variante = 'principal', tamano = 'normal', flecha = false, class: clase, ...resto } = Astro.props;
 
 const base =
-  'group inline-flex items-center justify-center gap-3 rounded-tarjeta font-semibold leading-none tracking-[0.01em] transition-[background-color,color,translate,box-shadow,border-color] duration-300 ease-(--ease-suave) disabled:cursor-not-allowed disabled:opacity-60';
+  'group inline-flex items-center justify-center gap-3 rounded-tarjeta font-semibold leading-none tracking-[0.01em] transition-[background-color,color,translate,scale,box-shadow,border-color] duration-300 ease-(--ease-suave) active:scale-[0.97] active:duration-100 disabled:cursor-not-allowed disabled:opacity-60';
 const tamanos = { normal: 'min-h-12 px-5 text-base', grande: 'min-h-15 px-7 text-lg' };
 const variantes = {
   principal:

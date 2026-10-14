@@ -49,8 +49,8 @@ const opciones = [
       {
         opciones.map((o) => (
           <article class="flex flex-col rounded-panel border border-linea bg-papel p-7 sm:p-9">
-            <p class="antetitulo text-oliva">{o.publico}</p>
-            <h3 class="titular-grande mt-3">{o.titulo}</h3>
+            <h3 class="titular-grande">{o.titulo}</h3>
+            <p class="mt-2 font-medium text-oliva">{o.publico}</p>
             <p class="mt-4 texto-entrada">{o.texto}</p>
             <ul class="mt-6 grid gap-2 text-gris" role="list">
               {o.detalles.map((d) => (
