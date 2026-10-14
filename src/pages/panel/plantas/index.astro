@@ -1,0 +1,39 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import { disponibilidades } from '../../../i18n/ui';
+import { formatearPrecio } from '../../../lib/catalogo/formato';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+import { avisosPublicacion, type DatosPlanta } from '../../../server/panel/plantas.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'editar');
+const plantas = s ? await s.repos.contenido.listar('catalogo') : [];
+plantas.sort((a, b) => String((a.borrador.datos as DatosPlanta).nombre?.es).localeCompare(String((b.borrador.datos as DatosPlanta).nombre?.es), 'es'));
+---
+
+<PaginaPanel titulo="Mis plantas" permiso="editar">
+  <h1 class="titular-grande">Mis plantas</h1>
+  {Astro.url.searchParams.get('hecho') === 'archivada' && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">Planta quitada de la web. Saldrá así cuando publiques los cambios.</p>}
+  <p class="mt-6"><a href="/panel/plantas/nueva" class="boton-panel">Añadir una planta</a></p>
+  {plantas.length === 0 && <p class="mt-6">Todavía no hay plantas. Empieza por añadir una.</p>}
+  <ul class="mt-6 grid gap-3" role="list">
+    {
+      plantas.map((p) => {
+        const d = p.borrador.datos as DatosPlanta;
+        const avisos = avisosPublicacion(d);
+        return (
+          <li>
+            <a href={`/panel/plantas/${p.id}`} class="group flex min-h-12 flex-col gap-1 rounded-tarjeta border-2 border-linea bg-papel p-4 no-underline hover:border-oliva">
+              <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{d.nombre?.es}</span>
+              <span class="text-gris">
+                {formatearPrecio(d.precioDesde ?? null, 'unidad', 'es')} · {disponibilidades[d.disponibilidad as keyof typeof disponibilidades]?.es}
+              </span>
+              {avisos.length > 0 && <span class="font-semibold text-terracota">{avisos[0]}</span>}
+            </a>
+          </li>
+        );
+      })
+    }
+  </ul>
+</PaginaPanel>

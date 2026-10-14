@@ -1,0 +1,30 @@
+---
+import Campo from '../../../../components/panel/Campo.astro';
+import Mensajes from '../../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { aTexto, pantallaPlanta } from '../../../../server/panel/form-planta.ts';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'editar');
+const p = await pantallaPlanta(s, Astro.params.id, Astro.request);
+if (s && !p.planta) return Astro.redirect('/panel/plantas', 303);
+if (p.guardado) return Astro.redirect(`${p.volver}?hecho=1`, 303);
+const d = p.datos;
+---
+
+<PaginaPanel titulo="Cambiar el precio" permiso="editar" volver={p.volver}>
+  <h1 class="titular-grande">Precio de {d?.nombre?.es}</h1>
+  <Mensajes errores={p.errores} />
+  <form method="post" class="mt-6 grid gap-6">
+    <input type="hidden" name="presentes" value="precioDesde,ventaUnitaria,precioUnidad" />
+    <Campo nombre="precioDesde" etiqueta="Precio al por mayor, desde (€)" tipo="number-texto" valor={aTexto(d?.precioDesde)} ayuda="Por ejemplo 18 o 18,50. Si lo dejas vacío, en la web pondrá «precio bajo presupuesto»." error={p.error('precioDesde')} />
+    <label class="flex min-h-12 items-center gap-3 font-semibold">
+      <input type="checkbox" name="ventaUnitaria" value="1" checked={Boolean(d?.ventaUnitaria)} class="size-6" />
+      También se vende por unidad, con envío
+    </label>
+    <Campo nombre="precioUnidad" etiqueta="Precio de una planta suelta (€)" tipo="number-texto" valor={aTexto(d?.precioUnidad)} ayuda="Solo si se vende por unidad. Sin el envío." error={p.error('precioUnidad')} />
+    <p><button class="boton-panel">Guardar el precio</button></p>
+  </form>
+</PaginaPanel>

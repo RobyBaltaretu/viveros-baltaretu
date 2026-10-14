@@ -1,0 +1,29 @@
+---
+import CamposPlanta from '../../../../components/panel/CamposPlanta.astro';
+import Mensajes from '../../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { pantallaPlanta } from '../../../../server/panel/form-planta.ts';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'editar');
+const p = await pantallaPlanta(s, Astro.params.id, Astro.request);
+if (s && !p.planta) return Astro.redirect('/panel/plantas', 303);
+if (p.guardado) return Astro.redirect(`${p.volver}?hecho=1`, 303);
+const PRESENTES = 'nombre.es,nombre.en,nombreCientifico,familia,descripcion.es,descripcion.en,alturaMin,alturaMax,perimetro,formatos,origen,destacada,revisado';
+---
+
+<PaginaPanel titulo="Cambiar nombre, textos y medidas" permiso="editar" volver={p.volver}>
+  <h1 class="titular-grande">{p.planta?.datos.nombre?.es}</h1>
+  <Mensajes errores={p.errores} />
+  {
+    p.datos && (
+      <form method="post" class="mt-6 grid gap-6">
+        <input type="hidden" name="presentes" value={PRESENTES} />
+        <CamposPlanta d={p.datos} error={p.error} grupos={['nombres', 'familia', 'alturas', 'entrega', 'textos', 'otros']} />
+        <p><button class="boton-panel">Guardar los cambios</button></p>
+      </form>
+    )
+  }
+</PaginaPanel>

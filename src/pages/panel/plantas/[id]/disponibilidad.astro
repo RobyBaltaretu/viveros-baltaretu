@@ -1,0 +1,27 @@
+---
+import Mensajes from '../../../../components/panel/Mensajes.astro';
+import Opciones from '../../../../components/panel/Opciones.astro';
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { disponibilidades } from '../../../../i18n/ui';
+import { pantallaPlanta } from '../../../../server/panel/form-planta.ts';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+import { DISPONIBILIDADES } from '../../../../server/panel/plantas.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'editar');
+const p = await pantallaPlanta(s, Astro.params.id, Astro.request);
+if (s && !p.planta) return Astro.redirect('/panel/plantas', 303);
+if (p.guardado) return Astro.redirect(`${p.volver}?hecho=1`, 303);
+const d = p.datos;
+---
+
+<PaginaPanel titulo="Cambiar si hay o no hay" permiso="editar" volver={p.volver}>
+  <h1 class="titular-grande">¿Hay {d?.nombre?.es}?</h1>
+  <Mensajes errores={p.errores} />
+  <form method="post" class="mt-6 grid gap-6">
+    <input type="hidden" name="presentes" value="disponibilidad" />
+    <Opciones nombre="disponibilidad" leyenda="Ahora mismo" opciones={DISPONIBILIDADES.map((v) => ({ valor: v, texto: disponibilidades[v].es }))} elegidas={[String(d?.disponibilidad)]} error={p.error('disponibilidad')} />
+    <p><button class="boton-panel">Guardar</button></p>
+  </form>
+</PaginaPanel>
