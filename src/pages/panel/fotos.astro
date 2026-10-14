@@ -1,11 +1,35 @@
 ---
 import PaginaPanel from '../../components/panel/PaginaPanel.astro';
 import { tp } from '../../i18n/panel';
+import { fotosDeFicha } from '../../server/panel/fotos.ts';
+import { sesionCon } from '../../server/panel/pagina.ts';
+import type { DatosPlanta } from '../../server/panel/plantas.ts';
 
 export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'editar');
+const plantas = s ? await s.repos.contenido.listar('catalogo') : [];
+const lista = plantas
+  .map((p) => ({ id: p.id, d: p.borrador.datos as DatosPlanta }))
+  .sort((a, b) => fotosDeFicha(a.d).length - fotosDeFicha(b.d).length || String(a.d.nombre?.es).localeCompare(String(b.d.nombre?.es), 'es'));
 ---
 
 <PaginaPanel titulo={tp.tarjetas.fotos[0]} permiso="editar">
   <h1 class="titular-grande">{tp.tarjetas.fotos[0]}</h1>
-  <p class="mt-4">{tp.enPreparacion}</p>
+  <p class="mt-4">Elige la planta. Primero salen las que tienen menos fotos.</p>
+  <ul class="mt-6 grid gap-3" role="list">
+    {
+      lista.map(({ id, d }) => {
+        const n = fotosDeFicha(d).length;
+        return (
+          <li>
+            <a href={`/panel/plantas/${id}/fotos`} class="group flex min-h-12 items-center justify-between gap-3 rounded-tarjeta border-2 border-linea bg-papel p-4 no-underline hover:border-oliva">
+              <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{d.nombre?.es}</span>
+              <span class:list={['font-semibold', n === 0 ? 'text-terracota' : 'text-gris']}>{n === 0 ? 'sin fotos' : `${n} ${n === 1 ? 'foto' : 'fotos'}`}</span>
+            </a>
+          </li>
+        );
+      })
+    }
+  </ul>
 </PaginaPanel>
