@@ -31,6 +31,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.3.6",
     "jose": "^6.2.12",
+    "pdf-lib": "^1.17.1",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {

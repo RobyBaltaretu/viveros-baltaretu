@@ -2,6 +2,7 @@
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
 import { ESTADOS_PRESUPUESTO, type EstadoPresupuesto } from '../../../server/data/tipos.ts';
 import { campo, sesionCon } from '../../../server/panel/pagina.ts';
+import { puede } from '../../../server/panel/permisos.ts';
 
 export const prerender = false;
 
@@ -21,6 +22,7 @@ const MENSAJE: Record<string, string> = { respondido: 'Marcado como respondido.'
 const fecha = (iso: string) => new Date(iso).toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Europe/Madrid' });
 const asunto = encodeURIComponent('Tu presupuesto de Viveros Baltaretu');
 const telefono = p?.telefono.replace(/[^\d+]/g, '');
+const puedeFacturar = s ? puede(s.usuario.rol, 'facturas') : false;
 ---
 
 <PaginaPanel titulo="Presupuesto" permiso="presupuestos" volver={`/panel/presupuestos?estado=${p?.estado ?? 'nuevo'}`}>
@@ -58,6 +60,12 @@ const telefono = p?.telefono.replace(/[^\d+]/g, '');
           {p.estado !== 'archivado' && <button class="boton-panel boton-panel-secundario" name="estado" value="archivado">Archivar</button>}
           {p.estado !== 'nuevo' && <button class="boton-panel boton-panel-secundario" name="estado" value="nuevo">Volver a nuevos</button>}
         </form>
+        {puedeFacturar && (
+          <form method="post" action="/panel/facturas/nueva" class="mt-4">
+            <input type="hidden" name="presupuesto" value={p.id} />
+            <button class="boton-panel boton-panel-secundario">Hacer la factura de este pedido</button>
+          </form>
+        )}
       </>
     )
   }

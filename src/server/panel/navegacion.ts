@@ -15,6 +15,7 @@ export const MENU: SeccionMenu[] = [
   { href: '/panel', texto: 'Inicio' },
   { href: '/panel/plantas', texto: 'Plantas', permiso: 'editar' },
   { href: '/panel/presupuestos', texto: 'Presupuestos', permiso: 'presupuestos' },
+  { href: '/panel/facturas', texto: 'Facturas', permiso: 'facturas' },
   { href: '/panel/textos', texto: 'Textos', permiso: 'editar' },
   { href: '/panel/publicar', texto: 'Publicar', permiso: 'publicar' },
 ];

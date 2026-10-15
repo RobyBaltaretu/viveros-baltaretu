@@ -56,3 +56,10 @@ Sin `DEPLOY_HOOK_URL`, el panel guarda los cambios como listos para publicar y a
 ## 7. Asistente con Workers AI (gratis, 10.000 neuronas al día)
 - El binding `AI` ya está en `wrangler.jsonc`: no hay que hacer nada para activarlo. Si el despliegue de Workers Builds fallara por permisos, añade *Account → Workers AI → Read* al token de Workers Builds.
 - Para medir la precisión real del modelo (opcional): crea un token con *Workers AI → Read* y ejecuta en tu ordenador `CLOUDFLARE_ACCOUNT_ID=<id> CLOUDFLARE_API_TOKEN=<token> npm run asistente:banco -- --workers-ai`. Escribe `docs/panel-propio/precision-asistente-workers-ai.md`; súbelo en un PR o pásame el resultado.
+
+## 8. Facturas
+1. En el panel, **Facturas → Datos de facturación**: razón social, NIF, dirección fiscal y, si cobráis por transferencia, el IBAN. Sin esos datos el panel no deja emitir.
+2. Si este año ya habéis hecho facturas con otro programa, consulta con el asesor antes de emitir la primera: el panel empieza la serie `F2026` en el número 1. Si hace falta, se puede cambiar la serie en el código.
+3. Pregunta al asesor por **VeriFactu** (el sistema de la AEAT para los programas de facturación): el panel numera, guarda copia inalterable y encadena huellas, pero no envía los registros a Hacienda ni pone el código QR. Si os afecta, habrá que añadirlo o facturar con un programa certificado.
+4. De vez en cuando, en **Facturas**, pulsa «Descargar la copia» y guárdala fuera del panel.
+

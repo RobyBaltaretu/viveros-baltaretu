@@ -77,6 +77,19 @@ export const TEMAS: Tema[] = [
     enlace: { href: '/panel/publicar', texto: 'Ir a Publicar cambios' },
   },
   {
+    id: 'facturas',
+    titulo: 'Hacer una factura',
+    pasos: [
+      'La primera vez, en «Facturas» pulsa «Datos de facturación» y completa la razón social, el NIF y la dirección de la empresa.',
+      'Pulsa «Nueva factura» y elige el cliente (o «A un cliente nuevo»). Desde un presupuesto, pulsa «Hacer la factura de este pedido» y se rellena sola.',
+      'Escribe cada línea: concepto, cantidad, precio sin IVA y el IVA (las plantas llevan el 10 %). Con «Añadir la planta» se copia el nombre y el precio del catálogo.',
+      'Pulsa «Emitir la factura» y confirma con «Sí, emitir». El número se pone solo y ya no se puede cambiar: si hay un error, usa «Corregir o anular (rectificativa)».',
+      'Pulsa «Enviar» para mandar el PDF por WhatsApp o correo, o «Descargar».',
+      'Cuando te paguen, pulsa «Marcar como cobrada». Para la gestoría, descarga el libro de facturas del año.',
+    ],
+    enlace: { href: '/panel/facturas', texto: 'Ir a Facturas' },
+  },
+  {
     id: 'deshacer',
     titulo: 'Me he equivocado: deshacer',
     pasos: ['Pulsa «Cambios recientes».', 'Busca el cambio y pulsa «Deshacer»: queda como estaba antes.', 'Si ya estaba publicado, vuelve a publicar para que la web lo recoja.'],

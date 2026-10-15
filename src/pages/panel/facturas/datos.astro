@@ -1,0 +1,50 @@
+---
+import Campo from '../../../components/panel/Campo.astro';
+import Mensajes from '../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import { CAMPOS_EMISOR, CLAVE_AJUSTES, FORMAS_PAGO, faltaEmisor, leerAjustes, type Error } from '../../../server/facturas/facturas.ts';
+import { ajustesFacturacion } from '../../../server/panel/facturacion.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+let ajustes = s ? await ajustesFacturacion(s.repos) : null;
+let errores: Error[] = [];
+if (s && Astro.request.method === 'POST') {
+  const r = leerAjustes(await Astro.request.formData());
+  ajustes = r.ajustes;
+  errores = r.errores;
+  if (!errores.length) {
+    await s.repos.ajustesPrivados.guardar(CLAVE_AJUSTES, ajustes, s.usuario.email);
+    await s.repos.auditoria.registrar(s.usuario.email, 'datos de facturación');
+    return Astro.redirect('/panel/facturas/datos?hecho=1', 303);
+  }
+}
+const falta = ajustes && !errores.length ? faltaEmisor(ajustes) : [];
+const error = (c: string) => errores.find((e) => e.campo === c)?.mensaje;
+---
+
+<PaginaPanel titulo="Datos de facturación" permiso="facturas" volver="/panel/facturas">
+  <h1 class="titular-grande">Datos de facturación</h1>
+  <p class="mt-2 text-gris">Salen en cada factura. No se publican en la web.</p>
+  <Mensajes hecho={Astro.url.searchParams.has('hecho') ? 'Guardado.' : undefined} errores={errores} />
+  {falta.length > 0 && <p class="mt-4 rounded-tarjeta border-2 border-linea bg-papel p-3">Para emitir facturas faltan: {falta.map((f) => f.mensaje.replace('Falta en los datos de facturación: ', '').replace('.', '')).join(', ')}.</p>}
+  {
+    ajustes && (
+      <form method="post" class="mt-6 grid gap-6">
+        {CAMPOS_EMISOR.map((c) => (
+          <Campo nombre={c.campo} etiqueta={c.etiqueta} valor={ajustes[c.campo]} requerido={c.obligatorio} tipo={c.campo === 'pie' ? 'textarea' : c.campo === 'email' ? 'email' : 'text'} filas={2} error={error(c.campo)} />
+        ))}
+        <div class="grid gap-1">
+          <label for="formaPago" class="font-semibold">Forma de pago habitual</label>
+          <select id="formaPago" name="formaPago" class="campo-panel">
+            {FORMAS_PAGO.map((f) => <option selected={f === ajustes.formaPago}>{f}</option>)}
+          </select>
+        </div>
+        <Campo nombre="diasVencimiento" etiqueta="Días para pagar desde la fecha de la factura" valor={ajustes.diasVencimiento} modoTeclado="numeric" requerido error={error('diasVencimiento')} />
+        <p><button class="boton-panel">Guardar</button></p>
+      </form>
+    )
+  }
+</PaginaPanel>

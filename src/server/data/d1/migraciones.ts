@@ -92,6 +92,47 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
     nombre: 'publicación automática',
     sql: [`ALTER TABLE publicaciones ADD COLUMN en_web TEXT`],
   },
+  {
+    version: 4,
+    nombre: 'facturas y clientes',
+    sql: [
+      `CREATE TABLE ajustes_privados (
+        clave TEXT PRIMARY KEY,
+        valor TEXT NOT NULL,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL
+      )`,
+      `CREATE TABLE clientes (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        nif TEXT NOT NULL DEFAULT '',
+        datos TEXT NOT NULL,
+        archivado INTEGER NOT NULL DEFAULT 0,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL
+      )`,
+      `CREATE TABLE facturas (
+        id TEXT PRIMARY KEY,
+        tipo TEXT NOT NULL CHECK (tipo IN ('ordinaria', 'rectificativa')),
+        estado TEXT NOT NULL CHECK (estado IN ('borrador', 'emitida', 'cobrada')),
+        serie TEXT,
+        numero INTEGER,
+        codigo TEXT UNIQUE,
+        fecha TEXT NOT NULL,
+        cliente_id TEXT NOT NULL,
+        total REAL NOT NULL DEFAULT 0,
+        datos TEXT NOT NULL,
+        huella TEXT,
+        cobrada_el TEXT,
+        creada TEXT NOT NULL,
+        creada_por TEXT NOT NULL,
+        actualizada TEXT NOT NULL,
+        UNIQUE (serie, numero)
+      )`,
+      `CREATE INDEX facturas_fecha ON facturas (estado, fecha)`,
+      `CREATE INDEX facturas_cliente ON facturas (cliente_id, fecha)`,
+    ],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

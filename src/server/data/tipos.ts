@@ -172,6 +172,140 @@ export interface RepositorioUsoAsistente {
   obtener(email: string, dia: string): Promise<number>;
 }
 
+/** Datos internos del panel que no salen en la web (por ejemplo, los de facturación). */
+export interface RepositorioAjustesPrivados {
+  obtener<T = unknown>(clave: string): Promise<T | null>;
+  guardar(clave: string, valor: unknown, email: string): Promise<void>;
+}
+
+export interface Cliente {
+  id: string;
+  /** Razón social o nombre completo. */
+  nombre: string;
+  nif: string;
+  direccion: string;
+  codigoPostal: string;
+  poblacion: string;
+  provincia: string;
+  pais: string;
+  email: string;
+  telefono: string;
+  /** Cliente en recargo de equivalencia (comercio minorista). */
+  recargo: boolean;
+  notas: string;
+  archivado: boolean;
+}
+
+export interface RepositorioClientes {
+  listar(opciones?: { incluirArchivados?: boolean }): Promise<Cliente[]>;
+  obtener(id: string): Promise<Cliente | null>;
+  guardar(cliente: Cliente, email: string): Promise<void>;
+}
+
+export const ESTADOS_FACTURA = ['borrador', 'emitida', 'cobrada'] as const;
+export type EstadoFactura = (typeof ESTADOS_FACTURA)[number];
+export type TipoFactura = 'ordinaria' | 'rectificativa';
+
+export interface LineaFactura {
+  concepto: string;
+  cantidad: number;
+  /** Precio por unidad sin IVA, en euros. */
+  precio: number;
+  /** Descuento en %. */
+  descuento: number;
+  /** Tipo de IVA en % (21, 10, 4 o 0). */
+  iva: number;
+}
+
+export interface DesgloseIva {
+  iva: number;
+  base: number;
+  cuota: number;
+  recargo: number;
+  cuotaRecargo: number;
+}
+
+export interface TotalesFactura {
+  base: number;
+  cuotaIva: number;
+  cuotaRecargo: number;
+  total: number;
+  desglose: DesgloseIva[];
+}
+
+/** Datos del emisor tal como salen en la factura (copia al emitir). */
+export interface DatosEmisor {
+  nombre: string;
+  nif: string;
+  direccion: string;
+  codigoPostal: string;
+  poblacion: string;
+  provincia: string;
+  email: string;
+  telefono: string;
+  iban: string;
+  /** Pie legal: registro mercantil u otros datos. */
+  pie: string;
+}
+
+export interface Factura {
+  id: string;
+  tipo: TipoFactura;
+  estado: EstadoFactura;
+  /** Serie y número: se asignan al emitir (correlativos por serie). */
+  serie: string | null;
+  numero: number | null;
+  codigo: string | null;
+  /** Fecha de expedición (AAAA-MM-DD). */
+  fecha: string;
+  vencimiento: string;
+  clienteId: string;
+  /** Copia de los datos del cliente; en las emitidas, los de ese momento. */
+  cliente: Cliente;
+  emisor: DatosEmisor | null;
+  lineas: LineaFactura[];
+  totales: TotalesFactura;
+  formaPago: string;
+  notas: string;
+  /** Motivo si hay líneas sin IVA (exención o inversión del sujeto pasivo). */
+  exencion: string;
+  /** Factura que corrige (solo rectificativas) y por qué. */
+  rectificaId: string | null;
+  rectificaCodigo: string | null;
+  motivoRectificacion: string;
+  presupuestoId: string | null;
+  cobradaEl: string | null;
+  /** Huella encadenada con la factura anterior (registro inalterable). */
+  huella: string | null;
+  huellaAnterior: string | null;
+  creada: string;
+  creadaPor: string;
+  actualizada: string;
+}
+
+export interface FiltroFacturas {
+  estado?: EstadoFactura;
+  clienteId?: string;
+  desde?: string;
+  hasta?: string;
+  limite?: number;
+}
+
+export interface RepositorioFacturas {
+  listar(filtro?: FiltroFacturas): Promise<Factura[]>;
+  obtener(id: string): Promise<Factura | null>;
+  /** Crea o actualiza un borrador. No toca las emitidas. */
+  guardarBorrador(factura: Factura): Promise<boolean>;
+  borrarBorrador(id: string): Promise<boolean>;
+  /** Última emitida de una serie (para numerar y encadenar la huella). */
+  ultimaEmitida(serie: string): Promise<Factura | null>;
+  /** La última emitida de todas (para la cadena de huellas). */
+  ultimaHuella(): Promise<string | null>;
+  /** Emite un borrador con el número siguiente de la serie. Devuelve la factura o `null` si ya no era borrador. */
+  emitir(id: string, datos: { serie: string; fecha: string; emisor: DatosEmisor; cliente: Cliente; huella: (numero: number, codigo: string) => Promise<string>; huellaAnterior: string | null; codigo: (numero: number) => string }): Promise<Factura | null>;
+  marcarCobrada(id: string, fecha: string | null): Promise<boolean>;
+}
+
 export interface Repositorios {
   contenido: RepositorioContenido;
   fotos: RepositorioFotos;
@@ -180,4 +314,7 @@ export interface Repositorios {
   publicaciones: RepositorioPublicaciones;
   presupuestos: RepositorioPresupuestos;
   usoAsistente: RepositorioUsoAsistente;
+  ajustesPrivados: RepositorioAjustesPrivados;
+  clientes: RepositorioClientes;
+  facturas: RepositorioFacturas;
 }
