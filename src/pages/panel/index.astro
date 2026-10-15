@@ -42,7 +42,7 @@ const RAPIDAS: { href: string; titulo: string; texto: string; escena: Escena; pe
   { href: '/panel/facturas/nueva', titulo: 'Nueva factura', texto: 'Para un cliente o desde un presupuesto', escena: 'facturas', permiso: 'facturas' },
   { href: '/panel/gastos/nuevo', titulo: 'Añadir un ticket', texto: 'Foto del ticket y se apunta solo', escena: 'gastos', permiso: 'gastos' },
   { href: '/panel/plantas/nueva', titulo: 'Añadir una planta', texto: 'Paso a paso, con sus fotos', escena: 'plantas', permiso: 'editar' },
-  { href: '/panel/asistente', titulo: 'Pedir al asistente', texto: 'Dile lo que quieres con tus palabras', escena: 'asistente', permiso: 'asistente' },
+  { href: '/panel/asistente', titulo: 'Pedir a AgricolAI', texto: 'Tu asistente: dile lo que quieres con tus palabras', escena: 'asistente', permiso: 'asistente' },
 ];
 const rapidas = RAPIDAS.filter((r) => puede(rol, r.permiso));
 const grupos = gruposDe(rol).map((g) => ({ ...g, secciones: g.secciones.filter((x) => x.href !== '/panel') }));

@@ -3,6 +3,7 @@ import type { MensajeAsistente, Propuesta } from '../data/tipos.ts';
 import { puede } from '../panel/permisos.ts';
 import { aplicarAccion, type Accion as AccionBasica } from './acciones.ts';
 import { atenderMensaje } from './conversacion.ts';
+import { aplicarFotos, descartarFotos, HERRAMIENTA_FOTOS, prepararFotos } from './fotos.ts';
 import { herramienta, herramientasDe, type Cambio, type Consulta, type Contexto } from './herramientas.ts';
 import { instruccionesDe } from './instrucciones.ts';
 import { MAXIMO_TEXTO, type BindingAI } from './interprete.ts';
@@ -35,6 +36,35 @@ export const CLAVE_NEURONAS = '__neuronas__';
 export type Respuesta = { texto: string; propuestas: Propuesta[]; modelo: string };
 
 const dia = (ahora = new Date()) => ahora.toISOString().slice(0, 10);
+
+export interface UsoDeHoy {
+  mensajes: number;
+  limiteMensajes: number;
+  neuronas: number;
+  limiteNeuronas: number;
+  /** Hora (de España) a la que se renueva el cupo: medianoche UTC. */
+  renueva: string;
+}
+
+/** Lo gastado hoy: mensajes de la persona y cupo de IA del vivero (compartido). */
+export async function usoDeHoy(repos: Contexto['repos'], email: string, ahora = new Date()): Promise<UsoDeHoy> {
+  const [mensajes, neuronas] = await Promise.all([repos.usoAsistente.obtener(email, dia(ahora)), repos.usoAsistente.obtener(CLAVE_NEURONAS, dia(ahora))]);
+  const manana = new Date(`${dia(ahora)}T00:00:00Z`);
+  manana.setUTCDate(manana.getUTCDate() + 1);
+  const renueva = manana.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
+  return { mensajes, limiteMensajes: LIMITE_MENSAJES_PERSONA, neuronas: Math.min(neuronas, LIMITE_NEURONAS_DIA), limiteNeuronas: LIMITE_NEURONAS_DIA, renueva };
+}
+
+/** Fotos enviadas en el chat: quedan como propuesta (no gastan IA). */
+export async function enviarFotos(ctx: Contexto, archivos: { bytes: Uint8Array; planta: string }[]): Promise<{ ok: boolean; texto: string }> {
+  const { repos, usuario } = ctx;
+  const conversacion = await repos.conversaciones.actual(usuario.email);
+  const r = await prepararFotos(repos, usuario, conversacion, archivos);
+  await repos.conversaciones.anadir({ conversacion, rol: 'usuario', texto: `${archivos.length === 1 ? 'Te envío 1 foto' : `Te envío ${archivos.length} fotos`}.`, propuestas: r.ok ? [r.propuesta.id] : [] });
+  const texto = r.ok ? 'Revisa que cada foto va con su planta y pulsa «Sí» para añadirlas.' : `No he podido guardar las fotos: ${r.error}`;
+  await repos.conversaciones.anadir({ conversacion, rol: 'asistente', texto, propuestas: r.ok ? [r.propuesta.id] : [] });
+  return { ok: r.ok, texto };
+}
 
 /** Historial como mensajes para el modelo: solo texto; las propuestas, con su estado. */
 function historial(mensajes: MensajeAsistente[], propuestas: Map<string, Propuesta>): ModelMessage[] {
@@ -168,10 +198,13 @@ export async function responderPropuesta(ctx: Contexto, id: string, si: boolean)
   if (p.estado !== 'pendiente') return { ok: false, texto: 'Esa propuesta ya estaba resuelta.' };
   let resultado: { ok: boolean; texto: string };
   if (!si) {
-    await repos.conversaciones.resolver(id, 'rechazada', 'Sin cambios.');
-    resultado = { ok: true, texto: 'Vale, no he cambiado nada.' };
+    if (!(await repos.conversaciones.resolver(id, 'rechazada', 'Sin cambios.'))) return { ok: false, texto: 'Esa propuesta ya estaba resuelta.' };
+    if (p.herramienta === HERRAMIENTA_FOTOS) await descartarFotos(repos, p);
+    resultado = { ok: true, texto: p.herramienta === HERRAMIENTA_FOTOS ? 'Vale, no he añadido las fotos.' : 'Vale, no he cambiado nada.' };
   } else if (!(await repos.conversaciones.resolver(id, 'aplicada', 'Aplicando…'))) {
     return { ok: false, texto: 'Esa propuesta ya estaba resuelta.' };
+  } else if (p.herramienta === HERRAMIENTA_FOTOS) {
+    resultado = await aplicarFotos(repos, usuario, p);
   } else if (p.herramienta === '__basica') {
     resultado = await aplicarAccion(repos, usuario.rol, usuario.email, p.argumentos as unknown as AccionBasica);
   } else {
