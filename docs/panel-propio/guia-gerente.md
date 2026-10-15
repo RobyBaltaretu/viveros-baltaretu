@@ -42,7 +42,7 @@ Nada de lo que hagas en el panel puede romper la web: si algo está mal, el pane
 ## Publicar los cambios
 1. Lo que guardas no sale en la web hasta que publicas.
 2. Pulsa «Publicar cambios»: verás la lista de lo que va a cambiar.
-3. Pulsa «Sí, publicar». La web tarda unos minutos y el propietario la aprueba antes de que se vea.
+3. Pulsa «Sí, publicar». La web se actualiza sola en unos minutos; en «Últimas publicaciones» verás cuándo ya está.
 4. Las plantas sin revisar o de ejemplo no salen en la web aunque publiques.
 
 ## Me he equivocado: deshacer

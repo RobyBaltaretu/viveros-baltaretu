@@ -257,7 +257,19 @@ export function crearRepositoriosD1(db: BaseD1): Repositorios {
         await db.prepare('INSERT INTO publicaciones (fecha, email, estado, detalle) VALUES (?, ?, ?, ?)').bind(ahora(), email, estado, detalle).run();
       },
       async listar(limite = 20) {
-        return (await db.prepare('SELECT * FROM publicaciones ORDER BY id DESC LIMIT ?').bind(limite).all<{ id: number; fecha: string; email: string; estado: 'lanzada' | 'sin-cambios' | 'error'; detalle: string }>()).results;
+        const filas = await db
+          .prepare('SELECT * FROM publicaciones ORDER BY id DESC LIMIT ?')
+          .bind(limite)
+          .all<{ id: number; fecha: string; email: string; estado: 'lanzada' | 'sin-cambios' | 'error'; detalle: string; en_web: string | null }>();
+        return filas.results.map(({ en_web, ...p }) => ({ ...p, enWeb: en_web }));
+      },
+      async pendientes(hasta) {
+        const f = await db.prepare("SELECT COUNT(*) AS n FROM publicaciones WHERE estado = 'lanzada' AND en_web IS NULL AND fecha <= ?").bind(hasta).first<{ n: number }>();
+        return f?.n ?? 0;
+      },
+      async marcarEnWeb(hasta) {
+        const r = await db.prepare("UPDATE publicaciones SET en_web = ? WHERE estado = 'lanzada' AND en_web IS NULL AND fecha <= ?").bind(ahora(), hasta).run();
+        return r.meta?.changes ?? 0;
       },
     },
     presupuestos: {

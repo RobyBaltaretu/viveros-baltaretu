@@ -81,3 +81,18 @@ describe('otros repositorios', () => {
     expect((await repos.auditoria.listar())[0].accion).toBe('entrar');
   });
 });
+
+describe('publicación automática', () => {
+  it('cuenta las publicaciones pendientes de llegar a la web y las marca', async () => {
+    const p = repos.publicaciones;
+    await p.registrar('gerente@example.com', 'lanzada', '1 cambio');
+    await p.registrar('gerente@example.com', 'sin-cambios');
+    const hasta = new Date(Date.now() + 1000).toISOString();
+    expect(await p.pendientes(new Date(0).toISOString())).toBe(0);
+    expect(await p.pendientes(hasta)).toBe(1);
+    expect(await p.marcarEnWeb(hasta)).toBe(1);
+    expect(await p.pendientes(hasta)).toBe(0);
+    expect((await p.listar(1))[0].enWeb).toBeNull(); // la de «sin cambios»
+    expect((await p.listar(2))[1].enWeb).not.toBeNull();
+  });
+});

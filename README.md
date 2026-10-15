@@ -12,7 +12,7 @@ Las normas del proyecto están en [CLAUDE.md](CLAUDE.md). Los comandos de desarr
 - Las fotos subidas desde el panel se guardan en D1 y el build las escribe en `src/assets/`, donde Astro las optimiza. No se usa Cloud Images porque es de pago.
 - El esquema de cada ficha del catálogo está en `src/lib/catalogo/schema.ts`. Si una ficha no lo cumple, el build falla y la web sigue con la versión anterior.
 - Las fichas con `revisado: false` no salen en producción. Sí se ven en local y en los builds de ramas que no son `main`.
-- **Producción requiere aprobación manual.** Cada build de `main` sube una *versión* del Worker con `wrangler versions upload`, pero no la publica. La publicas tú desde el panel de Cloudflare (paso 10).
+- **Publicación.** Lo que el gerente publica desde el panel sale solo a la web: el comando de despliegue (`npm run desplegar`) ve que el build lleva publicaciones del panel y despliega. Los cambios de código en `main` suben una *versión* con `wrangler versions upload` que publicas tú desde el panel de Cloudflare (paso 10), salvo que actives `PUBLICAR_SIEMPRE=1`.
 
 ### Peticiones de presupuesto
 
@@ -79,7 +79,7 @@ Base D1, Cloudflare Access, token de contenido y Deploy Hook: sigue [docs/panel-
 2. Conecta GitHub y elige `robybaltaretu/viveros-baltaretu`.
 3. Nombre del proyecto: `viveros-baltaretu`. Debe coincidir con `name` en `wrangler.jsonc`.
 4. **Build command:** `npm run build`
-5. **Deploy command:** `npx wrangler versions upload`. Con este comando el build sube una versión pero no la publica.
+5. **Deploy command:** `npm run desplegar`. Publica solo los cambios que vienen del panel; el resto sube una versión que no se publica hasta que la apruebas.
 6. Guarda. El primer build fallará porque falta `SITE_URL`; se arregla en el paso siguiente.
 
 ### 6. Ajustes de build

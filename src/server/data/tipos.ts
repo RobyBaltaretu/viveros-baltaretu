@@ -124,11 +124,17 @@ export interface Publicacion {
   email: string;
   estado: EstadoPublicacion;
   detalle: string;
+  /** Cuándo llegó a la web pública (despliegue automático). `null`: aún no. */
+  enWeb: string | null;
 }
 
 export interface RepositorioPublicaciones {
   registrar(email: string, estado: EstadoPublicacion, detalle?: string): Promise<void>;
   listar(limite?: number): Promise<Publicacion[]>;
+  /** Publicaciones lanzadas hasta esa fecha que aún no están en la web. */
+  pendientes(hasta: string): Promise<number>;
+  /** Las marca como ya en la web. Devuelve cuántas. */
+  marcarEnWeb(hasta: string): Promise<number>;
 }
 
 export interface LineaPresupuesto {

@@ -3,8 +3,9 @@ import { seccionDe } from './textos.ts';
 
 /**
  * "Publicar cambios": pasa los borradores a publicado y lanza un build con el
- * Deploy Hook de Workers Builds. El build sube una versión nueva que el
- * propietario revisa y publica en Cloudflare (decisión del propietario).
+ * Deploy Hook de Workers Builds. El build ve que hay publicaciones pendientes y
+ * despliega solo (`npm run desplegar`): los cambios del panel salen a la web sin
+ * aprobación manual (decisión del propietario, 15 de octubre de 2026).
  */
 export interface EntornoPublicar {
   DEPLOY_HOOK_URL?: string;
