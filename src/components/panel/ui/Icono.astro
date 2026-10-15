@@ -1,0 +1,12 @@
+---
+/** Icono de línea del panel. Decorativo: el texto de al lado dice qué es. */
+import { ICONOS, type NombreIcono } from '../../../server/panel/iconos.ts';
+
+interface Props {
+  nombre: NombreIcono;
+  clase?: string;
+}
+const { nombre, clase = 'size-6' } = Astro.props;
+---
+
+<svg class={`icono shrink-0 ${clase}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" set:html={ICONOS[nombre]} />

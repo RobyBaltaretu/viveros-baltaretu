@@ -44,7 +44,7 @@ const hecho = Astro.url.searchParams.has('hecho');
   <ul class="mt-6 grid gap-3" role="list">
     {
       usuarios.map((u) => (
-        <li class="flex flex-wrap items-center justify-between gap-3 rounded-tarjeta border-2 border-linea bg-papel p-4">
+        <li class="flex flex-wrap items-center justify-between gap-3 caja-panel p-4">
           <span>
             <span class="block font-semibold">{u.nombre || u.email}</span>
             <span class="block text-gris">

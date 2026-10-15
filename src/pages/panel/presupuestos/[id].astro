@@ -32,7 +32,7 @@ const puedeFacturar = s ? puede(s.usuario.rol, 'facturas') : false;
         <h1 class="titular-grande">{p.nombre}</h1>
         <p class="mt-1 text-gris">{fecha(p.fecha)}</p>
         {hecho && MENSAJE[hecho] && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{MENSAJE[hecho]}</p>}
-        <dl class="mt-6 grid gap-2 rounded-tarjeta border-2 border-linea bg-papel p-4">
+        <dl class="mt-6 grid gap-2 caja-panel p-4">
           <div><dt class="inline font-semibold">Pedido: </dt><dd class="inline">{p.tipoPedido === 'unidad' ? 'por unidad (con envío)' : 'al por mayor'}</dd></div>
           {p.empresa && <div><dt class="inline font-semibold">Empresa: </dt><dd class="inline">{p.empresa}</dd></div>}
           <div><dt class="inline font-semibold">Correo: </dt><dd class="inline">{p.email}</dd></div>
@@ -48,7 +48,7 @@ const puedeFacturar = s ? puede(s.usuario.rol, 'facturas') : false;
         {p.mensaje && (
           <>
             <h2 class="titular-medio mt-6">Mensaje</h2>
-            <p class="mt-2 whitespace-pre-line rounded-tarjeta border-2 border-linea bg-papel p-4">{p.mensaje}</p>
+            <p class="mt-2 whitespace-pre-line caja-panel p-4">{p.mensaje}</p>
           </>
         )}
         <div class="mt-8 flex flex-wrap gap-3">

@@ -21,7 +21,7 @@ const ocultos = (a: Accion | undefined, sinValor = false) => [
 const esPrecio = accion?.tipo === 'cambiar_precio' || accion?.tipo === 'cambiar_precio_unidad';
 ---
 
-<div class="rounded-panel border-2 border-linea bg-papel p-5" aria-live="polite">
+<div class="caja-panel p-5" aria-live="polite">
   {
     (paso.estado === 'respuesta' || paso.estado === 'no-puedo') && (
       <p role="status" class="texto-entrada font-semibold">

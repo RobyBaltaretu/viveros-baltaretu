@@ -24,7 +24,7 @@ plantas.sort((a, b) => String((a.borrador.datos as DatosPlanta).nombre?.es).loca
         const avisos = avisosPublicacion(d);
         return (
           <li>
-            <a href={`/panel/plantas/${p.id}`} class="group flex min-h-12 flex-col gap-1 rounded-tarjeta border-2 border-linea bg-papel p-4 no-underline hover:border-oliva">
+            <a href={`/panel/plantas/${p.id}`} class="group flex min-h-12 flex-col gap-1 caja-panel tarjeta-accion p-4 no-underline">
               <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{d.nombre?.es}</span>
               <span class="text-gris">
                 {formatearPrecio(d.precioDesde ?? null, 'unidad', 'es')} · {disponibilidades[d.disponibilidad as keyof typeof disponibilidades]?.es}

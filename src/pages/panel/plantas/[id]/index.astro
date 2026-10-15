@@ -23,7 +23,7 @@ const hecho = Astro.url.searchParams.get('hecho');
         <h1 class="titular-grande">{d.nombre?.es}</h1>
         {hecho && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{hecho === 'archivada' ? 'Planta archivada.' : 'Guardado. Saldrá en la web cuando publiques los cambios.'}</p>}
         {avisosPublicacion(d).map((a) => <p class="mt-3 font-semibold text-terracota">{a}</p>)}
-        <dl class="mt-6 grid gap-2 rounded-tarjeta border-2 border-linea bg-papel p-4">
+        <dl class="mt-6 grid gap-2 caja-panel p-4">
           <div><dt class="inline font-semibold">Precio: </dt><dd class="inline">{formatearPrecio(d.precioDesde ?? null, 'unidad', 'es')}</dd></div>
           <div><dt class="inline font-semibold">Hay ahora: </dt><dd class="inline">{disponibilidades[d.disponibilidad as keyof typeof disponibilidades]?.es}</dd></div>
           <div><dt class="inline font-semibold">Alturas: </dt><dd class="inline">{formatearRango(Number(d.alturaMin), Number(d.alturaMax), 'm', 'es')}</dd></div>

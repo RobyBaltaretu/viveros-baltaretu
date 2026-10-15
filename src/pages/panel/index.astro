@@ -1,7 +1,14 @@
 ---
 import PaginaPanel from '../../components/panel/PaginaPanel.astro';
 import Tarjeta from '../../components/panel/Tarjeta.astro';
+import Icono from '../../components/panel/ui/Icono.astro';
+import Ilustracion, { type Escena } from '../../components/panel/ui/Ilustracion.astro';
 import { tp } from '../../i18n/panel';
+import { dinero } from '../../server/facturas/importes.ts';
+import { hoy } from '../../server/gastos/gastos.ts';
+import { cifras, cobros, periodoDe } from '../../server/informes/informes.ts';
+import type { NombreIcono } from '../../server/panel/iconos.ts';
+import { gruposDe } from '../../server/panel/navegacion.ts';
 import { sesionCon } from '../../server/panel/pagina.ts';
 import { puede } from '../../server/panel/permisos.ts';
 
@@ -9,34 +16,166 @@ export const prerender = false;
 
 const s = sesionCon(Astro.locals);
 const rol = s?.usuario.rol ?? 'editor';
-const nuevos = s && puede(rol, 'presupuestos') ? await s.repos.presupuestos.contar('nuevo') : 0;
-const porRevisar = s && puede(rol, 'gastos') ? (await s.repos.gastos.listar({ estado: 'revisar' })).length : 0;
-const porCobrar = s && puede(rol, 'facturas') ? (await s.repos.facturas.listar({ estado: 'emitida' })).length : 0;
-const pendientes = s ? (await s.repos.contenido.pendientes()).length : 0;
-const t = tp.tarjetas;
+const dia = hoy();
+const mes = periodoDe('mes', dia);
+const [nuevos, porRevisar, emitidas, pendientes, delMes, gastosMes] = s
+  ? await Promise.all([
+      puede(rol, 'presupuestos') ? s.repos.presupuestos.contar('nuevo') : 0,
+      puede(rol, 'gastos') ? s.repos.gastos.listar({ estado: 'revisar' }).then((l) => l.length) : 0,
+      puede(rol, 'facturas') ? s.repos.facturas.listar({ estado: 'emitida' }) : [],
+      s.repos.contenido.pendientes().then((l) => l.length),
+      puede(rol, 'informes') ? s.repos.facturas.listar({ desde: mes.desde, hasta: mes.hasta }) : [],
+      puede(rol, 'informes') ? s.repos.gastos.listar({ estado: 'confirmado', desde: mes.desde, hasta: mes.hasta }) : [],
+    ])
+  : [0, 0, [], 0, [], []];
+const cobro = cobros(emitidas, dia);
+const cuentas = cifras(delMes, gastosMes, [], mes);
+
+// Lo que pide atención hoy, de lo más urgente a lo menos.
+const tareas: { href: string; icono: NombreIcono; texto: string; urgente?: boolean }[] = [];
+if (cobro.vencidas) tareas.push({ href: '/panel/facturas', icono: 'aviso', texto: `${cobro.vencidas} ${cobro.vencidas === 1 ? 'factura con la fecha de pago pasada' : 'facturas con la fecha de pago pasada'}`, urgente: true });
+if (nuevos) tareas.push({ href: '/panel/presupuestos', icono: 'presupuestos', texto: `${nuevos} ${nuevos === 1 ? 'presupuesto nuevo' : 'presupuestos nuevos'} por responder`, urgente: true });
+if (porRevisar) tareas.push({ href: '/panel/gastos', icono: 'ticket', texto: `${porRevisar} ${porRevisar === 1 ? 'ticket' : 'tickets'} por revisar` });
+if (pendientes && puede(rol, 'publicar')) tareas.push({ href: '/panel/publicar', icono: 'publicar', texto: `${pendientes} ${pendientes === 1 ? 'cambio guardado' : 'cambios guardados'} sin publicar en la web` });
+
+const RAPIDAS: { href: string; titulo: string; texto: string; escena: Escena; permiso: Parameters<typeof puede>[1] }[] = [
+  { href: '/panel/facturas/nueva', titulo: 'Nueva factura', texto: 'Para un cliente o desde un presupuesto', escena: 'facturas', permiso: 'facturas' },
+  { href: '/panel/gastos/nuevo', titulo: 'Añadir un ticket', texto: 'Foto del ticket y se apunta solo', escena: 'gastos', permiso: 'gastos' },
+  { href: '/panel/plantas/nueva', titulo: 'Añadir una planta', texto: 'Paso a paso, con sus fotos', escena: 'plantas', permiso: 'editar' },
+  { href: '/panel/asistente', titulo: 'Pedir al asistente', texto: 'Dile lo que quieres con tus palabras', escena: 'asistente', permiso: 'asistente' },
+];
+const rapidas = RAPIDAS.filter((r) => puede(rol, r.permiso));
+const grupos = gruposDe(rol).map((g) => ({ ...g, secciones: g.secciones.filter((x) => x.href !== '/panel') }));
+const avisos: Record<string, string | undefined> = {
+  '/panel/presupuestos': nuevos ? tp.nuevos(nuevos) : undefined,
+  '/panel/gastos': porRevisar ? `${porRevisar} por revisar` : undefined,
+  '/panel/facturas': emitidas.length ? `${emitidas.length} por cobrar` : undefined,
+  '/panel/publicar': pendientes ? `${pendientes}` : undefined,
+};
+const fecha = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Madrid' });
 ---
 
-<PaginaPanel titulo={tp.inicio} volver={false}>
-  <h1 class="titular-grande">
-    {tp.hola(s?.usuario.nombre ?? '')}
-    <span class="mt-2 block text-lg font-normal text-gris">{s && tp.roles[s.usuario.rol]}</span>
-  </h1>
-  <ul class="mt-8 grid gap-4" role="list">
-    {
-      puede(rol, 'publicar') && (
-        <Tarjeta href="/panel/publicar" titulo="Publicar cambios" texto={pendientes ? 'Hay cambios guardados que aún no están en la web' : 'La web está al día'} aviso={pendientes ? `${pendientes}` : undefined} />
-      )
-    }
-    <Tarjeta href="/panel/asistente" titulo="Asistente" texto="Cambiar precios y más, paso a paso" />
-    <Tarjeta href="/panel/plantas" titulo={t.plantas[0]} texto={t.plantas[1]} />
-    {puede(rol, 'presupuestos') && <Tarjeta href="/panel/presupuestos" titulo={t.presupuestos[0]} texto={t.presupuestos[1]} aviso={nuevos ? tp.nuevos(nuevos) : undefined} />}
- {puede(rol, 'informes') && <Tarjeta href="/panel/informes" titulo="Informes" texto="Ventas, gastos, resultado y cobros, comparados" />}
-    {puede(rol, 'gastos') && <Tarjeta href="/panel/gastos" titulo="Gastos" texto="Tickets de compra y lo que se ha gastado" aviso={porRevisar ? `${porRevisar} por revisar` : undefined} />}
-    {puede(rol, 'facturas') && <Tarjeta href="/panel/facturas" titulo="Facturas" texto="Hacer facturas y ver lo que falta por cobrar" aviso={porCobrar ? `${porCobrar} por cobrar` : undefined} />}
-    <Tarjeta href="/panel/fotos" titulo={t.fotos[0]} texto={t.fotos[1]} />
-    <Tarjeta href="/panel/textos" titulo={t.textos[0]} texto={t.textos[1]} />
-    <Tarjeta href="/panel/ayuda" titulo={t.ayuda[0]} texto={t.ayuda[1]} />
-    <Tarjeta href="/panel/cambios" titulo="Cambios recientes" texto="Ver lo que se ha cambiado y deshacer" />
-    {puede(rol, 'personas') && <Tarjeta href="/panel/personas" titulo={t.personas[0]} texto={t.personas[1]} />}
-  </ul>
+<PaginaPanel titulo={tp.inicio} volver={false} ancho="amplio">
+  <section class="saludo caja-panel relative overflow-hidden p-6 sm:p-8" aria-labelledby="saludo">
+    <div class="relative z-10 max-w-xl">
+      <p class="text-gris first-letter:uppercase">{fecha}</p>
+      <h1 id="saludo" class="titular-grande mt-1">{tp.hola(s?.usuario.nombre ?? '')}</h1>
+      <p class="mt-2 text-gris">{s && tp.roles[s.usuario.rol]}</p>
+      {
+        tareas.length === 0 ? (
+          <p class="mt-5 inline-flex items-center gap-2 rounded-full bg-verdor px-4 py-2 font-semibold text-oliva">
+            <Icono nombre="hecho" clase="size-5" />
+            Todo al día
+          </p>
+        ) : (
+          <ul class="mt-5 grid gap-2" role="list" aria-label="Para hoy">
+            {tareas.map((t) => (
+              <li>
+                <a href={t.href} class:list={['tarea-hoy', t.urgente && 'tarea-urgente']}>
+                  <Icono nombre={t.icono} clase="size-5" />
+                  <span class="flex-1">{t.texto}</span>
+                  <Icono nombre="siguiente" clase="size-5" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+    <Ilustracion escena="plantas" clase="saludo-dibujo pointer-events-none absolute -right-4 bottom-0 hidden w-64 sm:block" />
+  </section>
+
+  {
+    puede(rol, 'informes') && (
+      <section class="mt-6" aria-labelledby="mes">
+        <div class="flex flex-wrap items-end justify-between gap-2">
+          <h2 id="mes" class="titular-medio first-letter:uppercase">
+            {mes.etiqueta}
+          </h2>
+          <a href="/panel/informes" class="enlace-panel gap-1 no-underline">
+            Ver informes <Icono nombre="siguiente" clase="size-5" />
+          </a>
+        </div>
+        <ul class="escalonado mt-3 grid grid-cols-3 gap-2 sm:gap-3" role="list">
+          {[
+            { nombre: 'Ingresos sin IVA', valor: dinero(cuentas.ingresos) },
+            { nombre: 'Gastos sin IVA', valor: dinero(cuentas.gastos) },
+            { nombre: 'Por cobrar', valor: dinero(cobro.pendiente) },
+          ].map((k) => (
+            <li class="caja-panel grid content-start gap-1 p-3 sm:p-4">
+              <span class="text-sm text-gris sm:text-base">{k.nombre}</span>
+              <span class="tabular font-titular text-lg font-bold sm:text-2xl">{k.valor}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    rapidas.length > 0 && (
+      <section class="mt-8" aria-labelledby="rapidas">
+        <h2 id="rapidas" class="titular-medio">
+          Empezar algo
+        </h2>
+        <ul class="escalonado mt-3 grid grid-cols-2 gap-3 xl:grid-cols-4" role="list">
+          {rapidas.map((r) => (
+            <Tarjeta href={r.href} titulo={r.titulo} texto={r.texto} escena={r.escena} forma="bloque" />
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    grupos
+      .filter((g) => g.secciones.length)
+      .map((g) => (
+        <section class="mt-8" aria-labelledby={`grupo-${g.grupo}`}>
+          <h2 id={`grupo-${g.grupo}`} class="titular-medio">
+            {g.titulo}
+          </h2>
+          <ul class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="list">
+            {g.secciones.map((x) => (
+              <Tarjeta href={x.href} titulo={x.texto} texto={x.descripcion} escena={x.escena as Escena | undefined} aviso={avisos[x.href]} />
+            ))}
+          </ul>
+        </section>
+      ))
+  }
 </PaginaPanel>
+
+<style>
+  .saludo {
+    background:
+      radial-gradient(120% 140% at 100% 100%, color-mix(in oklab, var(--color-verdor) 90%, transparent) 0 38%, transparent 38.2%),
+      var(--color-papel);
+  }
+  .tarea-hoy {
+    display: flex;
+    min-height: 3rem;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: 0.875rem;
+    background: var(--color-crema);
+    padding: 0.5rem 0.875rem;
+    font-weight: 600;
+    color: var(--color-tinta);
+    text-decoration: none;
+    transition: transform 160ms var(--ease-salida), background-color 150ms ease;
+  }
+  .tarea-hoy .icono {
+    color: var(--color-oliva);
+  }
+  .tarea-urgente .icono:first-child {
+    color: var(--color-terracota);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .tarea-hoy:hover {
+      background: var(--color-verdor);
+    }
+  }
+  .tarea-hoy:active {
+    transform: scale(0.98);
+  }
+</style>

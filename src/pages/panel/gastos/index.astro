@@ -80,7 +80,7 @@ const MENSAJES: Record<string, string> = { borrado: 'Gasto borrado.', guardado: 
     {
       delMes.map((g) => (
         <li>
-          <a href={`/panel/gastos/${g.id}`} class="group flex min-h-12 flex-wrap items-center justify-between gap-2 rounded-tarjeta border-2 border-linea bg-papel p-4 no-underline hover:border-oliva">
+          <a href={`/panel/gastos/${g.id}`} class="group flex min-h-12 flex-wrap items-center justify-between gap-2 caja-panel tarjeta-accion p-4 no-underline">
             <span class="flex flex-col">
               <span class="font-semibold text-tinta group-hover:underline">{g.proveedor}</span>
               <span class="text-gris">

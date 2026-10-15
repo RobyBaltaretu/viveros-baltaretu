@@ -1,0 +1,147 @@
+---
+/**
+ * Dibujos de cada acción del panel, en el mismo estilo que las siluetas de la
+ * web: línea oliva, rellenos suaves de la paleta y todo apoyado en el suelo.
+ * Son decorativos (aria-hidden): el título de la tarjeta dice lo que es.
+ * Con movimiento permitido, la hoja de cada dibujo se balancea un poco al
+ * pasar por encima de su tarjeta.
+ */
+export type Escena =
+  | 'plantas'
+  | 'presupuestos'
+  | 'facturas'
+  | 'clientes'
+  | 'gastos'
+  | 'informes'
+  | 'textos'
+  | 'fotos'
+  | 'publicar'
+  | 'cambios'
+  | 'asistente'
+  | 'personas'
+  | 'ayuda';
+
+interface Props {
+  escena: Escena;
+  clase?: string;
+}
+const { escena, clase = 'w-28' } = Astro.props;
+
+// Hoja reutilizable (se balancea): base en (0,0), apunta hacia arriba a la derecha.
+const hoja = (x: number, y: number, giro = 0, escala = 1) =>
+  `<g transform="translate(${x} ${y}) rotate(${giro}) scale(${escala})"><path class="hoja-ilus" d="M0 0 C2 -10 10 -17 22 -18 C21 -7 13 -1 0 0 Z" fill="var(--ilus-hoja)" /></g>`;
+
+const ESCENAS: Record<Escena, string> = {
+  plantas: `
+    <path d="M58 100 L64 66 H96 L102 100 Z" fill="var(--ilus-barro)"/>
+    <path d="M60 66 H100"/>
+    <path d="M80 66 C80 50 79 38 80 24"/>
+    ${hoja(80, 30, -150, 1.4)}${hoja(80, 30, -30, 1.4)}${hoja(80, 26, -95, 1.2)}${hoja(80, 44, -170, 1)}${hoja(80, 44, -10, 1)}`,
+  presupuestos: `
+    <rect x="52" y="22" width="56" height="74" rx="6" fill="var(--ilus-papel)"/>
+    <rect x="66" y="16" width="28" height="12" rx="4" fill="var(--ilus-arena)"/>
+    <path d="M62 44 H98 M62 56 H98 M62 68 H86"/>
+    <circle cx="96" cy="80" r="9" fill="var(--ilus-hoja)"/>
+    <path d="M92 80 L95 83 L101 77"/>`,
+  facturas: `
+    <path d="M50 18 H96 L110 32 V100 H50 Z" fill="var(--ilus-papel)"/>
+    <path d="M96 18 V32 H110"/>
+    <path d="M60 46 H90 M60 58 H100 M60 70 H84"/>
+    <circle cx="96" cy="84" r="12" fill="var(--ilus-barro)"/>
+    <path d="M100 79 C94 76 90 80 90 84 C90 88 94 92 100 89 M88 82 H96 M88 86 H96"/>`,
+  clientes: `
+    <circle cx="64" cy="46" r="13" fill="var(--ilus-arena)"/>
+    <path d="M40 100 C40 80 52 70 64 70 C76 70 88 80 88 100"/>
+    <circle cx="100" cy="52" r="11" fill="var(--ilus-hoja)"/>
+    <path d="M80 100 C82 84 90 76 100 76 C110 76 120 84 120 100"/>`,
+  gastos: `
+    <path d="M56 16 H104 V96 L98 92 L92 96 L86 92 L80 96 L74 92 L68 96 L62 92 L56 96 Z" fill="var(--ilus-papel)"/>
+    <path d="M66 32 H94 M66 44 H94 M66 56 H86"/>
+    <path d="M66 74 H94" stroke-width="3.5"/>
+    <rect x="96" y="58" width="34" height="26" rx="6" fill="var(--ilus-arena)"/>
+    <circle cx="113" cy="71" r="7" fill="var(--ilus-papel)"/>
+    <path d="M104 58 L107 53 H119 L122 58"/>`,
+  informes: `
+    <path d="M44 100 H118"/>
+    <rect x="52" y="70" width="14" height="30" rx="3" fill="var(--ilus-arena)"/>
+    <rect x="74" y="54" width="14" height="46" rx="3" fill="var(--ilus-barro)"/>
+    <rect x="96" y="38" width="14" height="62" rx="3" fill="var(--ilus-hoja)"/>
+    <path d="M103 38 C103 30 103 24 104 18"/>
+    ${hoja(104, 24, -40, 0.9)}${hoja(103, 30, -150, 0.8)}`,
+  textos: `
+    <rect x="48" y="18" width="58" height="80" rx="6" fill="var(--ilus-papel)"/>
+    <path d="M58 36 H96 M58 48 H96 M58 60 H84 M58 72 H90"/>
+    <path d="M100 92 L122 54 L130 59 L108 97 L98 100 Z" fill="var(--ilus-barro)"/>
+    <path d="M118 61 L126 66"/>`,
+  fotos: `
+    <rect x="42" y="38" width="76" height="56" rx="10" fill="var(--ilus-arena)"/>
+    <path d="M60 38 L66 28 H94 L100 38"/>
+    <circle cx="80" cy="66" r="17" fill="var(--ilus-papel)"/>
+    <circle cx="80" cy="66" r="8" fill="var(--ilus-hoja)"/>
+    ${hoja(112, 36, -60, 0.9)}`,
+  publicar: `
+    <rect x="38" y="24" width="84" height="64" rx="8" fill="var(--ilus-papel)"/>
+    <path d="M38 38 H122"/>
+    <circle cx="48" cy="31" r="2" fill="currentColor"/><circle cx="56" cy="31" r="2" fill="currentColor"/>
+    <path d="M80 78 V52 M70 62 L80 52 L90 62"/>
+    <path d="M60 100 H100 M80 88 V100"/>`,
+  cambios: `
+    <circle cx="80" cy="60" r="34" fill="var(--ilus-papel)"/>
+    <path d="M80 40 V60 L94 70"/>
+    <path d="M46 52 C48 44 52 38 58 33 M44 40 L46 52 L58 50"/>
+    ${hoja(108, 96, -70, 0.9)}`,
+  asistente: `
+    <path d="M40 30 H106 A8 8 0 0 1 114 38 V70 A8 8 0 0 1 106 78 H64 L50 90 V78 H40 A8 8 0 0 1 32 70 V38 A8 8 0 0 1 40 30 Z" fill="var(--ilus-hoja)"/>
+    <path d="M48 48 H98 M48 60 H86"/>
+    <path d="M122 22 L125 31 L134 34 L125 37 L122 46 L119 37 L110 34 L119 31 Z" fill="var(--ilus-barro)"/>
+    <path d="M124 64 L126 69 L131 71 L126 73 L124 78 L122 73 L117 71 L122 69 Z" fill="var(--ilus-arena)"/>`,
+  personas: `
+    <circle cx="70" cy="46" r="14" fill="var(--ilus-arena)"/>
+    <path d="M44 100 C44 80 56 70 70 70 C84 70 96 80 96 100"/>
+    <circle cx="108" cy="72" r="9" fill="var(--ilus-barro)"/>
+    <path d="M108 81 V98 M108 90 H115 M108 96 H113"/>`,
+  ayuda: `
+    <circle cx="80" cy="58" r="36" fill="var(--ilus-papel)"/>
+    <circle cx="80" cy="58" r="16" fill="var(--ilus-hoja)"/>
+    <path d="M55 33 L69 47 M105 33 L91 47 M55 83 L69 69 M105 83 L91 69"/>`,
+};
+---
+
+<svg
+  class={`ilustracion ${clase}`}
+  viewBox="0 0 160 112"
+  fill="none"
+  stroke="var(--color-oliva)"
+  stroke-width="2.5"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+  set:html={`<path d="M24 100 H136" stroke="var(--ilus-suelo)"/>${ESCENAS[escena]}`}
+/>
+
+<style is:global>
+  .ilustracion {
+    --ilus-hoja: #cfe0b8;
+    --ilus-arena: #efe0c4;
+    --ilus-barro: #eec3aa;
+    --ilus-papel: var(--color-papel);
+    --ilus-suelo: var(--color-linea);
+    color: var(--color-oliva);
+    height: auto;
+    overflow: visible;
+  }
+  .ilustracion .hoja-ilus {
+    transform-box: fill-box;
+    transform-origin: 0% 100%;
+  }
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+    .ilustracion .hoja-ilus {
+      transition: rotate 400ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    :is(a, button):hover > * .ilustracion .hoja-ilus,
+    :is(a, button):hover .ilustracion .hoja-ilus {
+      rotate: -8deg;
+    }
+  }
+</style>

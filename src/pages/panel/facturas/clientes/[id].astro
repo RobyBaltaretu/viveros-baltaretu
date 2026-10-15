@@ -38,7 +38,7 @@ const c = cliente;
 <PaginaPanel titulo={nuevo ? 'Cliente nuevo' : (c?.nombre ?? 'Cliente')} permiso="facturas" volver="/panel/facturas/clientes">
   <h1 class="titular-grande">{nuevo ? 'Cliente nuevo' : c?.nombre}</h1>
   <Mensajes hecho={Astro.url.searchParams.has('hecho') ? 'Guardado.' : undefined} errores={errores} />
-  {falta.length > 0 && <p class="mt-4 rounded-tarjeta border-2 border-linea bg-papel p-3">Para facturarle falta: {falta.map((f) => f.mensaje.replace('Falta ', '').replace(' del cliente. Complétalo en su ficha.', '')).join(', ')}.</p>}
+  {falta.length > 0 && <p class="mt-4 caja-panel p-3">Para facturarle falta: {falta.map((f) => f.mensaje.replace('Falta ', '').replace(' del cliente. Complétalo en su ficha.', '')).join(', ')}.</p>}
   {
     c && (
       <form method="post" class="mt-6 grid gap-6">

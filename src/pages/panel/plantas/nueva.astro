@@ -56,7 +56,7 @@ const error = (c: string) => estado?.errores.find((e) => e.campo === c)?.mensaje
     {
       paso === 6 && (
         <>
-          <dl class="grid gap-2 rounded-tarjeta border-2 border-linea bg-papel p-4">
+          <dl class="grid gap-2 caja-panel p-4">
             <div><dt class="inline font-semibold">Nombre: </dt><dd class="inline">{d.nombre?.es} ({d.nombreCientifico})</dd></div>
             <div><dt class="inline font-semibold">Alturas: </dt><dd class="inline">{formatearRango(Number(d.alturaMin), Number(d.alturaMax), 'm', 'es')}</dd></div>
             <div><dt class="inline font-semibold">Precio: </dt><dd class="inline">{formatearPrecio(d.precioDesde ?? null, 'unidad', 'es')}</dd></div>

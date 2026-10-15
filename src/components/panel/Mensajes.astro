@@ -1,5 +1,7 @@
 ---
-/** Confirmación ("Guardado") o resumen de errores al principio del formulario. */
+/** Confirmación («Guardado») o resumen de errores al principio del formulario. */
+import Icono from './ui/Icono.astro';
+
 interface Props {
   hecho?: string | undefined;
   errores?: { campo: string; mensaje: string }[];
@@ -7,16 +9,26 @@ interface Props {
 const { hecho, errores = [] } = Astro.props;
 ---
 
-{hecho && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{hecho}</p>}
+{
+  hecho && (
+    <p role="status" class="mt-4 flex items-start gap-3 rounded-2xl bg-verdor p-4 font-semibold text-oliva">
+      <Icono nombre="hecho" clase="mt-0.5 size-6" />
+      <span class="text-tinta">{hecho}</span>
+    </p>
+  )
+}
 {
   errores.length > 0 && (
-    <div role="alert" class="mt-4 rounded-tarjeta border-2 border-terracota bg-papel p-4">
-      <p class="font-semibold">Revisa estos datos antes de guardar:</p>
-      <ul class="mt-2 list-disc pl-6">
-        {errores.map((e) => (
-          <li>{e.mensaje}</li>
-        ))}
-      </ul>
+    <div role="alert" class="mt-4 flex items-start gap-3 rounded-2xl border-2 border-terracota bg-papel p-4">
+      <Icono nombre="aviso" clase="mt-0.5 size-6 text-terracota" />
+      <div>
+        <p class="font-semibold">Revisa estos datos antes de guardar:</p>
+        <ul class="mt-2 list-disc pl-6">
+          {errores.map((e) => (
+            <li>{e.mensaje}</li>
+          ))}
+        </ul>
+      </div>
     </div>
   )
 }

@@ -29,7 +29,7 @@ const error = (c: string) => errores.find((e) => e.campo === c)?.mensaje;
   <h1 class="titular-grande">Datos de facturación</h1>
   <p class="mt-2 text-gris">Salen en cada factura. No se publican en la web.</p>
   <Mensajes hecho={Astro.url.searchParams.has('hecho') ? 'Guardado.' : undefined} errores={errores} />
-  {falta.length > 0 && <p class="mt-4 rounded-tarjeta border-2 border-linea bg-papel p-3">Para emitir facturas faltan: {falta.map((f) => f.mensaje.replace('Falta en los datos de facturación: ', '').replace('.', '')).join(', ')}.</p>}
+  {falta.length > 0 && <p class="mt-4 caja-panel p-3">Para emitir facturas faltan: {falta.map((f) => f.mensaje.replace('Falta en los datos de facturación: ', '').replace('.', '')).join(', ')}.</p>}
   {
     ajustes && (
       <form method="post" class="mt-6 grid gap-6">
