@@ -226,6 +226,10 @@ test('asistente: conversación con propuestas que se confirman con Sí o No', as
   await expect(page.getByText(/Tus mensajes hoy:/)).toBeVisible();
   await page.getByRole('button', { name: 'Nueva conversación' }).first().click();
   await expect(page.getByLabel('Escribe a AgricolAI')).toBeVisible();
+  // La conversación anterior sigue ahí y se puede volver a abrir.
+  // (Móvil y escritorio comparten usuario: se comprueba que se abre una con mensajes.)
+  await page.getByRole('button', { name: /^Abrir: / }).first().click();
+  await expect(page.locator('#conversacion .fila').first()).toBeVisible();
 });
 
 test('fotos de un proyecto y dibujo de una planta', async ({ page }) => {

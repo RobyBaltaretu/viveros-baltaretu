@@ -23,6 +23,7 @@ import {
   Send,
   Sparkles,
   Sprout,
+  Trash2,
   TriangleAlert,
   User,
   UserCog,
@@ -68,6 +69,7 @@ export const ICONOS = {
   conversacion: interior(MessageSquarePlus),
   anadirFoto: interior(ImagePlus),
   cerrar: interior(X),
+  borrar: interior(Trash2),
 } as const;
 
 export type NombreIcono = keyof typeof ICONOS;

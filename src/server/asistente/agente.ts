@@ -1,4 +1,5 @@
-import { generateText, isStepCount, tool, type LanguageModel, type ModelMessage, type ToolSet } from 'ai';
+import { generateText, isStepCount, jsonSchema, tool, type LanguageModel, type ModelMessage, type ToolSet } from 'ai';
+import { z } from 'astro/zod';
 import type { MensajeAsistente, Propuesta } from '../data/tipos.ts';
 import { puede } from '../panel/permisos.ts';
 import { aplicarAccion, type Accion as AccionBasica } from './acciones.ts';
@@ -55,6 +56,15 @@ export async function usoDeHoy(repos: Contexto['repos'], email: string, ahora = 
   return { mensajes, limiteMensajes: LIMITE_MENSAJES_PERSONA, neuronas: Math.min(neuronas, LIMITE_NEURONAS_DIA), limiteNeuronas: LIMITE_NEURONAS_DIA, renueva };
 }
 
+/** Borra una conversación de la persona; las fotos que esperaban un «Sí» se borran también. */
+export async function borrarConversacion(ctx: Contexto, id: string): Promise<boolean> {
+  const { repos, usuario } = ctx;
+  if (!(await repos.conversaciones.listar(usuario.email, 500)).some((c) => c.id === id)) return false;
+  const ids = (await repos.conversaciones.mensajes(id, 1000)).flatMap((m) => m.propuestas);
+  for (const p of await repos.conversaciones.propuestas([...new Set(ids)])) if (p.herramienta === HERRAMIENTA_FOTOS && p.estado === 'pendiente') await descartarFotos(repos, p);
+  return repos.conversaciones.borrar(usuario.email, id);
+}
+
 /** Fotos enviadas en el chat: quedan como propuesta (no gastan IA). */
 export async function enviarFotos(ctx: Contexto, archivos: { bytes: Uint8Array; planta: string }[]): Promise<{ ok: boolean; texto: string }> {
   const { repos, usuario } = ctx;
@@ -78,14 +88,29 @@ function historial(mensajes: MensajeAsistente[], propuestas: Map<string, Propues
   });
 }
 
+/**
+ * Esquemas JSON de las herramientas, calculados una vez por proceso: convertirlos
+ * en cada mensaje costaba unos 10 ms de CPU, el límite por petición del plan gratuito.
+ */
+const ESQUEMAS = new Map<string, ReturnType<typeof jsonSchema>>();
+const esquemaDe = (nombre: string, esquema: z.ZodType) => {
+  let e = ESQUEMAS.get(nombre);
+  if (!e) ESQUEMAS.set(nombre, (e = jsonSchema(z.toJSONSchema(esquema, { io: 'input', unrepresentable: 'any' }) as never)));
+  return e;
+};
+
 /** Herramientas del rol para el modelo. Las de cambio solo dejan propuestas. */
 function herramientasModelo(ctx: Contexto, conversacion: string, propuestas: Propuesta[]): ToolSet {
   const conjunto: ToolSet = {};
   for (const h of herramientasDe(ctx.usuario.rol)) {
     conjunto[h.nombre] = tool({
       description: h.descripcion,
-      inputSchema: h.esquema,
-      async execute(args: unknown) {
+      inputSchema: esquemaDe(h.nombre, h.esquema),
+      async execute(entrada: unknown) {
+        // La validación con zod (barata) se hace aquí: el esquema JSON solo informa al modelo.
+        const leido = h.esquema.safeParse(entrada);
+        if (!leido.success) return { error: `Datos no válidos: ${leido.error.issues.map((i) => `${i.path.join('.') || 'datos'}: ${i.message}`).join('; ').slice(0, 300)}` };
+        const args: unknown = leido.data;
         try {
           if (h.tipo === 'consulta') return { datos: await (h as Consulta<unknown>).consultar(ctx, args) };
           const p = await (h as Cambio<unknown>).preparar(ctx, args);
