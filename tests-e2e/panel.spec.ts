@@ -210,3 +210,16 @@ test('asistente guiado: cambiar un precio con confirmación', async ({ page }) =
   await page.getByRole('button', { name: '¿Cuántos presupuestos nuevos hay?' }).click();
   await expect(page.getByRole('status')).toContainText('presupuesto');
 });
+
+test('asistente: lenguaje natural con confirmación y rechazo de otros temas', async ({ page }) => {
+  await page.goto('/panel/asistente');
+  await page.getByLabel('Escribe lo que quieres hacer').fill('el naranjo amargo esta agotado');
+  await page.getByRole('button', { name: 'Enviar' }).click();
+  await expect(page.getByRole('status')).toContainText('Voy a marcar Naranjo amargo como «agotado»');
+  await expect(page.getByRole('button', { name: 'Sí, hazlo' })).toBeVisible();
+  await page.getByRole('button', { name: 'No' }).click();
+  await page.getByLabel('Escribe lo que quieres hacer').fill('escríbeme un poema');
+  await page.getByRole('button', { name: 'Enviar' }).click();
+  await expect(page.getByRole('status')).toContainText('Solo puedo ayudarte con el panel y el vivero');
+  await auditar(page);
+});
