@@ -4,7 +4,8 @@ import PaginaPanel from '../../components/panel/PaginaPanel.astro';
 import PasoAsistente from '../../components/panel/PasoAsistente.astro';
 import { aplicarAccion, PERMISO, prepararAccion, type Preparada } from '../../server/asistente/acciones.ts';
 import { accionDesdeFormulario, OPCIONES_GUIADO } from '../../server/asistente/formulario.ts';
-import { crearInterpreteWorkersAI, interpretarConRespaldo, interpreteLocal, MAXIMO_TEXTO, type BindingAI, type Interprete } from '../../server/asistente/interprete.ts';
+import { atenderMensaje } from '../../server/asistente/conversacion.ts';
+import { MAXIMO_TEXTO, type BindingAI } from '../../server/asistente/interprete.ts';
 import { campo, sesionCon } from '../../server/panel/pagina.ts';
 import { puede } from '../../server/panel/permisos.ts';
 import type { DatosPlanta } from '../../server/panel/plantas.ts';
@@ -14,22 +15,16 @@ export const prerender = false;
 const s = sesionCon(Astro.locals, 'asistente');
 let paso: Preparada | null = null;
 let escrito = '';
+let aviso = '';
 if (s && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const que = campo(form, 'paso');
   const accion = accionDesdeFormulario(form);
   if (que === 'texto') {
     escrito = campo(form, 'texto').slice(0, MAXIMO_TEXTO);
-    const ai = (env as { AI?: BindingAI }).AI;
-    const interpretes: Interprete[] = ai ? [crearInterpreteWorkersAI(ai), interpreteLocal] : [interpreteLocal];
-    const nombres = (await s.repos.contenido.listar('catalogo')).map((e) => String((e.borrador.datos as DatosPlanta).nombre?.es ?? e.id));
-    const i = escrito ? await interpretarConRespaldo(interpretes, escrito, { plantas: nombres }) : { tipo: 'no-entiendo' as const };
-    paso =
-      i.tipo === 'accion'
-        ? await prepararAccion(s.repos, s.usuario.rol, i.accion)
-        : i.tipo === 'fuera-de-tema'
-          ? { estado: 'no-puedo', texto: 'Solo puedo ayudarte con el panel y el vivero: precios, si hay o no hay plantas, quitarlas de la web y los presupuestos.' }
-          : { estado: 'no-puedo', texto: 'No lo he entendido. Prueba a decirlo de otra forma, por ejemplo «sube la yuca a 12», o usa los botones de abajo.' };
+    const r = await atenderMensaje(s.repos, s.usuario, escrito, { ai: (env as { AI?: BindingAI }).AI });
+    paso = r.paso;
+    aviso = r.aviso ?? '';
   } else if (!accion) paso = { estado: 'no-puedo', texto: 'Eso no lo sé hacer.' };
   else if (que === 'cancelar') paso = { estado: 'respuesta', texto: 'Vale, no he cambiado nada.' };
   else if (que === 'confirmar') {
@@ -56,6 +51,7 @@ const terminado = paso && (paso.estado === 'respuesta' || paso.estado === 'no-pu
     <input id="texto" name="texto" value={escrito} maxlength={MAXIMO_TEXTO} autocomplete="off" class="campo-panel" aria-describedby="texto-ayuda" />
     <p><button class="boton-panel">Enviar</button></p>
   </form>
+  {aviso && <p class="mt-6 rounded-tarjeta bg-verdor p-3">{aviso}</p>}
   {paso && <div class="mt-6"><PasoAsistente paso={paso} plantas={plantas} /></div>}
   {
     (!paso || terminado) && (
