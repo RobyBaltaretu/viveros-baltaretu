@@ -237,3 +237,17 @@ test('fotos de un proyecto y dibujo de una planta', async ({ page }) => {
   await expect(page.getByLabel(/Dibujo mientras no haya foto/)).toBeVisible();
   await expect(page.getByLabel('Es una ficha de ejemplo (no se publica)')).toBeChecked();
 });
+
+test('navegación: menú fijo y, tras guardar, ir atrás no vuelve al formulario', async ({ page }) => {
+  await page.goto('/panel/plantas/washingtonia-robusta');
+  const menu = page.getByRole('navigation', { name: 'Secciones del panel' });
+  await expect(menu.getByRole('link', { name: 'Plantas' })).toHaveAttribute('aria-current', 'page');
+  await page.getByRole('link', { name: 'Cambiar el precio' }).click();
+  await page.getByRole('button', { name: 'Guardar el precio' }).click();
+  await expect(page).toHaveURL(/\/panel\/plantas\/washingtonia-robusta$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/panel\/plantas\/washingtonia-robusta$/);
+  await expect(page.getByRole('button', { name: 'Guardar el precio' })).toHaveCount(0);
+  await menu.getByRole('link', { name: 'Inicio' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Hola');
+});
