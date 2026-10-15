@@ -8,7 +8,7 @@ import { avisosDe, CATEGORIAS, gastoVacio, nombreCategoria } from '../gastos/gas
 import { cifras, cobros, conclusiones, conversion, evolucionMensual, gastosPorCategoria, masVendido, mejoresClientes, periodoAnterior, periodoDe } from '../informes/informes.ts';
 import { ajustesFacturacion, emitirFactura } from '../panel/facturacion.ts';
 import { puede, type Accion } from '../panel/permisos.ts';
-import { guardarPlanta, seoPorDefecto, slugDesde, type DatosPlanta } from '../panel/plantas.ts';
+import { guardarPlanta, revisarPlanta, seoPorDefecto, slugDesde, type DatosPlanta } from '../panel/plantas.ts';
 import { describirCambio, describirPendiente, publicarCambios, type EntornoPublicar } from '../panel/publicar.ts';
 import { guardarTextos, SECCIONES } from '../panel/textos.ts';
 import { buscarPlanta, normalizar } from './coincidencia.ts';
@@ -155,6 +155,124 @@ type NuevaPlanta = Record<string, unknown> & {
   ventaUnitaria?: boolean | null;
 };
 
+/* ---------------- Plantas en bloque ---------------- */
+
+/** Qué plantas: una lista concreta, un filtro o todas. Los filtros se suman (todas las condiciones). */
+const SELECCION_PLANTAS = z.object({
+  todas: opcional(z.boolean()).describe('true = todo el catálogo (con los demás filtros, si los hay)'),
+  plantas: opcional(z.array(z.string()).max(300)).describe('Nombres o ids concretos'),
+  familia: opcional(z.enum(FAMILIAS)),
+  disponibilidad: opcional(z.enum(DISPONIBILIDADES)),
+  texto: opcional(z.string().max(80)).describe('Parte del nombre, p. ej. «palmera» u «olivo»'),
+  ventaUnitaria: opcional(z.boolean()).describe('true = solo las que también se venden por unidad'),
+  enLaWeb: opcional(z.boolean()).describe('true = solo las que salen en la web; false = las que no'),
+  sinPrecio: opcional(z.boolean()).describe('true = solo las de «precio bajo presupuesto»'),
+  precioMinimo: opcional(z.number().min(0)).describe('Precio «desde» igual o mayor que este'),
+  precioMaximo: opcional(z.number().min(0)).describe('Precio «desde» igual o menor que este'),
+  quitadas: opcional(z.boolean()).describe('true = solo las quitadas de la web'),
+});
+type SeleccionPlantas = z.infer<typeof SELECCION_PLANTAS>;
+
+const AJUSTE_PRECIO = z.object({
+  precio: opcional(z.enum(['precioDesde', 'precioUnidad', 'ambos'])).describe('Qué precio se ajusta; por defecto, precioDesde'),
+  porcentaje: opcional(z.number().min(-90).max(500)).describe('Subir (10) o bajar (-10) un tanto por ciento'),
+  euros: opcional(z.number().min(-10000).max(10000)).describe('Sumar (2) o restar (-2) euros'),
+  redondeo: opcional(z.enum(['centimos', 'medio-euro', 'euro'])).describe('Cómo redondear el resultado; por defecto, a céntimos'),
+});
+type AjustePrecio = z.infer<typeof AJUSTE_PRECIO>;
+
+const CAMBIOS_EN_BLOQUE = CAMBIOS_PLANTA.omit({ nombre_es: true, nombre_en: true, descripcion_es: true, descripcion_en: true, nombreCientifico: true });
+interface CambioPlantas {
+  seleccion: SeleccionPlantas;
+  cambios?: z.infer<typeof CAMBIOS_EN_BLOQUE> | null;
+  ajustePrecio?: AjustePrecio | null;
+  formatosAnadir?: string[] | null;
+  formatosQuitar?: string[] | null;
+  web?: 'quitar' | 'recuperar' | null;
+}
+
+const MAXIMO_BLOQUE = 300;
+const enumerar = (nombres: string[], n = 8) => `${nombres.slice(0, n).join(', ')}${nombres.length > n ? ` y ${nombres.length - n} más` : ''}`;
+/** Dos fichas iguales (un dato vacío cuenta igual sea null o no esté). */
+const mismaFicha = (a: unknown, b: unknown) => JSON.stringify(a, (_, v) => (v === null ? undefined : v)) === JSON.stringify(b, (_, v) => (v === null ? undefined : v));
+const conValor = (o: object | null | undefined) => !!o && Object.values(o).some((v) => v !== undefined && v !== null);
+
+async function elegirPlantas(repos: Repositorios, s: SeleccionPlantas, incluirQuitadas: boolean): Promise<{ ok: true; plantas: PlantaCandidata[] } | { ok: false; error: string }> {
+  const { todas, plantas: nombres, ...filtros } = s;
+  if (!todas && !nombres?.length && !conValor(filtros)) return { ok: false, error: 'Di qué plantas: una lista, un filtro (familia, disponibilidad, texto…) o todas.' };
+  const todasLasFichas = await plantas(repos, true);
+  let elegidas = todasLasFichas.filter((p) => (s.quitadas ? p.archivada : incluirQuitadas || nombres?.length || !p.archivada));
+  if (nombres?.length) {
+    const ids = new Set<string>();
+    for (const n of nombres) {
+      const exacta = todasLasFichas.find((p) => p.id === n);
+      const r = exacta ? ({ tipo: 'una', elegida: exacta } as const) : buscarPlanta(n, todasLasFichas);
+      if (r.tipo === 'varias') return { ok: false, error: `«${n}» puede ser: ${r.opciones.map((o) => `${o.nombre} (id ${o.id})`).join(', ')}. Pregunta cuál.` };
+      if (r.tipo !== 'una') return { ok: false, error: `No hay ninguna planta que se llame «${n}».` };
+      ids.add(r.elegida.id);
+    }
+    elegidas = elegidas.filter((p) => ids.has(p.id));
+  }
+  if (s.familia) elegidas = elegidas.filter((p) => p.datos.familia === s.familia);
+  if (s.disponibilidad) elegidas = elegidas.filter((p) => p.datos.disponibilidad === s.disponibilidad);
+  if (s.ventaUnitaria != null) elegidas = elegidas.filter((p) => Boolean(p.datos.ventaUnitaria) === s.ventaUnitaria);
+  if (s.enLaWeb != null) elegidas = elegidas.filter((p) => fichaCorta(p).enLaWeb === s.enLaWeb);
+  if (s.sinPrecio) elegidas = elegidas.filter((p) => p.datos.precioDesde == null);
+  if (s.precioMinimo != null) elegidas = elegidas.filter((p) => p.datos.precioDesde != null && Number(p.datos.precioDesde) >= s.precioMinimo!);
+  if (s.precioMaximo != null) elegidas = elegidas.filter((p) => p.datos.precioDesde != null && Number(p.datos.precioDesde) <= s.precioMaximo!);
+  if (s.texto) {
+    const t = normalizar(s.texto);
+    const contiene = elegidas.filter((p) => p.nombres.some((n) => normalizar(n).includes(t)));
+    if (contiene.length) elegidas = contiene;
+    else {
+      const r = buscarPlanta(s.texto, elegidas);
+      elegidas = r.tipo === 'una' ? [r.elegida] : r.tipo === 'varias' ? r.opciones : [];
+    }
+  }
+  if (!elegidas.length) return { ok: false, error: 'Ninguna planta cumple eso.' };
+  if (elegidas.length > MAXIMO_BLOQUE) return { ok: false, error: `Son ${elegidas.length} plantas: como mucho ${MAXIMO_BLOQUE} de una vez.` };
+  return { ok: true, plantas: elegidas };
+}
+
+function ajustar(precio: number, a: AjustePrecio): number {
+  let p = precio * (1 + (a.porcentaje ?? 0) / 100) + (a.euros ?? 0);
+  if (a.redondeo === 'euro') p = Math.round(p);
+  else if (a.redondeo === 'medio-euro') p = Math.round(p * 2) / 2;
+  else p = Math.round(p * 100) / 100;
+  return p;
+}
+
+/** La ficha nueva de una planta con los cambios en bloque (sin tocar la base). */
+function plantaEnBloque(d: DatosPlanta, a: CambioPlantas): DatosPlanta {
+  let n = a.cambios && conValor(a.cambios) ? aplicarCambiosPlanta(d, a.cambios) : (structuredClone(d) as DatosPlanta);
+  if (a.ajustePrecio && (a.ajustePrecio.porcentaje || a.ajustePrecio.euros)) {
+    const campos = a.ajustePrecio.precio === 'ambos' ? (['precioDesde', 'precioUnidad'] as const) : ([a.ajustePrecio.precio ?? 'precioDesde'] as const);
+    for (const c of campos) if (typeof n[c] === 'number') n = { ...n, [c]: ajustar(n[c] as number, a.ajustePrecio) };
+  }
+  if (a.formatosAnadir?.length || a.formatosQuitar?.length) {
+    const actuales = new Set(Array.isArray(n.formatos) ? (n.formatos as string[]) : []);
+    for (const f of a.formatosAnadir ?? []) actuales.add(f);
+    for (const f of a.formatosQuitar ?? []) actuales.delete(f);
+    n = { ...n, formatos: FORMATOS.filter((f) => actuales.has(f)) };
+  }
+  return n;
+}
+
+function describirBloque(a: CambioPlantas): string {
+  const partes: string[] = [];
+  if (a.cambios && conValor(a.cambios)) partes.push(describirCambiosPlanta(a.cambios));
+  const aj = a.ajustePrecio;
+  if (aj && (aj.porcentaje || aj.euros)) {
+    const cuanto = [aj.porcentaje ? `${aj.porcentaje > 0 ? '+' : ''}${String(aj.porcentaje).replace('.', ',')} %` : '', aj.euros ? `${aj.euros > 0 ? '+' : '−'}${dinero(Math.abs(aj.euros))}` : ''].filter(Boolean).join(' y ');
+    const cual = { precioDesde: 'precio al por mayor', precioUnidad: 'precio por unidad', ambos: 'los dos precios' }[aj.precio ?? 'precioDesde'];
+    partes.push(`${cual} ${cuanto}${aj.redondeo === 'euro' ? ', redondeado al euro' : aj.redondeo === 'medio-euro' ? ', redondeado al medio euro' : ''}`);
+  }
+  if (a.formatosAnadir?.length) partes.push(`añadir formato ${a.formatosAnadir.join(', ')}`);
+  if (a.formatosQuitar?.length) partes.push(`quitar formato ${a.formatosQuitar.join(', ')}`);
+  if (a.web) partes.push(a.web === 'quitar' ? 'quitar de la web' : 'volver a poner en el catálogo');
+  return partes.join('; ');
+}
+
 /* ---------------- Facturas y clientes ---------------- */
 
 async function unCliente(repos: Repositorios, texto: string) {
@@ -202,6 +320,30 @@ function ponerRuta(obj: Record<string, unknown>, ruta: string, valor: unknown) {
   o[partes.at(-1)!] = valor;
 }
 
+interface TextoWeb {
+  seccion: string;
+  campo: string;
+  es?: string | null;
+  en?: string | null;
+  valor?: string | number | boolean | null;
+}
+const esBilingue = (actual: unknown) => !!actual && typeof actual === 'object' && 'es' in (actual as object);
+/** El valor nuevo de un campo: en los bilingües solo cambia el idioma que venga. */
+const valorTexto = (actual: unknown, t: TextoWeb) => (esBilingue(actual) ? { ...(actual as object), ...(t.es ? { es: t.es } : {}), ...(t.en ? { en: t.en } : {}) } : t.valor);
+
+async function prepararTexto(repos: Repositorios, t: TextoWeb): Promise<{ ok: true; resumen: string } | { ok: false; error: string }> {
+  const [coleccion, id] = t.seccion.split('/');
+  if (!SECCIONES.some((s) => s.coleccion === coleccion && s.id === id)) return { ok: false, error: 'Esa sección no existe. Usa ver_textos_web.' };
+  const e = await repos.contenido.obtener(coleccion as Coleccion, id);
+  if (!e) return { ok: false, error: 'Esa sección no existe.' };
+  const actual = leerRuta(e.borrador.datos, t.campo);
+  if (actual === undefined) return { ok: false, error: `No existe el campo «${t.campo}» en ${t.seccion}.` };
+  const bilingue = esBilingue(actual);
+  if (bilingue ? !t.es && !t.en : t.valor === undefined || t.valor === null) return { ok: false, error: bilingue ? 'Falta el texto en español o en inglés.' : 'Falta el valor nuevo.' };
+  const nuevo = valorTexto(actual, t);
+  return { ok: true, resumen: `${t.seccion} → ${t.campo}: «${recortar(bilingue ? (nuevo as { es: string }).es : nuevo, 120)}».` };
+}
+
 /* ---------------- La lista ---------------- */
 
 export const HERRAMIENTAS: Herramienta[] = [
@@ -228,7 +370,7 @@ export const HERRAMIENTAS: Herramienta[] = [
   }),
   consulta({
     nombre: 'buscar_plantas',
-    descripcion: 'Busca plantas del catálogo por nombre (con faltas vale), familia o disponibilidad. Con «planta» devuelve la ficha completa de una.',
+    descripcion: 'Busca plantas del catálogo por nombre (con faltas vale), familia o disponibilidad; sin filtros, lista todo el catálogo. Con «planta» devuelve la ficha completa de una.',
     permiso: 'asistente',
     esquema: z.object({ texto: opcional(z.string()), familia: opcional(z.enum(FAMILIAS)), disponibilidad: opcional(z.enum(DISPONIBILIDADES)), planta: opcional(z.string()).describe('Nombre o id para ver la ficha completa') }),
     async consultar({ repos }, a: { texto?: string | null; familia?: string | null; disponibilidad?: string | null; planta?: string | null }) {
@@ -245,7 +387,7 @@ export const HERRAMIENTAS: Herramienta[] = [
         const r = buscarPlanta(a.texto, lista);
         lista = r.tipo === 'una' ? [r.elegida] : r.tipo === 'varias' ? r.opciones : [];
       }
-      return { total: lista.length, plantas: lista.slice(0, 30).map(fichaCorta) };
+      return { total: lista.length, plantas: lista.slice(0, 120).map(fichaCorta) };
     },
   }),
   consulta({
@@ -364,7 +506,7 @@ export const HERRAMIENTAS: Herramienta[] = [
     nombre: 'cambios_recientes',
     descripcion: 'Últimos cambios guardados (con su número para deshacerlos) y lo que falta por publicar en la web.',
     permiso: 'editar',
-    esquema: z.object({ limite: opcional(z.number().int().min(1).max(30)) }),
+    esquema: z.object({ limite: opcional(z.number().int().min(1).max(200)) }),
     async consultar({ repos }, a: { limite?: number | null }) {
       const [historial, pendientes] = await Promise.all([repos.contenido.historial({ limite: a.limite ?? 10 }), repos.contenido.pendientes()]);
       return { sinPublicar: pendientes.map(describirPendiente), cambios: historial.map((c) => ({ cambioId: c.id, fecha: c.fecha.slice(0, 16), quien: c.email, que: describirCambio(c) })) };
@@ -605,26 +747,16 @@ export const HERRAMIENTAS: Herramienta[] = [
     descripcion: 'Cambia un texto de la web (empresa, condiciones, portada, páginas). «campo» es la ruta del dato (ver ver_textos_web), p. ej. «telefono» o «pedidoMinimo». Los textos bilingües llevan «es» y «en».',
     permiso: 'editar',
     esquema: z.object({ seccion: z.string(), campo: z.string(), es: opcional(z.string().max(2000)), en: opcional(z.string().max(2000)), valor: opcional(z.union([z.string().max(2000), z.number(), z.boolean()])) }),
-    async preparar({ repos }, a: { seccion: string; campo: string; es?: string | null; en?: string | null; valor?: string | number | boolean | null }) {
-      const [coleccion, id] = a.seccion.split('/');
-      if (!SECCIONES.some((s) => s.coleccion === coleccion && s.id === id)) return { ok: false, error: 'Esa sección no existe. Usa ver_textos_web.' };
-      const e = await repos.contenido.obtener(coleccion as Coleccion, id);
-      if (!e) return { ok: false, error: 'Esa sección no existe.' };
-      const actual = leerRuta(e.borrador.datos, a.campo);
-      if (actual === undefined) return { ok: false, error: `No existe el campo «${a.campo}» en ${a.seccion}.` };
-      const bilingue = actual && typeof actual === 'object' && 'es' in (actual as object);
-      if (bilingue ? !a.es && !a.en : a.valor === undefined || a.valor === null) return { ok: false, error: bilingue ? 'Falta el texto en español o en inglés.' : 'Falta el valor nuevo.' };
-      const nuevo = bilingue ? { ...(actual as object), ...(a.es ? { es: a.es } : {}), ...(a.en ? { en: a.en } : {}) } : a.valor;
-      return { ok: true, resumen: `${a.seccion} → ${a.campo}: «${recortar(bilingue ? (nuevo as { es: string }).es : nuevo, 120)}».`, argumentos: a };
+    async preparar({ repos }, a: TextoWeb) {
+      const r = await prepararTexto(repos, a);
+      return r.ok ? { ok: true, resumen: r.resumen, argumentos: a } : r;
     },
-    async aplicar(ctx, a: { seccion: string; campo: string; es?: string | null; en?: string | null; valor?: string | number | boolean | null }) {
+    async aplicar(ctx, a: TextoWeb) {
       const [coleccion, id] = a.seccion.split('/') as [Coleccion, string];
       const e = await ctx.repos.contenido.obtener(coleccion, id);
       if (!e) return { ok: false, texto: 'Esa sección no existe.' };
       const datos = structuredClone(e.borrador.datos);
-      const actual = leerRuta(datos, a.campo);
-      const bilingue = actual && typeof actual === 'object' && 'es' in (actual as object);
-      ponerRuta(datos, a.campo, bilingue ? { ...(actual as object), ...(a.es ? { es: a.es } : {}), ...(a.en ? { en: a.en } : {}) } : a.valor);
+      ponerRuta(datos, a.campo, valorTexto(leerRuta(datos, a.campo), a));
       const r = await guardarTextos(ctx.repos, coleccion, id, datos, e.borrador.cuerpo, autor(ctx));
       return r.ok ? { ok: true, texto: 'Guardado como borrador: saldrá en la web al publicar.' } : { ok: false, texto: r.errores.map((x) => x.mensaje).join(' ') };
     },
@@ -646,16 +778,320 @@ export const HERRAMIENTAS: Herramienta[] = [
   }),
   cambio({
     nombre: 'deshacer_cambio',
-    descripcion: 'Deshace un cambio guardado (número de cambios_recientes).',
+    descripcion: 'Deshace uno o varios cambios guardados (números de cambios_recientes). Cada cambio se deshace una sola vez.',
     permiso: 'editar',
-    esquema: z.object({ cambioId: z.number().int().positive() }),
-    async preparar({ repos }, a: { cambioId: number }) {
-      const c = (await repos.contenido.historial({ limite: 200 })).find((x) => x.id === a.cambioId);
-      return c ? { ok: true, resumen: `Deshacer: ${describirCambio(c)} (${c.fecha.slice(0, 10)}).`, argumentos: a } : { ok: false, error: 'No encuentro ese cambio.' };
+    esquema: z.object({ cambioId: opcional(z.number().int().positive()), cambioIds: opcional(z.array(z.number().int().positive()).max(MAXIMO_BLOQUE)) }),
+    async preparar({ repos }, a: { cambioId?: number | null; cambioIds?: number[] | null }) {
+      const ids = [...new Set([...(a.cambioIds ?? []), ...(a.cambioId ? [a.cambioId] : [])])];
+      if (!ids.length) return { ok: false, error: 'Di qué cambio deshacer (su número en cambios_recientes).' };
+      const historial = await repos.contenido.historial({ limite: 1000 });
+      const encontrados = ids.map((id) => historial.find((x) => x.id === id)).filter((c): c is NonNullable<typeof c> => !!c);
+      if (encontrados.length < ids.length) return { ok: false, error: `No encuentro ${ids.length - encontrados.length === 1 ? 'uno de esos cambios' : 'algunos de esos cambios'} (o ya se deshicieron).` };
+      const resumen = encontrados.length === 1 ? `Deshacer: ${describirCambio(encontrados[0])} (${encontrados[0].fecha.slice(0, 10)}).` : `Deshacer ${encontrados.length} cambios: ${enumerar(encontrados.map(describirCambio), 5)}.`;
+      return { ok: true, resumen, argumentos: { cambioIds: ids } };
     },
-    async aplicar(ctx, a: { cambioId: number }) {
-      const c = await ctx.repos.contenido.deshacer(a.cambioId, autor(ctx));
-      return c ? { ok: true, texto: 'Deshecho. Publica para que la web lo recoja.' } : { ok: false, texto: 'No se ha podido deshacer.' };
+    async aplicar(ctx, a: { cambioIds?: number[] | null }) {
+      // Del más nuevo al más viejo: así una ficha cambiada dos veces vuelve a como estaba al principio.
+      const ids = [...(a.cambioIds ?? [])].sort((x, y) => y - x);
+      let hechos = 0;
+      for (const id of ids) if (await ctx.repos.contenido.deshacer(id, autor(ctx))) hechos++;
+      if (!hechos) return { ok: false, texto: 'No se ha podido deshacer.' };
+      return { ok: true, texto: `${hechos === 1 ? 'Deshecho' : `Deshechos ${hechos} cambios`}${hechos < ids.length ? ` (${ids.length - hechos} ya estaban deshechos)` : ''}. Publica para que la web lo recoja.` };
+    },
+  }),
+
+  /* ---------- En bloque: muchas cosas con un solo «Sí» ---------- */
+
+  cambio({
+    nombre: 'cambiar_plantas',
+    descripcion:
+      'Cambia VARIAS plantas a la vez con un solo «Sí»: elige cuáles con «seleccion» (lista de nombres, familia, disponibilidad, texto, sin precio, todas…) y di qué cambiar: «cambios» (mismo valor para todas: disponibilidad, revisado, destacada, ventaUnitaria, precio, origen…), «ajustePrecio» (subir o bajar un % o unos euros), «formatosAnadir»/«formatosQuitar» o «web» (quitar o recuperar).',
+    permiso: 'editar',
+    esquema: z.object({
+      seleccion: SELECCION_PLANTAS,
+      cambios: opcional(CAMBIOS_EN_BLOQUE),
+      ajustePrecio: opcional(AJUSTE_PRECIO),
+      formatosAnadir: opcional(z.array(z.enum(FORMATOS))),
+      formatosQuitar: opcional(z.array(z.enum(FORMATOS))),
+      web: opcional(z.enum(['quitar', 'recuperar'])),
+    }),
+    async preparar({ repos }, a: CambioPlantas) {
+      const hayAjuste = !!a.ajustePrecio && !!(a.ajustePrecio.porcentaje || a.ajustePrecio.euros);
+      if (!conValor(a.cambios) && !hayAjuste && !a.formatosAnadir?.length && !a.formatosQuitar?.length && !a.web) return { ok: false, error: 'No hay ningún cambio.' };
+      const r = await elegirPlantas(repos, a.seleccion, a.web === 'recuperar');
+      if (!r.ok) return r;
+      const cambian: { p: PlantaCandidata; nueva: DatosPlanta }[] = [];
+      const fallan: string[] = [];
+      for (const p of r.plantas) {
+        const nueva = plantaEnBloque(p.datos, a);
+        const errores = revisarPlanta(nueva);
+        if (a.cambios?.precioUnidad != null && !nueva.ventaUnitaria) errores.unshift({ campo: 'precioUnidad', mensaje: 'no se vende por unidad' });
+        if (errores.length) fallan.push(`${p.nombre} (${errores[0].mensaje.replace(/\.$/, '')})`);
+        else if (!mismaFicha(nueva, p.datos) || (a.web && p.archivada !== (a.web === 'quitar'))) cambian.push({ p, nueva });
+      }
+      if (!cambian.length) return { ok: false, error: fallan.length ? `No se puede: ${enumerar(fallan, 4)}.` : 'Esas plantas ya están así: no cambia nada.' };
+      const ejemplos = hayAjuste
+        ? cambian
+            .filter(({ p, nueva }) => nueva.precioDesde !== p.datos.precioDesde || nueva.precioUnidad !== p.datos.precioUnidad)
+            .slice(0, 3)
+            .map(({ p, nueva }) => (nueva.precioDesde !== p.datos.precioDesde ? `${p.nombre} ${dinero(Number(p.datos.precioDesde))} → ${dinero(Number(nueva.precioDesde))}` : `${p.nombre} ${dinero(Number(p.datos.precioUnidad))} → ${dinero(Number(nueva.precioUnidad))}`))
+        : [];
+      const resumen = [
+        `${cambian.length === 1 ? '1 planta' : `${cambian.length} plantas`} (${enumerar(cambian.map((c) => c.p.nombre))}): ${describirBloque(a)}.`,
+        ejemplos.length ? `Por ejemplo: ${ejemplos.join('; ')}.` : '',
+        fallan.length ? `No se tocan ${fallan.length}: ${enumerar(fallan, 3)}.` : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+      return { ok: true, resumen, argumentos: { ...a, seleccion: { plantas: cambian.map((c) => c.p.id) } } };
+    },
+    async aplicar(ctx, a: CambioPlantas) {
+      const ids = a.seleccion.plantas ?? [];
+      let hechas = 0;
+      const fallos: string[] = [];
+      for (const id of ids) {
+        const e = await ctx.repos.contenido.obtener('catalogo', id);
+        if (!e) {
+          fallos.push(`${id} ya no está`);
+          continue;
+        }
+        const antes = e.borrador.datos as DatosPlanta;
+        const nueva = plantaEnBloque(antes, a);
+        if (!mismaFicha(nueva, antes)) {
+          const r = await guardarPlanta(ctx.repos, id, nueva, autor(ctx));
+          if (!r.ok) {
+            fallos.push(`${String(antes.nombre?.es ?? id)}: ${r.errores[0]?.mensaje ?? 'no vale'}`);
+            continue;
+          }
+        }
+        if (a.web && e.archivada !== (a.web === 'quitar')) await ctx.repos.contenido.archivar('catalogo', id, a.web === 'quitar', autor(ctx));
+        hechas++;
+      }
+      if (!hechas) return { ok: false, texto: `No se ha cambiado ninguna: ${enumerar(fallos, 3)}.` };
+      return { ok: true, texto: `${hechas === 1 ? '1 planta cambiada' : `${hechas} plantas cambiadas`} como borrador: salen en la web al publicar.${fallos.length ? ` No se pudo con ${enumerar(fallos, 3)}.` : ''}` };
+    },
+  }),
+  cambio({
+    nombre: 'cambiar_presupuestos',
+    descripcion: 'Cambia el estado de VARIOS presupuestos a la vez (por ids, por estado actual, anteriores a una fecha, por texto de nombre/empresa o todos).',
+    permiso: 'presupuestos',
+    esquema: z.object({
+      ids: opcional(z.array(z.string()).max(MAXIMO_BLOQUE)),
+      estadoActual: opcional(z.enum(['nuevo', 'respondido', 'archivado'])),
+      antesDe: opcional(fecha).describe('Solo los pedidos antes de este día'),
+      texto: opcional(z.string().max(80)),
+      todos: opcional(z.boolean()),
+      estado: z.enum(['nuevo', 'respondido', 'archivado']).describe('Estado nuevo'),
+    }),
+    async preparar({ repos }, a: { ids?: string[] | null; estadoActual?: EstadoPresupuesto | null; antesDe?: string | null; texto?: string | null; todos?: boolean | null; estado: EstadoPresupuesto }) {
+      if (!a.ids?.length && !a.estadoActual && !a.antesDe && !a.texto && !a.todos) return { ok: false, error: 'Di qué presupuestos: ids, estado actual, fecha, texto o todos.' };
+      let lista = await repos.presupuestos.listar({ estado: a.estadoActual ?? undefined, limite: 5000 });
+      if (a.ids?.length) lista = lista.filter((p) => a.ids!.includes(p.id));
+      if (a.antesDe) lista = lista.filter((p) => p.fecha.slice(0, 10) < a.antesDe!);
+      if (a.texto) lista = lista.filter((p) => normalizar(`${p.nombre} ${p.empresa} ${p.email}`).includes(normalizar(a.texto!)));
+      lista = lista.filter((p) => p.estado !== a.estado);
+      if (!lista.length) return { ok: false, error: 'Ningún presupuesto cambia con eso.' };
+      if (lista.length > MAXIMO_BLOQUE) return { ok: false, error: `Son ${lista.length}: como mucho ${MAXIMO_BLOQUE} de una vez.` };
+      return { ok: true, resumen: `Pasar a «${a.estado}» ${lista.length === 1 ? '1 presupuesto' : `${lista.length} presupuestos`}: ${enumerar(lista.map((p) => p.empresa || p.nombre), 6)}.`, argumentos: { ids: lista.map((p) => p.id), estado: a.estado } };
+    },
+    async aplicar(ctx, a: { ids?: string[] | null; estado: EstadoPresupuesto }) {
+      let hechos = 0;
+      for (const id of a.ids ?? []) if (await ctx.repos.presupuestos.cambiarEstado(id, a.estado)) hechos++;
+      if (hechos) await ctx.repos.auditoria.registrar(ctx.usuario.email, 'presupuesto', `${hechos} → ${a.estado} (asistente, en bloque)`);
+      return { ok: hechos > 0, texto: hechos ? `${hechos === 1 ? '1 presupuesto' : `${hechos} presupuestos`} en «${a.estado}».` : 'No se ha podido cambiar ninguno.' };
+    },
+  }),
+  cambio({
+    nombre: 'gestionar_facturas',
+    descripcion: 'Sobre VARIAS facturas a la vez: «emitir» borradores, marcar «cobrada» o volver a «pendiente». Elige por lista de números/ids, cliente, estado, fechas o solo las vencidas.',
+    permiso: 'facturas',
+    esquema: z.object({
+      facturas: opcional(z.array(z.string()).max(MAXIMO_BLOQUE)).describe('Ids o números (F2026-0001)'),
+      cliente: opcional(z.string()),
+      estado: opcional(z.enum(['borrador', 'emitida', 'cobrada'])),
+      desde: opcional(fecha),
+      hasta: opcional(fecha),
+      vencidas: opcional(z.boolean()),
+      accion: z.enum(['emitir', 'cobrada', 'pendiente']),
+      fecha: opcional(fecha).describe('Día del cobro'),
+    }),
+    async preparar(
+      { repos, hoy },
+      a: { facturas?: string[] | null; cliente?: string | null; estado?: Factura['estado'] | null; desde?: string | null; hasta?: string | null; vencidas?: boolean | null; accion: 'emitir' | 'cobrada' | 'pendiente'; fecha?: string | null },
+    ) {
+      if (!a.facturas?.length && !a.cliente && !a.estado && !a.desde && !a.hasta && !a.vencidas) return { ok: false, error: 'Di qué facturas: números, cliente, estado, fechas o vencidas.' };
+      if (a.fecha && a.fecha > hoy) return { ok: false, error: 'La fecha de cobro no puede ser posterior a hoy.' };
+      let lista = await repos.facturas.listar({ estado: a.estado ?? undefined, desde: a.desde ?? undefined, hasta: a.hasta ?? undefined, limite: 20000 });
+      if (a.facturas?.length) {
+        const buscadas = new Set(a.facturas.map((x) => x.toLowerCase()));
+        lista = lista.filter((f) => buscadas.has(f.id.toLowerCase()) || (f.codigo && buscadas.has(f.codigo.toLowerCase())));
+      }
+      if (a.cliente) {
+        const c = await unCliente(repos, a.cliente);
+        if (!c.ok) return c;
+        lista = lista.filter((f) => f.clienteId === c.cliente.id);
+      }
+      if (a.vencidas) lista = lista.filter((f) => vencida(f));
+      const valen = lista.filter((f) => (a.accion === 'emitir' ? f.estado === 'borrador' : a.accion === 'cobrada' ? f.estado === 'emitida' : f.estado === 'cobrada'));
+      if (!valen.length) return { ok: false, error: a.accion === 'emitir' ? 'No hay borradores que emitir con eso.' : a.accion === 'cobrada' ? 'No hay facturas pendientes de cobro con eso.' : 'No hay facturas cobradas con eso.' };
+      if (valen.length > MAXIMO_BLOQUE) return { ok: false, error: `Son ${valen.length}: como mucho ${MAXIMO_BLOQUE} de una vez.` };
+      const suma = valen.reduce((t, f) => t + f.totales.total, 0);
+      const que = { emitir: 'Emitir', cobrada: `Marcar como cobradas${a.fecha ? ` el ${a.fecha}` : ' hoy'}`, pendiente: 'Volver a dejar pendientes de cobro' }[a.accion];
+      return {
+        ok: true,
+        resumen: `${que} ${valen.length === 1 ? '1 factura' : `${valen.length} facturas`} (${dinero(Math.round(suma * 100) / 100)} en total): ${enumerar(valen.map((f) => `${f.codigo ?? 'borrador'} de ${f.cliente.nombre}`), 5)}.${a.accion === 'emitir' ? ' Después no se podrán cambiar ni borrar.' : ''}`,
+        argumentos: { facturas: valen.map((f) => f.id), accion: a.accion, fecha: a.fecha ?? null },
+      };
+    },
+    async aplicar(ctx, a: { facturas?: string[] | null; accion: 'emitir' | 'cobrada' | 'pendiente'; fecha?: string | null }) {
+      let hechas = 0;
+      const fallos: string[] = [];
+      for (const id of a.facturas ?? []) {
+        const f = await ctx.repos.facturas.obtener(id);
+        if (!f) continue;
+        if (a.accion === 'emitir') {
+          const r = await emitirFactura(ctx.repos, f, ctx.usuario.email);
+          if (r.ok) hechas++;
+          else fallos.push(`${f.cliente.nombre}: ${r.errores[0]?.mensaje ?? 'no se pudo'}`);
+        } else if (await ctx.repos.facturas.marcarCobrada(f.id, a.accion === 'cobrada' ? (a.fecha ?? ctx.hoy) : null)) hechas++;
+      }
+      if (hechas) await ctx.repos.auditoria.registrar(ctx.usuario.email, `factura ${a.accion}`, `${hechas} facturas (asistente, en bloque)`);
+      const verbo = { emitir: 'emitidas', cobrada: 'marcadas como cobradas', pendiente: 'pendientes de cobro otra vez' }[a.accion];
+      return { ok: hechas > 0, texto: `${hechas} ${hechas === 1 ? 'factura' : 'facturas'} ${verbo}.${fallos.length ? ` No se pudo con ${enumerar(fallos, 3)}.` : ''}` };
+    },
+  }),
+  cambio({
+    nombre: 'gestionar_gastos',
+    descripcion: 'Sobre VARIOS gastos a la vez: «confirmar» los tickets por revisar (pasan a contar en las cuentas) o cambiarles el tipo («categoria»). Elige por ids, estado, tienda, tipo actual o fechas.',
+    permiso: 'gastos',
+    esquema: z.object({
+      gastos: opcional(z.array(z.string()).max(MAXIMO_BLOQUE)),
+      estado: opcional(z.enum(['revisar', 'confirmado'])),
+      proveedor: opcional(z.string().max(80)).describe('Parte del nombre de la tienda o proveedor'),
+      categoriaActual: opcional(z.enum(CATEGORIAS.map((c) => c.id) as [string, ...string[]])),
+      desde: opcional(fecha),
+      hasta: opcional(fecha),
+      accion: z.enum(['confirmar', 'categoria']),
+      categoria: opcional(z.enum(CATEGORIAS.map((c) => c.id) as [string, ...string[]])).describe('Tipo nuevo (con accion «categoria»)'),
+    }),
+    async preparar(
+      { repos, hoy },
+      a: { gastos?: string[] | null; estado?: 'revisar' | 'confirmado' | null; proveedor?: string | null; categoriaActual?: string | null; desde?: string | null; hasta?: string | null; accion: 'confirmar' | 'categoria'; categoria?: string | null },
+    ) {
+      if (!a.gastos?.length && !a.estado && !a.proveedor && !a.categoriaActual && !a.desde && !a.hasta) return { ok: false, error: 'Di qué gastos: ids, estado, tienda, tipo o fechas.' };
+      if (a.accion === 'categoria' && !a.categoria) return { ok: false, error: 'Falta el tipo nuevo.' };
+      let lista = await repos.gastos.listar({ estado: a.estado ?? undefined, desde: a.desde ?? undefined, hasta: a.hasta ?? undefined, limite: 20000 });
+      if (a.gastos?.length) lista = lista.filter((g) => a.gastos!.includes(g.id));
+      if (a.proveedor) lista = lista.filter((g) => normalizar(g.proveedor).includes(normalizar(a.proveedor!)));
+      if (a.categoriaActual) lista = lista.filter((g) => g.categoria === a.categoriaActual);
+      lista = a.accion === 'confirmar' ? lista.filter((g) => g.estado === 'revisar') : lista.filter((g) => g.categoria !== a.categoria);
+      if (!lista.length) return { ok: false, error: a.accion === 'confirmar' ? 'No hay tickets por revisar con eso.' : 'Esos gastos ya son de ese tipo.' };
+      if (lista.length > MAXIMO_BLOQUE) return { ok: false, error: `Son ${lista.length}: como mucho ${MAXIMO_BLOQUE} de una vez.` };
+      const incompletos = lista.filter((g) => !g.proveedor || !g.categoria || !(g.total > 0) || !g.fecha || g.fecha > hoy);
+      if (a.accion === 'confirmar' && incompletos.length) return { ok: false, error: `Antes hay que completar ${incompletos.length === 1 ? 'un ticket' : `${incompletos.length} tickets`} (tienda, tipo, total o fecha): ${enumerar(incompletos.map((g) => g.proveedor || g.id), 3)}.` };
+      const suma = Math.round(lista.reduce((t, g) => t + g.total, 0) * 100) / 100;
+      const avisos = lista.filter((g) => g.avisos.length).length;
+      const que = a.accion === 'confirmar' ? 'Confirmar' : `Pasar a «${nombreCategoria(a.categoria!)}»`;
+      return {
+        ok: true,
+        resumen: `${que} ${lista.length === 1 ? '1 gasto' : `${lista.length} gastos`} (${dinero(suma)}): ${enumerar(lista.map((g) => `${g.proveedor} ${dinero(g.total)}`), 5)}.${a.accion === 'confirmar' && avisos ? ` Ojo: ${avisos} con avisos del lector de tickets.` : ''}`,
+        argumentos: { gastos: lista.map((g) => g.id), accion: a.accion, categoria: a.categoria ?? null },
+      };
+    },
+    async aplicar(ctx, a: { gastos?: string[] | null; accion: 'confirmar' | 'categoria'; categoria?: string | null }) {
+      let hechos = 0;
+      for (const id of a.gastos ?? []) {
+        const g = await ctx.repos.gastos.obtener(id);
+        if (!g) continue;
+        const nuevo = a.accion === 'confirmar' ? { ...g, estado: 'confirmado' as const } : { ...g, categoria: a.categoria! };
+        await ctx.repos.gastos.guardar({ ...nuevo, actualizado: new Date().toISOString() });
+        hechos++;
+      }
+      if (hechos) await ctx.repos.auditoria.registrar(ctx.usuario.email, 'gasto guardado', `${hechos} gastos: ${a.accion} (asistente, en bloque)`);
+      return { ok: hechos > 0, texto: hechos ? `${hechos === 1 ? '1 gasto' : `${hechos} gastos`} ${a.accion === 'confirmar' ? 'confirmados: ya cuentan en las cuentas' : 'cambiados de tipo'}.` : 'No se ha cambiado ninguno.' };
+    },
+  }),
+  cambio({
+    nombre: 'cambiar_clientes',
+    descripcion: 'Cambia VARIOS clientes a la vez: recargo de equivalencia, provincia, país, o archivarlos/recuperarlos. Elige por nombres, texto (nombre, NIF o población) o todos.',
+    permiso: 'facturas',
+    esquema: z.object({
+      clientes: opcional(z.array(z.string()).max(MAXIMO_BLOQUE)).describe('Nombres, NIF o ids'),
+      texto: opcional(z.string().max(80)),
+      todos: opcional(z.boolean()),
+      recargo: opcional(z.boolean()),
+      provincia: opcional(z.string().max(100)),
+      pais: opcional(z.string().max(60)),
+      archivar: opcional(z.boolean()).describe('true = archivar; false = recuperar'),
+    }),
+    async preparar(
+      { repos },
+      a: { clientes?: string[] | null; texto?: string | null; todos?: boolean | null; recargo?: boolean | null; provincia?: string | null; pais?: string | null; archivar?: boolean | null },
+    ) {
+      if (!a.clientes?.length && !a.texto && !a.todos) return { ok: false, error: 'Di qué clientes: nombres, un texto o todos.' };
+      if (a.recargo == null && a.provincia == null && a.pais == null && a.archivar == null) return { ok: false, error: 'No hay ningún cambio.' };
+      let lista = await repos.clientes.listar({ incluirArchivados: true });
+      if (a.clientes?.length) {
+        const ids = new Set<string>();
+        for (const n of a.clientes) {
+          const c = await unCliente(repos, n);
+          if (!c.ok) return c;
+          ids.add(c.cliente.id);
+        }
+        lista = lista.filter((c) => ids.has(c.id));
+      } else if (a.archivar !== false) lista = lista.filter((c) => !c.archivado);
+      if (a.texto) lista = lista.filter((c) => normalizar(`${c.nombre} ${c.nif} ${c.poblacion}`).includes(normalizar(a.texto!)));
+      if (!lista.length) return { ok: false, error: 'Ningún cliente cumple eso.' };
+      const partes = [a.recargo != null ? `recargo de equivalencia: ${a.recargo ? 'sí' : 'no'}` : '', a.provincia ? `provincia: ${a.provincia}` : '', a.pais ? `país: ${a.pais}` : '', a.archivar != null ? (a.archivar ? 'archivar' : 'recuperar') : ''].filter(Boolean);
+      return { ok: true, resumen: `${lista.length === 1 ? '1 cliente' : `${lista.length} clientes`} (${enumerar(lista.map((c) => c.nombre), 6)}): ${partes.join('; ')}.`, argumentos: { ...a, clientes: lista.map((c) => c.id), texto: null, todos: null } };
+    },
+    async aplicar(ctx, a: { clientes?: string[] | null; recargo?: boolean | null; provincia?: string | null; pais?: string | null; archivar?: boolean | null }) {
+      let hechos = 0;
+      for (const id of a.clientes ?? []) {
+        const c = await ctx.repos.clientes.obtener(id);
+        if (!c) continue;
+        await ctx.repos.clientes.guardar(
+          { ...c, ...(a.recargo != null ? { recargo: a.recargo } : {}), ...(a.provincia ? { provincia: a.provincia } : {}), ...(a.pais ? { pais: a.pais } : {}), ...(a.archivar != null ? { archivado: a.archivar } : {}) },
+          ctx.usuario.email,
+        );
+        hechos++;
+      }
+      return { ok: hechos > 0, texto: hechos ? `${hechos === 1 ? '1 cliente cambiado' : `${hechos} clientes cambiados`}.` : 'No se ha cambiado ninguno.' };
+    },
+  }),
+  cambio({
+    nombre: 'cambiar_textos_web',
+    descripcion: 'Cambia VARIOS textos de la web a la vez (de una o varias secciones) con un solo «Sí». Cada elemento es como en cambiar_texto_web.',
+    permiso: 'editar',
+    esquema: z.object({
+      textos: z
+        .array(z.object({ seccion: z.string(), campo: z.string(), es: opcional(z.string().max(2000)), en: opcional(z.string().max(2000)), valor: opcional(z.union([z.string().max(2000), z.number(), z.boolean()])) }))
+        .min(1)
+        .max(40),
+    }),
+    async preparar(ctx, a: { textos: TextoWeb[] }) {
+      const resumenes: string[] = [];
+      for (const t of a.textos) {
+        const r = await prepararTexto(ctx.repos, t);
+        if (!r.ok) return { ok: false, error: `${t.seccion} → ${t.campo}: ${r.error}` };
+        resumenes.push(r.resumen);
+      }
+      return { ok: true, resumen: `${a.textos.length} textos: ${resumenes.join(' ')}`, argumentos: a };
+    },
+    async aplicar(ctx, a: { textos: TextoWeb[] }) {
+      // Se agrupan por sección: un solo guardado (y un solo cambio en el historial) por sección.
+      const porSeccion = new Map<string, TextoWeb[]>();
+      for (const t of a.textos) porSeccion.set(t.seccion, [...(porSeccion.get(t.seccion) ?? []), t]);
+      for (const [seccion, textos] of porSeccion) {
+        const [coleccion, id] = seccion.split('/') as [Coleccion, string];
+        const e = await ctx.repos.contenido.obtener(coleccion, id);
+        if (!e) return { ok: false, texto: `La sección ${seccion} no existe.` };
+        const datos = structuredClone(e.borrador.datos);
+        for (const t of textos) ponerRuta(datos, t.campo, valorTexto(leerRuta(datos, t.campo), t));
+        const r = await guardarTextos(ctx.repos, coleccion, id, datos, e.borrador.cuerpo, autor(ctx));
+        if (!r.ok) return { ok: false, texto: `${seccion}: ${r.errores.map((x) => x.mensaje).join(' ')}` };
+      }
+      return { ok: true, texto: 'Guardado como borrador: saldrá en la web al publicar.' };
     },
   }),
 ];

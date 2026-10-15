@@ -28,7 +28,9 @@ export const SUGERENCIAS = [
   '¿Qué tengo pendiente hoy?',
   '¿Cuánto hemos facturado este mes?',
   '¿Qué presupuestos están sin responder?',
-  'Sube la palmera canaria a 40 €',
+  'Sube un 5 % el precio de todas las palmeras',
+  'Marca como cobradas las facturas vencidas de un cliente',
+  'Archiva los presupuestos de hace más de 3 meses',
   'Hazle una factura a un cliente',
   '¿En qué hemos gastado más este trimestre?',
 ];
