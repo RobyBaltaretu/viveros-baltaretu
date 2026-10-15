@@ -190,41 +190,30 @@ test('bandeja de presupuestos: ver, marcar como respondido y descargar', async (
   expect(texto).toContain(`"'=Necesito 20 palmeras`);
 });
 
-test('asistente guiado: cambiar un precio con confirmación', async ({ page }) => {
+test('asistente: conversación con propuestas que se confirman con Sí o No', async ({ page }) => {
+  test.setTimeout(60_000);
   const planta = test.info().project.name === 'movil' ? 'Palmito' : 'Yuca';
+  const escribir = async (texto: string) => {
+    await page.getByLabel('Escribe al asistente').fill(texto);
+    await page.getByRole('button', { name: 'Enviar' }).click();
+  };
   await page.goto('/panel/asistente');
-  await page.getByRole('button', { name: 'Cambiar un precio' }).click();
-  await expect(page.getByRole('status')).toHaveText('¿De qué planta?');
-  await page.getByRole('button', { name: planta, exact: true }).click();
-  await page.getByLabel('¿Cuál es el precio nuevo, en euros?').fill('31');
-  await page.getByRole('button', { name: 'Siguiente' }).click();
-  await expect(page.getByRole('status')).toContainText(`Voy a cambiar el precio de ${planta}`);
+  await expect(page.getByRole('heading', { name: /En qué te ayudo/ })).toBeVisible();
   await auditar(page);
   await controlesGrandes(page);
-  await page.getByRole('button', { name: 'No' }).click();
-  await expect(page.getByRole('status')).toHaveText('Vale, no he cambiado nada.');
-
-  await page.getByRole('button', { name: 'Cambiar un precio' }).click();
-  await page.getByRole('button', { name: planta, exact: true }).click();
-  await page.getByLabel('¿Cuál es el precio nuevo, en euros?').fill('31');
-  await page.getByRole('button', { name: 'Siguiente' }).click();
-  await page.getByRole('button', { name: 'Sí, hazlo' }).click();
-  await expect(page.getByRole('status')).toContainText('Hecho');
-  await page.getByRole('button', { name: '¿Cuántos presupuestos nuevos hay?' }).click();
-  await expect(page.getByRole('status')).toContainText('presupuesto');
-});
-
-test('asistente: lenguaje natural con confirmación y rechazo de otros temas', async ({ page }) => {
-  await page.goto('/panel/asistente');
-  await page.getByLabel('Escribe lo que quieres hacer').fill('el naranjo amargo esta agotado');
-  await page.getByRole('button', { name: 'Enviar' }).click();
-  await expect(page.getByRole('status')).toContainText('Voy a marcar Naranjo amargo como «agotado»');
-  await expect(page.getByRole('button', { name: 'Sí, hazlo' })).toBeVisible();
-  await page.getByRole('button', { name: 'No' }).click();
-  await page.getByLabel('Escribe lo que quieres hacer').fill('escríbeme un poema');
-  await page.getByRole('button', { name: 'Enviar' }).click();
-  await expect(page.getByRole('status')).toContainText('Solo puedo ayudarte con el panel y el vivero');
+  // En las pruebas no hay modelo de IA: responde el modo básico de respaldo.
+  await escribir(`sube ${planta.toLowerCase()} a 31`);
+  await expect(page.getByText(`Voy a cambiar el precio de ${planta}`).last()).toBeVisible();
+  await page.getByRole('button', { name: 'No', exact: true }).last().click();
+  await expect(page.getByText('Vale, no he cambiado nada.').last()).toBeVisible();
+  await escribir(`sube ${planta.toLowerCase()} a 31`);
+  await page.getByRole('button', { name: 'Sí, hazlo' }).last().click();
+  await expect(page.getByText(/^Hecho\./).last()).toBeVisible();
+  await escribir('escríbeme un poema');
+  await expect(page.getByText('Solo puedo ayudarte con el panel y el vivero').last()).toBeVisible();
   await auditar(page);
+  await page.getByRole('button', { name: 'Nueva conversación' }).click();
+  await expect(page.getByRole('heading', { name: /En qué te ayudo/ })).toBeVisible();
 });
 
 test('fotos de un proyecto y dibujo de una planta', async ({ page }) => {

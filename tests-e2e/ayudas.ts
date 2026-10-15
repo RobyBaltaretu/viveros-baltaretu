@@ -3,6 +3,9 @@ import { expect, type Page } from '@playwright/test';
 
 /** Sin violaciones de WCAG 2.1 AA según axe. */
 export async function auditar(page: Page) {
+  // Se mide el estado final: se espera a que acaben las animaciones de entrada
+  // (con opacidad a medias, el contraste saldría más bajo de lo que se ve).
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
   const resultado = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   const resumen = resultado.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`);
   expect(resumen).toEqual([]);

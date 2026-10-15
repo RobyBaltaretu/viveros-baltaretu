@@ -161,6 +161,38 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       `CREATE INDEX gastos_fecha ON gastos (estado, fecha)`,
     ],
   },
+  {
+    version: 6,
+    nombre: 'conversaciones del asistente',
+    sql: [
+      `CREATE TABLE asistente_conversaciones (
+        id TEXT PRIMARY KEY,
+        email TEXT NOT NULL,
+        creada TEXT NOT NULL
+      )`,
+      `CREATE INDEX asistente_conversaciones_email ON asistente_conversaciones (email, creada)`,
+      `CREATE TABLE asistente_mensajes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversacion TEXT NOT NULL,
+        rol TEXT NOT NULL CHECK (rol IN ('usuario', 'asistente')),
+        texto TEXT NOT NULL,
+        propuestas TEXT NOT NULL DEFAULT '[]',
+        fecha TEXT NOT NULL
+      )`,
+      `CREATE INDEX asistente_mensajes_conversacion ON asistente_mensajes (conversacion, id)`,
+      `CREATE TABLE asistente_propuestas (
+        id TEXT PRIMARY KEY,
+        conversacion TEXT NOT NULL,
+        email TEXT NOT NULL,
+        herramienta TEXT NOT NULL,
+        argumentos TEXT NOT NULL,
+        resumen TEXT NOT NULL,
+        estado TEXT NOT NULL CHECK (estado IN ('pendiente', 'aplicada', 'rechazada', 'fallida')),
+        resultado TEXT NOT NULL DEFAULT '',
+        creada TEXT NOT NULL
+      )`,
+    ],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

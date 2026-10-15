@@ -3,10 +3,10 @@ import EditorFactura from '../../../components/panel/EditorFactura.astro';
 import Mensajes from '../../../components/panel/Mensajes.astro';
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
 import VistaFactura from '../../../components/panel/VistaFactura.astro';
-import type { DatosEmisor, Factura } from '../../../server/data/tipos.ts';
-import { calcularTotales, dinero } from '../../../server/facturas/importes.ts';
-import { CAMPOS_EMISOR, codigoDe, hoy, huellaDe, leerBorrador, nuevaFactura, rectificativaDe, serieDe, validarEmision, type Error } from '../../../server/facturas/facturas.ts';
-import { ajustesFacturacion, plantasParaFacturar } from '../../../server/panel/facturacion.ts';
+import type { Factura } from '../../../server/data/tipos.ts';
+import { dinero } from '../../../server/facturas/importes.ts';
+import { hoy, leerBorrador, nuevaFactura, rectificativaDe, serieDe, type Error } from '../../../server/facturas/facturas.ts';
+import { ajustesFacturacion, borradorAlDia, comprobarEmision, emitirFactura, plantasParaFacturar } from '../../../server/panel/facturacion.ts';
 import { campo, sesionCon } from '../../../server/panel/pagina.ts';
 
 export const prerender = false;
@@ -18,15 +18,8 @@ if (s && !f) return Astro.redirect('/panel/facturas', 303);
 const ajustes = s ? await ajustesFacturacion(s.repos) : null;
 const plantas = s && f?.estado === 'borrador' ? await plantasParaFacturar(s.repos) : [];
 // En los borradores manda la ficha actual del cliente (en las emitidas, la copia de ese día).
-if (s && f && f.estado === 'borrador') {
-  const actual = await s.repos.clientes.obtener(f.clienteId);
-  if (actual) f = { ...f, cliente: actual, totales: calcularTotales(f.lineas.filter((l) => l.concepto), actual.recargo) };
-}
-const emisorDe = (a: typeof ajustes): DatosEmisor => Object.fromEntries(CAMPOS_EMISOR.map((c) => [c.campo, a?.[c.campo] ?? ''])) as unknown as DatosEmisor;
-const comprobar = async (fa: Factura) => {
-  const ultima = await s!.repos.facturas.ultimaEmitida(serieDe(fa.tipo, fa.fecha));
-  return validarEmision(fa, emisorDe(ajustes), fa.cliente, ultima?.fecha ?? null);
-};
+if (s && f) f = await borradorAlDia(s.repos, f);
+const comprobar = (fa: Factura) => comprobarEmision(s!.repos, fa, ajustes!);
 
 let errores: Error[] = [];
 let crudo: FormData | null = null;
@@ -44,24 +37,9 @@ if (s && f && ajustes && Astro.request.method === 'POST') {
       return Astro.redirect('/panel/facturas?hecho=borrada', 303);
     }
     if (accion === 'confirmar-emision') {
-      errores = await comprobar(f);
-      if (!errores.length) {
-        const fa = f;
-        await s.repos.facturas.guardarBorrador(fa);
-        const serie = serieDe(fa.tipo, fa.fecha);
-        const anterior = await s.repos.facturas.ultimaHuella();
-        const emitida = await s.repos.facturas.emitir(fa.id, {
-          serie,
-          fecha: fa.fecha,
-          emisor: emisorDe(ajustes),
-          cliente: fa.cliente,
-          huellaAnterior: anterior,
-          codigo: (n) => codigoDe(serie, n),
-          huella: (_n, codigo) => huellaDe({ codigo, fecha: fa.fecha, total: fa.totales.total, nifEmisor: ajustes.nif, nifCliente: fa.cliente.nif }, anterior),
-        });
-        if (emitida) await s.repos.auditoria.registrar(s.usuario.email, 'factura emitida', `${emitida.codigo} · ${dinero(emitida.totales.total)}`);
-        return Astro.redirect(`/panel/facturas/${fa.id}?hecho=emitida`, 303);
-      }
+      const r = await emitirFactura(s.repos, f, s.usuario.email);
+      if (r.ok) return Astro.redirect(`/panel/facturas/${f.id}?hecho=emitida`, 303);
+      errores = r.errores;
     } else {
       const r = leerBorrador(form, f, plantas);
       errores = r.errores;
