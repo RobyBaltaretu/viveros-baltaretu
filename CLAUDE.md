@@ -78,4 +78,5 @@ Estado actual, preferencias del propietario y pendientes: `docs/estado.md`. Leer
 - El panel: español llano, una tarea por pantalla, controles de 48 px, WCAG 2.1 AA (e2e en `tests-e2e/panel.spec.ts`). Un error del usuario nunca rompe la web: todo se valida con el esquema del build antes de guardar.
 - El asistente solo ejecuta la lista cerrada de `src/server/asistente/acciones.ts`, siempre con confirmación Sí/No.
 - Facturas (`src/server/facturas/`, `/panel/facturas`): una emitida no se cambia ni se borra (se corrige con una rectificativa); numeración correlativa por serie y año; los datos fiscales de la empresa están en D1 (`ajustes_privados`), no en la web. No es un sistema VeriFactu: no presentarlo como tal.
+- Gastos (`src/server/gastos/`, `/panel/gastos`): el lector de tickets (Workers AI con visión) solo propone; el gasto queda «por revisar» hasta que una persona lo guarda. Las fotos de los tickets nunca se publican.
 - Decisiones: `docs/panel-propio/decisiones.md`. Pasos del propietario: `docs/panel-propio/pasos-manuales.md`.

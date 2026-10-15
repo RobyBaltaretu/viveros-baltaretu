@@ -1,0 +1,181 @@
+---
+import Mensajes from '../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import type { Gasto } from '../../../server/data/tipos.ts';
+import { avisosDe, CATEGORIAS, FORMAS_PAGO_GASTO, leerGasto, type Error } from '../../../server/gastos/gastos.ts';
+import { campo, sesionCon } from '../../../server/panel/pagina.ts';
+import { MENSAJE_LECTURA } from '../../../server/panel/gastos.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'gastos');
+const id = Astro.params.id ?? '';
+let g: Gasto | null = s ? await s.repos.gastos.obtener(id) : null;
+if (s && !g) return Astro.redirect('/panel/gastos', 303);
+let errores: Error[] = [];
+let crudo: FormData | null = null;
+if (s && g && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  if (campo(form, 'accion') === 'borrar') {
+    await s.repos.gastos.borrar(g.id);
+    await s.repos.auditoria.registrar(s.usuario.email, 'gasto borrado', `${g.proveedor} ${g.total}`);
+    return Astro.redirect('/panel/gastos?hecho=borrado', 303);
+  }
+  const r = leerGasto(form, g);
+  errores = r.errores;
+  if (errores.length) crudo = form;
+  else if (r.accion.tipo === 'guardar') {
+    const confirmado: Gasto = { ...r.gasto, estado: 'confirmado', avisos: avisosDe(r.gasto) };
+    await s.repos.gastos.guardar(confirmado);
+    await s.repos.auditoria.registrar(s.usuario.email, 'gasto guardado', `${confirmado.proveedor} ${confirmado.total}`);
+    return Astro.redirect(`/panel/gastos?mes=${confirmado.fecha.slice(0, 7)}&hecho=guardado`, 303);
+  } else {
+    await s.repos.gastos.guardar(r.gasto);
+    return Astro.redirect(`/panel/gastos/${g.id}#lineas`, 303);
+  }
+  g = r.gasto;
+}
+const leido = Astro.url.searchParams.get('leido');
+const valor = (n: string, normal: string | number | null) => (crudo ? String(crudo.get(n) ?? '') : normal === null ? '' : String(normal).replace('.', ','));
+const error = (c: string) => errores.find((e) => e.campo === c)?.mensaje;
+const lineas = g?.lineas.length ? g.lineas : [{ concepto: '', cantidad: 1, importe: 0 }];
+const describe = (c: string) => (error(c) ? `${c}-error` : undefined);
+---
+
+<PaginaPanel titulo={g?.estado === 'revisar' ? 'Revisar el gasto' : 'Gasto'} permiso="gastos" volver="/panel/gastos">
+  {
+    g && (
+      <>
+        <h1 class="titular-grande">{g.estado === 'revisar' ? 'Revisar el gasto' : g.proveedor || 'Gasto'}</h1>
+        <Mensajes hecho={leido ? MENSAJE_LECTURA[leido] : undefined} errores={errores} />
+        {g.avisos.length > 0 && !errores.length && (
+          <ul class="mt-4 grid gap-1 rounded-tarjeta border-2 border-terracota bg-papel p-3" role="list">
+            {g.avisos.map((a) => (
+              <li>{a}</li>
+            ))}
+          </ul>
+        )}
+        {g.ticketId && (
+          <details class="mt-6 rounded-panel border-2 border-linea bg-papel p-3" open={g.estado === 'revisar'}>
+            <summary class="flex min-h-12 cursor-pointer items-center font-semibold">Foto del ticket</summary>
+            <a href={`/api/panel/ticket?id=${g.ticketId}`} class="mt-2 block">
+              <img src={`/api/panel/ticket?id=${g.ticketId}`} alt="Foto del ticket de compra" class="max-h-[70vh] w-full rounded-tarjeta object-contain" />
+            </a>
+          </details>
+        )}
+        <form method="post" class="mt-6 grid gap-6">
+          <button name="accion" value="guardar" class="sr-only" tabindex="-1" aria-hidden="true">
+            Guardar
+          </button>
+          <input type="hidden" name="lineas" value={lineas.length} />
+          <div class="grid gap-1">
+            <label for="proveedor" class="font-semibold">Dónde se compró</label>
+            <input id="proveedor" name="proveedor" class="campo-panel" value={valor('proveedor', g.proveedor)} required aria-describedby={describe('proveedor')} />
+            {error('proveedor') && <p id="proveedor-error" class="font-semibold text-terracota">{error('proveedor')}</p>}
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-1">
+              <label for="fecha" class="font-semibold">Fecha</label>
+              <input id="fecha" name="fecha" type="date" class="campo-panel" value={valor('fecha', g.fecha)} required aria-describedby={describe('fecha')} />
+              {error('fecha') && <p id="fecha-error" class="font-semibold text-terracota">{error('fecha')}</p>}
+            </div>
+            <div class="grid gap-1">
+              <label for="categoria" class="font-semibold">Tipo de gasto</label>
+              <select id="categoria" name="categoria" class="campo-panel" required aria-describedby={describe('categoria')}>
+                <option value="">Elige uno</option>
+                {CATEGORIAS.map((c) => (
+                  <option value={c.id} selected={c.id === valor('categoria', g.categoria)}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+              {error('categoria') && <p id="categoria-error" class="font-semibold text-terracota">{error('categoria')}</p>}
+            </div>
+          </div>
+
+          <h2 id="lineas" class="titular-medio">Qué se compró</h2>
+          <ol class="grid gap-3" role="list">
+            {lineas.map((l, i) => (
+              <li>
+                <fieldset class="grid gap-3 rounded-panel border-2 border-linea bg-papel p-4">
+                  <legend class="px-1 font-semibold">Línea {i + 1}</legend>
+                  <div class="grid gap-1">
+                    <label for={`l${i}-concepto`} class="font-semibold">Concepto</label>
+                    <input id={`l${i}-concepto`} name={`l${i}.concepto`} class="campo-panel" value={valor(`l${i}.concepto`, l.concepto)} />
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="grid gap-1">
+                      <label for={`l${i}-cantidad`} class="font-semibold">Cantidad</label>
+                      <input id={`l${i}-cantidad`} name={`l${i}.cantidad`} inputmode="decimal" class="campo-panel" value={valor(`l${i}.cantidad`, l.cantidad)} />
+                    </div>
+                    <div class="grid gap-1">
+                      <label for={`l${i}-importe`} class="font-semibold">Importe (€)</label>
+                      <input id={`l${i}-importe`} name={`l${i}.importe`} inputmode="decimal" class="campo-panel" value={valor(`l${i}.importe`, l.importe)} />
+                    </div>
+                  </div>
+                  <p>
+                    <button name="accion" value={`quitar:${i}`} class="boton-panel boton-panel-secundario">
+                      Quitar la línea {i + 1}
+                    </button>
+                  </p>
+                </fieldset>
+              </li>
+            ))}
+          </ol>
+          <p>
+            <button name="accion" value="agregar" class="boton-panel boton-panel-secundario">Añadir una línea</button>
+          </p>
+
+          <div class="grid gap-4 sm:grid-cols-3">
+            <div class="grid gap-1">
+              <label for="total" class="font-semibold">Total pagado (€)</label>
+              <input id="total" name="total" inputmode="decimal" class="campo-panel" value={valor('total', g.total || null)} required aria-describedby={describe('total')} />
+              {error('total') && <p id="total-error" class="font-semibold text-terracota">{error('total')}</p>}
+            </div>
+            <div class="grid gap-1">
+              <label for="base" class="font-semibold">
+                Base sin IVA (€) <span class="font-normal text-gris">(opcional)</span>
+              </label>
+              <input id="base" name="base" inputmode="decimal" class="campo-panel" value={valor('base', g.base)} />
+            </div>
+            <div class="grid gap-1">
+              <label for="iva" class="font-semibold">
+                IVA pagado (€) <span class="font-normal text-gris">(opcional)</span>
+              </label>
+              <input id="iva" name="iva" inputmode="decimal" class="campo-panel" value={valor('iva', g.iva)} />
+            </div>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-1">
+              <label for="formaPago" class="font-semibold">Cómo se pagó</label>
+              <select id="formaPago" name="formaPago" class="campo-panel">
+                {FORMAS_PAGO_GASTO.map((f) => (
+                  <option selected={f === valor('formaPago', g.formaPago)}>{f}</option>
+                ))}
+              </select>
+            </div>
+            <div class="grid gap-1">
+              <label for="nifProveedor" class="font-semibold">
+                NIF de la tienda <span class="font-normal text-gris">(opcional)</span>
+              </label>
+              <input id="nifProveedor" name="nifProveedor" class="campo-panel" value={valor('nifProveedor', g.nifProveedor)} />
+            </div>
+          </div>
+          <div class="grid gap-1">
+            <label for="notas" class="font-semibold">
+              Notas <span class="font-normal text-gris">(opcional)</span>
+            </label>
+            <textarea id="notas" name="notas" rows="2" class="campo-panel">{valor('notas', g.notas)}</textarea>
+          </div>
+          <p>
+            <button name="accion" value="guardar" class="boton-panel">Guardar el gasto</button>
+          </p>
+        </form>
+        <form method="post" class="mt-8">
+          <input type="hidden" name="accion" value="borrar" />
+          <button class="boton-panel boton-panel-secundario">Borrar este gasto</button>
+        </form>
+      </>
+    )
+  }
+</PaginaPanel>

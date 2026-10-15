@@ -3,7 +3,7 @@ import { auditar, controlesGrandes } from './ayudas';
 
 // El build de los e2e usa el entorno `desarrollo`: D1 local con el contenido importado
 // y entrada al panel sin Access desde localhost como propietario@example.com.
-const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/publicar', '/panel/cambios', '/panel/plantas/washingtonia-robusta/vista', '/panel/presupuestos?estado=archivado', '/panel/asistente', '/panel/textos/proyectos/proyecto-de-ejemplo/fotos', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos', '/panel/facturas', '/panel/facturas/nueva', '/panel/facturas/clientes', '/panel/facturas/clientes/nuevo', '/panel/facturas/datos'];
+const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/publicar', '/panel/cambios', '/panel/plantas/washingtonia-robusta/vista', '/panel/presupuestos?estado=archivado', '/panel/asistente', '/panel/textos/proyectos/proyecto-de-ejemplo/fotos', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos', '/panel/facturas', '/panel/facturas/nueva', '/panel/facturas/clientes', '/panel/facturas/clientes/nuevo', '/panel/facturas/datos', '/panel/gastos', '/panel/gastos/nuevo'];
 
 test.describe('panel: accesibilidad y tamaño de los controles', () => {
   for (const ruta of PANTALLAS) {
@@ -315,4 +315,27 @@ test('facturas: datos, cliente, borrador, emitir, PDF y cobro', async ({ page, r
   await expect(page.getByRole('status')).toContainText('cobrada');
   const csv = await request.get(`/api/panel/facturas.csv?anio=${new Date().getFullYear()}`);
   expect(await csv.text()).toContain(`Jardinería ${p} SL`);
+});
+
+test('gastos: subir la foto de un ticket, revisarlo y guardarlo', async ({ page }) => {
+  test.setTimeout(60_000);
+  const p = test.info().project.name;
+  await page.goto('/panel/gastos/nuevo');
+  await page.getByLabel('Foto del ticket').setInputFiles('src/assets/catalogo/phoenix-canariensis/foto-prueba-1.jpg');
+  await page.getByRole('button', { name: 'Leer el ticket' }).click();
+  // En las pruebas no hay lector automático: se escribe a mano mirando la foto.
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Revisar el gasto');
+  await expect(page.getByRole('status')).toContainText('Escribe los datos mirando la foto');
+  await expect(page.getByRole('img', { name: 'Foto del ticket de compra' })).toBeVisible();
+  await auditar(page);
+  await controlesGrandes(page);
+  await page.getByLabel('Dónde se compró').fill(`Agrícola ${p}`);
+  await page.getByLabel('Tipo de gasto').selectOption({ label: 'Sustratos y abonos' });
+  await page.getByLabel('Concepto').fill('Sustrato 70 l');
+  await page.getByLabel('Importe (€)').fill('23,85');
+  await page.getByLabel('Total pagado (€)').fill('23,85');
+  await page.getByRole('button', { name: 'Guardar el gasto' }).click();
+  await expect(page.getByRole('status')).toContainText('Gasto guardado');
+  await expect(page.getByRole('link', { name: new RegExp(`Agrícola ${p}`) })).toBeVisible();
+  await auditar(page);
 });

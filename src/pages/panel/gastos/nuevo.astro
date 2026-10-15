@@ -1,0 +1,77 @@
+---
+import { env } from 'cloudflare:workers';
+import Mensajes from '../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import type { BindingAI } from '../../../server/asistente/interprete.ts';
+import { hoy } from '../../../server/gastos/gastos.ts';
+import { crearLectorWorkersAI } from '../../../server/gastos/lector.ts';
+import { gastoDesdeTicket } from '../../../server/panel/gastos.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'gastos');
+let error: string | undefined;
+if (s && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const archivo = form.get('ticket');
+  const bytes = archivo instanceof File ? new Uint8Array(await archivo.arrayBuffer()) : new Uint8Array();
+  const ai = (env as { AI?: BindingAI }).AI;
+  const r = await gastoDesdeTicket(s.repos, s.usuario.email, bytes, ai ? crearLectorWorkersAI(ai, hoy) : null);
+  if (r.ok) return Astro.redirect(`/panel/gastos/${r.gasto.id}?leido=${r.leido}`, 303);
+  error = r.mensaje;
+  Astro.response.status = 400;
+}
+---
+
+<PaginaPanel titulo="Añadir un ticket" permiso="gastos" volver="/panel/gastos">
+  <h1 class="titular-grande">Añadir un ticket</h1>
+  <p class="mt-2">Haz una foto al ticket o a la factura de compra, o elige una que ya tengas. El panel lee la tienda, la fecha, lo comprado y el total, y tú lo revisas.</p>
+  <Mensajes errores={error ? [{ campo: 'ticket', mensaje: error }] : []} />
+  <form method="post" enctype="multipart/form-data" class="mt-6 grid gap-4 rounded-panel border-2 border-linea bg-papel p-5" data-ticket>
+    <label for="ticket" class="font-titular text-xl font-bold">Foto del ticket</label>
+    <p id="ticket-ayuda" class="text-gris">Al pulsar el botón de elegir archivo, el móvil te deja hacer la foto con la cámara o elegirla de la galería. Que se vea entero, recto y con luz.</p>
+    <input id="ticket" name="ticket" type="file" accept="image/*" required aria-describedby="ticket-ayuda" class="campo-panel" />
+    <p><button class="boton-panel">Leer el ticket</button></p>
+    <p data-estado role="status" class="font-semibold"></p>
+  </form>
+  <form method="post" action="/panel/gastos" class="mt-6">
+    <input type="hidden" name="accion" value="manual" />
+    <button class="boton-panel boton-panel-secundario">No tengo ticket: escribirlo a mano</button>
+  </form>
+</PaginaPanel>
+
+<script>
+  // En el móvil, la foto se reduce (sin recortar: los tickets son largos) antes de subirla.
+  const form = document.querySelector<HTMLFormElement>('[data-ticket]');
+  const estado = form?.querySelector<HTMLElement>('[data-estado]');
+  form?.addEventListener('submit', async (evento) => {
+    const archivo = form.querySelector<HTMLInputElement>('input[type=file]')?.files?.[0];
+    if (!archivo || !('createImageBitmap' in window)) return;
+    evento.preventDefault();
+    form.querySelector('button')?.setAttribute('disabled', '');
+    if (estado) estado.textContent = 'Preparando la foto…';
+    try {
+      const imagen = await createImageBitmap(archivo, { imageOrientation: 'from-image' });
+      const escala = Math.min(1, 2000 / Math.max(imagen.width, imagen.height));
+      const lienzo = document.createElement('canvas');
+      lienzo.width = Math.round(imagen.width * escala);
+      lienzo.height = Math.round(imagen.height * escala);
+      lienzo.getContext('2d')?.drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+      const blob = await new Promise<Blob | null>((ok) => lienzo.toBlob(ok, 'image/jpeg', 0.8));
+      if (!blob) throw new Error('sin imagen');
+      const datos = new FormData();
+      datos.set('ticket', blob, 'ticket.jpg');
+      if (estado) estado.textContent = 'Leyendo el ticket… puede tardar unos segundos.';
+      const respuesta = await fetch(location.pathname, { method: 'POST', body: datos });
+      if (respuesta.redirected) location.replace(respuesta.url);
+      else {
+        if (estado) estado.textContent = 'No se ha podido subir la foto. Prueba otra vez o con otra foto.';
+        form.querySelector('button')?.removeAttribute('disabled');
+      }
+    } catch {
+      if (estado) estado.textContent = 'Subiendo la foto…';
+      form.submit();
+    }
+  });
+</script>

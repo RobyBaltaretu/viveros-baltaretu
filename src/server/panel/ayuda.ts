@@ -90,6 +90,18 @@ export const TEMAS: Tema[] = [
     enlace: { href: '/panel/facturas', texto: 'Ir a Facturas' },
   },
   {
+    id: 'gastos',
+    titulo: 'Apuntar un gasto con la foto del ticket',
+    pasos: [
+      'Pulsa «Gastos» y luego «Añadir un ticket».',
+      'Pulsa el botón de elegir archivo: haz la foto al ticket (entero, recto y con luz) o elígela de la galería. Pulsa «Leer el ticket».',
+      'En unos segundos verás lo que ha leído: dónde se compró, la fecha, lo comprado y el total. Compáralo con la foto y corrige lo que haga falta.',
+      'Elige el tipo de gasto y pulsa «Guardar el gasto». Hasta entonces queda «por revisar» y no cuenta en las cuentas.',
+      'Si no tienes ticket, pulsa «No tengo ticket: escribirlo a mano».',
+    ],
+    enlace: { href: '/panel/gastos', texto: 'Ir a Gastos' },
+  },
+  {
     id: 'deshacer',
     titulo: 'Me he equivocado: deshacer',
     pasos: ['Pulsa «Cambios recientes».', 'Busca el cambio y pulsa «Deshacer»: queda como estaba antes.', 'Si ya estaba publicado, vuelve a publicar para que la web lo recoja.'],

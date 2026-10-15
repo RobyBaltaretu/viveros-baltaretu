@@ -1,0 +1,100 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import { CATEGORIAS, gastoVacio, hoy, nombreCategoria } from '../../../server/gastos/gastos.ts';
+import { dinero } from '../../../server/facturas/importes.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'gastos');
+if (s && Astro.request.method === 'POST') {
+  // «Sin ticket»: gasto vacío para escribirlo a mano.
+  const g = gastoVacio(s.usuario.email);
+  await s.repos.gastos.guardar(g);
+  return Astro.redirect(`/panel/gastos/${g.id}`, 303);
+}
+const pedido = Astro.url.searchParams.get('mes') ?? '';
+const mes = /^\d{4}-\d{2}$/.test(pedido) ? pedido : hoy().slice(0, 7);
+const [a, m] = mes.split('-').map(Number);
+const desplazar = (n: number) => {
+  const d = new Date(Date.UTC(a, m - 1 + n, 1));
+  return d.toISOString().slice(0, 7);
+};
+const porRevisar = s ? await s.repos.gastos.listar({ estado: 'revisar' }) : [];
+const delMes = s ? await s.repos.gastos.listar({ estado: 'confirmado', desde: `${mes}-01`, hasta: `${mes}-31` }) : [];
+const total = delMes.reduce((t, g) => t + g.total, 0);
+const porCategoria = CATEGORIAS.map((c) => ({ ...c, total: delMes.filter((g) => g.categoria === c.id).reduce((t, g) => t + g.total, 0) }))
+  .filter((c) => c.total > 0)
+  .sort((x, y) => y.total - x.total);
+const nombreMes = new Date(Date.UTC(a, m - 1, 15)).toLocaleDateString('es-ES', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const fechaEs = (iso: string) => iso.split('-').reverse().join('/');
+const hecho = Astro.url.searchParams.get('hecho');
+const MENSAJES: Record<string, string> = { borrado: 'Gasto borrado.', guardado: 'Gasto guardado.' };
+---
+
+<PaginaPanel titulo="Gastos" permiso="gastos">
+  <h1 class="titular-grande">Gastos</h1>
+  {hecho && MENSAJES[hecho] && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{MENSAJES[hecho]}</p>}
+  <p class="mt-4"><a href="/panel/gastos/nuevo" class="boton-panel">Añadir un ticket</a></p>
+
+  {
+    porRevisar.length > 0 && (
+      <section class="mt-8" aria-labelledby="revisar">
+        <h2 id="revisar" class="titular-medio">Por revisar ({porRevisar.length})</h2>
+        <p class="mt-1 text-gris">No cuentan en las cuentas hasta que los revises y guardes.</p>
+        <ul class="mt-3 grid gap-3" role="list">
+          {porRevisar.map((g) => (
+            <li>
+              <a href={`/panel/gastos/${g.id}`} class="flex min-h-12 flex-wrap items-center justify-between gap-2 rounded-tarjeta border-2 border-terracota bg-papel p-4 no-underline hover:underline">
+                <span class="font-semibold text-tinta">{g.proveedor || 'Sin leer'} · {fechaEs(g.fecha)}</span>
+                <span class="font-semibold text-tinta">{g.total ? dinero(g.total) : '—'}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  <nav aria-label="Mes" class="mt-8 flex flex-wrap items-center justify-between gap-3">
+    <a class="boton-panel boton-panel-secundario" href={`/panel/gastos?mes=${desplazar(-1)}`}>← Mes anterior</a>
+    <h2 class="titular-medio first-letter:uppercase">{nombreMes}</h2>
+    {mes < hoy().slice(0, 7) ? <a class="boton-panel boton-panel-secundario" href={`/panel/gastos?mes=${desplazar(1)}`}>Mes siguiente →</a> : <span />}
+  </nav>
+  <p class="mt-4 rounded-panel bg-verdor p-4 text-lg">
+    Gastado: <strong>{dinero(total)}</strong> en {delMes.length} {delMes.length === 1 ? 'gasto' : 'gastos'}
+  </p>
+  {
+    porCategoria.length > 0 && (
+      <ul class="mt-4 grid gap-1" role="list">
+        {porCategoria.map((c) => (
+          <li class="flex justify-between gap-3 border-b border-linea py-1">
+            <span>{c.nombre}</span>
+            <span class="font-semibold">{dinero(c.total)}</span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  <ul class="mt-6 grid gap-3" role="list">
+    {
+      delMes.map((g) => (
+        <li>
+          <a href={`/panel/gastos/${g.id}`} class="group flex min-h-12 flex-wrap items-center justify-between gap-2 rounded-tarjeta border-2 border-linea bg-papel p-4 no-underline hover:border-oliva">
+            <span class="flex flex-col">
+              <span class="font-semibold text-tinta group-hover:underline">{g.proveedor}</span>
+              <span class="text-gris">
+                {fechaEs(g.fecha)} · {nombreCategoria(g.categoria)}
+              </span>
+            </span>
+            <span class="font-semibold text-tinta">{dinero(g.total)}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+  <h2 class="titular-medio mt-10">Para la gestoría</h2>
+  <p class="mt-3 flex flex-wrap gap-3">
+    <a class="boton-panel boton-panel-secundario" href={`/api/panel/gastos.csv?anio=${a}`} download>Descargar los gastos de {a}</a>
+  </p>
+</PaginaPanel>
