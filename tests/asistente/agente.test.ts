@@ -1,7 +1,7 @@
 import { MockLanguageModelV4 } from 'ai/test';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { leerContenido } from '../../scripts/contenido/archivos.mjs';
-import { AVISO_CUPO, CLAVE_NEURONAS, conversar, LIMITE_NEURONAS_DIA, responderPropuesta, type ModeloAsistente } from '../../src/server/asistente/agente.ts';
+import { AVISO_CUPO, CLAVE_NEURONAS, conversar, enviarFotos, LIMITE_NEURONAS_DIA, LIMITE_MENSAJES_PERSONA, responderPropuesta, usoDeHoy, type ModeloAsistente } from '../../src/server/asistente/agente.ts';
 import { textoSeguro } from '../../src/server/asistente/formato.ts';
 import { herramientasDe, type Contexto } from '../../src/server/asistente/herramientas.ts';
 import { importarContenido, type EntradaImportada } from '../../src/server/contenido/importacion.ts';
@@ -115,6 +115,43 @@ describe('asistente completo', () => {
     expect(t.propuestas[0].resumen).toContain('2 textos');
     expect(await responderPropuesta(c, t.propuestas[0].id, true)).toMatchObject({ ok: true });
     expect((await repos.contenido.obtener('ajustes', 'empresa'))?.borrador.datos.telefono).toBe('+34 600 000 001');
+  });
+
+  it('las fotos del chat van cada una a su planta solo con «Sí»; con «No» se borran', async () => {
+    const u = usuario('fotos@example.com');
+    const c = ctx(u);
+    const jpg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46, 0x49, 0x46, 0, 1, 1]);
+    const antes = (id: string) => repos.contenido.obtener('catalogo', id).then((e) => ((e?.borrador.datos.fotos as unknown[]) ?? []).length);
+    const [palmito, yuca] = [await antes('chamaerops-humilis'), await antes('yucca-elephantipes')];
+
+    expect(await enviarFotos(c, [{ bytes: jpg, planta: 'chamaerops-humilis' }, { bytes: jpg, planta: 'yucca-elephantipes' }])).toMatchObject({ ok: true });
+    const conversacion = await repos.conversaciones.actual(u.email);
+    const [, respuesta] = (await repos.conversaciones.mensajes(conversacion, 10)).slice(-2);
+    const [p] = await repos.conversaciones.propuestas(respuesta.propuestas);
+    expect(p.resumen).toBe('Añadir 2 fotos: 1 a Palmito, 1 a Yuca. Saldrán en la web al publicar.');
+    expect(await antes('chamaerops-humilis')).toBe(palmito);
+    expect(await responderPropuesta(c, p.id, true)).toMatchObject({ ok: true });
+    expect(await antes('chamaerops-humilis')).toBe(palmito + 1);
+    expect(await antes('yucca-elephantipes')).toBe(yuca + 1);
+
+    await enviarFotos(c, [{ bytes: jpg, planta: 'chamaerops-humilis' }]);
+    const [, otra] = (await repos.conversaciones.mensajes(conversacion, 10)).slice(-2);
+    const [q] = await repos.conversaciones.propuestas(otra.propuestas);
+    expect(await responderPropuesta(c, q.id, false)).toMatchObject({ ok: true });
+    expect(await repos.fotos.obtener((q.argumentos.fotos as { ruta: string }[])[0].ruta)).toBeNull();
+    expect(await antes('chamaerops-humilis')).toBe(palmito + 1);
+
+    // Ni archivos que no son fotos ni fotos sin planta; el editor no puede si no tiene permiso.
+    expect(await enviarFotos(c, [{ bytes: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]), planta: 'chamaerops-humilis' }])).toMatchObject({ ok: false });
+    expect(await enviarFotos(c, [{ bytes: jpg, planta: '' }])).toMatchObject({ ok: false });
+  });
+
+  it('el uso de hoy cuenta los mensajes de la persona y el cupo de IA', async () => {
+    const ahora = new Date('2026-10-15T10:00:00Z');
+    await repos.usoAsistente.sumar('uso@example.com', '2026-10-15', 3);
+    const u = await usoDeHoy(repos, 'uso@example.com', ahora);
+    expect(u).toMatchObject({ mensajes: 3, limiteMensajes: LIMITE_MENSAJES_PERSONA, limiteNeuronas: LIMITE_NEURONAS_DIA, renueva: '02:00' });
+    expect(u.neuronas).toBeGreaterThan(0);
   });
 
   it('las herramientas dependen del rol', () => {

@@ -12,9 +12,11 @@ import {
   FileText,
   History,
   House,
+  ImagePlus,
   Images,
   Inbox,
   LogOut,
+  MessageSquarePlus,
   Plus,
   ReceiptEuro,
   ScanLine,
@@ -22,9 +24,11 @@ import {
   Sparkles,
   Sprout,
   TriangleAlert,
+  User,
   UserCog,
   Users,
   Wallet,
+  X,
 } from 'lucide-static';
 
 /**
@@ -60,6 +64,10 @@ export const ICONOS = {
   enviar: interior(Send),
   calendario: interior(CalendarDays),
   campana: interior(Bell),
+  usuario: interior(User),
+  conversacion: interior(MessageSquarePlus),
+  anadirFoto: interior(ImagePlus),
+  cerrar: interior(X),
 } as const;
 
 export type NombreIcono = keyof typeof ICONOS;

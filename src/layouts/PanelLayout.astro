@@ -33,7 +33,8 @@ const enBarra = barra.some((s) => s.href === actual);
 // El enlace "volver" sobra si lleva a una sección que ya está en el menú.
 const mostrarVolver = volver && volver !== '/panel' && !menu.some((s) => s.href === volver);
 // En la portada de cada sección, su dibujo arriba a la derecha (decorativo, desde tableta).
-const portada = menu.find((s) => s.escena && s.href === Astro.url.pathname.replace(/\/+$/, ''));
+// El chat de AgricolAI lleva su propia cabecera: sin dibujo encima.
+const portada = menu.find((s) => s.escena && s.href !== '/panel/asistente' && s.href === Astro.url.pathname.replace(/\/+$/, ''));
 const enPruebas = sesion?.estado === 'ok' ? await modoPruebas(sesion.repos) : false;
 const iniciales = (usuario?.nombre || usuario?.email || '?').trim().slice(0, 1).toUpperCase();
 ---

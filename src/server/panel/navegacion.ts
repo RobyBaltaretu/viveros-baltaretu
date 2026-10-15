@@ -29,7 +29,7 @@ export const GRUPOS: Record<Grupo, string> = {
 
 export const MENU: SeccionMenu[] = [
   { href: '/panel', texto: 'Inicio', grupo: 'dia', icono: 'inicio', descripcion: 'Lo pendiente de hoy' },
-  { href: '/panel/asistente', texto: 'Asistente', permiso: 'asistente', grupo: 'dia', icono: 'asistente', escena: 'asistente', descripcion: 'Pide lo que necesites con tus palabras' },
+  { href: '/panel/asistente', texto: 'AgricolAI', permiso: 'asistente', grupo: 'dia', icono: 'asistente', escena: 'asistente', descripcion: 'Tu asistente: pide lo que necesites con tus palabras' },
   { href: '/panel/presupuestos', texto: 'Presupuestos', permiso: 'presupuestos', grupo: 'dia', icono: 'presupuestos', escena: 'presupuestos', descripcion: 'Lo que piden los clientes desde la web' },
   { href: '/panel/plantas', texto: 'Plantas', permiso: 'editar', grupo: 'vivero', icono: 'plantas', escena: 'plantas', descripcion: 'Precios, disponibilidad y plantas nuevas' },
   { href: '/panel/fotos', texto: 'Fotos', permiso: 'editar', grupo: 'vivero', icono: 'fotos', escena: 'fotos', descripcion: 'Las fotos de cada planta' },

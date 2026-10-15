@@ -195,7 +195,7 @@ test('asistente: conversación con propuestas que se confirman con Sí o No', as
   // Móvil y escritorio usan el mismo usuario (y conversación): cada uno trabaja con su planta.
   const planta = test.info().project.name === 'movil' ? 'Palmito' : 'Yuca';
   const escribir = async (texto: string) => {
-    await page.getByLabel('Escribe al asistente').fill(texto);
+    await page.getByLabel('Escribe a AgricolAI').fill(texto);
     await page.getByRole('button', { name: 'Enviar' }).click();
   };
   const propuesta = () => page.locator('.propuesta', { hasText: `Voy a cambiar el precio de ${planta}` }).last();
@@ -214,8 +214,18 @@ test('asistente: conversación con propuestas que se confirman con Sí o No', as
   await escribir('escríbeme un poema');
   await expect(page.getByText('Solo puedo ayudarte con el panel y el vivero').last()).toBeVisible();
   await auditar(page);
-  await page.getByRole('button', { name: 'Nueva conversación' }).click();
-  await expect(page.getByLabel('Escribe al asistente')).toBeVisible();
+  // Fotos desde el chat: cada una a su planta, con «Sí».
+  await page.getByLabel('Añadir fotos para las plantas').setInputFiles('src/assets/catalogo/phoenix-canariensis/foto-prueba-1.jpg');
+  await page.getByLabel('Planta de la foto 1').selectOption({ label: planta });
+  await page.getByRole('button', { name: 'Enviar' }).click();
+  const fotos = page.locator('.propuesta', { hasText: `Añadir 1 foto: 1 a ${planta}` }).last();
+  await expect(fotos).toBeVisible();
+  await fotos.getByRole('button', { name: 'Sí, hazlo' }).click();
+  await expect(fotos).toContainText('Hecho');
+  await page.getByText('Ver uso').click();
+  await expect(page.getByText(/Tus mensajes hoy:/)).toBeVisible();
+  await page.getByRole('button', { name: 'Nueva conversación' }).first().click();
+  await expect(page.getByLabel('Escribe a AgricolAI')).toBeVisible();
 });
 
 test('fotos de un proyecto y dibujo de una planta', async ({ page }) => {
