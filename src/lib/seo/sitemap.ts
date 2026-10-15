@@ -27,5 +27,5 @@ ${urls.join('\n')}
 
 export function generarRobots(sitio: string | URL, indexable: boolean): string {
   if (!indexable) return 'User-agent: *\nDisallow: /\n';
-  return `User-agent: *\nDisallow: /keystatic\nDisallow: /api/\n\nSitemap: ${new URL('/sitemap.xml', sitio).href}\n`;
+  return `User-agent: *\nDisallow: /panel\nDisallow: /api/\n\nSitemap: ${new URL('/sitemap.xml', sitio).href}\n`;
 }

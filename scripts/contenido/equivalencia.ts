@@ -1,6 +1,6 @@
 /**
  * Comprueba que el build desde D1 genera la misma web que el build desde los
- * archivos: mismas páginas, sitemap y JSON-LD (condición para retirar Keystatic).
+ * archivos: mismas páginas, sitemap y JSON-LD (la web desde el panel es idéntica a la de los archivos).
  * Importa el contenido a una D1 local vacía, lo exporta como haría el build y compara.
  * Con WORKERS_CI_BRANCH=pruebas incluye las fichas de ejemplo.
  */

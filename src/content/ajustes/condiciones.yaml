@@ -1,4 +1,4 @@
-# Condiciones de venta. Se editan desde el panel (/keystatic → Condiciones de venta).
+# Condiciones de venta. Se editan desde el panel (/panel → Textos de la web → Condiciones de venta).
 # No se inventan: lo que falte se queda como [PLACEHOLDER] hasta que se confirme.
 pedidoMinimo:
   es: '[PLACEHOLDER: pedido mínimo al por mayor]'
