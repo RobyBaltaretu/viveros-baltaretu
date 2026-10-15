@@ -57,6 +57,12 @@ Sin `DEPLOY_HOOK_URL`, el panel guarda los cambios como listos para publicar y a
 - El binding `AI` ya está en `wrangler.jsonc`: no hay que hacer nada para activarlo. Si el despliegue de Workers Builds fallara por permisos, añade *Account → Workers AI → Read* al token de Workers Builds.
 - Para medir la precisión real del modelo (opcional): crea un token con *Workers AI → Read* y ejecuta en tu ordenador `CLOUDFLARE_ACCOUNT_ID=<id> CLOUDFLARE_API_TOKEN=<token> npm run asistente:banco -- --workers-ai`. Escribe `docs/panel-propio/precision-asistente-workers-ai.md`; súbelo en un PR o pásame el resultado.
 
+### 7.1 Asistente completo (opcional: más capacidad gratis con Groq)
+El asistente usa Workers AI (`glm-4.7-flash`, unas 90 conversaciones al día dentro del cupo gratuito, compartido con la lectura de tickets). Si se agota, sigue en modo básico hasta el día siguiente. Para tener un respaldo gratuito:
+1. Crea una cuenta en https://console.groq.com (sin tarjeta) y genera una *API key*.
+2. En Cloudflare, *Workers & Pages → viveros-baltaretu → Settings → Variables & Secrets*, añade el **secreto** `GROQ_API_KEY` con esa clave.
+3. Ten en cuenta que con Groq los mensajes del asistente (que pueden incluir datos de clientes y facturas) pasan por sus servidores. Según sus condiciones no los usan para entrenar, pero decide tú si te parece bien.
+
 ## 8. Facturas
 1. En el panel, **Facturas → Datos de facturación**: razón social, NIF, dirección fiscal y, si cobráis por transferencia, el IBAN. Sin esos datos el panel no deja emitir.
 2. Si este año ya habéis hecho facturas con otro programa, consulta con el asesor antes de emitir la primera: el panel empieza la serie `F2026` en el número 1. Si hace falta, se puede cambiar la serie en el código.

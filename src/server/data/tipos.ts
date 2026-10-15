@@ -167,8 +167,8 @@ export interface RepositorioPresupuestos {
 }
 
 export interface RepositorioUsoAsistente {
-  /** Suma un uso y devuelve el total del día. */
-  sumar(email: string, dia: string): Promise<number>;
+  /** Suma `cantidad` usos (1 por defecto) y devuelve el total del día. */
+  sumar(email: string, dia: string, cantidad?: number): Promise<number>;
   obtener(email: string, dia: string): Promise<number>;
 }
 
@@ -354,6 +354,47 @@ export interface RepositorioTickets {
   obtener(id: string): Promise<{ tipo: string; bytes: Uint8Array } | null>;
 }
 
+export type EstadoPropuesta = 'pendiente' | 'aplicada' | 'rechazada' | 'fallida';
+
+/** Cambio que el asistente propone y que solo se aplica si la persona dice «Sí». */
+export interface Propuesta {
+  id: string;
+  conversacion: string;
+  email: string;
+  herramienta: string;
+  argumentos: Record<string, unknown>;
+  /** Lo que se le enseña a la persona para confirmar. */
+  resumen: string;
+  estado: EstadoPropuesta;
+  resultado: string;
+  creada: string;
+}
+
+export interface MensajeAsistente {
+  id: number;
+  conversacion: string;
+  rol: 'usuario' | 'asistente';
+  texto: string;
+  /** Propuestas que acompañan a la respuesta (ids). */
+  propuestas: string[];
+  fecha: string;
+}
+
+export interface RepositorioConversaciones {
+  /** Conversación abierta de la persona (o una nueva si no hay). */
+  actual(email: string): Promise<string>;
+  nueva(email: string): Promise<string>;
+  mensajes(conversacion: string, limite?: number): Promise<MensajeAsistente[]>;
+  anadir(m: Omit<MensajeAsistente, 'id' | 'fecha'>): Promise<void>;
+  guardarPropuesta(p: Propuesta): Promise<void>;
+  propuesta(id: string): Promise<Propuesta | null>;
+  propuestas(ids: string[]): Promise<Propuesta[]>;
+  /** Cambia el estado solo si seguía pendiente (para no aplicar dos veces). */
+  resolver(id: string, estado: Exclude<EstadoPropuesta, 'pendiente'>, resultado: string): Promise<boolean>;
+  /** Apunta el resultado final de una propuesta ya resuelta. */
+  anotar(id: string, estado: Exclude<EstadoPropuesta, 'pendiente'>, resultado: string): Promise<void>;
+}
+
 export interface Repositorios {
   contenido: RepositorioContenido;
   fotos: RepositorioFotos;
@@ -367,4 +408,5 @@ export interface Repositorios {
   facturas: RepositorioFacturas;
   gastos: RepositorioGastos;
   tickets: RepositorioTickets;
+  conversaciones: RepositorioConversaciones;
 }

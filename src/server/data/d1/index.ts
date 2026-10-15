@@ -12,6 +12,7 @@ import type {
 import type { BaseD1 } from './base.ts';
 import { crearRepositoriosFacturacion } from './facturacion.ts';
 import { crearRepositoriosGastos } from './gastos.ts';
+import { crearRepositorioConversaciones } from './conversaciones.ts';
 
 /** Implementación de los repositorios sobre D1. Es el único sitio con SQL. */
 const ahora = () => new Date().toISOString();
@@ -303,13 +304,13 @@ export function crearRepositoriosD1(db: BaseD1): Repositorios {
       },
     },
     usoAsistente: {
-      async sumar(email, dia) {
+      async sumar(email, dia, cantidad = 1) {
         const f = await db
           .prepare(
-            `INSERT INTO asistente_uso (email, dia, usos) VALUES (?, ?, 1)
-             ON CONFLICT (email, dia) DO UPDATE SET usos = usos + 1 RETURNING usos`,
+            `INSERT INTO asistente_uso (email, dia, usos) VALUES (?, ?, ?)
+             ON CONFLICT (email, dia) DO UPDATE SET usos = usos + excluded.usos RETURNING usos`,
           )
-          .bind(email, dia)
+          .bind(email, dia, cantidad)
           .first<{ usos: number }>();
         return f?.usos ?? 1;
       },
@@ -319,5 +320,6 @@ export function crearRepositoriosD1(db: BaseD1): Repositorios {
     },
     ...crearRepositoriosFacturacion(db),
     ...crearRepositoriosGastos(db),
+    conversaciones: crearRepositorioConversaciones(db),
   };
 }

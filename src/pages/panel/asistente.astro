@@ -1,71 +1,282 @@
 ---
 import { env } from 'cloudflare:workers';
 import PaginaPanel from '../../components/panel/PaginaPanel.astro';
-import PasoAsistente from '../../components/panel/PasoAsistente.astro';
-import { aplicarAccion, PERMISO, prepararAccion, type Preparada } from '../../server/asistente/acciones.ts';
-import { accionDesdeFormulario, OPCIONES_GUIADO } from '../../server/asistente/formulario.ts';
-import { atenderMensaje } from '../../server/asistente/conversacion.ts';
+import Icono from '../../components/panel/ui/Icono.astro';
+import Ilustracion from '../../components/panel/ui/Ilustracion.astro';
+import type { Propuesta } from '../../server/data/tipos.ts';
+import { conversar, modelosDe, responderPropuesta } from '../../server/asistente/agente.ts';
+import { SUGERENCIAS, textoSeguro } from '../../server/asistente/formato.ts';
 import { MAXIMO_TEXTO, type BindingAI } from '../../server/asistente/interprete.ts';
+import { hoy } from '../../server/gastos/gastos.ts';
 import { campo, sesionCon } from '../../server/panel/pagina.ts';
-import { puede } from '../../server/panel/permisos.ts';
-import type { DatosPlanta } from '../../server/panel/plantas.ts';
+import type { EntornoPublicar } from '../../server/panel/publicar.ts';
 
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'asistente');
-let paso: Preparada | null = null;
-let escrito = '';
-let aviso = '';
-if (s && Astro.request.method === 'POST') {
+const entorno = env as EntornoPublicar & { AI?: BindingAI; GROQ_API_KEY?: string };
+const ctx = s ? { repos: s.repos, usuario: s.usuario, hoy: hoy(), env: entorno } : null;
+if (s && ctx && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const que = campo(form, 'paso');
-  const accion = accionDesdeFormulario(form);
-  if (que === 'texto') {
-    escrito = campo(form, 'texto').slice(0, MAXIMO_TEXTO);
-    const r = await atenderMensaje(s.repos, s.usuario, escrito, { ai: (env as { AI?: BindingAI }).AI });
-    paso = r.paso;
-    aviso = r.aviso ?? '';
-  } else if (!accion) paso = { estado: 'no-puedo', texto: 'Eso no lo sé hacer.' };
-  else if (que === 'cancelar') paso = { estado: 'respuesta', texto: 'Vale, no he cambiado nada.' };
-  else if (que === 'confirmar') {
-    const r = await aplicarAccion(s.repos, s.usuario.rol, s.usuario.email, accion);
-    paso = { estado: r.ok ? 'respuesta' : 'no-puedo', texto: r.texto };
-  } else paso = await prepararAccion(s.repos, s.usuario.rol, accion);
+  const accion = campo(form, 'accion');
+  if (accion === 'nueva') await s.repos.conversaciones.nueva(s.usuario.email);
+  else if (accion === 'si' || accion === 'no') await responderPropuesta(ctx, campo(form, 'propuesta'), accion === 'si');
+  else if (campo(form, 'texto')) await conversar(ctx, campo(form, 'texto'), await modelosDe(entorno));
+  // Siempre se vuelve a la conversación (recargar no repite el mensaje).
+  return Astro.redirect('/panel/asistente#final', 303);
 }
-const plantas = s
-  ? (await s.repos.contenido.listar('catalogo'))
-      .map((e) => ({ id: e.id, nombre: String((e.borrador.datos as DatosPlanta).nombre?.es ?? e.id) }))
-      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-  : [];
-const opciones = s ? OPCIONES_GUIADO.filter((o) => puede(s.usuario.rol, PERMISO[o.tipo])) : [];
-const terminado = paso && (paso.estado === 'respuesta' || paso.estado === 'no-puedo');
+const conversacion = s ? await s.repos.conversaciones.actual(s.usuario.email) : '';
+const mensajes = s ? await s.repos.conversaciones.mensajes(conversacion, 60) : [];
+const propuestas = new Map<string, Propuesta>(s ? (await s.repos.conversaciones.propuestas(mensajes.flatMap((m) => m.propuestas))).map((p) => [p.id, p]) : []);
+const ESTADO: Record<Propuesta['estado'], string> = { pendiente: '', aplicada: 'Hecho', rechazada: 'No aplicado', fallida: 'No se pudo' };
+const primerNombre = (s?.usuario.nombre || '').split(' ')[0];
 ---
 
 <PaginaPanel titulo="Asistente" permiso="asistente">
-  <h1 class="titular-grande">Asistente</h1>
-  <p class="mt-4">Te ayudo con lo más habitual, paso a paso. Nada se cambia sin que digas «Sí».</p>
-  <form method="post" class="mt-6 grid gap-3">
-    <input type="hidden" name="paso" value="texto" />
-    <label for="texto" class="font-semibold">Escribe lo que quieres hacer</label>
-    <p id="texto-ayuda" class="text-base text-gris">Por ejemplo: «sube la Washingtonia a 20», «no quedan yucas» o «¿hay presupuestos nuevos?».</p>
-    <input id="texto" name="texto" value={escrito} maxlength={MAXIMO_TEXTO} autocomplete="off" class="campo-panel" aria-describedby="texto-ayuda" />
-    <p><button class="boton-panel">Enviar</button></p>
-  </form>
-  {aviso && <p class="mt-6 rounded-tarjeta bg-verdor p-3">{aviso}</p>}
-  {paso && <div class="mt-6"><PasoAsistente paso={paso} plantas={plantas} /></div>}
-  {
-    (!paso || terminado) && (
-      <form method="post" class="mt-6 grid gap-3">
-        <h2 class="titular-medio">{terminado ? '¿Algo más?' : '¿Qué quieres hacer?'}</h2>
-        <input type="hidden" name="paso" value="preparar" />
-        <div class="grid gap-3 sm:grid-cols-2">
-          {opciones.map((o) => (
-            <button class="boton-panel boton-panel-secundario" name="tipo" value={o.tipo}>
-              {o.texto}
-            </button>
-          ))}
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="titular-grande">Asistente</h1>
+    <form method="post">
+      <input type="hidden" name="accion" value="nueva" />
+      <button class="boton-panel boton-panel-secundario">
+        <Icono nombre="nuevo" clase="size-5" />
+        Nueva conversación
+      </button>
+    </form>
+  </div>
+
+  <section id="conversacion" class="conversacion mt-6 grid gap-4" aria-label="Conversación con el asistente" aria-live="polite">
+    {
+      mensajes.length === 0 && (
+        <div class="caja-panel grid justify-items-center gap-3 p-6 text-center">
+          <Ilustracion escena="asistente" clase="w-36" />
+          <h2 class="titular-medio">{primerNombre ? `¿En qué te ayudo, ${primerNombre}?` : '¿En qué te ayudo?'}</h2>
+          <p class="max-w-md text-gris">Pregúntame por ventas, facturas, gastos o plantas, o pídeme cambios. Nada se cambia hasta que pulses «Sí».</p>
         </div>
-      </form>
-    )
-  }
+      )
+    }
+    {
+      mensajes.map((m) => (
+        <article class:list={['burbuja', m.rol === 'usuario' ? 'burbuja-usuario' : 'burbuja-asistente']} aria-label={m.rol === 'usuario' ? 'Tú' : 'Asistente'}>
+          {m.rol === 'usuario' ? <p>{m.texto}</p> : <div class="texto-asistente" set:html={textoSeguro(m.texto)} />}
+          {m.propuestas
+            .map((id) => propuestas.get(id))
+            .filter((p): p is Propuesta => !!p)
+            .map((p) => (
+              <div class:list={['propuesta mt-3 rounded-2xl p-4', p.estado === 'pendiente' ? 'bg-crema' : 'bg-verdor/60']}>
+                <p class="flex items-start gap-2 font-semibold">
+                  <Icono nombre={p.estado === 'aplicada' ? 'hecho' : p.estado === 'pendiente' ? 'asistente' : 'aviso'} clase="mt-0.5 size-5 text-oliva" />
+                  <span>{p.resumen}</span>
+                </p>
+                {p.estado === 'pendiente' ? (
+                  <form method="post" class="mt-3 flex flex-wrap gap-2">
+                    <input type="hidden" name="propuesta" value={p.id} />
+                    <button name="accion" value="si" class="boton-panel">
+                      Sí, hazlo
+                    </button>
+                    <button name="accion" value="no" class="boton-panel boton-panel-secundario">
+                      No
+                    </button>
+                  </form>
+                ) : (
+                  <p class="mt-2 text-base text-gris">
+                    {ESTADO[p.estado]}
+                    {p.resultado && p.estado !== 'rechazada' ? `: ${p.resultado}` : ''}
+                  </p>
+                )}
+              </div>
+            ))}
+        </article>
+      ))
+    }
+    <div id="final"></div>
+  </section>
+
+  <form method="post" class="redactor caja-panel mt-6 grid gap-3 p-3 sm:p-4" data-redactor>
+    <label for="texto" class="sr-only">Escribe al asistente</label>
+    <div class="flex items-end gap-2">
+      <textarea id="texto" name="texto" rows="1" maxlength={MAXIMO_TEXTO} required placeholder="Escribe lo que necesitas…" class="campo-panel max-h-40 min-h-12 flex-1 resize-none" autocomplete="off"></textarea>
+      <button class="boton-panel !px-4" aria-label="Enviar">
+        <Icono nombre="enviar" clase="size-5" />
+        <span class="hidden sm:inline">Enviar</span>
+      </button>
+    </div>
+    {
+      mensajes.length < 2 && (
+        <ul class="flex flex-wrap gap-2" role="list" aria-label="Sugerencias">
+          {SUGERENCIAS.map((t) => (
+            <li>
+              <button type="button" class="sugerencia" data-sugerencia={t}>
+                {t}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </form>
 </PaginaPanel>
+
+<style>
+  .burbuja {
+    max-width: min(40rem, 92%);
+    border-radius: 1.25rem;
+    padding: 0.875rem 1.125rem;
+    line-height: 1.5;
+  }
+  .burbuja-usuario {
+    justify-self: end;
+    border-bottom-right-radius: 0.375rem;
+    background: var(--color-oliva);
+    color: var(--color-crema);
+  }
+  .burbuja-asistente {
+    justify-self: start;
+    border-bottom-left-radius: 0.375rem;
+    background: var(--color-papel);
+    box-shadow: var(--sombra-suave);
+  }
+  .texto-asistente :global(p + p),
+  .texto-asistente :global(p + ul),
+  .texto-asistente :global(ul + p) {
+    margin-top: 0.5rem;
+  }
+  .texto-asistente :global(ul) {
+    list-style: disc;
+    padding-left: 1.25rem;
+  }
+  .redactor {
+    position: sticky;
+    bottom: 6.5rem;
+    z-index: 10;
+  }
+  @media (min-width: 64rem) {
+    .redactor {
+      bottom: 1rem;
+    }
+  }
+  .sugerencia {
+    min-height: 3rem;
+    border-radius: 999px;
+    background: var(--color-verdor);
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-oliva);
+    transition: transform 160ms var(--ease-salida);
+  }
+  .sugerencia:active {
+    transform: scale(0.97);
+  }
+  .pensando span {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-right: 0.25rem;
+    border-radius: 999px;
+    background: var(--color-gris);
+    opacity: 0.4;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .pensando span {
+      animation: latido 1s ease-in-out infinite;
+    }
+    .pensando span:nth-child(2) {
+      animation-delay: 150ms;
+    }
+    .pensando span:nth-child(3) {
+      animation-delay: 300ms;
+    }
+  }
+  @keyframes latido {
+    50% {
+      opacity: 1;
+      transform: translateY(-2px);
+    }
+  }
+</style>
+
+<script>
+  // Con JavaScript: el mensaje aparece al momento, «pensando…» mientras responde,
+  // y solo se cambia la conversación (sin recargar la página). Sin JavaScript,
+  // los formularios funcionan igual.
+  // La conversación se sustituye en cada respuesta: se busca siempre de nuevo.
+  const conversacion = () => document.querySelector<HTMLElement>('#conversacion');
+  const redactor = document.querySelector<HTMLFormElement>('[data-redactor]');
+  const texto = redactor?.querySelector<HTMLTextAreaElement>('textarea');
+
+  const alFinal = () => document.querySelector('#final')?.scrollIntoView({ block: 'end' });
+  const ajustar = () => {
+    if (!texto) return;
+    texto.style.height = 'auto';
+    texto.style.height = `${Math.min(texto.scrollHeight, 160)}px`;
+  };
+
+  async function enviar(form: HTMLFormElement, datos: FormData, burbuja?: string) {
+    const actual = conversacion();
+    if (!actual) return form.submit();
+    form.querySelectorAll('button').forEach((b) => b.setAttribute('disabled', ''));
+    if (burbuja) {
+      const yo = document.createElement('article');
+      yo.className = 'burbuja burbuja-usuario';
+      yo.textContent = burbuja;
+      const pensando = document.createElement('p');
+      pensando.className = 'burbuja burbuja-asistente pensando';
+      pensando.setAttribute('role', 'status');
+      pensando.innerHTML = '<span></span><span></span><span></span><span class="sr-only">Pensando…</span>';
+      document.querySelector('#final')?.before(yo, pensando);
+      alFinal();
+    }
+    try {
+      const r = await fetch('/panel/asistente', { method: 'POST', body: datos });
+      const html = new DOMParser().parseFromString(await r.text(), 'text/html');
+      const nueva = html.querySelector('#conversacion');
+      if (!nueva) throw new Error('sin conversación');
+      actual.replaceWith(nueva);
+      document.querySelector('[aria-label="Sugerencias"]')?.remove();
+      history.replaceState(null, '', '/panel/asistente');
+      alFinal();
+    } catch {
+      location.reload();
+    } finally {
+      form.querySelectorAll('button').forEach((b) => b.removeAttribute('disabled'));
+      if (texto && burbuja) {
+        texto.value = '';
+        ajustar();
+        texto.focus();
+      }
+    }
+  }
+
+  redactor?.addEventListener('submit', (e) => {
+    const valor = texto?.value.trim();
+    if (!valor) return;
+    e.preventDefault();
+    enviar(redactor, new FormData(redactor), valor);
+  });
+  texto?.addEventListener('input', ajustar);
+  texto?.addEventListener('keydown', (e) => {
+    // Intro envía; Mayúsculas + Intro hace un salto de línea.
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      redactor?.requestSubmit();
+    }
+  });
+  document.addEventListener('click', (e) => {
+    const sugerencia = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-sugerencia]');
+    if (sugerencia && texto) {
+      texto.value = sugerencia.dataset.sugerencia ?? '';
+      ajustar();
+      texto.focus();
+    }
+  });
+  document.addEventListener('submit', (e) => {
+    const form = e.target as HTMLFormElement;
+    const boton = (e as SubmitEvent).submitter as HTMLButtonElement | null;
+    if (!form.closest('#conversacion') || !boton) return;
+    e.preventDefault();
+    const datos = new FormData(form);
+    datos.set('accion', boton.value);
+    enviar(form, datos);
+  });
+  alFinal();
+</script>
