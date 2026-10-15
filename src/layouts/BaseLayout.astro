@@ -97,6 +97,7 @@ const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
         </p>
       )
     }
+    <div class="progreso-lectura" aria-hidden="true"></div>
     <Cabecera idioma={idioma} alternativas={alternativas} />
     <main id="contenido" class="flex-1">
       <slot />

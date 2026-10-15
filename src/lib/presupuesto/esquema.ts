@@ -44,7 +44,8 @@ export const esquemaPresupuesto = z.object({
   idioma: z.enum(['es', 'en']).default('es'),
   // Consentimiento RGPD obligatorio. Llega como "on" desde un formulario HTML.
   consentimiento: z.union([z.literal(true), z.literal('on'), z.literal('true')]).transform(() => true as const),
-  turnstile: z.string().min(1).max(4096),
+  // Vacío si la web aún no tiene Turnstile configurado (entonces el servidor no lo exige).
+  turnstile: z.string().max(4096).default(''),
   [CAMPO_TRAMPA]: z.string().max(0).optional(),
 });
 

@@ -170,7 +170,9 @@ export function crearRepositoriosD1(db: BaseD1): Repositorios {
         condiciones.push('entrada_id = ?');
         valores.push(opciones.id);
       }
-      const donde = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
+      // Un cambio deshecho (y el propio «deshacer») ya no se enseña: solo se deshace una vez.
+      condiciones.push("deshecho = 0 AND origen != 'deshacer'");
+      const donde = `WHERE ${condiciones.join(' AND ')}`;
       const filas = await db
         .prepare(`SELECT * FROM cambios ${donde} ORDER BY id DESC LIMIT ?`)
         .bind(...valores, opciones.limite ?? 50)
@@ -178,8 +180,11 @@ export function crearRepositoriosD1(db: BaseD1): Repositorios {
       return filas.results.map(aCambio);
     },
     async deshacer(cambioId, autor) {
-      const f = await db.prepare('SELECT * FROM cambios WHERE id = ?').bind(cambioId).first<FilaCambio>();
-      if (!f) return null;
+      const f = await db.prepare('SELECT * FROM cambios WHERE id = ?').bind(cambioId).first<FilaCambio & { deshecho: number }>();
+      if (!f || f.deshecho || f.origen === 'deshacer') return null;
+      // Se marca antes de aplicar: dos pulsaciones seguidas no lo deshacen dos veces.
+      const marcado = await db.prepare('UPDATE cambios SET deshecho = 1 WHERE id = ? AND deshecho = 0').bind(cambioId).run();
+      if (!marcado.meta?.changes) return null;
       const cambio = aCambio(f);
       const deshacer = { ...autor, origen: 'deshacer' as const };
       if (cambio.antes === null) await contenido.archivar(cambio.coleccion, cambio.entradaId, true, deshacer);

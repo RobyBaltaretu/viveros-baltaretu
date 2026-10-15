@@ -25,10 +25,10 @@ const valida = {
 function deps(cambios: Partial<DependenciasPresupuesto> = {}) {
   return {
     especies,
-    verificarTurnstile: vi.fn<DependenciasPresupuesto['verificarTurnstile']>(
+    verificarTurnstile: vi.fn<NonNullable<DependenciasPresupuesto['verificarTurnstile']>>(
       cambios.verificarTurnstile ?? (async () => true),
     ),
-    enviarEmail: vi.fn<DependenciasPresupuesto['enviarEmail']>(cambios.enviarEmail ?? (async () => {})),
+    enviarEmail: vi.fn<NonNullable<DependenciasPresupuesto['enviarEmail']>>(cambios.enviarEmail ?? (async () => {})),
   };
 }
 
@@ -40,6 +40,14 @@ describe('procesarPresupuesto', () => {
     const mensaje = d.enviarEmail.mock.calls[0]![0];
     expect(mensaje.responderA).toBe('ana@ejemplo.com');
     expect(mensaje.texto).toContain('4 × Palmera canaria (Phoenix canariensis)');
+  });
+
+  it('sin correo ni Turnstile configurados, la petición se guarda en el panel y vale', async () => {
+    const guardar = vi.fn(async () => {});
+    const { turnstile: _t, ...sinToken } = valida as Record<string, unknown>;
+    expect(await procesarPresupuesto(sinToken, { especies, guardar })).toEqual({ ok: true });
+    expect(guardar).toHaveBeenCalledOnce();
+    expect(await procesarPresupuesto(sinToken, { especies })).toMatchObject({ ok: false, codigo: 'configuracion' });
   });
 
   it('acepta un formulario HTML sin JavaScript (campos de texto)', async () => {
