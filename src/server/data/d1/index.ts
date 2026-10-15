@@ -299,6 +299,10 @@ export function crearRepositoriosD1(db: BaseD1): Repositorios {
         const r = await db.prepare('UPDATE presupuestos SET estado = ? WHERE id = ?').bind(estado, id).run();
         return (r.meta?.changes ?? 0) > 0;
       },
+      async borrar(id) {
+        const r = await db.prepare('DELETE FROM presupuestos WHERE id = ?').bind(id).run();
+        return (r.meta?.changes ?? 0) > 0;
+      },
       async contar(estado) {
         return (await db.prepare('SELECT COUNT(*) AS n FROM presupuestos WHERE estado = ?').bind(estado).first<{ n: number }>())?.n ?? 0;
       },

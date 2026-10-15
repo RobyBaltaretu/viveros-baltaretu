@@ -41,6 +41,7 @@ export const MENU: SeccionMenu[] = [
   { href: '/panel/gastos', texto: 'Gastos', permiso: 'gastos', grupo: 'cuentas', icono: 'gastos', escena: 'gastos', descripcion: 'Tickets de compra y lo que se ha gastado' },
   { href: '/panel/informes', texto: 'Informes', permiso: 'informes', grupo: 'cuentas', icono: 'informes', escena: 'informes', descripcion: 'Ventas, gastos, resultado y cobros' },
   { href: '/panel/personas', texto: 'Personas', permiso: 'personas', grupo: 'ajustes', icono: 'personas', escena: 'personas', descripcion: 'Quién puede entrar al panel' },
+  { href: '/panel/pruebas', texto: 'Datos de prueba', permiso: 'personas', grupo: 'ajustes', icono: 'nuevo', escena: 'cambios', descripcion: 'Cargar o quitar ejemplos para probar el panel' },
   { href: '/panel/ayuda', texto: 'Ayuda', grupo: 'ajustes', icono: 'ayuda', escena: 'ayuda', descripcion: 'Cómo se hace cada cosa' },
 ];
 

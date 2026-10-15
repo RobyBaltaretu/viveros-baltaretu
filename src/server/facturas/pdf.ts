@@ -205,8 +205,9 @@ export async function pdfFactura(f: Factura): Promise<Uint8Array> {
     pagina = p;
     if (emisor?.pie) bloque([emisor.pie], MARGEN, MARGEN - 10, ANCHO - 2 * MARGEN - 80, 7.5);
     texto(`Página ${i + 1} de ${paginas.length}`, ANCHO - MARGEN, MARGEN - 10, { tamano: 7.5, color: GRIS, derecha: true });
-    if (f.estado === 'borrador') {
-      const marca = 'BORRADOR · SIN VALIDEZ';
+    const deprueba = f.prueba || f.serie?.startsWith('PRUEBA-');
+    if (f.estado === 'borrador' || deprueba) {
+      const marca = deprueba ? 'PRUEBA · SIN VALIDEZ' : 'BORRADOR · SIN VALIDEZ';
       texto(marca, (ANCHO - negrita.widthOfTextAtSize(marca, 36)) / 2, ALTO / 2, { fuente: negrita, tamano: 36, color: LINEA });
     }
   });

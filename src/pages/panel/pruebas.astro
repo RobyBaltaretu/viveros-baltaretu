@@ -1,0 +1,57 @@
+---
+import Mensajes from '../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../components/panel/PaginaPanel.astro';
+import { hoy } from '../../server/gastos/gastos.ts';
+import { modoPruebas } from '../../server/panel/facturacion.ts';
+import { campo, sesionCon } from '../../server/panel/pagina.ts';
+import { cargarDatosPrueba, quitarDatosPrueba, type ResumenPruebas } from '../../server/panel/pruebas.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'personas');
+if (s && Astro.request.method === 'POST') {
+  const accion = campo(await Astro.request.formData(), 'accion');
+  const r = accion === 'cargar' ? await cargarDatosPrueba(s.repos, s.usuario.email, hoy()) : accion === 'quitar' ? await quitarDatosPrueba(s.repos, s.usuario.email) : null;
+  if (r) return Astro.redirect(`/panel/pruebas?hecho=${accion}&r=${encodeURIComponent(JSON.stringify(r))}`, 303);
+}
+const activo = s ? await modoPruebas(s.repos) : false;
+const hecho = Astro.url.searchParams.get('hecho');
+const leerResumen = (): ResumenPruebas | null => {
+  try {
+    return JSON.parse(Astro.url.searchParams.get('r') ?? 'null') as ResumenPruebas | null;
+  } catch {
+    return null;
+  }
+};
+const resumen = leerResumen();
+const cuenta = (r: ResumenPruebas) => `${r.clientes} clientes, ${r.presupuestos} presupuestos, ${r.facturas} facturas, ${r.gastos} gastos, ${r.proyectos} proyectos y ${r.guias} guías`;
+---
+
+<PaginaPanel titulo="Datos de prueba" permiso="personas">
+  <h1 class="titular-grande">Datos de prueba</h1>
+  <Mensajes hecho={hecho && resumen ? (hecho === 'cargar' ? `Cargados: ${cuenta(resumen)}.` : `Quitados: ${cuenta(resumen)}.`) : undefined} />
+  <div class="caja-panel mt-6 grid gap-3 p-5">
+    <p>Para probar el panel con algo dentro: unos 5 ejemplos inventados de clientes, presupuestos, facturas, gastos, proyectos y guías. Las plantas de ejemplo ya están.</p>
+    <ul class="grid list-disc gap-1 pl-6 text-base text-gris">
+      <li>Nada de esto sale en la web pública: los proyectos y guías son fichas de ejemplo sin revisar.</li>
+      <li>Las facturas de prueba van en una serie aparte (PRUEBA-F…), con la marca «PRUEBA · SIN VALIDEZ» en el PDF y fuera del libro para la gestoría. No gastan números de la serie real.</li>
+      <li>Mientras esté activo, las facturas que emitas también serán de prueba.</li>
+      <li>Al quitarlos se borra todo lo de prueba de una vez. Lo que hayas creado tú a mano (clientes, gastos…) se queda: bórralo tú si no lo quieres.</li>
+    </ul>
+    <p class="font-semibold">Ahora: {activo ? 'modo de pruebas activo.' : 'sin datos de prueba.'}</p>
+    <div class="flex flex-wrap gap-3">
+      <form method="post">
+        <input type="hidden" name="accion" value="cargar" />
+        <button class:list={['boton-panel', activo && 'boton-panel-secundario']}>{activo ? 'Volver a cargar los datos de prueba' : 'Cargar datos de prueba'}</button>
+      </form>
+      {
+        activo && (
+          <form method="post">
+            <input type="hidden" name="accion" value="quitar" />
+            <button class="boton-panel">Quitar los datos de prueba</button>
+          </form>
+        )
+      }
+    </div>
+  </div>
+</PaginaPanel>

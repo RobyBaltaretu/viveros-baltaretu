@@ -11,6 +11,7 @@ import Icono from '../components/panel/ui/Icono.astro';
 import Ilustracion, { type Escena } from '../components/panel/ui/Ilustracion.astro';
 import Logo from '../components/panel/ui/Logo.astro';
 import { tp } from '../i18n/panel';
+import { modoPruebas } from '../server/panel/facturacion.ts';
 import { barraDe, gruposDe, MAS, menuDe, seccionActual } from '../server/panel/navegacion.ts';
 
 interface Props {
@@ -33,6 +34,7 @@ const enBarra = barra.some((s) => s.href === actual);
 const mostrarVolver = volver && volver !== '/panel' && !menu.some((s) => s.href === volver);
 // En la portada de cada sección, su dibujo arriba a la derecha (decorativo, desde tableta).
 const portada = menu.find((s) => s.escena && s.href === Astro.url.pathname.replace(/\/+$/, ''));
+const enPruebas = sesion?.estado === 'ok' ? await modoPruebas(sesion.repos) : false;
 const iniciales = (usuario?.nombre || usuario?.email || '?').trim().slice(0, 1).toUpperCase();
 ---
 
@@ -141,6 +143,19 @@ const iniciales = (usuario?.nombre || usuario?.email || '?').trim().slice(0, 1).
               </p>
             )
           }
+          {
+            enPruebas && (
+              <p class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-arena-prueba px-4 py-2 text-base font-semibold">
+                <Icono nombre="aviso" clase="size-5 text-terracota" />
+                Modo de pruebas: hay datos inventados y las facturas que emitas son de prueba.
+                {Astro.url.pathname !== '/panel/pruebas' && (
+                  <a href="/panel/pruebas" class="enlace-panel">
+                    Quitar los datos de prueba
+                  </a>
+                )}
+              </p>
+            )
+          }
           {portada && <Ilustracion escena={portada.escena as Escena} clase="pointer-events-none absolute top-3 right-4 hidden w-20 sm:block lg:top-7 lg:right-10 lg:w-24" />}
           <slot />
         </main>
@@ -188,6 +203,9 @@ const iniciales = (usuario?.nombre || usuario?.email || '?').trim().slice(0, 1).
   .panel :focus-visible {
     outline: 3px solid var(--color-terracota);
     outline-offset: 2px;
+  }
+  .panel .bg-arena-prueba {
+    background: #f3e3c3;
   }
   .panel .tabular {
     font-variant-numeric: tabular-nums;

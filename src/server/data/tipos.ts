@@ -164,6 +164,7 @@ export interface RepositorioPresupuestos {
   listar(opciones?: { estado?: EstadoPresupuesto; limite?: number }): Promise<Presupuesto[]>;
   cambiarEstado(id: string, estado: EstadoPresupuesto): Promise<boolean>;
   contar(estado: EstadoPresupuesto): Promise<number>;
+  borrar(id: string): Promise<boolean>;
 }
 
 export interface RepositorioUsoAsistente {
@@ -200,6 +201,7 @@ export interface RepositorioClientes {
   listar(opciones?: { incluirArchivados?: boolean }): Promise<Cliente[]>;
   obtener(id: string): Promise<Cliente | null>;
   guardar(cliente: Cliente, email: string): Promise<void>;
+  borrar(id: string): Promise<boolean>;
 }
 
 export const ESTADOS_FACTURA = ['borrador', 'emitida', 'cobrada'] as const;
@@ -274,6 +276,8 @@ export interface Factura {
   rectificaCodigo: string | null;
   motivoRectificacion: string;
   presupuestoId: string | null;
+  /** Factura de prueba (modo de pruebas): serie aparte, se borra al quitar los datos de prueba. */
+  prueba?: boolean;
   cobradaEl: string | null;
   /** Huella encadenada con la factura anterior (registro inalterable). */
   huella: string | null;
@@ -304,6 +308,8 @@ export interface RepositorioFacturas {
   /** Emite un borrador con el número siguiente de la serie. Devuelve la factura o `null` si ya no era borrador. */
   emitir(id: string, datos: { serie: string; fecha: string; emisor: DatosEmisor; cliente: Cliente; huella: (numero: number, codigo: string) => Promise<string>; huellaAnterior: string | null; codigo: (numero: number) => string }): Promise<Factura | null>;
   marcarCobrada(id: string, fecha: string | null): Promise<boolean>;
+  /** Borra las facturas de prueba (serie PRUEBA o marcadas como prueba). Devuelve cuántas. */
+  borrarPruebas(): Promise<number>;
 }
 
 export const ESTADOS_GASTO = ['revisar', 'confirmado'] as const;
