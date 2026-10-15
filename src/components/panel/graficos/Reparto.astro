@@ -1,0 +1,45 @@
+---
+/**
+ * Reparto de una cantidad (gastos por tipo, ventas por cliente o por planta):
+ * barras horizontales de una sola serie, ordenadas de mayor a menor, con el
+ * nombre y el valor escritos al lado (sirven también como tabla).
+ */
+import { dinero } from '../../../server/facturas/importes.ts';
+import type { Parte } from '../../../server/informes/informes.ts';
+
+interface Props {
+  titulo: string;
+  partes: Parte[];
+  vacio: string;
+  color?: string;
+}
+const { titulo, partes, vacio, color = 'var(--color-serie-1)' } = Astro.props;
+const max = Math.max(...partes.map((p) => p.valor), 0);
+const total = partes.reduce((t, p) => t + p.valor, 0);
+---
+
+<section class="grid gap-3" aria-label={titulo}>
+  <h3 class="titular-medio">{titulo}</h3>
+  {partes.length === 0 && <p class="text-gris">{vacio}</p>}
+  <ol class="grid gap-3" role="list">
+    {
+      partes.map((p) => (
+        <li class="grid gap-1">
+          <div class="flex flex-wrap justify-between gap-x-3">
+            <span>{p.nombre}</span>
+            <span class="font-semibold">
+              {dinero(p.valor)}
+              <span class="font-normal text-gris">
+                {' '}
+                · {total ? Math.round((p.valor / total) * 100) : 0} %{p.detalle && ` · ${p.detalle}`}
+              </span>
+            </span>
+          </div>
+          <span class="block h-2.5 rounded-r bg-verdor" aria-hidden="true">
+            <span class="block h-full rounded-r" style={`width:${max ? Math.max(1, (p.valor / max) * 100) : 0}%;background:${color}`} />
+          </span>
+        </li>
+      ))
+    }
+  </ol>
+</section>

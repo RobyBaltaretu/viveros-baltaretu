@@ -102,6 +102,17 @@ export const TEMAS: Tema[] = [
     enlace: { href: '/panel/gastos', texto: 'Ir a Gastos' },
   },
   {
+    id: 'informes',
+    titulo: 'Ver cómo van las ventas y los gastos',
+    pasos: [
+      'Pulsa «Informes». Arriba eliges el mes, el trimestre o el año, y con «Anterior» y «Siguiente» te mueves.',
+      'Verás los ingresos y los gastos sin IVA, el resultado, lo que falta por cobrar y la comparación con el periodo anterior.',
+      '«Lo más importante» resume en frases lo que ha cambiado. Debajo, el gráfico de 12 meses (con sus datos en una tabla), en qué se gasta, los mejores clientes y lo más vendido.',
+      'Solo cuentan las facturas emitidas y los tickets revisados.',
+    ],
+    enlace: { href: '/panel/informes', texto: 'Ir a Informes' },
+  },
+  {
     id: 'deshacer',
     titulo: 'Me he equivocado: deshacer',
     pasos: ['Pulsa «Cambios recientes».', 'Busca el cambio y pulsa «Deshacer»: queda como estaba antes.', 'Si ya estaba publicado, vuelve a publicar para que la web lo recoja.'],
