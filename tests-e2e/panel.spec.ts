@@ -192,28 +192,30 @@ test('bandeja de presupuestos: ver, marcar como respondido y descargar', async (
 
 test('asistente: conversación con propuestas que se confirman con Sí o No', async ({ page }) => {
   test.setTimeout(60_000);
+  // Móvil y escritorio usan el mismo usuario (y conversación): cada uno trabaja con su planta.
   const planta = test.info().project.name === 'movil' ? 'Palmito' : 'Yuca';
   const escribir = async (texto: string) => {
     await page.getByLabel('Escribe al asistente').fill(texto);
     await page.getByRole('button', { name: 'Enviar' }).click();
   };
+  const propuesta = () => page.locator('.propuesta', { hasText: `Voy a cambiar el precio de ${planta}` }).last();
   await page.goto('/panel/asistente');
-  await expect(page.getByRole('heading', { name: /En qué te ayudo/ })).toBeVisible();
   await auditar(page);
   await controlesGrandes(page);
   // En las pruebas no hay modelo de IA: responde el modo básico de respaldo.
   await escribir(`sube ${planta.toLowerCase()} a 31`);
-  await expect(page.getByText(`Voy a cambiar el precio de ${planta}`).last()).toBeVisible();
-  await page.getByRole('button', { name: 'No', exact: true }).last().click();
-  await expect(page.getByText('Vale, no he cambiado nada.').last()).toBeVisible();
-  await escribir(`sube ${planta.toLowerCase()} a 31`);
-  await page.getByRole('button', { name: 'Sí, hazlo' }).last().click();
-  await expect(page.getByText(/^Hecho\./).last()).toBeVisible();
+  await expect(propuesta()).toBeVisible();
+  await propuesta().getByRole('button', { name: 'No', exact: true }).click();
+  await expect(propuesta()).toContainText('No aplicado');
+  await escribir(`sube ${planta.toLowerCase()} a 32`);
+  await expect(propuesta().getByRole('button', { name: 'Sí, hazlo' })).toBeVisible();
+  await propuesta().getByRole('button', { name: 'Sí, hazlo' }).click();
+  await expect(propuesta()).toContainText('Hecho');
   await escribir('escríbeme un poema');
   await expect(page.getByText('Solo puedo ayudarte con el panel y el vivero').last()).toBeVisible();
   await auditar(page);
   await page.getByRole('button', { name: 'Nueva conversación' }).click();
-  await expect(page.getByRole('heading', { name: /En qué te ayudo/ })).toBeVisible();
+  await expect(page.getByLabel('Escribe al asistente')).toBeVisible();
 });
 
 test('fotos de un proyecto y dibujo de una planta', async ({ page }) => {

@@ -77,6 +77,18 @@ export const TEMAS: Tema[] = [
     enlace: { href: '/panel/publicar', texto: 'Ir a Publicar cambios' },
   },
   {
+    id: 'asistente',
+    titulo: 'Pedir cosas al asistente',
+    pasos: [
+      'Pulsa «Asistente» (en el móvil, el botón redondo del centro) y escribe lo que necesitas con tus palabras: «¿cuánto hemos facturado este mes?», «sube la palmera canaria a 40 €», «hazle una factura a Jardines Turia de 10 olivos a 25 €».',
+      'Si pide hacer un cambio, verás una tarjeta con lo que va a hacer. No se cambia nada hasta que pulses «Sí, hazlo»; con «No» se descarta.',
+      'Las facturas que prepara quedan como borrador: revísalas en «Facturas» o pídele que la emita.',
+      'Si un día se agota el uso gratuito, sigue funcionando en modo básico (precios, disponibilidad y presupuestos) hasta el día siguiente.',
+      'Con «Nueva conversación» empiezas de cero.',
+    ],
+    enlace: { href: '/panel/asistente', texto: 'Ir al asistente' },
+  },
+  {
     id: 'facturas',
     titulo: 'Hacer una factura',
     pasos: [

@@ -12,3 +12,7 @@ EMAIL_REMITENTE=
 # Panel propio. Token largo (mínimo 32 caracteres) para el build, la importación y las copias.
 # Genera uno con: node -e "console.log(crypto.randomUUID()+crypto.randomUUID())"
 CONTENIDO_TOKEN=
+
+# Asistente (opcional): clave gratuita de Groq como respaldo cuando se agota el cupo de Workers AI.
+# Se crea en https://console.groq.com sin tarjeta. Sin ella, el asistente usa solo Workers AI y las reglas locales.
+GROQ_API_KEY=

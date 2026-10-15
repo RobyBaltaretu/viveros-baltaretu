@@ -35,17 +35,13 @@ const primerNombre = (s?.usuario.nombre || '').split(' ')[0];
 <PaginaPanel titulo="Asistente" permiso="asistente">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="titular-grande">Asistente</h1>
-    {
-      mensajes.length > 0 && (
-        <form method="post">
-          <input type="hidden" name="accion" value="nueva" />
-          <button class="boton-panel boton-panel-secundario">
-            <Icono nombre="nuevo" clase="size-5" />
-            Nueva conversación
-          </button>
-        </form>
-      )
-    }
+    <form method="post">
+      <input type="hidden" name="accion" value="nueva" />
+      <button class="boton-panel boton-panel-secundario">
+        <Icono nombre="nuevo" clase="size-5" />
+        Nueva conversación
+      </button>
+    </form>
   </div>
 
   <section id="conversacion" class="conversacion mt-6 grid gap-4" aria-label="Conversación con el asistente" aria-live="polite">
@@ -203,7 +199,8 @@ const primerNombre = (s?.usuario.nombre || '').split(' ')[0];
   // Con JavaScript: el mensaje aparece al momento, «pensando…» mientras responde,
   // y solo se cambia la conversación (sin recargar la página). Sin JavaScript,
   // los formularios funcionan igual.
-  const conversacion = document.querySelector<HTMLElement>('#conversacion');
+  // La conversación se sustituye en cada respuesta: se busca siempre de nuevo.
+  const conversacion = () => document.querySelector<HTMLElement>('#conversacion');
   const redactor = document.querySelector<HTMLFormElement>('[data-redactor]');
   const texto = redactor?.querySelector<HTMLTextAreaElement>('textarea');
 
@@ -215,7 +212,8 @@ const primerNombre = (s?.usuario.nombre || '').split(' ')[0];
   };
 
   async function enviar(form: HTMLFormElement, datos: FormData, burbuja?: string) {
-    if (!conversacion) return form.submit();
+    const actual = conversacion();
+    if (!actual) return form.submit();
     form.querySelectorAll('button').forEach((b) => b.setAttribute('disabled', ''));
     if (burbuja) {
       const yo = document.createElement('article');
@@ -233,7 +231,7 @@ const primerNombre = (s?.usuario.nombre || '').split(' ')[0];
       const html = new DOMParser().parseFromString(await r.text(), 'text/html');
       const nueva = html.querySelector('#conversacion');
       if (!nueva) throw new Error('sin conversación');
-      conversacion.replaceWith(nueva);
+      actual.replaceWith(nueva);
       document.querySelector('[aria-label="Sugerencias"]')?.remove();
       history.replaceState(null, '', '/panel/asistente');
       alFinal();

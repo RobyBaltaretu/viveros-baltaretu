@@ -45,6 +45,13 @@ Nada de lo que hagas en el panel puede romper la web: si algo está mal, el pane
 3. Pulsa «Sí, publicar». La web se actualiza sola en unos minutos; en «Últimas publicaciones» verás cuándo ya está.
 4. Las plantas sin revisar o de ejemplo no salen en la web aunque publiques.
 
+## Pedir cosas al asistente
+1. Pulsa «Asistente» (en el móvil, el botón redondo del centro) y escribe lo que necesitas con tus palabras: «¿cuánto hemos facturado este mes?», «sube la palmera canaria a 40 €», «hazle una factura a Jardines Turia de 10 olivos a 25 €».
+2. Si pide hacer un cambio, verás una tarjeta con lo que va a hacer. No se cambia nada hasta que pulses «Sí, hazlo»; con «No» se descarta.
+3. Las facturas que prepara quedan como borrador: revísalas en «Facturas» o pídele que la emita.
+4. Si un día se agota el uso gratuito, sigue funcionando en modo básico (precios, disponibilidad y presupuestos) hasta el día siguiente.
+5. Con «Nueva conversación» empiezas de cero.
+
 ## Hacer una factura
 1. La primera vez, en «Facturas» pulsa «Datos de facturación» y completa la razón social, el NIF y la dirección de la empresa.
 2. Pulsa «Nueva factura» y elige el cliente (o «A un cliente nuevo»). Desde un presupuesto, pulsa «Hacer la factura de este pedido» y se rellena sola.
