@@ -1,0 +1,112 @@
+---
+/**
+ * Un paso del asistente: pregunta, elegir planta, confirmación Sí/No o respuesta.
+ * Lo usan el modo guiado y el de lenguaje natural.
+ */
+import { disponibilidades } from '../../i18n/ui';
+import type { Accion, Preparada } from '../../server/asistente/acciones.ts';
+import { DISPONIBILIDADES } from '../../server/panel/plantas.ts';
+
+interface Props {
+  paso: Preparada;
+  plantas: { id: string; nombre: string }[];
+}
+const { paso, plantas } = Astro.props;
+const accion: Accion | undefined = 'accion' in paso ? paso.accion : undefined;
+const ocultos = (a: Accion | undefined, sinValor = false) => [
+  ['tipo', a?.tipo ?? ''],
+  ['planta', a?.planta ?? ''],
+  ...(!sinValor && a?.valor !== undefined ? [['valor', a.valor === null ? '' : String(a.valor)], ...(a.valor === null ? [['sinPrecio', '1']] : [])] : []),
+];
+const esPrecio = accion?.tipo === 'cambiar_precio' || accion?.tipo === 'cambiar_precio_unidad';
+---
+
+<div class="rounded-panel border-2 border-linea bg-papel p-5" aria-live="polite">
+  {
+    (paso.estado === 'respuesta' || paso.estado === 'no-puedo') && (
+      <p role="status" class="texto-entrada font-semibold">
+        {paso.texto}
+      </p>
+    )
+  }
+  {
+    paso.estado === 'lista' && (
+      <form method="post" class="grid gap-4">
+        <p role="status" class="texto-entrada font-semibold">
+          {paso.resumen}
+        </p>
+        <p>¿Lo hago?</p>
+        {ocultos(paso.accion).map(([n, v]) => <input type="hidden" name={n} value={v} />)}
+        <div class="flex flex-wrap gap-3">
+          <button class="boton-panel" name="paso" value="confirmar">Sí, hazlo</button>
+          <button class="boton-panel boton-panel-secundario" name="paso" value="cancelar">No</button>
+        </div>
+      </form>
+    )
+  }
+  {
+    paso.estado === 'elegir-planta' && (
+      <form method="post" class="grid gap-3">
+        <p role="status" class="texto-entrada font-semibold">{paso.pregunta}</p>
+        {ocultos({ ...paso.accion, planta: undefined }).filter(([n]) => n !== 'planta').map(([n, v]) => <input type="hidden" name={n} value={v} />)}
+        <div class="flex flex-wrap gap-3">
+          {paso.opciones.map((o) => (
+            <button class="boton-panel boton-panel-secundario" name="planta" value={o.id}>
+              {o.nombre}
+            </button>
+          ))}
+        </div>
+        <input type="hidden" name="paso" value="preparar" />
+      </form>
+    )
+  }
+  {
+    paso.estado === 'falta' && !paso.accion.planta && (
+      <form method="post" class="grid gap-3">
+        <p role="status" class="texto-entrada font-semibold">{paso.pregunta}</p>
+        {ocultos(paso.accion).filter(([n]) => n !== 'planta').map(([n, v]) => <input type="hidden" name={n} value={v} />)}
+        <input type="hidden" name="paso" value="preparar" />
+        <div class="flex flex-wrap gap-3">
+          {plantas.map((p) => (
+            <button class="boton-panel boton-panel-secundario" name="planta" value={p.id}>
+              {p.nombre}
+            </button>
+          ))}
+        </div>
+      </form>
+    )
+  }
+  {
+    paso.estado === 'falta' && paso.accion.planta && (
+      <form method="post" class="grid gap-4">
+        {ocultos(paso.accion, true).map(([n, v]) => <input type="hidden" name={n} value={v} />)}
+        <input type="hidden" name="paso" value="preparar" />
+        {esPrecio ? (
+          <>
+            <label for="valor" class="texto-entrada font-semibold">{paso.pregunta}</label>
+            <input id="valor" name="valor" inputmode="decimal" autocomplete="off" class="campo-panel" />
+            <div class="flex flex-wrap gap-3">
+              <button class="boton-panel">Siguiente</button>
+              {accion?.tipo === 'cambiar_precio' && (
+                <button class="boton-panel boton-panel-secundario" name="sinPrecio" value="1">
+                  Sin precio (bajo presupuesto)
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          <fieldset class="grid gap-3">
+            <legend class="texto-entrada mb-2 font-semibold">{paso.pregunta}</legend>
+            <div class="flex flex-wrap gap-3">
+              {DISPONIBILIDADES.map((d) => (
+                <button class="boton-panel boton-panel-secundario" name="valor" value={d}>
+                  {disponibilidades[d].es}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        )}
+      </form>
+    )
+  }
+</div>
