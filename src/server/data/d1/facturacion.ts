@@ -57,6 +57,10 @@ export function crearRepositoriosFacturacion(db: BaseD1): Pick<Repositorios, 'aj
         const f = await db.prepare('SELECT datos FROM clientes WHERE id = ?').bind(id).first<{ datos: string }>();
         return f ? (JSON.parse(f.datos) as Cliente) : null;
       },
+      async borrar(id) {
+        const r = await db.prepare('DELETE FROM clientes WHERE id = ?').bind(id).run();
+        return (r.meta?.changes ?? 0) > 0;
+      },
       async guardar(c, email) {
         await db
           .prepare(
@@ -122,7 +126,7 @@ export function crearRepositoriosFacturacion(db: BaseD1): Pick<Repositorios, 'aj
         return f ? aFactura(f) : null;
       },
       async ultimaHuella() {
-        const f = await db.prepare("SELECT huella FROM facturas WHERE huella IS NOT NULL ORDER BY json_extract(datos, '$.emitidaEl') DESC, rowid DESC LIMIT 1").first<{ huella: string }>();
+        const f = await db.prepare("SELECT huella FROM facturas WHERE huella IS NOT NULL AND serie NOT LIKE 'PRUEBA-%' ORDER BY json_extract(datos, '$.emitidaEl') DESC, rowid DESC LIMIT 1").first<{ huella: string }>();
         return f?.huella ?? null;
       },
       async emitir(id, d) {
@@ -162,6 +166,10 @@ export function crearRepositoriosFacturacion(db: BaseD1): Pick<Repositorios, 'aj
           }
         }
         return null;
+      },
+      async borrarPruebas() {
+        const r = await db.prepare("DELETE FROM facturas WHERE serie LIKE 'PRUEBA-%' OR json_extract(datos, '$.prueba') = 1").run();
+        return r.meta?.changes ?? 0;
       },
       async marcarCobrada(id, fecha) {
         const r = await db

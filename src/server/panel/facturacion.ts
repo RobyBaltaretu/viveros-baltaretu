@@ -4,6 +4,7 @@ import {
   CAMPOS_EMISOR,
   CLAVE_AJUSTES,
   codigoDe,
+  faltaEmisor,
   huellaDe,
   serieDe,
   validarEmision,
@@ -37,7 +38,7 @@ export function libroFacturasCsv(facturas: Factura[]): string {
   const tipos = [21, 10, 4, 0];
   const cabecera = ['Fecha', 'Número', 'Tipo', 'Rectifica a', 'Cliente', 'NIF', ...tipos.flatMap((t) => [`Base ${t} %`, `IVA ${t} %`]), 'Recargo de equivalencia', 'Total', 'Estado', 'Cobrada el'];
   const filas = facturas
-    .filter((f) => f.estado !== 'borrador')
+    .filter((f) => f.estado !== 'borrador' && !f.prueba && !f.serie?.startsWith('PRUEBA-'))
     .sort((a, b) => (a.codigo ?? '').localeCompare(b.codigo ?? ''))
     .map((f) => {
       const por = (t: number) => f.totales.desglose.find((d) => d.iva === t);
@@ -68,10 +69,40 @@ export async function borradorAlDia(repos: Repositorios, f: Factura): Promise<Fa
   return actual ? { ...f, cliente: actual, totales: calcularTotales(f.lineas.filter((l) => l.concepto), actual.recargo) } : f;
 }
 
+/** Clave del modo de pruebas en los ajustes privados. */
+export const CLAVE_MODO_PRUEBAS = 'modo-pruebas';
+export const modoPruebas = async (repos: Repositorios) => Boolean((await repos.ajustesPrivados.obtener<{ activo: boolean }>(CLAVE_MODO_PRUEBAS))?.activo);
+
+/** Emisor ficticio de las facturas de prueba cuando aún no hay datos reales. */
+export const EMISOR_PRUEBA: DatosEmisor = {
+  nombre: 'EMPRESA DE PRUEBA (sin validez)',
+  nif: 'B00000000',
+  direccion: 'Calle de Prueba 1',
+  codigoPostal: '46000',
+  poblacion: 'Valencia',
+  provincia: 'Valencia',
+  email: 'pruebas@example.com',
+  telefono: '',
+  iban: '',
+  pie: 'Factura de prueba generada en el modo de pruebas del panel. Sin validez fiscal.',
+};
+
+/**
+ * Serie y emisor con los que se emitiría: en modo de pruebas (o si la factura es
+ * de prueba) la serie es PRUEBA-… y, si faltan los datos reales, el emisor ficticio.
+ */
+async function destinoEmision(repos: Repositorios, f: Factura, ajustes: AjustesFacturacion) {
+  const prueba = f.prueba || (await modoPruebas(repos));
+  const real = emisorDe(ajustes);
+  const emisor = prueba && faltaEmisor(real).length ? EMISOR_PRUEBA : real;
+  return { prueba, serie: `${prueba ? 'PRUEBA-' : ''}${serieDe(f.tipo, f.fecha)}`, emisor };
+}
+
 /** Lo que impide emitir (vacío = se puede). */
 export async function comprobarEmision(repos: Repositorios, f: Factura, ajustes: AjustesFacturacion): Promise<ErrorFactura[]> {
-  const ultima = await repos.facturas.ultimaEmitida(serieDe(f.tipo, f.fecha));
-  return validarEmision(f, emisorDe(ajustes), f.cliente, ultima?.fecha ?? null);
+  const { serie, emisor } = await destinoEmision(repos, f, ajustes);
+  const ultima = await repos.facturas.ultimaEmitida(serie);
+  return validarEmision(f, emisor, f.cliente, ultima?.fecha ?? null);
 }
 
 /**
@@ -83,17 +114,18 @@ export async function emitirFactura(repos: Repositorios, borrador: Factura, emai
   const fa = await borradorAlDia(repos, borrador);
   const errores = await comprobarEmision(repos, fa, ajustes);
   if (errores.length) return { ok: false, errores };
-  await repos.facturas.guardarBorrador(fa);
-  const serie = serieDe(fa.tipo, fa.fecha);
-  const anterior = await repos.facturas.ultimaHuella();
+  const { prueba, serie, emisor } = await destinoEmision(repos, fa, ajustes);
+  await repos.facturas.guardarBorrador({ ...fa, prueba });
+  // Las de prueba no entran en la cadena de huellas de las reales.
+  const anterior = prueba ? null : await repos.facturas.ultimaHuella();
   const emitida = await repos.facturas.emitir(fa.id, {
     serie,
     fecha: fa.fecha,
-    emisor: emisorDe(ajustes),
+    emisor,
     cliente: fa.cliente,
     huellaAnterior: anterior,
     codigo: (n) => codigoDe(serie, n),
-    huella: (_n, codigo) => huellaDe({ codigo, fecha: fa.fecha, total: fa.totales.total, nifEmisor: ajustes.nif, nifCliente: fa.cliente.nif }, anterior),
+    huella: (_n, codigo) => huellaDe({ codigo, fecha: fa.fecha, total: fa.totales.total, nifEmisor: emisor.nif, nifCliente: fa.cliente.nif }, anterior),
   });
   if (!emitida) return { ok: false, errores: [{ campo: 'estado', mensaje: 'Esa factura ya no es un borrador.' }] };
   await repos.auditoria.registrar(email, 'factura emitida', `${emitida.codigo} · ${emitida.totales.total}`);
