@@ -244,6 +244,24 @@ test('fotos de un proyecto y dibujo de una planta', async ({ page }) => {
   await expect(page.getByLabel('Es una ficha de ejemplo (no se publica)')).toBeChecked();
 });
 
+test('plantas: cambios rápidos desde la lista y la ficha', async ({ page }) => {
+  await page.goto('/panel/plantas?ver=revisar');
+  await auditar(page);
+  await controlesGrandes(page);
+  const primera = page.getByRole('button', { name: 'Revisada' }).first();
+  if (await primera.count()) {
+    await primera.click();
+    await expect(page.getByRole('status')).toContainText('marcar como revisada');
+  }
+  // Móvil y escritorio a la vez: cada uno con su planta.
+  await page.goto(`/panel/plantas/${test.info().project.name === 'movil' ? 'phoenix-dactylifera' : 'washingtonia-robusta'}`);
+  await page.getByRole('button', { name: 'Bajo pedido' }).click();
+  await expect(page.getByRole('status')).toContainText('Guardado');
+  await expect(page.getByRole('button', { name: 'Bajo pedido' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Disponible' }).click();
+  await expect(page.getByRole('button', { name: 'Disponible' })).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('navegación: menú fijo y, tras guardar, ir atrás no vuelve al formulario', async ({ page }) => {
   await page.goto('/panel/plantas/washingtonia-robusta');
   const menu = page.getByRole('navigation', { name: 'Secciones del panel' });

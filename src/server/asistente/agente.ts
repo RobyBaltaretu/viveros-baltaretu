@@ -5,7 +5,7 @@ import { puede } from '../panel/permisos.ts';
 import { aplicarAccion, type Accion as AccionBasica } from './acciones.ts';
 import { atenderMensaje } from './conversacion.ts';
 import { aplicarFotos, descartarFotos, HERRAMIENTA_FOTOS, prepararFotos } from './fotos.ts';
-import { herramienta, herramientasDe, type Cambio, type Consulta, type Contexto } from './herramientas.ts';
+import { herramienta, herramientasDe, herramientasPara, type Cambio, type Consulta, type Contexto } from './herramientas.ts';
 import { instruccionesDe } from './instrucciones.ts';
 import { MAXIMO_TEXTO, type BindingAI } from './interprete.ts';
 
@@ -100,9 +100,9 @@ const esquemaDe = (nombre: string, esquema: z.ZodType) => {
 };
 
 /** Herramientas del rol para el modelo. Las de cambio solo dejan propuestas. */
-function herramientasModelo(ctx: Contexto, conversacion: string, propuestas: Propuesta[]): ToolSet {
+function herramientasModelo(ctx: Contexto, conversacion: string, propuestas: Propuesta[], tema: string): ToolSet {
   const conjunto: ToolSet = {};
-  for (const h of herramientasDe(ctx.usuario.rol)) {
+  for (const h of herramientasPara(herramientasDe(ctx.usuario.rol), tema)) {
     conjunto[h.nombre] = tool({
       description: h.descripcion,
       inputSchema: esquemaDe(h.nombre, h.esquema),
@@ -190,7 +190,7 @@ export async function conversar(ctx: Contexto, texto: string, modelos: ModeloAsi
           model: m.modelo,
           system: instruccionesDe(ctx),
           messages: [...historial(previos, conocidas), { role: 'user', content: mensaje }],
-          tools: herramientasModelo(ctx, conversacion, propuestas),
+          tools: herramientasModelo(ctx, conversacion, propuestas, [...previos.slice(-3).map((m) => m.texto), mensaje].join(' ')),
           stopWhen: isStepCount(PASOS),
           temperature: 0.2,
           maxOutputTokens: 1600,

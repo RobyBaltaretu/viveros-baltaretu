@@ -172,3 +172,41 @@ export const PANTALLAS_PLANTA = {
   precio: 'precioDesde,ventaUnitaria,precioUnidad',
   disponibilidad: 'disponibilidad',
 } as const;
+
+/** Acciones de un toque sobre una o varias plantas (desde la lista o la ficha). */
+export const ACCIONES_RAPIDAS = {
+  revisar: 'Marcar como revisada',
+  'no-revisar': 'Quitar «revisada»',
+  disponible: 'Disponible',
+  'bajo-pedido': 'Bajo pedido',
+  agotado: 'Agotado',
+  destacar: 'Destacar en la portada',
+  'no-destacar': 'Dejar de destacar',
+  quitar: 'Quitar de la web',
+  recuperar: 'Volver a poner en la web',
+} as const;
+export type AccionRapida = keyof typeof ACCIONES_RAPIDAS;
+export const esAccionRapida = (a: string): a is AccionRapida => a in ACCIONES_RAPIDAS;
+
+/** Aplica una acción rápida a cada planta, con la misma validación del panel. Devuelve cuántas y los errores. */
+export async function accionRapida(repos: Repositorios, ids: string[], accion: AccionRapida, autor: Autor): Promise<{ hechas: number; errores: string[] }> {
+  let hechas = 0;
+  const errores: string[] = [];
+  for (const id of [...new Set(ids)].slice(0, 300)) {
+    const e = await repos.contenido.obtener('catalogo', id);
+    if (!e) continue;
+    if (accion === 'quitar' || accion === 'recuperar') {
+      await repos.contenido.archivar('catalogo', id, accion === 'quitar', autor);
+      hechas++;
+      continue;
+    }
+    const d = { ...(e.borrador.datos as DatosPlanta) };
+    if (accion === 'revisar' || accion === 'no-revisar') d.revisado = accion === 'revisar';
+    else if (accion === 'destacar' || accion === 'no-destacar') d.destacada = accion === 'destacar';
+    else d.disponibilidad = accion;
+    const r = await guardarPlanta(repos, id, d, autor);
+    if (r.ok) hechas++;
+    else errores.push(`${String(d.nombre?.es ?? id)}: ${r.errores[0]?.mensaje ?? 'no se ha podido'}`);
+  }
+  return { hechas, errores };
+}

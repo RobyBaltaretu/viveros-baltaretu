@@ -1,0 +1,63 @@
+---
+/**
+ * El PDF de las facturas se hace en el navegador: el servidor solo manda los
+ * datos. Generarlo en el Worker cuesta ~22 ms de CPU y el plan gratuito permite
+ * 10 ms por petición. Sin JavaScript, los enlaces siguen pidiendo el PDF al servidor.
+ */
+---
+
+<script>
+  const ENLACE = 'a[href*="/api/panel/factura-pdf"]';
+
+  async function generar(href: string): Promise<{ blob: Blob; nombre: string }> {
+    const r = await fetch(`${href}&datos=1`);
+    if (!r.ok) throw new Error(String(r.status));
+    const factura = await r.json();
+    const { pdfFactura } = await import('../../server/facturas/pdf.ts');
+    const bytes = await pdfFactura(factura);
+    return { blob: new Blob([bytes as Uint8Array<ArrayBuffer>], { type: 'application/pdf' }), nombre: `${factura.codigo ?? 'borrador'}.pdf` };
+  }
+
+  document.addEventListener('click', async (e) => {
+    const a = (e.target as HTMLElement).closest<HTMLAnchorElement>(ENLACE);
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    e.preventDefault();
+    const descargar = a.href.includes('descargar=');
+    // La pestaña se abre ya (tras esperar, el navegador la bloquearía).
+    const ventana = descargar ? null : window.open('', '_blank');
+    a.setAttribute('aria-busy', 'true');
+    try {
+      const { blob, nombre } = await generar(a.href.replace(/&descargar=1/, ''));
+      const url = URL.createObjectURL(blob);
+      if (ventana) ventana.location.href = url;
+      else {
+        const d = document.createElement('a');
+        d.href = url;
+        d.download = nombre;
+        d.click();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      ventana?.close();
+      location.href = a.href;
+    } finally {
+      a.removeAttribute('aria-busy');
+    }
+  });
+
+  // En el móvil, «Enviar» abre el menú de compartir con el PDF adjunto (WhatsApp, correo…).
+  const boton = document.querySelector<HTMLButtonElement>('[data-compartir]');
+  if (boton && 'share' in navigator && 'canShare' in navigator) {
+    boton.hidden = false;
+    boton.addEventListener('click', async () => {
+      try {
+        const { blob, nombre } = await generar(boton.dataset.compartir ?? '');
+        const archivo = new File([blob], nombre, { type: 'application/pdf' });
+        if (navigator.canShare({ files: [archivo] })) await navigator.share({ files: [archivo], title: archivo.name });
+        else location.href = `${boton.dataset.compartir}&descargar=1`;
+      } catch {
+        // Cancelado por la persona: no hay nada que hacer.
+      }
+    });
+  }
+</script>

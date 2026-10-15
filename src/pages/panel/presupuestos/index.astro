@@ -2,7 +2,7 @@
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
 import { tp } from '../../../i18n/panel';
 import { ESTADOS_PRESUPUESTO, type EstadoPresupuesto } from '../../../server/data/tipos.ts';
-import { sesionCon } from '../../../server/panel/pagina.ts';
+import { campo, sesionCon } from '../../../server/panel/pagina.ts';
 import { NOMBRES_ESTADO } from '../../../server/panel/presupuestos.ts';
 
 export const prerender = false;
@@ -10,6 +10,13 @@ export const prerender = false;
 const pedido = Astro.url.searchParams.get('estado');
 const estado: EstadoPresupuesto = (ESTADOS_PRESUPUESTO as readonly string[]).includes(pedido ?? '') ? (pedido as EstadoPresupuesto) : 'nuevo';
 const s = sesionCon(Astro.locals, 'presupuestos');
+// Un toque desde la lista: «respondido» o «archivado» sin abrir el presupuesto.
+if (s && Astro.request.method === 'POST') {
+  const [nuevo, id] = campo(await Astro.request.formData(), 'cambiar').split(':');
+  if ((ESTADOS_PRESUPUESTO as readonly string[]).includes(nuevo) && id && (await s.repos.presupuestos.cambiarEstado(id, nuevo as EstadoPresupuesto)))
+    await s.repos.auditoria.registrar(s.usuario.email, 'presupuesto', `${id} → ${nuevo}`);
+  return Astro.redirect(`/panel/presupuestos?estado=${estado}`, 303);
+}
 const lista = s ? await s.repos.presupuestos.listar({ estado }) : [];
 const cuentas = s ? Object.fromEntries(await Promise.all(ESTADOS_PRESUPUESTO.map(async (e) => [e, await s.repos.presupuestos.contar(e)] as const))) : {};
 const fecha = (iso: string) => new Date(iso).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Madrid' });
@@ -34,8 +41,8 @@ const fecha = (iso: string) => new Date(iso).toLocaleString('es-ES', { dateStyle
   <ul class="mt-6 grid gap-3" role="list">
     {
       lista.map((p) => (
-        <li>
-          <a href={`/panel/presupuestos/${p.id}`} class="group flex min-h-12 flex-col gap-1 caja-panel tarjeta-accion p-4 no-underline">
+        <li class="caja-panel flex flex-wrap items-center gap-2 pr-3">
+          <a href={`/panel/presupuestos/${p.id}`} class="group flex min-h-12 min-w-0 flex-1 flex-col gap-1 p-4 no-underline">
             <span class="font-titular text-xl font-bold text-tinta group-hover:underline">
               {p.nombre}
               {p.empresa && ` · ${p.empresa}`}
@@ -44,6 +51,22 @@ const fecha = (iso: string) => new Date(iso).toLocaleString('es-ES', { dateStyle
               {fecha(p.fecha)} · {p.tipoPedido === 'unidad' ? 'por unidad' : 'al por mayor'} · {p.lineas.length} {p.lineas.length === 1 ? 'planta' : 'plantas'}
             </span>
           </a>
+          <form method="post" class="flex flex-wrap gap-2 pb-3 pl-4 sm:pb-0 sm:pl-0">
+            {p.estado === 'nuevo' && (
+              <button class="boton-panel boton-panel-secundario" name="cambiar" value={`respondido:${p.id}`} aria-label={`Marcar como respondido: ${p.nombre}`}>
+                Respondido
+              </button>
+            )}
+            {p.estado !== 'archivado' ? (
+              <button class="boton-panel boton-panel-secundario" name="cambiar" value={`archivado:${p.id}`} aria-label={`Archivar: ${p.nombre}`}>
+                Archivar
+              </button>
+            ) : (
+              <button class="boton-panel boton-panel-secundario" name="cambiar" value={`nuevo:${p.id}`} aria-label={`Volver a nuevos: ${p.nombre}`}>
+                Volver a nuevos
+              </button>
+            )}
+          </form>
         </li>
       ))
     }

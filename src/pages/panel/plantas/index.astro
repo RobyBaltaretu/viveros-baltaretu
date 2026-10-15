@@ -1,39 +1,213 @@
 ---
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import Icono from '../../../components/panel/ui/Icono.astro';
 import { disponibilidades } from '../../../i18n/ui';
 import { formatearPrecio } from '../../../lib/catalogo/formato';
-import { sesionCon } from '../../../server/panel/pagina.ts';
-import { avisosPublicacion, type DatosPlanta } from '../../../server/panel/plantas.ts';
+import { campo, sesionCon } from '../../../server/panel/pagina.ts';
+import { ACCIONES_RAPIDAS, accionRapida, avisosPublicacion, esAccionRapida, type DatosPlanta } from '../../../server/panel/plantas.ts';
 
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'editar');
-const plantas = s ? await s.repos.contenido.listar('catalogo') : [];
-plantas.sort((a, b) => String((a.borrador.datos as DatosPlanta).nombre?.es).localeCompare(String((b.borrador.datos as DatosPlanta).nombre?.es), 'es'));
+const filtro = Astro.url.searchParams.get('ver') ?? 'todas';
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+
+// Acciones de un toque: una planta («rapida» = acción:id) o las elegidas («accion» + «ids»).
+if (s && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const [rapida, id] = campo(form, 'rapida').split(':');
+  const accion = rapida || campo(form, 'accion');
+  const ids = rapida ? [id] : form.getAll('ids').map(String);
+  let mensaje = 'Elige una o varias plantas.';
+  if (esAccionRapida(accion) && ids.length) {
+    const r = await accionRapida(s.repos, ids, accion, { email: s.usuario.email });
+    mensaje = `${r.hechas === 1 ? '1 planta' : `${r.hechas} plantas`}: ${ACCIONES_RAPIDAS[accion].toLowerCase()}. Saldrá así en la web cuando publiques.${r.errores.length ? ` No se pudo con ${r.errores.join('; ')}` : ''}`;
+  }
+  const vuelta = new URL(Astro.url);
+  vuelta.searchParams.set('mensaje', mensaje);
+  return Astro.redirect(`${vuelta.pathname}${vuelta.search}`, 303);
+}
+
+const todas = s ? await s.repos.contenido.listar('catalogo', { incluirArchivadas: filtro === 'quitadas' }) : [];
+const nombre = (d: DatosPlanta) => String(d.nombre?.es ?? '');
+const sinTildes = (t: string) =>
+  t
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+const FILTROS = {
+  todas: { texto: 'Todas', vale: (p: (typeof todas)[number]) => !p.archivada },
+  revisar: { texto: 'Sin revisar', vale: (p: (typeof todas)[number]) => !p.archivada && !(p.borrador.datos as DatosPlanta).revisado },
+  agotadas: { texto: 'Agotadas', vale: (p: (typeof todas)[number]) => !p.archivada && (p.borrador.datos as DatosPlanta).disponibilidad === 'agotado' },
+  quitadas: { texto: 'Quitadas de la web', vale: (p: (typeof todas)[number]) => p.archivada },
+} as const;
+const elegido = FILTROS[filtro as keyof typeof FILTROS] ?? FILTROS.todas;
+const plantas = todas
+  .filter(elegido.vale)
+  .filter((p) => !q || sinTildes(`${nombre(p.borrador.datos as DatosPlanta)} ${(p.borrador.datos as DatosPlanta).nombreCientifico ?? ''}`).includes(sinTildes(q)))
+  .sort((a, b) => nombre(a.borrador.datos as DatosPlanta).localeCompare(nombre(b.borrador.datos as DatosPlanta), 'es'));
+const cuenta = (k: keyof typeof FILTROS) => todas.filter(FILTROS[k].vale).length;
+const mensaje = Astro.url.searchParams.get('mensaje') ?? (Astro.url.searchParams.get('hecho') === 'archivada' ? 'Planta quitada de la web. Saldrá así cuando publiques los cambios.' : '');
+const BLOQUE: (keyof typeof ACCIONES_RAPIDAS)[] = filtro === 'quitadas' ? ['recuperar'] : ['revisar', 'disponible', 'bajo-pedido', 'agotado', 'destacar', 'no-destacar', 'no-revisar', 'quitar'];
 ---
 
 <PaginaPanel titulo="Mis plantas" permiso="editar">
-  <h1 class="titular-grande">Mis plantas</h1>
-  {Astro.url.searchParams.get('hecho') === 'archivada' && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">Planta quitada de la web. Saldrá así cuando publiques los cambios.</p>}
-  <p class="mt-6"><a href="/panel/plantas/nueva" class="boton-panel">Añadir una planta</a></p>
-  {plantas.length === 0 && <p class="mt-6">Todavía no hay plantas. Empieza por añadir una.</p>}
-  <ul class="mt-6 grid gap-3" role="list">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="titular-grande">Mis plantas</h1>
+    <a href="/panel/plantas/nueva" class="boton-panel"><Icono nombre="nuevo" clase="size-5" />Añadir una planta</a>
+  </div>
+  {mensaje && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{mensaje}</p>}
+
+  <nav class="mt-6 flex flex-wrap gap-2" aria-label="Ver plantas">
     {
-      plantas.map((p) => {
-        const d = p.borrador.datos as DatosPlanta;
-        const avisos = avisosPublicacion(d);
-        return (
-          <li>
-            <a href={`/panel/plantas/${p.id}`} class="group flex min-h-12 flex-col gap-1 caja-panel tarjeta-accion p-4 no-underline">
-              <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{d.nombre?.es}</span>
-              <span class="text-gris">
-                {formatearPrecio(d.precioDesde ?? null, 'unidad', 'es')} · {disponibilidades[d.disponibilidad as keyof typeof disponibilidades]?.es}
-              </span>
-              {avisos.length > 0 && <span class="font-semibold text-terracota">{avisos[0]}</span>}
-            </a>
-          </li>
-        );
-      })
+      (Object.keys(FILTROS) as (keyof typeof FILTROS)[]).map((k) => (
+        <a href={`/panel/plantas?ver=${k}`} class:list={['boton-panel', k !== filtro && 'boton-panel-secundario']} aria-current={k === filtro ? 'page' : undefined}>
+          {FILTROS[k].texto}
+          {k !== 'quitadas' && <span class="tabular">({cuenta(k)})</span>}
+        </a>
+      ))
     }
-  </ul>
+  </nav>
+  <form method="get" class="mt-4 flex gap-2" role="search">
+    <input type="hidden" name="ver" value={filtro} />
+    <label for="buscar-planta" class="sr-only">Buscar una planta</label>
+    <input id="buscar-planta" name="q" value={q} type="search" placeholder="Buscar por nombre…" class="campo-panel flex-1" />
+    <button class="boton-panel boton-panel-secundario">Buscar</button>
+  </form>
+
+  {plantas.length === 0 && <p class="mt-6">{q || filtro !== 'todas' ? 'Ninguna planta coincide.' : 'Todavía no hay plantas. Empieza por añadir una.'}</p>}
+  {
+    plantas.length > 0 && (
+      <form method="post" class="mt-6" data-lista-plantas>
+        <p class="mb-3 text-base text-gris">Marca varias para cambiarlas a la vez, o usa los botones de cada planta.</p>
+        <ul class="grid gap-3" role="list">
+          {plantas.map((p) => {
+            const d = p.borrador.datos as DatosPlanta;
+            const avisos = avisosPublicacion(d);
+            return (
+              <li class="fila-planta caja-panel">
+                <label class="elegir">
+                  <input type="checkbox" name="ids" value={p.id} class="size-6" />
+                  <span class="sr-only">Elegir {d.nombre?.es}</span>
+                </label>
+                <a href={`/panel/plantas/${p.id}`} class="group flex min-h-12 min-w-0 flex-1 flex-col gap-1 py-3 no-underline">
+                  <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{d.nombre?.es}</span>
+                  <span class="text-gris">
+                    {formatearPrecio(d.precioDesde ?? null, 'unidad', 'es')} · {disponibilidades[d.disponibilidad as keyof typeof disponibilidades]?.es}
+                    {d.destacada ? ' · destacada' : ''}
+                  </span>
+                  {avisos.length > 0 && <span class="font-semibold text-terracota">{avisos[0]}</span>}
+                </a>
+                <div class="acciones-fila">
+                  {p.archivada ? (
+                    <button class="boton-panel boton-panel-secundario" name="rapida" value={`recuperar:${p.id}`}>
+                      Volver a la web
+                    </button>
+                  ) : !d.revisado ? (
+                    <button class="boton-panel" name="rapida" value={`revisar:${p.id}`}>
+                      <Icono nombre="hecho" clase="size-5" />
+                      Revisada
+                    </button>
+                  ) : (
+                    <span class="revisada">
+                      <Icono nombre="hecho" clase="size-5" />
+                      Revisada
+                    </span>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        <div class="barra-bloque caja-panel" data-barra-bloque>
+          <p class="font-semibold" aria-live="polite" data-elegidas>
+            Con las elegidas:
+          </p>
+          <label for="accion-bloque" class="sr-only">
+            Qué hacer con las plantas elegidas
+          </label>
+          <select id="accion-bloque" name="accion" class="campo-panel">
+            {BLOQUE.map((a) => (
+              <option value={a}>{ACCIONES_RAPIDAS[a]}</option>
+            ))}
+          </select>
+          <button class="boton-panel">Aplicar</button>
+        </div>
+      </form>
+    )
+  }
 </PaginaPanel>
+
+<style>
+  .fila-planta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.75rem 0 0.25rem;
+  }
+  .elegir {
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    flex: none;
+    place-items: center;
+    cursor: pointer;
+  }
+  .elegir input {
+    accent-color: var(--color-oliva);
+  }
+  .acciones-fila {
+    flex: none;
+  }
+  .revisada {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0 0.5rem;
+    font-weight: 600;
+    color: var(--color-oliva);
+  }
+  @media (max-width: 30rem) {
+    .acciones-fila .revisada {
+      display: none;
+    }
+  }
+  .barra-bloque {
+    position: sticky;
+    bottom: 6.5rem;
+    z-index: 10;
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    box-shadow: var(--sombra-suave);
+  }
+  .barra-bloque[hidden] {
+    display: none;
+  }
+  .barra-bloque select {
+    flex: 1 1 12rem;
+  }
+  @media (min-width: 64rem) {
+    .barra-bloque {
+      bottom: 1rem;
+    }
+  }
+</style>
+
+<script>
+  // Con JavaScript, la barra dice cuántas hay elegidas y solo aparece si hay alguna.
+  const form = document.querySelector<HTMLFormElement>('[data-lista-plantas]');
+  const barra = form?.querySelector<HTMLElement>('[data-barra-bloque]');
+  const texto = form?.querySelector<HTMLElement>('[data-elegidas]');
+  const contar = () => {
+    const n = form?.querySelectorAll('input[name=ids]:checked').length ?? 0;
+    if (barra) barra.hidden = n === 0;
+    if (texto) texto.textContent = n === 1 ? '1 planta elegida:' : `${n} plantas elegidas:`;
+  };
+  form?.addEventListener('change', contar);
+  contar();
+</script>

@@ -3,8 +3,8 @@
  * privado o con el almacenamiento bloqueado: entonces dura solo en la página).
  * Las funciones puras se prueban en tests; `almacen` envuelve el navegador.
  */
-import { MAX_CANTIDAD, MAX_LINEAS } from './esquema';
-import { SLUG_REGEX } from '../catalogo/schema';
+import { MAX_CANTIDAD, MAX_LINEAS } from './limites';
+import { SLUG_REGEX } from '../catalogo/constantes';
 
 export interface LineaLista {
   slug: string;

@@ -1,4 +1,5 @@
 ---
+import PdfEnNavegador from './PdfEnNavegador.astro';
 /** Factura emitida: resumen, PDF, compartir, cobro y rectificación. No se puede editar. */
 import type { Factura } from '../../server/data/tipos.ts';
 import { hoy, NOMBRE_ESTADO, vencida } from '../../server/facturas/facturas.ts';
@@ -79,20 +80,4 @@ const estado = vencida(f) ? 'Pendiente de cobro (vencida)' : NOMBRE_ESTADO[f.est
 </div>
 <p class="mt-3 text-base text-gris">Una factura emitida no se cambia ni se borra: los errores se corrigen con una rectificativa.</p>
 
-<script>
-  // En el móvil, «Enviar» abre el menú de compartir con el PDF adjunto (WhatsApp, correo…).
-  const boton = document.querySelector<HTMLButtonElement>('[data-compartir]');
-  if (boton && 'share' in navigator && 'canShare' in navigator) {
-    boton.hidden = false;
-    boton.addEventListener('click', async () => {
-      try {
-        const r = await fetch(boton.dataset.compartir ?? '');
-        const archivo = new File([await r.blob()], boton.dataset.nombre ?? 'factura.pdf', { type: 'application/pdf' });
-        if (navigator.canShare({ files: [archivo] })) await navigator.share({ files: [archivo], title: archivo.name });
-        else location.href = `${boton.dataset.compartir}&descargar=1`;
-      } catch {
-        // Cancelado por la persona: no hay nada que hacer.
-      }
-    });
-  }
-</script>
+<PdfEnNavegador />
