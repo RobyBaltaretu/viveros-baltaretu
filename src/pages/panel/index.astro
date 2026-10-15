@@ -30,7 +30,7 @@ const t = tp.tarjetas;
     <Tarjeta href="/panel/asistente" titulo="Asistente" texto="Cambiar precios y más, paso a paso" />
     <Tarjeta href="/panel/plantas" titulo={t.plantas[0]} texto={t.plantas[1]} />
     {puede(rol, 'presupuestos') && <Tarjeta href="/panel/presupuestos" titulo={t.presupuestos[0]} texto={t.presupuestos[1]} aviso={nuevos ? tp.nuevos(nuevos) : undefined} />}
- {puede(rol, 'gastos') && <Tarjeta href="/panel/gastos" titulo="Gastos" texto="Fotos de los tickets y lo que se ha gastado" aviso={porRevisar ? `${porRevisar} por revisar` : undefined} />}
+ {puede(rol, 'gastos') && <Tarjeta href="/panel/gastos" titulo="Gastos" texto="Tickets de compra y lo que se ha gastado" aviso={porRevisar ? `${porRevisar} por revisar` : undefined} />}
     {puede(rol, 'facturas') && <Tarjeta href="/panel/facturas" titulo="Facturas" texto="Hacer facturas y ver lo que falta por cobrar" aviso={porCobrar ? `${porCobrar} por cobrar` : undefined} />}
     <Tarjeta href="/panel/fotos" titulo={t.fotos[0]} texto={t.fotos[1]} />
     <Tarjeta href="/panel/textos" titulo={t.textos[0]} texto={t.textos[1]} />
