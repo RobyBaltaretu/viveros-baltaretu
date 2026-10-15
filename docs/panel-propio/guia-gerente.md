@@ -53,6 +53,13 @@ Nada de lo que hagas en el panel puede romper la web: si algo está mal, el pane
 5. Pulsa «Enviar» para mandar el PDF por WhatsApp o correo, o «Descargar».
 6. Cuando te paguen, pulsa «Marcar como cobrada». Para la gestoría, descarga el libro de facturas del año.
 
+## Apuntar un gasto con la foto del ticket
+1. Pulsa «Gastos» y luego «Añadir un ticket».
+2. Pulsa el botón de elegir archivo: haz la foto al ticket (entero, recto y con luz) o elígela de la galería. Pulsa «Leer el ticket».
+3. En unos segundos verás lo que ha leído: dónde se compró, la fecha, lo comprado y el total. Compáralo con la foto y corrige lo que haga falta.
+4. Elige el tipo de gasto y pulsa «Guardar el gasto». Hasta entonces queda «por revisar» y no cuenta en las cuentas.
+5. Si no tienes ticket, pulsa «No tengo ticket: escribirlo a mano».
+
 ## Me he equivocado: deshacer
 1. Pulsa «Cambios recientes».
 2. Busca el cambio y pulsa «Deshacer»: queda como estaba antes.

@@ -306,6 +306,54 @@ export interface RepositorioFacturas {
   marcarCobrada(id: string, fecha: string | null): Promise<boolean>;
 }
 
+export const ESTADOS_GASTO = ['revisar', 'confirmado'] as const;
+export type EstadoGasto = (typeof ESTADOS_GASTO)[number];
+
+export interface LineaGasto {
+  concepto: string;
+  cantidad: number;
+  /** Importe de la línea con IVA, en euros. */
+  importe: number;
+}
+
+export interface Gasto {
+  id: string;
+  /** `revisar`: leído del ticket y sin confirmar; no cuenta en los informes. */
+  estado: EstadoGasto;
+  fecha: string;
+  proveedor: string;
+  nifProveedor: string;
+  categoria: string;
+  lineas: LineaGasto[];
+  /** Base imponible y cuota de IVA si vienen en el ticket (`null` si no). */
+  base: number | null;
+  iva: number | null;
+  total: number;
+  formaPago: string;
+  notas: string;
+  ticketId: string | null;
+  /** Si los datos los leyó el lector de tickets (y qué avisó). */
+  leidoAutomaticamente: boolean;
+  avisos: string[];
+  creado: string;
+  creadoPor: string;
+  actualizado: string;
+}
+
+export interface RepositorioGastos {
+  listar(filtro?: { estado?: EstadoGasto; desde?: string; hasta?: string; limite?: number }): Promise<Gasto[]>;
+  obtener(id: string): Promise<Gasto | null>;
+  guardar(gasto: Gasto): Promise<void>;
+  /** Borra el gasto y la foto de su ticket. */
+  borrar(id: string): Promise<boolean>;
+}
+
+/** Fotos de los tickets: aparte de las de la web, nunca se publican. */
+export interface RepositorioTickets {
+  guardar(ticket: { id: string; tipo: string; bytes: Uint8Array }, email: string): Promise<void>;
+  obtener(id: string): Promise<{ tipo: string; bytes: Uint8Array } | null>;
+}
+
 export interface Repositorios {
   contenido: RepositorioContenido;
   fotos: RepositorioFotos;
@@ -317,4 +365,6 @@ export interface Repositorios {
   ajustesPrivados: RepositorioAjustesPrivados;
   clientes: RepositorioClientes;
   facturas: RepositorioFacturas;
+  gastos: RepositorioGastos;
+  tickets: RepositorioTickets;
 }

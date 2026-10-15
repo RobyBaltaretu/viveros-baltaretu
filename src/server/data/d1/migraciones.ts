@@ -133,6 +133,34 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       `CREATE INDEX facturas_cliente ON facturas (cliente_id, fecha)`,
     ],
   },
+  {
+    version: 5,
+    nombre: 'gastos y tickets',
+    sql: [
+      `CREATE TABLE tickets (
+        id TEXT PRIMARY KEY,
+        tipo TEXT NOT NULL,
+        bytes BLOB NOT NULL,
+        tamano INTEGER NOT NULL,
+        subido TEXT NOT NULL,
+        subido_por TEXT NOT NULL
+      )`,
+      `CREATE TABLE gastos (
+        id TEXT PRIMARY KEY,
+        estado TEXT NOT NULL CHECK (estado IN ('revisar', 'confirmado')),
+        fecha TEXT NOT NULL,
+        proveedor TEXT NOT NULL DEFAULT '',
+        categoria TEXT NOT NULL DEFAULT '',
+        total REAL NOT NULL DEFAULT 0,
+        ticket_id TEXT,
+        datos TEXT NOT NULL,
+        creado TEXT NOT NULL,
+        creado_por TEXT NOT NULL,
+        actualizado TEXT NOT NULL
+      )`,
+      `CREATE INDEX gastos_fecha ON gastos (estado, fecha)`,
+    ],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

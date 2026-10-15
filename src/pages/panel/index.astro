@@ -10,6 +10,7 @@ export const prerender = false;
 const s = sesionCon(Astro.locals);
 const rol = s?.usuario.rol ?? 'editor';
 const nuevos = s && puede(rol, 'presupuestos') ? await s.repos.presupuestos.contar('nuevo') : 0;
+const porRevisar = s && puede(rol, 'gastos') ? (await s.repos.gastos.listar({ estado: 'revisar' })).length : 0;
 const porCobrar = s && puede(rol, 'facturas') ? (await s.repos.facturas.listar({ estado: 'emitida' })).length : 0;
 const pendientes = s ? (await s.repos.contenido.pendientes()).length : 0;
 const t = tp.tarjetas;
@@ -29,7 +30,8 @@ const t = tp.tarjetas;
     <Tarjeta href="/panel/asistente" titulo="Asistente" texto="Cambiar precios y más, paso a paso" />
     <Tarjeta href="/panel/plantas" titulo={t.plantas[0]} texto={t.plantas[1]} />
     {puede(rol, 'presupuestos') && <Tarjeta href="/panel/presupuestos" titulo={t.presupuestos[0]} texto={t.presupuestos[1]} aviso={nuevos ? tp.nuevos(nuevos) : undefined} />}
- {puede(rol, 'facturas') && <Tarjeta href="/panel/facturas" titulo="Facturas" texto="Hacer facturas y ver lo que falta por cobrar" aviso={porCobrar ? `${porCobrar} por cobrar` : undefined} />}
+ {puede(rol, 'gastos') && <Tarjeta href="/panel/gastos" titulo="Gastos" texto="Tickets de compra y lo que se ha gastado" aviso={porRevisar ? `${porRevisar} por revisar` : undefined} />}
+    {puede(rol, 'facturas') && <Tarjeta href="/panel/facturas" titulo="Facturas" texto="Hacer facturas y ver lo que falta por cobrar" aviso={porCobrar ? `${porCobrar} por cobrar` : undefined} />}
     <Tarjeta href="/panel/fotos" titulo={t.fotos[0]} texto={t.fotos[1]} />
     <Tarjeta href="/panel/textos" titulo={t.textos[0]} texto={t.textos[1]} />
     <Tarjeta href="/panel/ayuda" titulo={t.ayuda[0]} texto={t.ayuda[1]} />
