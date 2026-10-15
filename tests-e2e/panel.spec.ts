@@ -3,7 +3,7 @@ import { auditar, controlesGrandes } from './ayudas';
 
 // El build de los e2e usa el entorno `desarrollo`: D1 local con el contenido importado
 // y entrada al panel sin Access desde localhost como propietario@example.com.
-const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/publicar', '/panel/cambios', '/panel/plantas/washingtonia-robusta/vista', '/panel/presupuestos?estado=archivado', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos'];
+const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/publicar', '/panel/cambios', '/panel/plantas/washingtonia-robusta/vista', '/panel/presupuestos?estado=archivado', '/panel/asistente', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos'];
 
 test.describe('panel: accesibilidad y tamaño de los controles', () => {
   for (const ruta of PANTALLAS) {
@@ -185,4 +185,28 @@ test('bandeja de presupuestos: ver, marcar como respondido y descargar', async (
   expect(texto).toContain(nombre);
   // Un texto que empieza por "=" no se convierte en fórmula al abrirlo en Excel.
   expect(texto).toContain(`"'=Necesito 20 palmeras`);
+});
+
+test('asistente guiado: cambiar un precio con confirmación', async ({ page }) => {
+  const planta = test.info().project.name === 'movil' ? 'Palmito' : 'Yuca';
+  await page.goto('/panel/asistente');
+  await page.getByRole('button', { name: 'Cambiar un precio' }).click();
+  await expect(page.getByRole('status')).toHaveText('¿De qué planta?');
+  await page.getByRole('button', { name: planta, exact: true }).click();
+  await page.getByLabel('¿Cuál es el precio nuevo, en euros?').fill('31');
+  await page.getByRole('button', { name: 'Siguiente' }).click();
+  await expect(page.getByRole('status')).toContainText(`Voy a cambiar el precio de ${planta}`);
+  await auditar(page);
+  await controlesGrandes(page);
+  await page.getByRole('button', { name: 'No' }).click();
+  await expect(page.getByRole('status')).toHaveText('Vale, no he cambiado nada.');
+
+  await page.getByRole('button', { name: 'Cambiar un precio' }).click();
+  await page.getByRole('button', { name: planta, exact: true }).click();
+  await page.getByLabel('¿Cuál es el precio nuevo, en euros?').fill('31');
+  await page.getByRole('button', { name: 'Siguiente' }).click();
+  await page.getByRole('button', { name: 'Sí, hazlo' }).click();
+  await expect(page.getByRole('status')).toContainText('Hecho');
+  await page.getByRole('button', { name: '¿Cuántos presupuestos nuevos hay?' }).click();
+  await expect(page.getByRole('status')).toContainText('presupuesto');
 });

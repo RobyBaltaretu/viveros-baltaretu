@@ -25,6 +25,7 @@ const t = tp.tarjetas;
         <Tarjeta href="/panel/publicar" titulo="Publicar cambios" texto={pendientes ? 'Hay cambios guardados que aún no están en la web' : 'La web está al día'} aviso={pendientes ? `${pendientes}` : undefined} />
       )
     }
+    <Tarjeta href="/panel/asistente" titulo="Asistente" texto="Cambiar precios y más, paso a paso" />
     <Tarjeta href="/panel/plantas" titulo={t.plantas[0]} texto={t.plantas[1]} />
     {puede(rol, 'presupuestos') && <Tarjeta href="/panel/presupuestos" titulo={t.presupuestos[0]} texto={t.presupuestos[1]} aviso={nuevos ? tp.nuevos(nuevos) : undefined} />}
     <Tarjeta href="/panel/fotos" titulo={t.fotos[0]} texto={t.fotos[1]} />
