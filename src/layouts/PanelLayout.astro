@@ -6,6 +6,7 @@
 import '../styles/global.css';
 import { Font } from 'astro:assets';
 import { tp } from '../i18n/panel';
+import { menuDe, seccionActual } from '../server/panel/navegacion.ts';
 
 interface Props {
   titulo: string;
@@ -16,6 +17,10 @@ interface Props {
 const { titulo, volver = '/panel' } = Astro.props;
 const sesion = Astro.locals.panel;
 const usuario = sesion?.estado === 'ok' ? sesion.usuario : null;
+const menu = usuario ? menuDe(usuario.rol) : [];
+const actual = seccionActual(Astro.url.pathname, menu);
+// El enlace "volver" sobra si lleva a la sección que ya está en el menú.
+const mostrarVolver = volver && volver !== '/panel' && volver !== actual;
 ---
 
 <html lang="es" class="sin-js">
@@ -24,7 +29,34 @@ const usuario = sesion?.estado === 'ok' ? sesion.usuario : null;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
     <title>{titulo} · {tp.tituloPanel}</title>
-    <script is:inline>document.documentElement.classList.remove('sin-js');</script>
+    <script is:inline>
+      document.documentElement.classList.remove('sin-js');
+      // Tras guardar, la página llega con un aviso de un solo uso (?hecho, ?resultado):
+      // se quita de la URL para que recargar no lo repita y, al ir atrás, se salta el
+      // formulario ya enviado en lugar de volver a mostrarlo.
+      (() => {
+        const CLAVE = 'panel:enviado';
+        const UNA_VEZ = ['hecho', 'resultado', 'n'];
+        try {
+          const u = new URL(location.href);
+          const nav = performance.getEntriesByType('navigation')[0];
+          if (nav && nav.type === 'back_forward' && sessionStorage.getItem(CLAVE) === location.pathname) {
+            sessionStorage.removeItem(CLAVE);
+            history.back();
+            return;
+          }
+          if (sessionStorage.getItem(CLAVE) === location.pathname) sessionStorage.removeItem(CLAVE);
+          if (UNA_VEZ.some((p) => u.searchParams.has(p))) {
+            const r = document.referrer ? new URL(document.referrer) : null;
+            if (r && r.origin === location.origin) sessionStorage.setItem(CLAVE, r.pathname);
+            UNA_VEZ.forEach((p) => u.searchParams.delete(p));
+            history.replaceState(history.state, '', u.pathname + u.search + u.hash);
+          }
+        } catch {
+          // Sin sessionStorage o historial, el panel funciona igual.
+        }
+      })();
+    </script>
     <Font cssVariable="--font-bricolage" preload />
     <Font cssVariable="--font-dm-sans" />
   </head>
@@ -41,13 +73,28 @@ const usuario = sesion?.estado === 'ok' ? sesion.usuario : null;
           )
         }
       </div>
+      {
+        menu.length > 1 && (
+          <nav aria-label={tp.menu} class="menu-panel border-t border-crema/20">
+            <ul class="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-2" role="list">
+              {menu.map((s) => (
+                <li class="shrink-0">
+                  <a href={s.href} aria-current={s.href === actual ? 'page' : undefined} class="menu-panel-enlace">
+                    {s.texto}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )
+      }
     </header>
     <main id="principal" class="mx-auto max-w-3xl px-4 pt-6 pb-16">
       {
-        volver && (
+        mostrarVolver && (
           <p class="mb-4">
             <a href={volver} class="enlace-panel">
-              ← {volver === '/panel' ? tp.inicio : tp.volver}
+              ← {tp.volver}
             </a>
           </p>
         )
@@ -58,6 +105,27 @@ const usuario = sesion?.estado === 'ok' ? sesion.usuario : null;
 </html>
 
 <style is:global>
+  /* El panel es una herramienta: sin transiciones entre páginas (al enviar formularios
+     o ir atrás daban la sensación de que la página se quedaba a medias). */
+  @view-transition {
+    navigation: none;
+  }
+  .menu-panel-enlace {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    padding: 0 0.875rem;
+    font-weight: 600;
+    color: var(--color-crema);
+    text-decoration: none;
+    border-bottom: 3px solid transparent;
+  }
+  .menu-panel-enlace:hover {
+    text-decoration: underline;
+  }
+  .menu-panel-enlace[aria-current='page'] {
+    border-bottom-color: var(--color-crema);
+  }
   /* Controles del panel: al menos 48 px de alto y foco bien visible. */
   .boton-panel {
     display: inline-flex;
