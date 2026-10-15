@@ -386,10 +386,26 @@ export interface MensajeAsistente {
   fecha: string;
 }
 
+export interface ResumenConversacion {
+  id: string;
+  creada: string;
+  usada: string;
+  /** El primer mensaje de la persona (recortado). */
+  titulo: string;
+  mensajes: number;
+}
+
 export interface RepositorioConversaciones {
-  /** Conversación abierta de la persona (o una nueva si no hay). */
+  /** Conversación abierta de la persona (la usada más recientemente, o una nueva si no hay). */
   actual(email: string): Promise<string>;
+  /** Empieza otra; si la abierta está vacía, se sigue usando esa. */
   nueva(email: string): Promise<string>;
+  /** Conversaciones con mensajes de la persona, la más reciente primero. */
+  listar(email: string, limite?: number): Promise<ResumenConversacion[]>;
+  /** Vuelve a abrir una conversación suya. */
+  abrir(email: string, id: string): Promise<boolean>;
+  /** Borra una conversación suya con sus mensajes (no deshace lo que se aplicó). */
+  borrar(email: string, id: string): Promise<boolean>;
   mensajes(conversacion: string, limite?: number): Promise<MensajeAsistente[]>;
   anadir(m: Omit<MensajeAsistente, 'id' | 'fecha'>): Promise<void>;
   guardarPropuesta(p: Propuesta): Promise<void>;

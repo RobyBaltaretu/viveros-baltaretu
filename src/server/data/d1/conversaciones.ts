@@ -18,17 +18,49 @@ interface FilaPropuesta {
 const aPropuesta = (f: FilaPropuesta): Propuesta => ({ ...f, argumentos: JSON.parse(f.argumentos) as Record<string, unknown> });
 
 export function crearRepositorioConversaciones(db: BaseD1): RepositorioConversaciones {
-  const nueva = async (email: string) => {
+  const crear = async (email: string) => {
     const id = crypto.randomUUID();
-    await db.prepare('INSERT INTO asistente_conversaciones (id, email, creada) VALUES (?, ?, ?)').bind(id, email, ahora()).run();
+    const t = ahora();
+    await db.prepare('INSERT INTO asistente_conversaciones (id, email, creada, usada) VALUES (?, ?, ?, ?)').bind(id, email, t, t).run();
     return id;
   };
+  const abierta = (email: string) =>
+    db.prepare('SELECT id FROM asistente_conversaciones WHERE email = ? ORDER BY COALESCE(usada, creada) DESC, rowid DESC LIMIT 1').bind(email).first<{ id: string }>();
+  const vacia = async (id: string) => !(await db.prepare('SELECT 1 FROM asistente_mensajes WHERE conversacion = ? LIMIT 1').bind(id).first());
   return {
     async actual(email) {
-      const f = await db.prepare('SELECT id FROM asistente_conversaciones WHERE email = ? ORDER BY creada DESC LIMIT 1').bind(email).first<{ id: string }>();
-      return f?.id ?? nueva(email);
+      return (await abierta(email))?.id ?? crear(email);
     },
-    nueva,
+    async nueva(email) {
+      const f = await abierta(email);
+      return f && (await vacia(f.id)) ? f.id : crear(email);
+    },
+    async listar(email, limite = 50) {
+      const filas = await db
+        .prepare(
+          `SELECT c.id, c.creada, COALESCE(c.usada, c.creada) AS usada, COUNT(m.id) AS mensajes,
+             (SELECT texto FROM asistente_mensajes WHERE conversacion = c.id AND rol = 'usuario' ORDER BY id LIMIT 1) AS titulo
+           FROM asistente_conversaciones c JOIN asistente_mensajes m ON m.conversacion = c.id
+           WHERE c.email = ? GROUP BY c.id ORDER BY usada DESC, c.rowid DESC LIMIT ?`,
+        )
+        .bind(email, limite)
+        .all<{ id: string; creada: string; usada: string; mensajes: number; titulo: string | null }>();
+      return filas.results.map((f) => ({ ...f, titulo: (f.titulo ?? 'Conversación').slice(0, 90) }));
+    },
+    async abrir(email, id) {
+      const r = await db.prepare('UPDATE asistente_conversaciones SET usada = ? WHERE id = ? AND email = ?').bind(ahora(), id, email).run();
+      return (r.meta?.changes ?? 0) > 0;
+    },
+    async borrar(email, id) {
+      const r = await db.prepare('DELETE FROM asistente_conversaciones WHERE id = ? AND email = ?').bind(id, email).run();
+      if (!(r.meta?.changes ?? 0)) return false;
+      // Las propuestas sin responder se descartan; las resueltas se quedan (la auditoría ya las tiene).
+      await db.batch([
+        db.prepare('DELETE FROM asistente_mensajes WHERE conversacion = ?').bind(id),
+        db.prepare("UPDATE asistente_propuestas SET estado = 'rechazada', resultado = 'Conversación borrada.' WHERE conversacion = ? AND estado = 'pendiente'").bind(id),
+      ]);
+      return true;
+    },
     async mensajes(conversacion, limite = 40) {
       const filas = await db
         .prepare('SELECT * FROM (SELECT * FROM asistente_mensajes WHERE conversacion = ? ORDER BY id DESC LIMIT ?) ORDER BY id')
@@ -37,10 +69,11 @@ export function crearRepositorioConversaciones(db: BaseD1): RepositorioConversac
       return filas.results.map((f) => ({ ...f, propuestas: JSON.parse(f.propuestas) as string[] }));
     },
     async anadir(m) {
-      await db
-        .prepare('INSERT INTO asistente_mensajes (conversacion, rol, texto, propuestas, fecha) VALUES (?, ?, ?, ?, ?)')
-        .bind(m.conversacion, m.rol, m.texto, JSON.stringify(m.propuestas), ahora())
-        .run();
+      const t = ahora();
+      await db.batch([
+        db.prepare('INSERT INTO asistente_mensajes (conversacion, rol, texto, propuestas, fecha) VALUES (?, ?, ?, ?, ?)').bind(m.conversacion, m.rol, m.texto, JSON.stringify(m.propuestas), t),
+        db.prepare('UPDATE asistente_conversaciones SET usada = ? WHERE id = ?').bind(t, m.conversacion),
+      ]);
     },
     async guardarPropuesta(p) {
       await db

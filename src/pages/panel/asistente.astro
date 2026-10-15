@@ -3,7 +3,7 @@ import { env } from 'cloudflare:workers';
 import PaginaPanel from '../../components/panel/PaginaPanel.astro';
 import Icono from '../../components/panel/ui/Icono.astro';
 import type { Propuesta } from '../../server/data/tipos.ts';
-import { conversar, enviarFotos, modelosDe, responderPropuesta, usoDeHoy } from '../../server/asistente/agente.ts';
+import { borrarConversacion, conversar, enviarFotos, modelosDe, responderPropuesta, usoDeHoy } from '../../server/asistente/agente.ts';
 import { HERRAMIENTA_FOTOS, MAXIMO_FOTOS_CHAT, miniaturas } from '../../server/asistente/fotos.ts';
 import { SUGERENCIAS, textoSeguro } from '../../server/asistente/formato.ts';
 import { MAXIMO_TEXTO, type BindingAI } from '../../server/asistente/interprete.ts';
@@ -23,6 +23,8 @@ if (s && ctx && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const accion = campo(form, 'accion');
   if (accion === 'nueva') await s.repos.conversaciones.nueva(s.usuario.email);
+  else if (accion === 'abrir') await s.repos.conversaciones.abrir(s.usuario.email, campo(form, 'conversacion'));
+  else if (accion === 'borrar') await borrarConversacion(ctx, campo(form, 'conversacion'));
   else if (accion === 'si' || accion === 'no') await responderPropuesta(ctx, campo(form, 'propuesta'), accion === 'si');
   else {
     // Fotos (cada una con su planta; sin JavaScript, una planta para todas) y después el texto.
@@ -41,6 +43,17 @@ const conversacion = s ? await s.repos.conversaciones.actual(s.usuario.email) : 
 const mensajes = s ? await s.repos.conversaciones.mensajes(conversacion, 60) : [];
 const propuestas = new Map<string, Propuesta>(s ? (await s.repos.conversaciones.propuestas(mensajes.flatMap((m) => m.propuestas))).map((p) => [p.id, p]) : []);
 const uso = s ? await usoDeHoy(s.repos, s.usuario.email) : null;
+const anteriores = s ? await s.repos.conversaciones.listar(s.usuario.email, 50) : [];
+const diaDe = (iso: string) => new Date(iso).toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+const cuando = (iso: string) => {
+  const d = diaDe(iso);
+  const hoyEs = diaDe(new Date().toISOString());
+  const ayer = diaDe(new Date(Date.now() - 86_400_000).toISOString());
+  const h = new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
+  if (d === hoyEs) return `Hoy, ${h}`;
+  if (d === ayer) return `Ayer, ${h}`;
+  return new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: d.slice(0, 4) === hoyEs.slice(0, 4) ? undefined : 'numeric', timeZone: 'Europe/Madrid' });
+};
 const plantas = conFotos && s ? (await s.repos.contenido.listar('catalogo')).map((e) => ({ id: e.id, nombre: String((e.borrador.datos.nombre as { es?: string } | undefined)?.es ?? e.id) })).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')) : [];
 
 const ESTADO: Record<Propuesta['estado'], string> = { pendiente: '', aplicada: 'Hecho', rechazada: 'No aplicado', fallida: 'No se pudo' };
@@ -82,6 +95,40 @@ const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
           Nueva<span class="sr-only sm:not-sr-only">&nbsp;conversación</span>
         </button>
       </form>
+      {
+        anteriores.length > 0 && (
+          <details class="historial" open={mensajes.length === 0 ? true : undefined}>
+            <summary>
+              <Icono nombre="cambios" clase="size-5" />
+              Conversaciones anteriores <span class="tabular text-gris">({anteriores.length})</span>
+            </summary>
+            <ul class="lista-historial" role="list">
+              {anteriores.map((c) => (
+                <li class:list={['conversacion-anterior', c.id === conversacion && 'conversacion-abierta']}>
+                  <form method="post" class="min-w-0 flex-1">
+                    <input type="hidden" name="accion" value="abrir" />
+                    <input type="hidden" name="conversacion" value={c.id} />
+                    <button class="abrir-conversacion" aria-current={c.id === conversacion ? 'true' : undefined} aria-label={`${c.id === conversacion ? 'Abierta ahora' : 'Abrir'}: ${c.titulo}, ${cuando(c.usada)}`}>
+                      <span class="titulo-conversacion">{c.titulo}</span>
+                      <span class="text-sm text-gris">
+                        {cuando(c.usada)} · {c.mensajes} {c.mensajes === 1 ? 'mensaje' : 'mensajes'}
+                        {c.id === conversacion ? ' · abierta ahora' : ''}
+                      </span>
+                    </button>
+                  </form>
+                  <form method="post" data-confirmar="¿Borrar esta conversación? Lo que ya se aplicó no se deshace.">
+                    <input type="hidden" name="accion" value="borrar" />
+                    <input type="hidden" name="conversacion" value={c.id} />
+                    <button class="boton-icono" aria-label={`Borrar la conversación «${c.titulo}»`} title="Borrar">
+                      <Icono nombre="borrar" clase="size-5" />
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )
+      }
       {
         uso && (
           <details id="uso" class="uso">
@@ -293,6 +340,57 @@ const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
     border-top: 1px solid var(--color-linea);
     padding-top: 0.5rem;
     font-size: 0.9375rem;
+  }
+  .chat-agricolai .historial {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--color-linea);
+    padding-top: 0.25rem;
+  }
+  .chat-agricolai .historial summary {
+    display: flex;
+    min-height: 3rem;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-oliva);
+  }
+  .chat-agricolai .lista-historial {
+    display: grid;
+    max-height: 22rem;
+    gap: 0.25rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: 0.25rem;
+  }
+  .chat-agricolai .conversacion-anterior {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 0.875rem;
+  }
+  .chat-agricolai .conversacion-abierta {
+    background: var(--color-verdor);
+  }
+  .chat-agricolai .abrir-conversacion {
+    display: grid;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.875rem;
+    text-align: left;
+    transition: background-color 150ms ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .chat-agricolai .conversacion-anterior:not(.conversacion-abierta) .abrir-conversacion:hover {
+      background: var(--color-crema);
+    }
+  }
+  .chat-agricolai .titulo-conversacion {
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .chat-agricolai .uso summary {
     display: flex;
@@ -839,6 +937,10 @@ const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
   });
   document.addEventListener('submit', (e) => {
     const form = e.target as HTMLFormElement;
+    if (form.dataset.confirmar && !confirm(form.dataset.confirmar)) {
+      e.preventDefault();
+      return;
+    }
     const boton = (e as SubmitEvent).submitter as HTMLButtonElement | null;
     if (!form.closest('#conversacion') || !boton) return;
     e.preventDefault();

@@ -198,6 +198,12 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
     nombre: 'cambios deshechos',
     sql: [`ALTER TABLE cambios ADD COLUMN deshecho INTEGER NOT NULL DEFAULT 0`],
   },
+  {
+    version: 8,
+    nombre: 'conversaciones anteriores del asistente',
+    // `usada`: último uso; la conversación abierta es la usada más recientemente.
+    sql: [`ALTER TABLE asistente_conversaciones ADD COLUMN usada TEXT`, `UPDATE asistente_conversaciones SET usada = creada`],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

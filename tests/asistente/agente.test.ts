@@ -1,7 +1,7 @@
 import { MockLanguageModelV4 } from 'ai/test';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { leerContenido } from '../../scripts/contenido/archivos.mjs';
-import { AVISO_CUPO, CLAVE_NEURONAS, conversar, enviarFotos, LIMITE_NEURONAS_DIA, LIMITE_MENSAJES_PERSONA, responderPropuesta, usoDeHoy, type ModeloAsistente } from '../../src/server/asistente/agente.ts';
+import { AVISO_CUPO, borrarConversacion, CLAVE_NEURONAS, conversar, enviarFotos, LIMITE_NEURONAS_DIA, LIMITE_MENSAJES_PERSONA, responderPropuesta, usoDeHoy, type ModeloAsistente } from '../../src/server/asistente/agente.ts';
 import { textoSeguro } from '../../src/server/asistente/formato.ts';
 import { herramientasDe, type Contexto } from '../../src/server/asistente/herramientas.ts';
 import { importarContenido, type EntradaImportada } from '../../src/server/contenido/importacion.ts';
@@ -152,6 +152,30 @@ describe('asistente completo', () => {
     const u = await usoDeHoy(repos, 'uso@example.com', ahora);
     expect(u).toMatchObject({ mensajes: 3, limiteMensajes: LIMITE_MENSAJES_PERSONA, limiteNeuronas: LIMITE_NEURONAS_DIA, renueva: '02:00' });
     expect(u.neuronas).toBeGreaterThan(0);
+  });
+
+  it('las conversaciones anteriores se pueden volver a abrir y borrar', async () => {
+    const u = usuario('historial@example.com');
+    const c = ctx(u);
+    const r = repos.conversaciones;
+    await conversar(c, 'hola', [modelo(null, 'Hola.')]);
+    const primera = await r.actual(u.email);
+    const segunda = await r.nueva(u.email);
+    expect(segunda).not.toBe(primera);
+    expect(await r.actual(u.email)).toBe(segunda);
+    // Una conversación vacía no se duplica ni sale en la lista.
+    expect(await r.nueva(u.email)).toBe(segunda);
+    expect((await r.listar(u.email)).map((x) => x.id)).toEqual([primera]);
+    expect((await r.listar(u.email))[0]).toMatchObject({ titulo: 'hola', mensajes: 2 });
+
+    expect(await r.abrir(u.email, primera)).toBe(true);
+    expect(await r.actual(u.email)).toBe(primera);
+    expect(await r.abrir('otra@example.com', primera)).toBe(false);
+
+    expect(await borrarConversacion(ctx(usuario('otra@example.com')), primera)).toBe(false);
+    expect(await borrarConversacion(c, primera)).toBe(true);
+    expect(await r.listar(u.email)).toEqual([]);
+    expect(await r.mensajes(primera)).toEqual([]);
   });
 
   it('las herramientas dependen del rol', () => {
