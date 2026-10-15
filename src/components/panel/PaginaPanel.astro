@@ -12,15 +12,16 @@ interface Props {
   titulo: string;
   permiso?: Accion;
   volver?: string | false;
+  ancho?: 'normal' | 'amplio';
 }
 
-const { titulo, permiso, volver } = Astro.props;
+const { titulo, permiso, volver, ancho } = Astro.props;
 const s = Astro.locals.panel;
 const estado = !s || s.estado === 'sin-activar' ? 'sin-activar' : s.estado === 'sin-acceso' ? 'sin-acceso' : permiso && !puede(s.usuario.rol, permiso) ? 'sin-permiso' : 'ok';
 if (estado !== 'ok') Astro.response.status = estado === 'sin-activar' ? 503 : 403;
 ---
 
-<PanelLayout titulo={titulo} volver={volver}>
+<PanelLayout titulo={titulo} volver={volver} ancho={ancho}>
   {estado === 'sin-activar' && <Aviso titulo={tp.sinActivarTitulo} texto={tp.sinActivarTexto} />}
   {estado === 'sin-acceso' && <Aviso titulo={tp.sinAccesoTitulo} texto={tp.sinAccesoTexto} />}
   {estado === 'sin-permiso' && <Aviso titulo={tp.sinPermisoTitulo} texto={tp.sinPermisoTexto} />}

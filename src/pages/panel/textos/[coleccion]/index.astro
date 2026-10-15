@@ -24,7 +24,7 @@ const hecho = Astro.url.searchParams.get('hecho');
         const d = e.borrador.datos as { titulo?: { es?: string }; revisado?: boolean; datosDeEjemplo?: boolean };
         return (
           <li>
-            <a href={`/panel/textos/${coleccion}/${e.id}`} class="group flex min-h-12 flex-col gap-1 rounded-tarjeta border-2 border-linea bg-papel p-4 no-underline hover:border-oliva">
+            <a href={`/panel/textos/${coleccion}/${e.id}`} class="group flex min-h-12 flex-col gap-1 caja-panel tarjeta-accion p-4 no-underline">
               <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{d.titulo?.es}</span>
               {(d.datosDeEjemplo || !d.revisado) && <span class="font-semibold text-terracota">{d.datosDeEjemplo ? 'Es un ejemplo: no se publica.' : 'Falta marcarlo como revisado: no se publica.'}</span>}
             </a>

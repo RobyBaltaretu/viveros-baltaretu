@@ -1,29 +1,45 @@
 ---
-/** Tarjeta grande del inicio del panel: todo el recuadro es el enlace. */
+/**
+ * Tarjeta de acceso: todo el recuadro es el enlace, con el dibujo de la acción,
+ * el título y una frase. Al pasar por encima se eleva un poco y la hoja del
+ * dibujo se mueve; al pulsar, se hunde.
+ */
+import Ilustracion, { type Escena } from './ui/Ilustracion.astro';
+
 interface Props {
   href: string;
   titulo: string;
   texto: string;
-  /** Número destacado (por ejemplo, presupuestos nuevos). */
+  /** Número o aviso destacado (por ejemplo, «3 nuevos»). */
   aviso?: string | undefined;
+  escena?: Escena | undefined;
+  /** `fila`: horizontal y compacta; `bloque`: dibujo arriba. */
+  forma?: 'fila' | 'bloque';
 }
-const { href, titulo, texto, aviso } = Astro.props;
+const { href, titulo, texto, aviso, escena, forma = 'fila' } = Astro.props;
 ---
 
-<li>
-  <a href={href} class="tarjeta-panel group flex min-h-24 items-center gap-4 rounded-panel border-2 border-linea bg-papel p-5 no-underline">
-    <span class="flex-1">
-      <span class="block font-titular text-2xl font-bold text-tinta group-hover:underline">{titulo}</span>
-      <span class="mt-1 block text-gris">{texto}</span>
+<li class="list-none">
+  <a
+    href={href}
+    class:list={[
+      'tarjeta-accion caja-panel group flex h-full no-underline',
+      forma === 'bloque' ? 'flex-col gap-3 p-3 sm:p-5' : 'min-h-24 items-center gap-4 p-4 pr-5',
+    ]}
+  >
+    {
+      escena && (
+        <span class:list={['grid shrink-0 place-items-center rounded-2xl bg-crema', forma === 'bloque' ? 'h-24 w-full sm:h-32' : 'size-20']}>
+          <Ilustracion escena={escena} clase={forma === 'bloque' ? 'w-28 sm:w-36' : 'w-[4.5rem]'} />
+        </span>
+      )
+    }
+    <span class="flex min-w-0 flex-1 flex-col">
+      <span class="flex flex-wrap items-center gap-2">
+        <span class:list={['font-titular font-bold text-tinta group-hover:underline', forma === 'bloque' ? 'text-lg sm:text-xl' : 'text-xl']}>{titulo}</span>
+        {aviso && <span class="rounded-full bg-terracota px-2.5 py-0.5 text-sm font-semibold text-white">{aviso}</span>}
+      </span>
+      <span class="mt-1 text-base text-gris">{texto}</span>
     </span>
-    {aviso && <span class="rounded-full bg-terracota px-3 py-1 font-semibold text-white">{aviso}</span>}
-    <span aria-hidden="true" class="text-2xl text-oliva">→</span>
   </a>
 </li>
-
-<style>
-  .tarjeta-panel:hover,
-  .tarjeta-panel:focus-visible {
-    border-color: var(--color-oliva);
-  }
-</style>

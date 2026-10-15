@@ -79,4 +79,5 @@ Estado actual, preferencias del propietario y pendientes: `docs/estado.md`. Leer
 - El asistente solo ejecuta la lista cerrada de `src/server/asistente/acciones.ts`, siempre con confirmación Sí/No.
 - Facturas (`src/server/facturas/`, `/panel/facturas`): una emitida no se cambia ni se borra (se corrige con una rectificativa); numeración correlativa por serie y año; los datos fiscales de la empresa están en D1 (`ajustes_privados`), no en la web. No es un sistema VeriFactu: no presentarlo como tal.
 - Gastos (`src/server/gastos/`, `/panel/gastos`): el lector de tickets (Workers AI con visión) solo propone; el gasto queda «por revisar» hasta que una persona lo guarda. Las fotos de los tickets nunca se publican.
+- Diseño del panel: armazón en `src/layouts/PanelLayout.astro` (barra lateral y barra inferior), mapa de secciones en `src/server/panel/navegacion.ts`, iconos Lucide en `src/server/panel/iconos.ts` y dibujos de cada acción en `src/components/panel/ui/Ilustracion.astro`.
 - Decisiones: `docs/panel-propio/decisiones.md`. Pasos del propietario: `docs/panel-propio/pasos-manuales.md`.

@@ -58,7 +58,7 @@ const clientes = s && !elegido ? await s.repos.clientes.listar() : [];
               <li>
                 <form method="post">
                   <input type="hidden" name="cliente" value={c.id} />
-                  <button class="flex min-h-12 w-full flex-col items-start gap-1 rounded-tarjeta border-2 border-linea bg-papel p-4 text-left hover:border-oliva">
+                  <button class="flex min-h-12 w-full flex-col items-start gap-1 caja-panel tarjeta-accion p-4 text-left">
                     <span class="font-titular text-xl font-bold">{c.nombre}</span>
                     <span class="text-gris">{[c.nif || 'sin NIF', c.poblacion].filter(Boolean).join(' · ')}</span>
                   </button>

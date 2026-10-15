@@ -110,7 +110,7 @@ const DATOS = [
     <ul class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2" role="list">
       {
         KPIS.map((k) => (
-          <li class="grid gap-1 rounded-panel border-2 border-linea bg-papel p-4">
+          <li class="grid gap-1 caja-panel p-4">
             <span class="text-gris">{k.nombre}</span>
             <span class="font-titular text-3xl font-bold">{k.valor}</span>
             <span class="text-base text-gris">{k.nota}</span>
@@ -150,7 +150,7 @@ const DATOS = [
     <ul class="mt-4 grid grid-cols-2 gap-3" role="list">
       {
         DATOS.map((k) => (
-          <li class="grid gap-1 rounded-tarjeta border-2 border-linea bg-papel p-3">
+          <li class="grid gap-1 caja-panel p-3">
             <span class="text-gris">{k.nombre}</span>
             <span class="text-xl font-bold">{k.valor}</span>
             {k.nota && <span class="text-base text-gris">{k.nota}</span>}

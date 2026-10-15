@@ -28,7 +28,7 @@ if (s && Astro.request.method === 'POST') {
   <h1 class="titular-grande">Añadir un ticket</h1>
   <p class="mt-2">Haz una foto al ticket o a la factura de compra, o elige una que ya tengas. El panel lee la tienda, la fecha, lo comprado y el total, y tú lo revisas.</p>
   <Mensajes errores={error ? [{ campo: 'ticket', mensaje: error }] : []} />
-  <form method="post" enctype="multipart/form-data" class="mt-6 grid gap-4 rounded-panel border-2 border-linea bg-papel p-5" data-ticket>
+  <form method="post" enctype="multipart/form-data" class="mt-6 grid gap-4 caja-panel p-5" data-ticket>
     <label for="ticket" class="font-titular text-xl font-bold">Foto del ticket</label>
     <p id="ticket-ayuda" class="text-gris">Al pulsar el botón de elegir archivo, el móvil te deja hacer la foto con la cámara o elegirla de la galería. Que se vea entero, recto y con luz.</p>
     <input id="ticket" name="ticket" type="file" accept="image/*" required aria-describedby="ticket-ayuda" class="campo-panel" />

@@ -12,7 +12,7 @@ export const prerender = false;
   <ul class="mt-6 grid gap-3" role="list">
     {
       SECCIONES.map((s) => (
-        <li class="rounded-tarjeta border-2 border-linea bg-papel p-4">
+        <li class="caja-panel p-4">
           {s.partes ? (
             <>
               <h2 class="font-titular text-xl font-bold">{s.titulo}</h2>
@@ -37,7 +37,7 @@ export const prerender = false;
     }
     {
       Object.entries(LISTAS).map(([c, l]) => (
-        <li class="rounded-tarjeta border-2 border-linea bg-papel p-4">
+        <li class="caja-panel p-4">
           <a class="group flex min-h-12 flex-col no-underline" href={`/panel/textos/${c}`}>
             <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{l.titulo}</span>
             <span class="text-gris">{l.ayuda}</span>

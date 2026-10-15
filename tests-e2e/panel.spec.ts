@@ -18,9 +18,10 @@ test.describe('panel: accesibilidad y tamaño de los controles', () => {
 
 test('inicio con las tarjetas principales', async ({ page }) => {
   await page.goto('/panel');
-  for (const nombre of ['Mis plantas', 'Presupuestos recibidos', 'Fotos', 'Textos de la web', 'Ayuda']) {
-    await expect(page.getByRole('link', { name: new RegExp(nombre) })).toBeVisible();
+  for (const nombre of ['Plantas', 'Presupuestos', 'Fotos', 'Textos', 'Ayuda', 'Nueva factura', 'Añadir un ticket']) {
+    await expect(page.getByRole('main').getByRole('link', { name: new RegExp(`^${nombre}`) })).toBeVisible();
   }
+  await expect(page.getByRole('heading', { name: 'Empezar algo' })).toBeVisible();
 });
 
 test('el propietario da y quita acceso con el teclado', async ({ page }) => {
@@ -81,7 +82,7 @@ test('alta guiada de una planta, paso a paso', async ({ page }) => {
   await page.getByRole('button', { name: 'Guardar el texto' }).click();
   await expect(page.getByRole('img', { name: 'Olivo joven en maceta' })).toBeVisible();
   await auditar(page);
-  await page.getByRole('link', { name: '← Volver' }).click();
+  await page.getByRole('link', { name: 'Volver', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(nombre);
   await expect(page.getByText('Falta marcarla como revisada')).toBeVisible();
 

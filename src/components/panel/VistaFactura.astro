@@ -13,7 +13,7 @@ const pdf = `/api/panel/factura-pdf?id=${f.id}`;
 const estado = vencida(f) ? 'Pendiente de cobro (vencida)' : NOMBRE_ESTADO[f.estado];
 ---
 
-<dl class="mt-6 grid gap-2 rounded-tarjeta border-2 border-linea bg-papel p-4">
+<dl class="mt-6 grid gap-2 caja-panel p-4">
   <div><dt class="inline font-semibold">Estado: </dt><dd class="inline">{estado}{f.cobradaEl && ` el ${fechaEs(f.cobradaEl)}`}</dd></div>
   <div><dt class="inline font-semibold">Fecha: </dt><dd class="inline">{fechaEs(f.fecha)}</dd></div>
   <div><dt class="inline font-semibold">Fecha límite de pago: </dt><dd class="inline">{fechaEs(f.vencimiento)}</dd></div>
@@ -33,7 +33,7 @@ const estado = vencida(f) ? 'Pendiente de cobro (vencida)' : NOMBRE_ESTADO[f.est
     f.lineas
       .filter((l) => l.concepto)
       .map((l) => (
-        <li class="flex flex-wrap justify-between gap-2 rounded-tarjeta border-2 border-linea bg-papel p-3">
+        <li class="flex flex-wrap justify-between gap-2 caja-panel p-3">
           <span>
             {String(l.cantidad).replace('.', ',')} × {l.concepto}
           </span>

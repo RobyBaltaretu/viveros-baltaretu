@@ -1,33 +1,48 @@
 ---
 /**
- * Plantilla del panel interno: letra grande, mucho contraste, una tarea por
- * pantalla y nada de la cabecera ni el pie de la web pública.
+ * Armazón del panel interno. En el ordenador, barra lateral con las secciones
+ * agrupadas; en el móvil, barra de arriba con la marca y barra de abajo con los
+ * accesos principales (el asistente en el centro) y «Más». Letra grande,
+ * controles de 48 px y nada de la cabecera ni el pie de la web pública.
  */
 import '../styles/global.css';
 import { Font } from 'astro:assets';
+import Icono from '../components/panel/ui/Icono.astro';
+import Ilustracion, { type Escena } from '../components/panel/ui/Ilustracion.astro';
+import Logo from '../components/panel/ui/Logo.astro';
 import { tp } from '../i18n/panel';
-import { menuDe, seccionActual } from '../server/panel/navegacion.ts';
+import { barraDe, gruposDe, MAS, menuDe, seccionActual } from '../server/panel/navegacion.ts';
 
 interface Props {
   titulo: string;
   /** Enlace "volver" (por defecto, al inicio del panel). `false` en el inicio. */
   volver?: string | false;
+  /** `amplio` para pantallas con tablero (inicio, informes, más). */
+  ancho?: 'normal' | 'amplio';
 }
 
-const { titulo, volver = '/panel' } = Astro.props;
+const { titulo, volver = '/panel', ancho = 'normal' } = Astro.props;
 const sesion = Astro.locals.panel;
 const usuario = sesion?.estado === 'ok' ? sesion.usuario : null;
 const menu = usuario ? menuDe(usuario.rol) : [];
-const actual = seccionActual(Astro.url.pathname, menu);
-// El enlace "volver" sobra si lleva a la sección que ya está en el menú.
-const mostrarVolver = volver && volver !== '/panel' && volver !== actual;
+const grupos = usuario ? gruposDe(usuario.rol) : [];
+const barra = usuario ? barraDe(usuario.rol) : [];
+const actual = Astro.url.pathname.replace(/\/+$/, '') === MAS ? MAS : seccionActual(Astro.url.pathname, menu);
+const enBarra = barra.some((s) => s.href === actual);
+// El enlace "volver" sobra si lleva a una sección que ya está en el menú.
+const mostrarVolver = volver && volver !== '/panel' && !menu.some((s) => s.href === volver);
+// En la portada de cada sección, su dibujo arriba a la derecha (decorativo, desde tableta).
+const portada = menu.find((s) => s.escena && s.href === Astro.url.pathname.replace(/\/+$/, ''));
+const iniciales = (usuario?.nombre || usuario?.email || '?').trim().slice(0, 1).toUpperCase();
 ---
 
 <html lang="es" class="sin-js">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#f7f2e8" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{titulo} · {tp.tituloPanel}</title>
     <script is:inline>
       document.documentElement.classList.remove('sin-js');
@@ -62,92 +77,293 @@ const mostrarVolver = volver && volver !== '/panel' && volver !== actual;
   </head>
   <body class="panel min-h-dvh text-lg">
     <a href="#principal" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-tarjeta focus:bg-papel focus:p-3">{tp.saltar}</a>
-    <header class="superficie-oliva">
-      <div class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <a href="/panel" class="inline-flex min-h-12 items-center font-titular text-xl font-bold text-crema no-underline">{tp.tituloPanel}</a>
-        {
-          usuario && (
-            <a href="/cdn-cgi/access/logout" class="boton-panel boton-panel-claro">
-              {tp.salir}
-            </a>
-          )
-        }
-      </div>
+    <div class="lg:grid lg:min-h-dvh lg:grid-cols-[17.5rem_minmax(0,1fr)]">
       {
-        menu.length > 1 && (
-          <nav aria-label={tp.menu} class="menu-panel border-t border-crema/20">
-            <ul class="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-2" role="list">
-              {menu.map((s) => (
-                <li class="shrink-0">
-                  <a href={s.href} aria-current={s.href === actual ? 'page' : undefined} class="menu-panel-enlace">
-                    {s.texto}
-                  </a>
-                </li>
+        usuario && (
+          <aside class="lateral-panel hidden lg:flex">
+            <a href="/panel" class="flex min-h-12 items-center rounded-2xl px-2 no-underline" aria-label="Inicio del panel">
+              <Logo />
+            </a>
+            <nav aria-label={tp.menu} class="mt-6 grid flex-1 content-start gap-5 overflow-y-auto">
+              {grupos.map((g) => (
+                <div class="grid gap-1">
+                  <p class="px-3 text-sm font-semibold text-gris">{g.titulo}</p>
+                  <ul class="grid gap-0.5" role="list">
+                    {g.secciones.map((s) => (
+                      <li>
+                        <a href={s.href} aria-current={s.href === actual ? 'page' : undefined} class="enlace-lateral">
+                          <Icono nombre={s.icono} clase="size-5" />
+                          {s.texto}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
-          </nav>
+            </nav>
+            <div class="mt-4 flex items-center gap-3 rounded-2xl bg-papel p-3 shadow-[0_1px_0_var(--color-linea)]">
+              <span class="grid size-10 shrink-0 place-items-center rounded-full bg-verdor font-titular font-bold text-oliva" aria-hidden="true">
+                {iniciales}
+              </span>
+              <span class="min-w-0 flex-1 leading-tight">
+                <span class="block truncate font-semibold">{usuario.nombre || usuario.email}</span>
+                <span class="block text-sm text-gris">{tp.roles[usuario.rol]}</span>
+              </span>
+              <a href="/cdn-cgi/access/logout" class="boton-icono" aria-label={tp.salir} title={tp.salir}>
+                <Icono nombre="salir" clase="size-5" />
+              </a>
+            </div>
+          </aside>
         )
       }
-    </header>
-    <main id="principal" class="mx-auto max-w-3xl px-4 pt-6 pb-16">
-      {
-        mostrarVolver && (
-          <p class="mb-4">
-            <a href={volver} class="enlace-panel">
-              ← {tp.volver}
-            </a>
-          </p>
-        )
-      }
-      <slot />
-    </main>
+      <div class="min-w-0">
+        <header class="superior-panel lg:hidden">
+          <a href="/panel" class="flex min-h-12 items-center no-underline" aria-label="Inicio del panel">
+            <Logo />
+          </a>
+          {
+            usuario && (
+              <a href="/cdn-cgi/access/logout" class="boton-panel boton-panel-secundario !min-h-12 !px-4">
+                <Icono nombre="salir" clase="size-5" />
+                {tp.salir}
+              </a>
+            )
+          }
+        </header>
+        <main id="principal" class:list={['contenido-panel relative mx-auto px-4 pt-5 pb-32 sm:px-6 lg:px-10 lg:pt-10 lg:pb-16', ancho === 'amplio' ? 'max-w-6xl' : 'max-w-3xl']}>
+          {
+            mostrarVolver && (
+              <p class="mb-3">
+                <a href={volver} class="enlace-panel gap-2 no-underline">
+                  <Icono nombre="volver" clase="size-5" />
+                  {tp.volver}
+                </a>
+              </p>
+            )
+          }
+          {portada && <Ilustracion escena={portada.escena as Escena} clase="pointer-events-none absolute top-3 right-4 hidden w-20 sm:block lg:top-7 lg:right-10 lg:w-24" />}
+          <slot />
+        </main>
+      </div>
+    </div>
+    {
+      barra.length > 0 && (
+        <nav aria-label={tp.menu} class="inferior-panel lg:hidden">
+          <ul class="mx-auto grid max-w-md grid-cols-5" role="list">
+            {[...barra, { href: MAS, texto: 'Más', icono: 'mas' as const }].map((s) => (
+              <li>
+                <a
+                  href={s.href}
+                  aria-current={s.href === actual || (s.href === MAS && actual && !enBarra) ? 'page' : undefined}
+                  class:list={['pestana-panel', s.href === '/panel/asistente' && 'pestana-central']}
+                >
+                  <span class="pestana-icono">
+                    <Icono nombre={s.icono} clase="size-6" />
+                  </span>
+                  <span>{s.texto}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
   </body>
 </html>
 
 <style is:global>
-  /* El panel es una herramienta: sin transiciones entre páginas (al enviar formularios
-     o ir atrás daban la sensación de que la página se quedaba a medias). */
+  /* ---------- Panel: base ---------- */
+  .panel {
+    --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
+    --sombra-suave: 0 1px 2px rgb(31 42 28 / 0.06), 0 4px 16px -8px rgb(31 42 28 / 0.18);
+    --sombra-alta: 0 2px 4px rgb(31 42 28 / 0.06), 0 12px 28px -12px rgb(31 42 28 / 0.28);
+    background: var(--color-crema);
+    color: var(--color-tinta);
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* El panel es una herramienta: sin transiciones entre páginas. */
   @view-transition {
     navigation: none;
   }
-  .menu-panel-enlace {
-    display: inline-flex;
+  .panel :focus-visible {
+    outline: 3px solid var(--color-terracota);
+    outline-offset: 2px;
+  }
+  .panel .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Armazón ---------- */
+  .lateral-panel {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    flex-direction: column;
+    padding: 1.25rem 1rem;
+    border-right: 1px solid var(--color-linea);
+    background: color-mix(in oklab, var(--color-crema) 60%, var(--color-papel));
+  }
+  .enlace-lateral {
+    display: flex;
     min-height: 3rem;
     align-items: center;
-    padding: 0 0.875rem;
-    font-weight: 600;
-    color: var(--color-crema);
+    gap: 0.75rem;
+    border-radius: 0.875rem;
+    padding: 0 0.75rem;
+    font-weight: 500;
+    color: var(--color-tinta);
     text-decoration: none;
-    border-bottom: 3px solid transparent;
+    transition: background-color 150ms ease, color 150ms ease;
   }
-  .menu-panel-enlace:hover {
-    text-decoration: underline;
+  .enlace-lateral .icono {
+    color: var(--color-gris);
+    transition: color 150ms ease;
   }
-  .menu-panel-enlace[aria-current='page'] {
-    border-bottom-color: var(--color-crema);
+  @media (hover: hover) and (pointer: fine) {
+    .enlace-lateral:hover {
+      background: var(--color-papel);
+    }
   }
-  /* Controles del panel: al menos 48 px de alto y foco bien visible. */
+  .enlace-lateral[aria-current='page'] {
+    background: var(--color-verdor);
+    color: var(--color-oliva);
+    font-weight: 700;
+  }
+  .enlace-lateral[aria-current='page'] .icono {
+    color: var(--color-oliva);
+  }
+  @media (min-width: 64rem) {
+    .superior-panel {
+      display: none !important;
+    }
+  }
+  .superior-panel {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: max(0.5rem, env(safe-area-inset-top)) 1rem 0.5rem;
+    background: color-mix(in oklab, var(--color-crema) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid color-mix(in oklab, var(--color-linea) 70%, transparent);
+  }
+  .inferior-panel {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 30;
+    padding: 0.375rem 0.5rem max(0.5rem, env(safe-area-inset-bottom));
+    background: color-mix(in oklab, var(--color-papel) 92%, transparent);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--color-linea);
+  }
+  .pestana-panel {
+    display: flex;
+    min-height: 3.5rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.125rem;
+    border-radius: 1rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-gris);
+    text-decoration: none;
+    user-select: none;
+  }
+  .pestana-icono {
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 2rem;
+    border-radius: 999px;
+    transition:
+      background-color 200ms ease,
+      transform 160ms var(--ease-salida);
+  }
+  .pestana-panel[aria-current='page'] {
+    color: var(--color-oliva);
+  }
+  .pestana-panel[aria-current='page'] .pestana-icono {
+    background: var(--color-verdor);
+  }
+  .pestana-central .pestana-icono {
+    width: 3.25rem;
+    height: 3.25rem;
+    margin-top: -1.25rem;
+    background: var(--color-oliva);
+    color: var(--color-crema);
+    box-shadow: var(--sombra-alta);
+  }
+  .pestana-central[aria-current='page'] .pestana-icono {
+    background: var(--color-oliva);
+  }
+  .pestana-panel:active .pestana-icono {
+    transform: scale(0.92);
+  }
+
+  /* ---------- Controles: al menos 48 px, respuesta al pulsar ---------- */
   .boton-panel {
     display: inline-flex;
     min-height: 3rem;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: var(--radius-tarjeta);
+    border-radius: 0.875rem;
     padding: 0.625rem 1.25rem;
     font-weight: 600;
     text-decoration: none;
     background: var(--color-terracota);
     color: #fff;
+    box-shadow: 0 1px 0 rgb(0 0 0 / 0.08), inset 0 1px 0 rgb(255 255 255 / 0.12);
+    transition:
+      transform 160ms var(--ease-salida),
+      background-color 150ms ease,
+      box-shadow 150ms ease;
+    user-select: none;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .boton-panel:hover {
+      background: color-mix(in oklab, var(--color-terracota) 88%, black);
+    }
+    .boton-panel-secundario:hover {
+      background: var(--color-verdor);
+    }
+  }
+  .boton-panel:active,
+  .boton-icono:active {
+    transform: scale(0.97);
+  }
+  .boton-panel:disabled {
+    opacity: 0.6;
+    cursor: progress;
   }
   .boton-panel-secundario {
     background: var(--color-papel);
     color: var(--color-tinta);
-    border: 2px solid var(--color-oliva);
+    border: 2px solid color-mix(in oklab, var(--color-oliva) 55%, var(--color-linea));
+    box-shadow: none;
   }
   .boton-panel-claro {
     background: var(--color-crema);
     color: var(--color-oliva);
+  }
+  .boton-icono {
+    display: inline-grid;
+    width: 3rem;
+    height: 3rem;
+    place-items: center;
+    border-radius: 0.875rem;
+    color: var(--color-gris);
+    transition: transform 160ms var(--ease-salida), background-color 150ms ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .boton-icono:hover {
+      background: var(--color-verdor);
+      color: var(--color-oliva);
+    }
   }
   .enlace-panel {
     display: inline-flex;
@@ -162,9 +378,76 @@ const mostrarVolver = volver && volver !== '/panel' && volver !== actual;
     min-height: 3rem;
     width: 100%;
     border: 2px solid var(--color-gris);
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     background: var(--color-papel);
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem 0.875rem;
     font-size: 1.125rem;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .campo-panel:focus-visible {
+    outline: none;
+    border-color: var(--color-oliva);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-terracota) 35%, transparent);
+  }
+  .campo-panel[aria-invalid='true'] {
+    border-color: var(--color-terracota);
+  }
+  .panel details > summary {
+    list-style: none;
+  }
+  .panel details > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  /* ---------- Superficies ---------- */
+  .caja-panel {
+    border-radius: 1.25rem;
+    background: var(--color-papel);
+    box-shadow: var(--sombra-suave);
+  }
+  .tarjeta-accion {
+    transition:
+      transform 200ms var(--ease-salida),
+      box-shadow 200ms ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .tarjeta-accion:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--sombra-alta);
+    }
+  }
+  .tarjeta-accion:active {
+    transform: scale(0.985);
+  }
+
+  /* ---------- Movimiento (solo si no se ha pedido reducirlo) ---------- */
+  @media (prefers-reduced-motion: no-preference) {
+    .contenido-panel {
+      animation: panel-entra 220ms var(--ease-salida) both;
+    }
+    .escalonado > * {
+      animation: panel-entra 320ms var(--ease-salida) both;
+    }
+    .escalonado > :nth-child(2) { animation-delay: 40ms; }
+    .escalonado > :nth-child(3) { animation-delay: 80ms; }
+    .escalonado > :nth-child(4) { animation-delay: 120ms; }
+    .escalonado > :nth-child(5) { animation-delay: 160ms; }
+    .escalonado > :nth-child(n + 6) { animation-delay: 200ms; }
+    .panel [role='status'],
+    .panel [role='alert'] {
+      animation: panel-aviso 260ms var(--ease-salida) both;
+    }
+  }
+  @keyframes panel-entra {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  @keyframes panel-aviso {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
   }
 </style>

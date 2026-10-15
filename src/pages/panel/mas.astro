@@ -1,0 +1,33 @@
+---
+import PaginaPanel from '../../components/panel/PaginaPanel.astro';
+import Tarjeta from '../../components/panel/Tarjeta.astro';
+import type { Escena } from '../../components/panel/ui/Ilustracion.astro';
+import { gruposDe } from '../../server/panel/navegacion.ts';
+import { sesionCon } from '../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+/** «Más» en el móvil: todas las secciones del panel, agrupadas. */
+const s = sesionCon(Astro.locals);
+const grupos = s ? gruposDe(s.usuario.rol).map((g) => ({ ...g, secciones: g.secciones.filter((x) => x.href !== '/panel') })) : [];
+---
+
+<PaginaPanel titulo="Todo el panel" volver={false} ancho="amplio">
+  <h1 class="titular-grande">Todo el panel</h1>
+  {
+    grupos
+      .filter((g) => g.secciones.length)
+      .map((g) => (
+        <section class="mt-8" aria-labelledby={`grupo-${g.grupo}`}>
+          <h2 id={`grupo-${g.grupo}`} class="titular-medio">
+            {g.titulo}
+          </h2>
+          <ul class="escalonado mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="list">
+            {g.secciones.map((x) => (
+              <Tarjeta href={x.href} titulo={x.texto} texto={x.descripcion} escena={x.escena as Escena | undefined} />
+            ))}
+          </ul>
+        </section>
+      ))
+  }
+</PaginaPanel>

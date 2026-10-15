@@ -23,7 +23,7 @@ const lista = plantas
         const n = fotosDeFicha(d).length;
         return (
           <li>
-            <a href={`/panel/plantas/${id}/fotos`} class="group flex min-h-12 items-center justify-between gap-3 rounded-tarjeta border-2 border-linea bg-papel p-4 no-underline hover:border-oliva">
+            <a href={`/panel/plantas/${id}/fotos`} class="group flex min-h-12 items-center justify-between gap-3 caja-panel tarjeta-accion p-4 no-underline">
               <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{d.nombre?.es}</span>
               <span class:list={['font-semibold', n === 0 ? 'text-terracota' : 'text-gris']}>{n === 0 ? 'sin fotos' : `${n} ${n === 1 ? 'foto' : 'fotos'}`}</span>
             </a>
