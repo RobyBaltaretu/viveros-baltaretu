@@ -1,8 +1,6 @@
 // @ts-check
 import { defineConfig, fontProviders } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
-import react from '@astrojs/react';
-import keystatic from '@keystatic/astro';
 import tailwindcss from '@tailwindcss/vite';
 
 // URL pública para canonical y hreflang. En Workers Builds es obligatoria
@@ -14,26 +12,20 @@ const site = process.env.SITE_URL || 'http://localhost:4321';
 
 export default defineConfig({
   site,
-  // 'ignore' para que /api/* y las rutas de Keystatic funcionen sin barra final; enlaces y canonical la llevan.
+  // 'ignore' para que /api/* y /panel funcionen sin barra final; enlaces y canonical la llevan.
   trailingSlash: 'ignore',
   // Web estática: todas las páginas se generan en el build. Solo las rutas con
   // `export const prerender = false` (formularios y panel) ejecutan el Worker.
   output: 'static',
   // Sin sesiones de Astro: así el adaptador no crea un espacio KV que no usamos.
   session: false,
-  // `npm run panel:local` arranca sin el adaptador (en Node): el modo local de
-  // Keystatic no funciona en workerd. Solo para editar contenido en local.
-  adapter: process.env.KEYSTATIC_LOCAL
-    ? undefined
-    : cloudflare({
+  adapter: cloudflare({
         // Imágenes optimizadas en el build con Sharp; sin el binding de Cloudflare Images.
         imageService: 'compile',
         // Sin conexiones a Cloudflare en local, en la CI ni al construir: Workers AI solo
         // existe en producción y el asistente usa su intérprete local mientras tanto.
         remoteBindings: false,
       }),
-  // Keystatic añade /keystatic y /api/keystatic como rutas del Worker.
-  integrations: [react(), keystatic()],
   // Fuentes servidas desde el propio dominio (subconjunto latino de Fontsource,
   // instalado con npm): sin peticiones a terceros y con fallbacks ajustados.
   fonts: [

@@ -8,7 +8,6 @@
   },
   "scripts": {
     "dev": "wrangler types --include-runtime=false && astro dev",
-    "panel:local": "node scripts/panel-local.mjs",
     "build": "tsx scripts/contenido/descargar.ts && astro build",
     "preview": "astro preview",
     "types": "wrangler types --include-runtime=false",
@@ -26,16 +25,11 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.4",
-    "@astrojs/react": "^7.0.1",
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource-variable/dm-sans": "^5.3.0",
-    "@keystatic/astro": "^6.0.0",
-    "@keystatic/core": "^0.6.9",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.3.6",
     "jose": "^6.2.12",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
@@ -44,8 +38,6 @@
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.0",
     "@types/node": "^22.20.5",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
     "eslint": "^10.12.0",
     "eslint-plugin-astro": "^3.2.1",
     "globals": "^17.13.0",

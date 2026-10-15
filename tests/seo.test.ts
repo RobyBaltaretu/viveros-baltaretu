@@ -61,7 +61,7 @@ describe('sitemap y robots', async () => {
     expect(xml).toContain('hreflang="x-default" href="https://ejemplo.test/catalogo/"');
   });
   it('robots: bloquea el panel y la API, y todo en builds de prueba', () => {
-    expect(generarRobots('https://ejemplo.test', true)).toContain('Disallow: /keystatic');
+    expect(generarRobots('https://ejemplo.test', true)).toContain('Disallow: /panel');
     expect(generarRobots('https://ejemplo.test', true)).toContain('Sitemap: https://ejemplo.test/sitemap.xml');
     expect(generarRobots('https://ejemplo.test', false)).toBe('User-agent: *\nDisallow: /\n');
   });
