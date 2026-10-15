@@ -1,9 +1,10 @@
 ---
+import GestorFotos from '../../../../components/panel/GestorFotos.astro';
 import Mensajes from '../../../../components/panel/Mensajes.astro';
 import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
 import type { ErrorCampo } from '../../../../server/contenido/validacion.ts';
-import { cambiarFoto, fotosDeFicha, rutaDeImagen, subirFoto } from '../../../../server/panel/fotos.ts';
-import { campo, sesionCon } from '../../../../server/panel/pagina.ts';
+import { fotosDeFicha, formularioFotos, MENSAJES_FOTOS } from '../../../../server/panel/fotos.ts';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
 import { plantaActual } from '../../../../server/panel/planta-actual.ts';
 
 export const prerender = false;
@@ -14,130 +15,16 @@ if (s && !planta) return Astro.redirect('/panel/plantas', 303);
 const base = `/panel/plantas/${Astro.params.id}/fotos`;
 let errores: ErrorCampo[] = [];
 if (s && planta && Astro.request.method === 'POST') {
-  const form = await Astro.request.formData();
-  const accion = campo(form, 'accion');
-  const email = s.usuario.email;
-  const id = planta.entrada.id;
-  let r;
-  if (accion === 'subir') {
-    const archivo = form.get('foto');
-    const bytes = archivo instanceof File ? new Uint8Array(await archivo.arrayBuffer()) : new Uint8Array();
-    r = await subirFoto(s.repos, id, planta.datos, bytes, email);
-  } else if (accion === 'quitar' || accion === 'primera' || accion === 'texto') {
-    r = await cambiarFoto(s.repos, id, planta.datos, Number(campo(form, 'indice')), accion, email, { es: campo(form, 'alt.es'), en: campo(form, 'alt.en') });
-  }
-  if (r?.ok) return Astro.redirect(`${base}?hecho=${accion}`, 303);
-  errores = r && !r.ok ? r.errores : [];
+  const { accion, r } = await formularioFotos(s.repos, 'catalogo', planta.entrada.id, planta.datos, await Astro.request.formData(), s.usuario.email);
+  if (r.ok) return Astro.redirect(`${base}?hecho=${accion}`, 303);
+  errores = r.errores;
 }
 const actual = s && planta ? await plantaActual(s, Astro.params.id) : null;
-const fotos = actual ? fotosDeFicha(actual.datos) : [];
 const hecho = Astro.url.searchParams.get('hecho');
-const MENSAJES: Record<string, string> = {
-  subir: 'Foto subida. Revisa el texto que la describe.',
-  quitar: 'Foto quitada.',
-  primera: 'Ahora es la primera foto.',
-  texto: 'Texto guardado.',
-  nueva: 'Planta guardada. Ahora añade una foto.',
-};
 ---
 
 <PaginaPanel titulo="Fotos" permiso="editar" volver={`/panel/plantas/${Astro.params.id}`}>
   <h1 class="titular-grande">Fotos de {actual?.datos.nombre?.es}</h1>
-  <Mensajes hecho={hecho ? MENSAJES[hecho] : undefined} errores={errores} />
-
-  <form method="post" enctype="multipart/form-data" class="mt-6 grid gap-4 rounded-panel border-2 border-linea bg-papel p-5" data-subir-foto>
-    <input type="hidden" name="accion" value="subir" />
-    <label for="foto" class="font-titular text-xl font-bold">Añadir una foto</label>
-    <p id="foto-ayuda" class="text-gris">Haz la foto con el móvil o elige una de la galería. Se recorta y se reduce sola para que cargue rápido.</p>
-    <input id="foto" name="foto" type="file" accept="image/jpeg,image/png,image/webp,image/*" capture="environment" required aria-describedby="foto-ayuda" class="campo-panel" />
-    <p><button class="boton-panel">Subir la foto</button></p>
-    <p data-estado role="status" class="font-semibold"></p>
-  </form>
-
-  {fotos.length === 0 && <p class="mt-6">Esta planta todavía no tiene fotos. En la web se ve un dibujo hasta que añadas una.</p>}
-  <ol class="mt-6 grid gap-6" role="list">
-    {
-      fotos.map((f, i) => (
-        <li class="grid gap-3 rounded-panel border-2 border-linea bg-papel p-4">
-          <img src={`/api/panel/foto?ruta=${encodeURIComponent(rutaDeImagen(f.imagen))}`} alt={f.alt.es} class="aspect-[4/3] w-full rounded-tarjeta object-cover" loading="lazy" />
-          {i === 0 && <p class="font-semibold text-oliva">Foto principal</p>}
-          <form method="post" class="grid gap-3">
-            <input type="hidden" name="accion" value="texto" />
-            <input type="hidden" name="indice" value={i} />
-            <label class="grid gap-1 font-semibold">
-              Qué se ve en la foto
-              <input class="campo-panel font-normal" name="alt.es" value={f.alt.es} maxlength="200" required />
-            </label>
-            <label class="grid gap-1 font-semibold">
-              Lo mismo en inglés
-              <input class="campo-panel font-normal" name="alt.en" value={f.alt.en} maxlength="200" required />
-            </label>
-            <p><button class="boton-panel boton-panel-secundario">Guardar el texto</button></p>
-          </form>
-          <div class="flex flex-wrap gap-3">
-            {i > 0 && (
-              <form method="post">
-                <input type="hidden" name="accion" value="primera" />
-                <input type="hidden" name="indice" value={i} />
-                <button class="boton-panel boton-panel-secundario">Ponerla la primera</button>
-              </form>
-            )}
-            <form method="post">
-              <input type="hidden" name="accion" value="quitar" />
-              <input type="hidden" name="indice" value={i} />
-              <button class="boton-panel boton-panel-secundario">Quitar esta foto</button>
-            </form>
-          </div>
-        </li>
-      ))
-    }
-  </ol>
+  <Mensajes hecho={hecho ? MENSAJES_FOTOS[hecho] : undefined} errores={errores} />
+  <GestorFotos fotos={actual ? fotosDeFicha(actual.datos) : []} vacio="Esta planta todavía no tiene fotos. En la web se ve un dibujo hasta que añadas una." />
 </PaginaPanel>
-
-<script>
-  // Antes de subir, la foto se reencuadra a 4:3 y se reduce a 1600 px de ancho en JPEG,
-  // en el propio móvil. Sin JavaScript, el formulario envía la foto original.
-  const form = document.querySelector<HTMLFormElement>('[data-subir-foto]');
-  const estado = form?.querySelector<HTMLElement>('[data-estado]');
-  form?.addEventListener('submit', async (evento) => {
-    const entrada = form.querySelector<HTMLInputElement>('input[type=file]');
-    const archivo = entrada?.files?.[0];
-    if (!archivo || !('createImageBitmap' in window)) return;
-    evento.preventDefault();
-    const boton = form.querySelector('button');
-    boton?.setAttribute('disabled', '');
-    if (estado) estado.textContent = 'Preparando la foto…';
-    try {
-      const imagen = await createImageBitmap(archivo, { imageOrientation: 'from-image' });
-      const proporcion = 4 / 3;
-      let ancho = imagen.width;
-      let alto = imagen.height;
-      let x = 0;
-      let y = 0;
-      if (ancho / alto > proporcion) {
-        ancho = Math.round(alto * proporcion);
-        x = Math.round((imagen.width - ancho) / 2);
-      } else {
-        alto = Math.round(ancho / proporcion);
-        y = Math.round((imagen.height - alto) / 2);
-      }
-      const escala = Math.min(1, 1600 / ancho);
-      const lienzo = document.createElement('canvas');
-      lienzo.width = Math.round(ancho * escala);
-      lienzo.height = Math.round(alto * escala);
-      lienzo.getContext('2d')?.drawImage(imagen, x, y, ancho, alto, 0, 0, lienzo.width, lienzo.height);
-      const blob = await new Promise<Blob | null>((ok) => lienzo.toBlob(ok, 'image/jpeg', 0.82));
-      if (!blob) throw new Error('sin imagen');
-      const datos = new FormData();
-      datos.set('accion', 'subir');
-      datos.set('foto', blob, 'foto.jpg');
-      if (estado) estado.textContent = 'Subiendo la foto…';
-      const respuesta = await fetch(location.pathname, { method: 'POST', body: datos });
-      location.href = respuesta.url;
-    } catch {
-      // Si el navegador no puede prepararla, se envía tal cual.
-      if (estado) estado.textContent = 'Subiendo la foto…';
-      form.submit();
-    }
-  });
-</script>

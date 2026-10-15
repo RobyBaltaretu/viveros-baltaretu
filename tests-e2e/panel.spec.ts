@@ -3,7 +3,7 @@ import { auditar, controlesGrandes } from './ayudas';
 
 // El build de los e2e usa el entorno `desarrollo`: D1 local con el contenido importado
 // y entrada al panel sin Access desde localhost como propietario@example.com.
-const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/publicar', '/panel/cambios', '/panel/plantas/washingtonia-robusta/vista', '/panel/presupuestos?estado=archivado', '/panel/asistente', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos'];
+const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/publicar', '/panel/cambios', '/panel/plantas/washingtonia-robusta/vista', '/panel/presupuestos?estado=archivado', '/panel/asistente', '/panel/textos/proyectos/proyecto-de-ejemplo/fotos', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos'];
 
 test.describe('panel: accesibilidad y tamaño de los controles', () => {
   for (const ruta of PANTALLAS) {
@@ -24,6 +24,8 @@ test('inicio con las tarjetas principales', async ({ page }) => {
 });
 
 test('el propietario da y quita acceso con el teclado', async ({ page }) => {
+  // En la CI, con los dos proyectos a la vez, este recorrido puede pasar de 30 s.
+  test.setTimeout(60_000);
   await page.goto('/panel/personas');
   const email = `gerente-${test.info().project.name}@example.com`;
   await page.getByLabel('Correo electrónico').fill(email);
@@ -222,4 +224,16 @@ test('asistente: lenguaje natural con confirmación y rechazo de otros temas', a
   await page.getByRole('button', { name: 'Enviar' }).click();
   await expect(page.getByRole('status')).toContainText('Solo puedo ayudarte con el panel y el vivero');
   await auditar(page);
+});
+
+test('fotos de un proyecto y dibujo de una planta', async ({ page }) => {
+  await page.goto('/panel/textos/proyectos/proyecto-de-ejemplo');
+  await page.getByRole('link', { name: 'Fotos del proyecto' }).click();
+  await page.getByLabel('Añadir una foto').setInputFiles('src/assets/catalogo/phoenix-canariensis/foto-prueba-1.jpg');
+  await page.getByRole('button', { name: 'Subir la foto' }).click();
+  await expect(page.getByRole('status').first()).toContainText('Foto subida');
+  await expect(page.getByRole('img').first()).toHaveAttribute('alt', /^Proyecto:/);
+  await page.goto('/panel/plantas/naranjo-amargo/datos');
+  await expect(page.getByLabel(/Dibujo mientras no haya foto/)).toBeVisible();
+  await expect(page.getByLabel('Es una ficha de ejemplo (no se publica)')).toBeChecked();
 });

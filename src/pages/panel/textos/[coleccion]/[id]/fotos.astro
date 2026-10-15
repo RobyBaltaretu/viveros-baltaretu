@@ -1,0 +1,38 @@
+---
+import GestorFotos from '../../../../../components/panel/GestorFotos.astro';
+import Mensajes from '../../../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../../../components/panel/PaginaPanel.astro';
+import type { ErrorCampo } from '../../../../../server/contenido/validacion.ts';
+import { fotosDeFicha, formularioFotos, MENSAJES_FOTOS } from '../../../../../server/panel/fotos.ts';
+import { sesionCon } from '../../../../../server/panel/pagina.ts';
+import type { DatosPlanta } from '../../../../../server/panel/plantas.ts';
+
+export const prerender = false;
+
+// Solo los proyectos tienen fotos (las de las plantas van en Mis plantas).
+if (Astro.params.coleccion !== 'proyectos') return Astro.redirect('/panel/textos', 303);
+const id = Astro.params.id ?? '';
+const s = sesionCon(Astro.locals, 'editar');
+const cargar = async () => {
+  const e = s ? await s.repos.contenido.obtener('proyectos', id) : null;
+  return e && !e.archivada ? (e.borrador.datos as DatosPlanta) : null;
+};
+const datos = await cargar();
+if (s && !datos) return Astro.redirect('/panel/textos/proyectos', 303);
+const base = `/panel/textos/proyectos/${id}/fotos`;
+let errores: ErrorCampo[] = [];
+if (s && datos && Astro.request.method === 'POST') {
+  const { accion, r } = await formularioFotos(s.repos, 'proyectos', id, datos, await Astro.request.formData(), s.usuario.email);
+  if (r.ok) return Astro.redirect(`${base}?hecho=${accion}`, 303);
+  errores = r.errores;
+}
+const actual = s ? await cargar() : null;
+const hecho = Astro.url.searchParams.get('hecho');
+const titulo = (actual as { titulo?: { es?: string } } | null)?.titulo?.es ?? '';
+---
+
+<PaginaPanel titulo="Fotos del proyecto" permiso="editar" volver={`/panel/textos/proyectos/${id}`}>
+  <h1 class="titular-grande">Fotos de «{titulo}»</h1>
+  <Mensajes hecho={hecho ? MENSAJES_FOTOS[hecho] : undefined} errores={errores} />
+  <GestorFotos fotos={actual ? fotosDeFicha(actual) : []} vacio="Este proyecto todavía no tiene fotos." />
+</PaginaPanel>

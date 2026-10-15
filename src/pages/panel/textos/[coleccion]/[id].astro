@@ -69,8 +69,17 @@ const hecho = Astro.url.searchParams.has('hecho');
     <p><button class="boton-panel" name="accion" value="guardar">Guardar</button></p>
   </form>
   {
-    esLista(coleccion) && !nuevo && (
+    coleccion === 'proyectos' && !nuevo && (
       <p class="mt-8">
+        <a class="boton-panel" href={`/panel/textos/proyectos/${idUrl}/fotos`}>
+          Fotos del proyecto
+        </a>
+      </p>
+    )
+  }
+  {
+    esLista(coleccion) && !nuevo && (
+      <p class="mt-4">
         <a class="boton-panel boton-panel-secundario" href={`/panel/textos/${coleccion}/${idUrl}/archivar`}>
           Quitar de la web
         </a>

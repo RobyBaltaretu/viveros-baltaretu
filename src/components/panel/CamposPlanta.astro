@@ -4,7 +4,7 @@ import Campo from './Campo.astro';
 import Opciones from './Opciones.astro';
 import { familias, formatos } from '../../i18n/ui';
 import { aTexto } from '../../server/panel/form-planta.ts';
-import { FAMILIAS, FORMATOS, type DatosPlanta } from '../../server/panel/plantas.ts';
+import { FAMILIAS, FORMATOS, SILUETAS, type DatosPlanta } from '../../server/panel/plantas.ts';
 
 interface Props {
   d: DatosPlanta;
@@ -14,6 +14,7 @@ interface Props {
 }
 const { d, error, grupos } = Astro.props;
 const desc = (d.descripcion ?? {}) as { es?: string; en?: string };
+const NOMBRES_SILUETA: Record<string, string> = { palmera: 'Palmera', olivo: 'Olivo', higuera: 'Higuera', cica: 'Cica' };
 const per = Array.isArray(d.perimetroTroncoCm) ? (d.perimetroTroncoCm as number[]) : [];
 ---
 
@@ -54,9 +55,20 @@ const per = Array.isArray(d.perimetroTroncoCm) ? (d.perimetroTroncoCm as number[
         <input type="checkbox" name="destacada" value="1" checked={Boolean(d.destacada)} class="size-6" />
         Destacarla en la web
       </label>
+      <div class="grid gap-1">
+        <label for="campo-silueta" class="font-semibold">Dibujo mientras no haya foto <span class="font-normal text-gris">(opcional)</span></label>
+        <select id="campo-silueta" name="silueta" class="campo-panel">
+          <option value="" selected={!d.silueta}>El de su familia</option>
+          {SILUETAS.map((x) => <option value={x} selected={d.silueta === x}>{NOMBRES_SILUETA[x]}</option>)}
+        </select>
+      </div>
       <label class="flex min-h-12 items-center gap-3 font-semibold">
         <input type="checkbox" name="revisado" value="1" checked={Boolean(d.revisado)} class="size-6" />
         Está revisada y se puede publicar
+      </label>
+      <label class="flex min-h-12 items-center gap-3 font-semibold">
+        <input type="checkbox" name="datosDeEjemplo" value="1" checked={Boolean(d.datosDeEjemplo)} class="size-6" />
+        Es una ficha de ejemplo (no se publica)
       </label>
     </>
   )

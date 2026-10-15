@@ -1,4 +1,4 @@
-import { ALTURA_MAXIMA, DISPONIBILIDADES, FAMILIAS, FORMATOS } from '../../lib/catalogo/schema';
+import { ALTURA_MAXIMA, DISPONIBILIDADES, FAMILIAS, FORMATOS, SILUETAS } from '../../lib/catalogo/schema';
 import type { Autor, Documento, Repositorios } from '../data/tipos.ts';
 import { validarEntrada, type ErrorCampo } from '../contenido/validacion.ts';
 
@@ -127,7 +127,7 @@ export function avisosPublicacion(d: DatosPlanta): string[] {
   return avisos;
 }
 
-export { ALTURA_MAXIMA, DISPONIBILIDADES, FAMILIAS, FORMATOS };
+export { ALTURA_MAXIMA, DISPONIBILIDADES, FAMILIAS, FORMATOS, SILUETAS };
 
 /**
  * Pasa los campos de un formulario a los datos de la ficha. Solo cambia los
@@ -147,7 +147,12 @@ export function leerFormularioPlanta(form: FormData, base: DatosPlanta): DatosPl
   bilingue('descripcion', 'en');
   for (const n of ['nombreCientifico', 'familia', 'disponibilidad', 'origen']) if (presentes.has(n)) d[n] = texto(n);
   for (const n of ['alturaMin', 'alturaMax', 'precioDesde', 'precioUnidad']) if (presentes.has(n)) d[n] = numero(texto(n));
-  for (const n of ['ventaUnitaria', 'destacada', 'revisado']) if (presentes.has(n)) d[n] = form.get(n) === '1';
+  for (const n of ['ventaUnitaria', 'destacada', 'revisado', 'datosDeEjemplo']) if (presentes.has(n)) d[n] = form.get(n) === '1';
+  if (presentes.has('silueta')) {
+    const silueta = texto('silueta');
+    if (SILUETAS.includes(silueta as never)) d.silueta = silueta;
+    else delete d.silueta;
+  }
   if (presentes.has('formatos')) d.formatos = form.getAll('formatos').map(String).filter((f) => FORMATOS.includes(f as never));
   if (presentes.has('perimetro')) {
     const min = numero(texto('perimetroMin'));
@@ -160,3 +165,10 @@ export function leerFormularioPlanta(form: FormData, base: DatosPlanta): DatosPl
   d.seo = seoPorDefecto(d);
   return d;
 }
+
+/** Campos que se editan en cada pantalla de una planta (ver tests/panel/cobertura.test.ts). */
+export const PANTALLAS_PLANTA = {
+  datos: 'nombre.es,nombre.en,nombreCientifico,familia,descripcion.es,descripcion.en,alturaMin,alturaMax,perimetro,formatos,origen,destacada,revisado,silueta,datosDeEjemplo',
+  precio: 'precioDesde,ventaUnitaria,precioUnidad',
+  disponibilidad: 'disponibilidad',
+} as const;
