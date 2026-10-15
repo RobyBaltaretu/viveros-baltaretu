@@ -17,6 +17,9 @@
   // en el binding: el plan gratuito solo permite enviar a direcciones de destino
   // verificadas en Email Routing (EMAIL_DESTINO).
   "send_email": [{ "name": "EMAIL" }],
+  // Workers AI para el asistente del panel (cupo gratuito diario). En local y en el
+  // build no se conecta (remoteBindings: false en astro.config.mjs).
+  "ai": { "binding": "AI" },
   // Base de datos del panel propio (contenido, fotos, presupuestos). Las tablas las crea el Worker.
   "d1_databases": [{ "binding": "DB", "database_name": "viveros-baltaretu", "database_id": "6b9bb52c-f194-405d-ac4a-86bb6370cb35" }],
   // Conserva las variables y secretos definidos en el panel de Cloudflare

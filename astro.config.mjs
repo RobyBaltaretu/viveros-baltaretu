@@ -28,6 +28,9 @@ export default defineConfig({
     : cloudflare({
         // Imágenes optimizadas en el build con Sharp; sin el binding de Cloudflare Images.
         imageService: 'compile',
+        // Sin conexiones a Cloudflare en local, en la CI ni al construir: Workers AI solo
+        // existe en producción y el asistente usa su intérprete local mientras tanto.
+        remoteBindings: false,
       }),
   // Keystatic añade /keystatic y /api/keystatic como rutas del Worker.
   integrations: [react(), keystatic()],

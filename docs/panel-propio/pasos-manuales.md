@@ -49,3 +49,7 @@ Sin `DEPLOY_HOOK_URL`, el panel guarda los cambios como listos para publicar y a
 - Un cambio concreto: en el panel, *Cambios recientes → Deshacer*.
 - Toda la base a un momento de los últimos 7 días (incluidos los presupuestos): D1 Time Travel, `npx wrangler d1 time-travel restore viveros-baltaretu --timestamp=<fecha ISO>`.
 - Desde una copia diaria: descarga el artefacto de la acción y ejecuta `CONTENIDO_TOKEN=<token> npm run contenido:restaurar -- copia-contenido.json --url https://<tu web>`. Sin `--url` la carga en la base local para revisarla antes.
+
+## 7. Asistente con Workers AI (gratis, 10.000 neuronas al día)
+- El binding `AI` ya está en `wrangler.jsonc`: no hay que hacer nada para activarlo. Si el despliegue de Workers Builds fallara por permisos, añade *Account → Workers AI → Read* al token de Workers Builds.
+- Para medir la precisión real del modelo (opcional): crea un token con *Workers AI → Read* y ejecuta en tu ordenador `CLOUDFLARE_ACCOUNT_ID=<id> CLOUDFLARE_API_TOKEN=<token> npm run asistente:banco -- --workers-ai`. Escribe `docs/panel-propio/precision-asistente-workers-ai.md`; súbelo en un PR o pásame el resultado.
