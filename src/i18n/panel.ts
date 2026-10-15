@@ -32,7 +32,7 @@ export const tp = {
     nombre: 'Nombre',
     rol: 'Qué puede hacer',
     rolGerente: 'Gerente: todo menos gestionar personas',
-    rolEditor: 'Editor: prepara cambios, no publica ni ve presupuestos',
+    rolEditor: 'Editor: prepara cambios, no publica ni ve presupuestos ni facturas',
     guardar: 'Dar acceso',
     quitar: 'Quitar acceso',
     devolver: 'Devolver acceso',

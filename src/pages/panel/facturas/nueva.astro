@@ -1,0 +1,73 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import { calcularTotales } from '../../../server/facturas/importes.ts';
+import { clienteDePresupuesto, lineasDePresupuesto, nuevaFactura } from '../../../server/facturas/facturas.ts';
+import { ajustesFacturacion, plantasParaFacturar } from '../../../server/panel/facturacion.ts';
+import { campo, sesionCon } from '../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+if (s && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const ajustes = await ajustesFacturacion(s.repos);
+  const presupuesto = campo(form, 'presupuesto') ? await s.repos.presupuestos.obtener(campo(form, 'presupuesto')) : null;
+  let cliente = campo(form, 'cliente') ? await s.repos.clientes.obtener(campo(form, 'cliente')) : null;
+  if (presupuesto && !cliente) {
+    // Si ya existe un cliente con ese correo, se usa; si no, se crea con lo que dejó en la web.
+    const email = presupuesto.email.toLowerCase();
+    cliente = (await s.repos.clientes.listar({ incluirArchivados: true })).find((c) => c.email.toLowerCase() === email) ?? null;
+    if (!cliente) {
+      cliente = clienteDePresupuesto(presupuesto);
+      await s.repos.clientes.guardar(cliente, s.usuario.email);
+    }
+  }
+  if (cliente) {
+    const factura = nuevaFactura(cliente, s.usuario.email, ajustes);
+    if (presupuesto) {
+      factura.presupuestoId = presupuesto.id;
+      factura.lineas = lineasDePresupuesto(presupuesto, await plantasParaFacturar(s.repos));
+      factura.totales = calcularTotales(factura.lineas, cliente.recargo);
+    }
+    await s.repos.facturas.guardarBorrador(factura);
+    await s.repos.auditoria.registrar(s.usuario.email, 'factura nueva', `${cliente.nombre}${presupuesto ? ' (desde presupuesto)' : ''}`);
+    return Astro.redirect(`/panel/facturas/${factura.id}`, 303);
+  }
+  return Astro.redirect('/panel/facturas/nueva', 303);
+}
+const elegido = s && Astro.url.searchParams.get('cliente') ? await s.repos.clientes.obtener(Astro.url.searchParams.get('cliente') ?? '') : null;
+const clientes = s && !elegido ? await s.repos.clientes.listar() : [];
+---
+
+<PaginaPanel titulo="Nueva factura" permiso="facturas" volver="/panel/facturas">
+  <h1 class="titular-grande">Nueva factura</h1>
+  {
+    elegido ? (
+      <form method="post" class="mt-6 grid gap-4">
+        <input type="hidden" name="cliente" value={elegido.id} />
+        <p>Para <strong>{elegido.nombre}</strong>.</p>
+        <p><button class="boton-panel">Empezar la factura</button></p>
+      </form>
+    ) : (
+      <>
+        <p class="mt-2">¿A quién se la haces?</p>
+        <p class="mt-4"><a href="/panel/facturas/clientes/nuevo?despues=factura" class="boton-panel boton-panel-secundario">A un cliente nuevo</a></p>
+        {clientes.length > 0 && (
+          <ul class="mt-6 grid gap-3" role="list">
+            {clientes.map((c) => (
+              <li>
+                <form method="post">
+                  <input type="hidden" name="cliente" value={c.id} />
+                  <button class="flex min-h-12 w-full flex-col items-start gap-1 rounded-tarjeta border-2 border-linea bg-papel p-4 text-left hover:border-oliva">
+                    <span class="font-titular text-xl font-bold">{c.nombre}</span>
+                    <span class="text-gris">{[c.nif || 'sin NIF', c.poblacion].filter(Boolean).join(' · ')}</span>
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+      </>
+    )
+  }
+</PaginaPanel>

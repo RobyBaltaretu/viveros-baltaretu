@@ -1,0 +1,207 @@
+---
+/**
+ * Borrador de factura: líneas (concepto, cantidad, precio sin IVA, descuento e
+ * IVA), fechas, forma de pago y notas. Funciona sin JavaScript; con él, los
+ * importes y el total se recalculan al escribir.
+ */
+import type { Factura } from '../../server/data/tipos.ts';
+import { FORMAS_PAGO, type Error, type Planta } from '../../server/facturas/facturas.ts';
+import { dinero, importeLinea, RECARGO, TIPOS_IVA } from '../../server/facturas/importes.ts';
+
+interface Props {
+  factura: Factura;
+  plantas: Planta[];
+  errores: Error[];
+  /** Lo que escribió la persona si hubo errores (para no perderlo). */
+  crudo: FormData | null;
+}
+const { factura: f, plantas, errores, crudo } = Astro.props;
+const valor = (nombre: string, normal: string | number) => (crudo ? String(crudo.get(nombre) ?? '') : String(normal));
+const numero = (n: number) => String(n).replace('.', ',');
+const error = (c: string) => errores.find((e) => e.campo === c)?.mensaje;
+const lineas = f.lineas.length ? f.lineas : [{ concepto: '', cantidad: 1, precio: 0, descuento: 0, iva: 10 }];
+const t = f.totales;
+---
+
+<form method="post" class="mt-6 grid gap-6" data-factura data-recargo={f.cliente.recargo ? JSON.stringify(RECARGO) : '{}'}>
+  <input type="hidden" name="lineas" value={lineas.length} />
+  <!-- Pulsar Intro en un campo guarda (sin esto, haría lo del primer botón: quitar la línea 1). -->
+  <button name="accion" value="guardar" class="sr-only" tabindex="-1" aria-hidden="true">Guardar</button>
+  <p class="flex flex-wrap items-center gap-x-2 text-gris">
+    Cliente:
+    <a class="enlace-panel" href={`/panel/facturas/clientes/${f.clienteId}`}>{f.cliente.nombre}</a>
+    {f.cliente.recargo && <span>(con recargo de equivalencia)</span>}
+  </p>
+  {f.rectificaCodigo && <p class="rounded-tarjeta bg-verdor p-3">Rectifica a la factura {f.rectificaCodigo}. Las cantidades en negativo restan de la original.</p>}
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div class="grid gap-1">
+      <label for="fecha" class="font-semibold">Fecha de la factura</label>
+      <input id="fecha" name="fecha" type="date" class="campo-panel" value={valor('fecha', f.fecha)} required aria-describedby={error('fecha') ? 'fecha-error' : undefined} />
+      {error('fecha') && <p id="fecha-error" class="font-semibold text-terracota">{error('fecha')}</p>}
+    </div>
+    <div class="grid gap-1">
+      <label for="vencimiento" class="font-semibold">Fecha límite de pago</label>
+      <input id="vencimiento" name="vencimiento" type="date" class="campo-panel" value={valor('vencimiento', f.vencimiento)} required aria-describedby={error('vencimiento') ? 'vencimiento-error' : undefined} />
+      {error('vencimiento') && <p id="vencimiento-error" class="font-semibold text-terracota">{error('vencimiento')}</p>}
+    </div>
+  </div>
+
+  <h2 id="lineas" class="titular-medio">Qué se factura</h2>
+  <ol class="grid gap-4" role="list">
+    {
+      lineas.map((l, i) => {
+        const n = i + 1;
+        const campoError = (c: string) => error(`l${i}.${c}`);
+        return (
+          <li>
+            <fieldset class="grid gap-3 rounded-panel border-2 border-linea bg-papel p-4" data-linea>
+              <legend class="px-1 font-semibold">Línea {n}</legend>
+              <div class="grid gap-1">
+                  <label for={`l${i}-concepto`} class="font-semibold">Concepto</label>
+                  <input id={`l${i}-concepto`} name={`l${i}.concepto`} class="campo-panel" value={valor(`l${i}.concepto`, l.concepto)} maxlength="300" />
+              </div>
+              <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div class="grid gap-1">
+                  <label for={`l${i}-cantidad`} class="font-semibold">Cantidad</label>
+                  <input id={`l${i}-cantidad`} name={`l${i}.cantidad`} inputmode="decimal" class="campo-panel" value={valor(`l${i}.cantidad`, numero(l.cantidad))} aria-invalid={campoError('cantidad') ? 'true' : undefined} data-cantidad />
+                </div>
+                <div class="grid gap-1">
+                  <label for={`l${i}-precio`} class="font-semibold">Precio sin IVA (€)</label>
+                  <input id={`l${i}-precio`} name={`l${i}.precio`} inputmode="decimal" class="campo-panel" value={valor(`l${i}.precio`, numero(l.precio))} aria-invalid={campoError('precio') ? 'true' : undefined} data-precio />
+                </div>
+                <div class="grid gap-1">
+                  <label for={`l${i}-descuento`} class="font-semibold">Descuento (%)</label>
+                  <input id={`l${i}-descuento`} name={`l${i}.descuento`} inputmode="decimal" class="campo-panel" value={valor(`l${i}.descuento`, l.descuento ? numero(l.descuento) : '')} aria-invalid={campoError('descuento') ? 'true' : undefined} data-descuento />
+                </div>
+                <div class="grid gap-1">
+                  <label for={`l${i}-iva`} class="font-semibold">IVA</label>
+                  <select id={`l${i}-iva`} name={`l${i}.iva`} class="campo-panel" data-iva>
+                    {TIPOS_IVA.map((iva) => (
+                      <option value={iva} selected={String(iva) === valor(`l${i}.iva`, l.iva)}>
+                        {iva} %
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <p>
+                  Importe: <strong data-importe>{dinero(importeLinea(l))}</strong>
+                </p>
+                <button name="accion" value={`quitar:${i}`} class="boton-panel boton-panel-secundario">
+                  Quitar la línea {n}
+                </button>
+              </div>
+            </fieldset>
+          </li>
+        );
+      })
+    }
+  </ol>
+  <div class="grid gap-3 rounded-panel border-2 border-dashed border-linea p-4">
+    {
+      plantas.length > 0 && (
+        <div class="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+          <label class="grid gap-1">
+            <span class="font-semibold">Añadir una planta del catálogo</span>
+            <select name="planta" class="campo-panel">
+              {plantas.map((p) => (
+                <option value={p.slug}>
+                  {p.nombre}
+                  {p.precio ? ` · desde ${dinero(p.precio)}` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button name="accion" value="planta" class="boton-panel boton-panel-secundario">Añadir la planta</button>
+        </div>
+      )
+    }
+    <p><button name="accion" value="agregar" class="boton-panel boton-panel-secundario">Añadir una línea en blanco</button></p>
+  </div>
+
+  <section aria-labelledby="totales" class="grid gap-1 rounded-panel bg-verdor p-4">
+    <h2 id="totales" class="titular-medio">Total</h2>
+    <p>Base imponible: <strong data-base>{dinero(t.base)}</strong></p>
+    <p>IVA: <strong data-cuota>{dinero(t.cuotaIva)}</strong></p>
+    {f.cliente.recargo && <p>Recargo de equivalencia: <strong data-recargo-total>{dinero(t.cuotaRecargo)}</strong></p>}
+    <p class="text-xl">Total: <strong data-total>{dinero(t.total)}</strong></p>
+    <p class="text-base text-gris" data-aviso-recalculo hidden>Calculado mientras escribes; al guardar se comprueba.</p>
+  </section>
+
+  <div class="grid gap-1">
+    <label for="formaPago" class="font-semibold">Forma de pago</label>
+    <select id="formaPago" name="formaPago" class="campo-panel">
+      {[...new Set([f.formaPago, ...FORMAS_PAGO])].map((p) => <option selected={p === f.formaPago}>{p}</option>)}
+    </select>
+  </div>
+  <div class="grid gap-1">
+    <label for="exencion" class="font-semibold">Motivo si alguna línea va sin IVA <span class="font-normal text-gris">(opcional)</span></label>
+    <input id="exencion" name="exencion" class="campo-panel" value={valor('exencion', f.exencion)} maxlength="300" aria-describedby={error('exencion') ? 'exencion-error' : undefined} />
+    {error('exencion') && <p id="exencion-error" class="font-semibold text-terracota">{error('exencion')}</p>}
+  </div>
+  {
+    f.tipo === 'rectificativa' && (
+      <div class="grid gap-1">
+        <label for="motivoRectificacion" class="font-semibold">Por qué se rectifica</label>
+        <input id="motivoRectificacion" name="motivoRectificacion" class="campo-panel" value={valor('motivoRectificacion', f.motivoRectificacion)} maxlength="300" required />
+      </div>
+    )
+  }
+  <div class="grid gap-1">
+    <label for="notas" class="font-semibold">Notas en la factura <span class="font-normal text-gris">(opcional)</span></label>
+    <textarea id="notas" name="notas" rows="2" class="campo-panel" maxlength="1000">{valor('notas', f.notas)}</textarea>
+  </div>
+
+  <div class="flex flex-wrap gap-3">
+    <button name="accion" value="emitir" class="boton-panel">Emitir la factura</button>
+    <button name="accion" value="guardar" class="boton-panel boton-panel-secundario">Guardar el borrador</button>
+    <a href={`/api/panel/factura-pdf?id=${f.id}`} class="boton-panel boton-panel-secundario">Ver el borrador en PDF</a>
+  </div>
+</form>
+<form method="post" class="mt-8">
+  <input type="hidden" name="accion" value="borrar" />
+  <button class="boton-panel boton-panel-secundario">Borrar este borrador</button>
+</form>
+
+<script>
+  // Recalcula importes y totales mientras se escribe (el servidor vuelve a calcular al guardar).
+  import { calcularTotales, dinero, importeLinea, leerNumero } from '../../server/facturas/importes.ts';
+
+  const form = document.querySelector<HTMLFormElement>('[data-factura]');
+  const conRecargo = form?.dataset.recargo !== '{}';
+  const leer = (el: HTMLInputElement | HTMLSelectElement | null, normal: number) => {
+    const n = leerNumero(el?.value ?? '');
+    return n === null || Number.isNaN(n) ? normal : n;
+  };
+  const recalcular = () => {
+    if (!form) return;
+    const lineas = [...form.querySelectorAll<HTMLElement>('[data-linea]')].map((fs) => {
+      const l = {
+        concepto: fs.querySelector<HTMLInputElement>('input[name$=".concepto"]')?.value.trim() ?? '',
+        cantidad: leer(fs.querySelector('[data-cantidad]'), 1),
+        precio: leer(fs.querySelector('[data-precio]'), 0),
+        descuento: leer(fs.querySelector('[data-descuento]'), 0),
+        iva: Number(fs.querySelector<HTMLSelectElement>('[data-iva]')?.value ?? 10),
+      };
+      const importe = fs.querySelector('[data-importe]');
+      if (importe) importe.textContent = dinero(importeLinea(l));
+      return l;
+    });
+    const t = calcularTotales(
+      lineas.filter((l) => l.concepto),
+      conRecargo,
+    );
+    const poner = (sel: string, n: number) => {
+      const el = form.querySelector(sel);
+      if (el) el.textContent = dinero(n);
+    };
+    poner('[data-base]', t.base);
+    poner('[data-cuota]', t.cuotaIva);
+    poner('[data-recargo-total]', t.cuotaRecargo);
+    poner('[data-total]', t.total);
+    form.querySelector<HTMLElement>('[data-aviso-recalculo]')?.removeAttribute('hidden');
+  };
+  form?.addEventListener('input', recalcular);
+</script>

@@ -1,0 +1,112 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import { ESTADOS_FACTURA, type EstadoFactura } from '../../../server/data/tipos.ts';
+import { faltaEmisor, NOMBRE_ESTADO, vencida } from '../../../server/facturas/facturas.ts';
+import { dinero } from '../../../server/facturas/importes.ts';
+import { ajustesFacturacion } from '../../../server/panel/facturacion.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+import { puede } from '../../../server/panel/permisos.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+const pedido = Astro.url.searchParams.get('estado');
+const clienteId = Astro.url.searchParams.get('cliente') ?? undefined;
+const estado: EstadoFactura | 'todas' = pedido === 'todas' ? 'todas' : (ESTADOS_FACTURA as readonly string[]).includes(pedido ?? '') ? (pedido as EstadoFactura) : clienteId ? 'todas' : 'emitida';
+const todas = s ? await s.repos.facturas.listar({ clienteId }) : [];
+const lista = estado === 'todas' ? todas : todas.filter((f) => f.estado === estado);
+const pendientes = todas.filter((f) => f.estado === 'emitida');
+const porCobrar = pendientes.reduce((t, f) => t + f.totales.total, 0);
+const vencidas = pendientes.filter((f) => vencida(f)).length;
+const faltan = s ? faltaEmisor(await ajustesFacturacion(s.repos)).length : 0;
+const cliente = clienteId && s ? await s.repos.clientes.obtener(clienteId) : null;
+const anio = new Date().getFullYear();
+const esPropietario = s ? puede(s.usuario.rol, 'personas') : false;
+const PESTANAS: [EstadoFactura | 'todas', string][] = [
+  ['emitida', 'Por cobrar'],
+  ['borrador', 'Borradores'],
+  ['cobrada', 'Cobradas'],
+  ['todas', 'Todas'],
+];
+const fechaEs = (iso: string) => iso.split('-').reverse().join('/');
+const borrada = Astro.url.searchParams.get('hecho') === 'borrada';
+---
+
+<PaginaPanel titulo="Facturas" permiso="facturas">
+  <h1 class="titular-grande">Facturas{cliente && ` de ${cliente.nombre}`}</h1>
+  {borrada && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">Borrador borrado.</p>}
+  {
+    faltan > 0 && (
+      <div class="mt-4 rounded-tarjeta border-2 border-terracota bg-papel p-3">
+        <p>Antes de emitir facturas, completa los datos de facturación de la empresa.</p>
+        <a class="enlace-panel" href="/panel/facturas/datos">Completar los datos de facturación</a>
+      </div>
+    )
+  }
+  <p class="mt-4 flex flex-wrap gap-3">
+    <a href={cliente ? `/panel/facturas/nueva?cliente=${cliente.id}` : '/panel/facturas/nueva'} class="boton-panel">Nueva factura</a>
+    <a href="/panel/facturas/clientes" class="boton-panel boton-panel-secundario">Clientes</a>
+    <a href="/panel/facturas/datos" class="boton-panel boton-panel-secundario">Datos de facturación</a>
+  </p>
+  {
+    pendientes.length > 0 && (
+      <p class="mt-6 rounded-panel bg-verdor p-4 text-lg">
+        Por cobrar: <strong>{dinero(porCobrar)}</strong> en {pendientes.length} {pendientes.length === 1 ? 'factura' : 'facturas'}
+        {vencidas > 0 && <strong class="text-terracota"> · {vencidas} con la fecha de pago pasada</strong>}
+      </p>
+    )
+  }
+  <nav aria-label="Qué facturas ver" class="mt-6">
+    <ul class="flex flex-wrap gap-2" role="list">
+      {
+        PESTANAS.map(([e, texto]) => (
+          <li>
+            <a
+              href={`/panel/facturas?estado=${e}${clienteId ? `&cliente=${clienteId}` : ''}`}
+              class:list={['boton-panel', e !== estado && 'boton-panel-secundario']}
+              aria-current={e === estado ? 'page' : undefined}
+            >
+              {texto} ({e === 'todas' ? todas.length : todas.filter((f) => f.estado === e).length})
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+  {lista.length === 0 && <p class="mt-6">No hay facturas aquí.</p>}
+  <ul class="mt-6 grid gap-3" role="list">
+    {
+      lista.map((f) => (
+        <li>
+          <a href={`/panel/facturas/${f.id}`} class="group flex min-h-12 flex-wrap items-center justify-between gap-2 rounded-tarjeta border-2 border-linea bg-papel p-4 no-underline hover:border-oliva">
+            <span class="flex flex-col">
+              <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{f.cliente.nombre}</span>
+              <span class="text-gris">
+                {f.codigo ?? 'Borrador'} · {fechaEs(f.fecha)} · {vencida(f) ? 'fecha de pago pasada' : NOMBRE_ESTADO[f.estado].toLowerCase()}
+              </span>
+            </span>
+            <span class="font-semibold text-tinta">{dinero(f.totales.total)}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+  <h2 class="titular-medio mt-10">Para la gestoría</h2>
+  <p class="mt-2">Libro de facturas emitidas, en una hoja de cálculo:</p>
+  <p class="mt-3 flex flex-wrap gap-3">
+    <a class="boton-panel boton-panel-secundario" href={`/api/panel/facturas.csv?anio=${anio}`} download>Descargar {anio}</a>
+    <a class="boton-panel boton-panel-secundario" href={`/api/panel/facturas.csv?anio=${anio - 1}`} download>Descargar {anio - 1}</a>
+  </p>
+  {
+    esPropietario && (
+      <>
+        <p class="mt-6">Copia de seguridad de toda la facturación (guárdala fuera del panel cada cierto tiempo):</p>
+        <p class="mt-3">
+          <a class="boton-panel boton-panel-secundario" href="/api/panel/facturas-copia" download>
+            Descargar la copia
+          </a>
+        </p>
+      </>
+    )
+  }
+</PaginaPanel>

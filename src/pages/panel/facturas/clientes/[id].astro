@@ -1,0 +1,75 @@
+---
+import Campo from '../../../../components/panel/Campo.astro';
+import Mensajes from '../../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { clienteVacio, faltaCliente, leerCliente, type Error } from '../../../../server/facturas/facturas.ts';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+const id = Astro.params.id ?? '';
+const nuevo = id === 'nuevo';
+// Al crear un cliente desde «Nueva factura», después se crea la factura.
+const despues = Astro.url.searchParams.get('despues') === 'factura' ? 'factura' : '';
+let cliente = s ? (nuevo ? clienteVacio() : await s.repos.clientes.obtener(id)) : null;
+if (s && !cliente) return Astro.redirect('/panel/facturas/clientes', 303);
+let errores: Error[] = [];
+if (s && cliente && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  if (form.get('accion') === 'archivar' && !nuevo) {
+    await s.repos.clientes.guardar({ ...cliente, archivado: !cliente.archivado }, s.usuario.email);
+    return Astro.redirect(`/panel/facturas/clientes${cliente.archivado ? `/${id}?hecho=1` : '?hecho=1'}`, 303);
+  }
+  const r = leerCliente(form, cliente);
+  cliente = r.cliente;
+  errores = r.errores;
+  if (!errores.length) {
+    await s.repos.clientes.guardar(cliente, s.usuario.email);
+    if (despues) return Astro.redirect(`/panel/facturas/nueva?cliente=${cliente.id}`, 303);
+    return Astro.redirect(`/panel/facturas/clientes/${cliente.id}?hecho=1`, 303);
+  }
+}
+const error = (c: string) => errores.find((e) => e.campo === c)?.mensaje;
+const falta = cliente && !nuevo && !errores.length ? faltaCliente(cliente) : [];
+const c = cliente;
+---
+
+<PaginaPanel titulo={nuevo ? 'Cliente nuevo' : (c?.nombre ?? 'Cliente')} permiso="facturas" volver="/panel/facturas/clientes">
+  <h1 class="titular-grande">{nuevo ? 'Cliente nuevo' : c?.nombre}</h1>
+  <Mensajes hecho={Astro.url.searchParams.has('hecho') ? 'Guardado.' : undefined} errores={errores} />
+  {falta.length > 0 && <p class="mt-4 rounded-tarjeta border-2 border-linea bg-papel p-3">Para facturarle falta: {falta.map((f) => f.mensaje.replace('Falta ', '').replace(' del cliente. Complétalo en su ficha.', '')).join(', ')}.</p>}
+  {
+    c && (
+      <form method="post" class="mt-6 grid gap-6">
+        <Campo nombre="nombre" etiqueta="Razón social o nombre completo" valor={c.nombre} requerido error={error('nombre')} />
+        <Campo nombre="nif" etiqueta="NIF" valor={c.nif} ayuda="De la empresa o de la persona. Si es de otro país, su número de IVA." error={error('nif')} />
+        <Campo nombre="direccion" etiqueta="Dirección" valor={c.direccion} />
+        <Campo nombre="codigoPostal" etiqueta="Código postal" valor={c.codigoPostal} modoTeclado="numeric" />
+        <Campo nombre="poblacion" etiqueta="Población" valor={c.poblacion} />
+        <Campo nombre="provincia" etiqueta="Provincia" valor={c.provincia} />
+        <Campo nombre="pais" etiqueta="País" valor={c.pais} requerido />
+        <Campo nombre="email" etiqueta="Correo" valor={c.email} tipo="email" error={error('email')} />
+        <Campo nombre="telefono" etiqueta="Teléfono" valor={c.telefono} />
+        <label class="flex min-h-12 items-center gap-3 font-semibold">
+          <input type="checkbox" name="recargo" value="1" checked={c.recargo} class="size-6" />
+          Recargo de equivalencia (tiendas que venden al público y no hacen la declaración del IVA)
+        </label>
+        <Campo nombre="notas" etiqueta="Notas internas" valor={c.notas} tipo="textarea" filas={2} />
+        <p><button class="boton-panel">{despues ? 'Guardar y seguir con la factura' : 'Guardar'}</button></p>
+      </form>
+    )
+  }
+  {
+    c && !nuevo && (
+      <div class="mt-10 flex flex-wrap gap-3">
+        <a class="boton-panel boton-panel-secundario" href={`/panel/facturas/nueva?cliente=${c.id}`}>Hacerle una factura</a>
+        <a class="boton-panel boton-panel-secundario" href={`/panel/facturas?cliente=${c.id}`}>Ver sus facturas</a>
+        <form method="post">
+          <input type="hidden" name="accion" value="archivar" />
+          <button class="boton-panel boton-panel-secundario">{c.archivado ? 'Volver a mostrarlo' : 'Ocultarlo de la lista'}</button>
+        </form>
+      </div>
+    )
+  }
+</PaginaPanel>

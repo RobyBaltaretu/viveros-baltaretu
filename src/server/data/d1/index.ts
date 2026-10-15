@@ -10,6 +10,7 @@ import type {
   Usuario,
 } from '../tipos.ts';
 import type { BaseD1 } from './base.ts';
+import { crearRepositoriosFacturacion } from './facturacion.ts';
 
 /** Implementación de los repositorios sobre D1. Es el único sitio con SQL. */
 const ahora = () => new Date().toISOString();
@@ -315,5 +316,6 @@ export function crearRepositoriosD1(db: BaseD1): Repositorios {
         return (await db.prepare('SELECT usos FROM asistente_uso WHERE email = ? AND dia = ?').bind(email, dia).first<{ usos: number }>())?.usos ?? 0;
       },
     },
+    ...crearRepositoriosFacturacion(db),
   };
 }

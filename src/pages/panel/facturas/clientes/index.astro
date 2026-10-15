@@ -1,0 +1,27 @@
+---
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+const clientes = s ? await s.repos.clientes.listar() : [];
+---
+
+<PaginaPanel titulo="Clientes" permiso="facturas" volver="/panel/facturas">
+  <h1 class="titular-grande">Clientes</h1>
+  <p class="mt-4"><a href="/panel/facturas/clientes/nuevo" class="boton-panel">Añadir un cliente</a></p>
+  {clientes.length === 0 && <p class="mt-6">Aún no hay clientes. También se crean solos al facturar un presupuesto de la web.</p>}
+  <ul class="mt-6 grid gap-3" role="list">
+    {
+      clientes.map((c) => (
+        <li>
+          <a href={`/panel/facturas/clientes/${c.id}`} class="group flex min-h-12 flex-col gap-1 rounded-tarjeta border-2 border-linea bg-papel p-4 no-underline hover:border-oliva">
+            <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{c.nombre}</span>
+            <span class="text-gris">{[c.nif || 'sin NIF', c.poblacion].filter(Boolean).join(' · ')}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</PaginaPanel>

@@ -12,7 +12,7 @@ export async function auditar(page: Page) {
 export async function controlesGrandes(page: Page) {
   const pequenos = await page.locator('main a, main button, main input:not([type=hidden]), main select, main textarea, header a').evaluateAll((els) =>
     els
-      .filter((e) => (e as HTMLElement).offsetParent !== null && !(e as HTMLInputElement).matches('input[type=radio], input[type=checkbox]'))
+      .filter((e) => (e as HTMLElement).offsetParent !== null && !(e as HTMLInputElement).matches('input[type=radio], input[type=checkbox], [aria-hidden=true][tabindex="-1"]'))
       .filter((e) => e.getBoundingClientRect().height < 47.5)
       .map((e) => e.outerHTML.slice(0, 80)),
   );

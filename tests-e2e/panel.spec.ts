@@ -3,7 +3,7 @@ import { auditar, controlesGrandes } from './ayudas';
 
 // El build de los e2e usa el entorno `desarrollo`: D1 local con el contenido importado
 // y entrada al panel sin Access desde localhost como propietario@example.com.
-const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/publicar', '/panel/cambios', '/panel/plantas/washingtonia-robusta/vista', '/panel/presupuestos?estado=archivado', '/panel/asistente', '/panel/textos/proyectos/proyecto-de-ejemplo/fotos', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos'];
+const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/publicar', '/panel/cambios', '/panel/plantas/washingtonia-robusta/vista', '/panel/presupuestos?estado=archivado', '/panel/asistente', '/panel/textos/proyectos/proyecto-de-ejemplo/fotos', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos', '/panel/facturas', '/panel/facturas/nueva', '/panel/facturas/clientes', '/panel/facturas/clientes/nuevo', '/panel/facturas/datos'];
 
 test.describe('panel: accesibilidad y tamaño de los controles', () => {
   for (const ruta of PANTALLAS) {
@@ -250,4 +250,69 @@ test('navegación: menú fijo y, tras guardar, ir atrás no vuelve al formulario
   await expect(page.getByRole('button', { name: 'Guardar el precio' })).toHaveCount(0);
   await menu.getByRole('link', { name: 'Inicio' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Hola');
+});
+
+test('facturas: datos, cliente, borrador, emitir, PDF y cobro', async ({ page, request }) => {
+  test.setTimeout(90_000);
+  const p = test.info().project.name;
+  await page.goto('/panel/facturas/datos');
+  await page.getByLabel('Razón social o nombre').fill('Viveros Prueba SL');
+  await page.getByLabel('NIF').fill('B12345675');
+  await page.getByLabel('Dirección').fill('Camino del Vivero 12');
+  await page.getByLabel('Código postal').fill('46000');
+  await page.getByLabel('Población').fill('Valencia');
+  await page.getByLabel('Provincia').fill('Valencia');
+  await page.getByRole('button', { name: 'Guardar' }).click();
+  await expect(page.getByRole('alert')).toContainText('El NIF no es correcto');
+  await page.getByLabel('NIF').fill('B12345674');
+  await page.getByRole('button', { name: 'Guardar' }).click();
+  await expect(page.getByRole('status')).toContainText('Guardado');
+
+  await page.goto('/panel/facturas/nueva');
+  await page.getByRole('link', { name: 'A un cliente nuevo' }).click();
+  await page.getByLabel('Razón social o nombre completo').fill(`Jardinería ${p} SL`);
+  await page.getByRole('button', { name: 'Guardar y seguir con la factura' }).click();
+  await page.getByRole('button', { name: 'Empezar la factura' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Factura (borrador)');
+  await auditar(page);
+  await controlesGrandes(page);
+
+  await page.getByLabel('Concepto').fill('Olivo en maceta');
+  await page.getByLabel('Cantidad').fill('10');
+  await page.getByLabel('Precio sin IVA (€)').fill('25,50');
+  await expect(page.locator('[data-total]')).toHaveText('280,50 €');
+  await page.getByRole('button', { name: 'Añadir una línea en blanco' }).click();
+  await expect(page.getByRole('group', { name: 'Línea 2' })).toBeVisible();
+  await page.getByRole('group', { name: 'Línea 2' }).getByLabel('Concepto').fill('Transporte');
+  await page.getByRole('group', { name: 'Línea 2' }).getByLabel('Precio sin IVA (€)').fill('60');
+  await page.getByRole('group', { name: 'Línea 2' }).getByLabel('IVA', { exact: true }).selectOption('21');
+  await page.getByRole('button', { name: 'Emitir la factura' }).click();
+  // Al cliente le faltan el NIF y la dirección: no se puede emitir.
+  await expect(page.getByRole('alert')).toContainText('Falta el NIF del cliente');
+  const borrador = page.url();
+  await page.getByRole('link', { name: `Jardinería ${p} SL` }).click();
+  await page.getByLabel('NIF').fill('A58818501');
+  await page.getByLabel('Dirección').fill('Calle Mayor 2');
+  await page.getByLabel('Código postal').fill('28001');
+  await page.getByLabel('Población').fill('Madrid');
+  await page.getByRole('button', { name: 'Guardar' }).click();
+  await expect(page.getByRole('status')).toContainText('Guardado');
+  await page.goto(borrador);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Factura (borrador)');
+  await page.getByRole('button', { name: 'Emitir la factura' }).click();
+  await expect(page.getByRole('heading', { name: '¿Emitir la factura?' })).toBeVisible();
+  await expect(page.getByText('353,10 €')).toBeVisible();
+  await page.getByRole('button', { name: 'Sí, emitir' }).click();
+  await expect(page.getByRole('status')).toContainText('Factura emitida');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(/Factura F\d{4}-\d{4}/);
+  await auditar(page);
+
+  const pdf = await request.get(await page.getByRole('link', { name: 'Ver el PDF' }).getAttribute('href') ?? '');
+  expect(pdf.headers()['content-type']).toBe('application/pdf');
+  expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');
+
+  await page.getByRole('button', { name: 'Marcar como cobrada' }).click();
+  await expect(page.getByRole('status')).toContainText('cobrada');
+  const csv = await request.get(`/api/panel/facturas.csv?anio=${new Date().getFullYear()}`);
+  expect(await csv.text()).toContain(`Jardinería ${p} SL`);
 });

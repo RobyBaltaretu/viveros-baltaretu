@@ -3,14 +3,14 @@ import type { Rol } from '../data/tipos.ts';
 /**
  * Qué puede hacer cada persona en el panel. El propietario, todo; el gerente,
  * todo salvo gestionar personas; el editor solo prepara cambios (no publica ni
- * ve presupuestos). Como máximo hay un editor.
+ * ve presupuestos ni facturas). Como máximo hay un editor.
  */
-export const ACCIONES = ['editar', 'publicar', 'presupuestos', 'personas', 'asistente'] as const;
+export const ACCIONES = ['editar', 'publicar', 'presupuestos', 'personas', 'asistente', 'facturas'] as const;
 export type Accion = (typeof ACCIONES)[number];
 
 const PERMISOS: Record<Rol, readonly Accion[]> = {
   propietario: ACCIONES,
-  gerente: ['editar', 'publicar', 'presupuestos', 'asistente'],
+  gerente: ['editar', 'publicar', 'presupuestos', 'asistente', 'facturas'],
   editor: ['editar', 'asistente'],
 };
 

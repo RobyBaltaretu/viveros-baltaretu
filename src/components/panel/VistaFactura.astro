@@ -1,0 +1,98 @@
+---
+/** Factura emitida: resumen, PDF, compartir, cobro y rectificación. No se puede editar. */
+import type { Factura } from '../../server/data/tipos.ts';
+import { hoy, NOMBRE_ESTADO, vencida } from '../../server/facturas/facturas.ts';
+import { dinero, importeLinea } from '../../server/facturas/importes.ts';
+
+interface Props {
+  factura: Factura;
+}
+const { factura: f } = Astro.props;
+const fechaEs = (iso: string) => iso.split('-').reverse().join('/');
+const pdf = `/api/panel/factura-pdf?id=${f.id}`;
+const estado = vencida(f) ? 'Pendiente de cobro (vencida)' : NOMBRE_ESTADO[f.estado];
+---
+
+<dl class="mt-6 grid gap-2 rounded-tarjeta border-2 border-linea bg-papel p-4">
+  <div><dt class="inline font-semibold">Estado: </dt><dd class="inline">{estado}{f.cobradaEl && ` el ${fechaEs(f.cobradaEl)}`}</dd></div>
+  <div><dt class="inline font-semibold">Fecha: </dt><dd class="inline">{fechaEs(f.fecha)}</dd></div>
+  <div><dt class="inline font-semibold">Fecha límite de pago: </dt><dd class="inline">{fechaEs(f.vencimiento)}</dd></div>
+  {f.rectificaCodigo && <div><dt class="inline font-semibold">Rectifica a: </dt><dd class="inline">{f.rectificaCodigo}</dd></div>}
+  <div><dt class="inline font-semibold">Total: </dt><dd class="inline text-xl font-bold">{dinero(f.totales.total)}</dd></div>
+</dl>
+
+<div class="mt-6 flex flex-wrap gap-3">
+  <a href={pdf} class="boton-panel">Ver el PDF</a>
+  <a href={`${pdf}&descargar=1`} class="boton-panel boton-panel-secundario">Descargar</a>
+  <button type="button" class="boton-panel boton-panel-secundario" data-compartir={pdf} data-nombre={`${f.codigo}.pdf`} hidden>Enviar (WhatsApp, correo…)</button>
+</div>
+
+<h2 class="titular-medio mt-8">Líneas</h2>
+<ul class="mt-3 grid gap-2" role="list">
+  {
+    f.lineas
+      .filter((l) => l.concepto)
+      .map((l) => (
+        <li class="flex flex-wrap justify-between gap-2 rounded-tarjeta border-2 border-linea bg-papel p-3">
+          <span>
+            {String(l.cantidad).replace('.', ',')} × {l.concepto}
+          </span>
+          <span class="font-semibold">{dinero(importeLinea(l))}</span>
+        </li>
+      ))
+  }
+</ul>
+
+<h2 class="titular-medio mt-8">Cobro</h2>
+{
+  f.estado === 'emitida' ? (
+    <form method="post" class="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+      <input type="hidden" name="accion" value="cobrada" />
+      <label class="grid gap-1">
+        <span class="font-semibold">Día del cobro</span>
+        <input type="date" name="fechaCobro" value={hoy()} class="campo-panel" required />
+      </label>
+      <button class="boton-panel">Marcar como cobrada</button>
+    </form>
+  ) : (
+    <form method="post" class="mt-3">
+      <input type="hidden" name="accion" value="pendiente" />
+      <button class="boton-panel boton-panel-secundario">No está cobrada (deshacer)</button>
+    </form>
+  )
+}
+
+<h2 class="titular-medio mt-8">Otras acciones</h2>
+<div class="mt-3 flex flex-wrap gap-3">
+  <form method="post">
+    <input type="hidden" name="accion" value="duplicar" />
+    <button class="boton-panel boton-panel-secundario">Hacer otra igual</button>
+  </form>
+  {
+    f.tipo === 'ordinaria' && (
+      <form method="post">
+        <input type="hidden" name="accion" value="rectificar" />
+        <button class="boton-panel boton-panel-secundario">Corregir o anular (rectificativa)</button>
+      </form>
+    )
+  }
+</div>
+<p class="mt-3 text-base text-gris">Una factura emitida no se cambia ni se borra: los errores se corrigen con una rectificativa.</p>
+
+<script>
+  // En el móvil, «Enviar» abre el menú de compartir con el PDF adjunto (WhatsApp, correo…).
+  const boton = document.querySelector<HTMLButtonElement>('[data-compartir]');
+  if (boton && 'share' in navigator && 'canShare' in navigator) {
+    boton.hidden = false;
+    boton.addEventListener('click', async () => {
+      try {
+        const r = await fetch(boton.dataset.compartir ?? '');
+        const archivo = new File([await r.blob()], boton.dataset.nombre ?? 'factura.pdf', { type: 'application/pdf' });
+        if (navigator.canShare({ files: [archivo] })) await navigator.share({ files: [archivo], title: archivo.name });
+        else location.href = `${boton.dataset.compartir}&descargar=1`;
+      } catch {
+        // Cancelado por la persona: no hay nada que hacer.
+      }
+    });
+  }
+</script>
