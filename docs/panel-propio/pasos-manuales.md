@@ -37,7 +37,10 @@ Cuando el contenido ya esté importado (paso 3):
 1. En el Worker, *Settings → Build → Variables and secrets*: añade el **secreto** `CONTENIDO_TOKEN` con el mismo valor del paso 2. Desde ese momento, cada build construye la web con el contenido publicado del panel.
 2. *Settings → Builds → Deploy Hooks*: crea uno llamado `Panel del vivero` para la rama `main` y copia su dirección (`https://api.cloudflare.com/client/v4/workers/builds/deploy_hooks/...`).
 3. *Settings → Variables and Secrets* (runtime): añade el **secreto** `DEPLOY_HOOK_URL` con esa dirección.
-4. Publica la versión. Desde entonces, "Publicar cambios" en el panel lanza un build; la versión nueva aparece en *Deployments* y tú la publicas como siempre.
+4. *Settings → Build → Build configuration*: cambia el **Deploy command** de `npx wrangler versions upload` a `npm run desplegar`. Comprueba que `SITE_URL` (o `CONTENIDO_URL`) y `CONTENIDO_TOKEN` están en las variables de build.
+5. Publica la versión una última vez a mano. Desde entonces, «Publicar cambios» en el panel lanza un build que **sale solo a la web** en unos minutos; en el panel, «Últimas publicaciones» dice cuándo ya está.
+
+Los cambios de código (los PR fusionados en `main`) siguen subiendo una versión que tú publicas en *Deployments*. Si quieres que también salgan solos, añade la variable de build `PUBLICAR_SIEMPRE` con valor `1`. Ojo: cuando el gerente publica, sale la última versión de `main`, así que un cambio de código ya fusionado y aún sin publicar sale con ella.
 
 Sin `DEPLOY_HOOK_URL`, el panel guarda los cambios como listos para publicar y avisa de que falta configurarlo.
 

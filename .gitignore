@@ -25,3 +25,4 @@ npm-debug.log*
 
 # sistema
 .DS_Store
+.contenido-descargado.json

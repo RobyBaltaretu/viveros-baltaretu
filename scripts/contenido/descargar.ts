@@ -7,7 +7,9 @@
  */
 import { faltantes, type Exportacion } from '../../src/server/contenido/exportacion.ts';
 import { esRutaFotoValida } from '../../src/server/contenido/validacion.ts';
+import { writeFile } from 'node:fs/promises';
 import { escribirContenido } from './archivos.mjs';
+import { MARCA_DESCARGA } from './desplegar-comun.ts';
 
 const token = process.env.CONTENIDO_TOKEN;
 const url = process.env.CONTENIDO_URL || process.env.SITE_URL;
@@ -17,6 +19,9 @@ if (!token) {
 } else {
   if (!url) throw new Error('[contenido] Falta CONTENIDO_URL o SITE_URL para descargar el contenido.');
   const cabeceras = { Authorization: `Bearer ${token}` };
+  // Hora del servidor antes de exportar: todo lo publicado hasta entonces va en este build.
+  const p = await fetch(new URL('/api/contenido/publicacion', url), { headers: cabeceras });
+  const hasta = p.ok ? ((await p.json()) as { ahora: string }).ahora : null;
   const r = await fetch(new URL('/api/contenido/exportacion', url), { headers: cabeceras });
   if (!r.ok) throw new Error(`[contenido] La exportación respondió ${r.status}: ${await r.text()}`);
   const exportacion = (await r.json()) as Exportacion;
@@ -30,5 +35,6 @@ if (!token) {
     fotos.push({ ruta, bytes: new Uint8Array(await f.arrayBuffer()) });
   }
   await escribirContenido(process.cwd(), { entradas: exportacion.entradas, fotos });
+  if (hasta) await writeFile(MARCA_DESCARGA, JSON.stringify({ hasta }));
   console.log(`[contenido] Descargadas ${exportacion.entradas.length} entradas y ${fotos.length} fotos del panel.`);
 }

@@ -71,7 +71,7 @@ export const TEMAS: Tema[] = [
     pasos: [
       'Lo que guardas no sale en la web hasta que publicas.',
       'Pulsa «Publicar cambios»: verás la lista de lo que va a cambiar.',
-      'Pulsa «Sí, publicar». La web tarda unos minutos y el propietario la aprueba antes de que se vea.',
+      'Pulsa «Sí, publicar». La web se actualiza sola en unos minutos; en «Últimas publicaciones» verás cuándo ya está.',
       'Las plantas sin revisar o de ejemplo no salen en la web aunque publiques.',
     ],
     enlace: { href: '/panel/publicar', texto: 'Ir a Publicar cambios' },

@@ -14,7 +14,7 @@ Negocio (confirmado por el propietario):
 - Textos editables que no son fichas: datos de la empresa, portada y textos del catálogo en `src/content/ajustes/*.yaml`; páginas fijas (nosotros, reparto y legales) en `src/content/paginas/*.yaml`. Proyectos y guías son colecciones (`src/content/proyectos/`, `src/content/guias/`) con la misma regla de `revisado` que el catálogo. Nada de textos de contenido fijos en los componentes; los de interfaz van en `src/i18n/ui.ts`.
 - Panel interno propio en `/panel` para el gerente, que no tiene GitHub: Astro en el servidor, contenido en D1 (borrador y publicado), acceso con Cloudflare Access y roles (propietario, gerente y como mucho un editor), y asistente (guiado y lenguaje natural con Workers AI). Todo el acceso a datos va por la capa de repositorios (`src/server/data/`). En el build, `scripts/contenido/descargar.ts` escribe el contenido publicado en `src/content` y `src/assets` (con `CONTENIDO_TOKEN`); sin token, se usan los archivos del repositorio. Detalles: `docs/panel-propio/`. El GitHub y el soporte los lleva el propietario del proyecto.
 - Hosting en Cloudflare Workers con Static Assets (plan gratuito), con el adaptador `@astrojs/cloudflare` y `wrangler.jsonc`. No usar Vercel ni Netlify. Las páginas son estáticas. Solo ejecutan el Worker las rutas con `prerender = false`: formularios y presupuestos (`/api/*`, con Turnstile y Cloudflare Email Service) y el panel (`/panel`).
-- Producción con aprobación manual: Workers Builds sube versiones con `wrangler versions upload` y el propietario las publica desde el panel de Cloudflare.
+- Publicación: lo que se publica desde el panel sale solo a la web (decisión del propietario). El comando de despliegue de Workers Builds es `npm run desplegar` (`scripts/contenido/desplegar.ts`): despliega con `wrangler deploy` si el build lleva publicaciones del panel y, si no (cambios de código), sube una versión con `wrangler versions upload` que el propietario publica desde Cloudflare.
 - Todo lo demás debe ser gratuito. Antes de elegir un servicio, comprobar sus límites actuales.
 
 ## Idiomas
@@ -24,7 +24,7 @@ Español en la raíz (`/`) e inglés bajo `/en/`. Cada texto se escribe en los d
 - No inventar datos de la empresa. Lo que falte se marca como `[PLACEHOLDER]`.
 - Los datos de ejemplo del catálogo llevan `datosDeEjemplo: true` y `revisado: false`. Nada con `revisado: false` se publica en producción.
 - Precio visible como "desde X €"; si falta, "precio bajo presupuesto".
-- Cambios siempre en rama con PR. No hacer push a `main`. Producción requiere aprobación manual.
+- Cambios siempre en rama con PR. No hacer push a `main`. Los cambios de código llegan a producción con aprobación manual del propietario.
 - Ejecutar lint, tests y build antes de dar una tarea por terminada.
 - Claves y secretos solo como variables de entorno, nunca en el repositorio.
 - Accesibilidad WCAG 2.1 AA: etiquetas en formularios, contraste, navegación con teclado, textos alternativos.
