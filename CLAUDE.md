@@ -37,6 +37,7 @@ Español en la raíz (`/`) e inglés bajo `/en/`. Cada texto se escribe en los d
 
 ## Diseño
 - Dirección: vivero mediterráneo, claro y sencillo. Mensaje directo para el público (jardinerías, paisajistas y obra; y particulares en las especies que se venden por unidad). Poca información por pantalla: nada de datos técnicos que no ayuden a comprar.
+- Identidad visual: logo en `public/logo.png` (cabecera), `public/logo-oscuro.png` (pie), monograma en `public/monograma.png` y favicon `public/favicon.png`. Van en `public/`, no en `src/assets` (el build reescribe esa carpeta con las fotos del panel). Paleta de la marca: verde bosque `#3a4632`, oliva `#747457`, cobre `#a17b58` (más oscuro, `#8a6240`, en los botones) y arena `#d6c9b4`.
 - Tokens en `src/styles/global.css` (`@theme` de Tailwind 4): crema (fondo), papel, verdor, oliva (marca), tinta (texto), gris (texto secundario), terracota (acento) y linea. Los contrastes se comprueban en `tests/tokens.test.ts`.
 - La terracota es solo para lo que se pulsa (botón principal, con texto blanco). El oliva es el color de marca; la única superficie oscura es oliva (pie y llamada final). Superficies: `superficie-crema`, `superficie-papel`, `superficie-verde` y `superficie-oliva`, con su foco, acento y botón.
 - Tipografía: Bricolage Grotesque para titulares y DM Sans para texto. Unidades en minúscula (m, cm).

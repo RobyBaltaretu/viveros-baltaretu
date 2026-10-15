@@ -1,21 +1,22 @@
 @import 'tailwindcss';
 
 /*
- * Sistema de diseño: vivero mediterráneo, claro y sencillo.
- * Crema de fondo, verde oliva como color de marca y terracota (el de las macetas)
- * solo para lo que hay que pulsar. Los contrastes se comprueban en tests/tokens.test.ts.
+ * Sistema de diseño con la identidad visual de Viveros Baltaretu: crema de fondo,
+ * verde bosque como color de marca y cobre (el semicírculo del logo) solo para lo que
+ * hay que pulsar, un poco más oscuro que el del logo para que el texto blanco encima
+ * cumpla WCAG AA. Los contrastes se comprueban en tests/tokens.test.ts.
  */
 @theme {
-  --color-crema: #f7f2e8;
-  --color-papel: #fffdf8;
-  --color-verdor: #e9eedc;
-  --color-oliva: #2f4a2c;
-  --color-tinta: #1f2a1c;
+  --color-crema: #f5efe6;
+  --color-papel: #fdfaf4;
+  --color-verdor: #e8e8db;
+  --color-oliva: #3a4632;
+  --color-tinta: #232a1d;
   /* Texto secundario. */
-  --color-gris: #5a634f;
+  --color-gris: #5e6450;
   /* Acento: botones y enlaces destacados. Con texto blanco encima. */
-  --color-terracota: #a64b28;
-  --color-linea: #dcd4c2;
+  --color-terracota: #8a6240;
+  --color-linea: #d6c9b4;
 
   --font-titular: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;

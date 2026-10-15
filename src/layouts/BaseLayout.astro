@@ -54,7 +54,8 @@ const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
     <!-- Antes de pintar: si hay JavaScript se muestran los controles interactivos (sin saltos de maquetación). -->
     <script is:inline>document.documentElement.classList.remove('sin-js');</script>
     <meta name="theme-color" content="#0e2519" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>{titulo}</title>
     <meta name="description" content={descripcion} />
     <!-- Solo se precarga la fuente de los titulares (suele ser el LCP). -->

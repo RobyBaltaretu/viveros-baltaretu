@@ -6,7 +6,7 @@ import { dinero, importeLinea } from './importes.ts';
  * PDF de una factura (A4), con las letras estándar de PDF para no cargar
  * fuentes. Colores de la marca: oliva para títulos y líneas, tinta para el texto.
  */
-const OLIVA = rgb(0x2f / 255, 0x4a / 255, 0x2c / 255);
+const OLIVA = rgb(0x3a / 255, 0x46 / 255, 0x32 / 255);
 const TINTA = rgb(0x1f / 255, 0x2a / 255, 0x1c / 255);
 const GRIS = rgb(0x5a / 255, 0x63 / 255, 0x4f / 255);
 const VERDOR = rgb(0xe9 / 255, 0xee / 255, 0xdc / 255);
