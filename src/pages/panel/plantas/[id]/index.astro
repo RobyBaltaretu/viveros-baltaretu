@@ -2,13 +2,20 @@
 import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
 import { disponibilidades } from '../../../../i18n/ui';
 import { formatearPrecio, formatearRango } from '../../../../lib/catalogo/formato';
-import { sesionCon } from '../../../../server/panel/pagina.ts';
+import Icono from '../../../../components/panel/ui/Icono.astro';
+import { campo, sesionCon } from '../../../../server/panel/pagina.ts';
 import { plantaActual } from '../../../../server/panel/planta-actual.ts';
-import { avisosPublicacion } from '../../../../server/panel/plantas.ts';
+import { ACCIONES_RAPIDAS, accionRapida, avisosPublicacion, esAccionRapida } from '../../../../server/panel/plantas.ts';
 
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'editar');
+// Cambios de un toque (revisada, hay o no hay, destacada) sin entrar en cada pantalla.
+if (s && Astro.request.method === 'POST' && Astro.params.id) {
+  const accion = campo(await Astro.request.formData(), 'rapida');
+  const r = esAccionRapida(accion) ? await accionRapida(s.repos, [Astro.params.id], accion, { email: s.usuario.email }) : { hechas: 0, errores: ['Acción desconocida.'] };
+  return Astro.redirect(`/panel/plantas/${Astro.params.id}?${r.hechas ? 'hecho=1' : `error=${encodeURIComponent(r.errores.join(' '))}`}`, 303);
+}
 const planta = await plantaActual(s, Astro.params.id);
 if (s && !planta) return Astro.redirect('/panel/plantas', 303);
 const d = planta?.datos;
@@ -22,7 +29,27 @@ const hecho = Astro.url.searchParams.get('hecho');
       <>
         <h1 class="titular-grande">{d.nombre?.es}</h1>
         {hecho && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{hecho === 'archivada' ? 'Planta archivada.' : 'Guardado. Saldrá en la web cuando publiques los cambios.'}</p>}
+        {Astro.url.searchParams.get('error') && <p role="alert" class="mt-4 rounded-tarjeta bg-arena-prueba p-3 font-semibold">{Astro.url.searchParams.get('error')}</p>}
         {avisosPublicacion(d).map((a) => <p class="mt-3 font-semibold text-terracota">{a}</p>)}
+        <form method="post" class="mt-6 grid gap-4 caja-panel p-4">
+          <h2 class="titular-medio">Cambios rápidos</h2>
+          <div class="flex flex-wrap items-center gap-2">
+            {d.revisado ? (
+              <button class="boton-panel boton-panel-secundario" name="rapida" value="no-revisar">Quitar «revisada»</button>
+            ) : (
+              <button class="boton-panel" name="rapida" value="revisar"><Icono nombre="hecho" clase="size-5" />Marcar como revisada</button>
+            )}
+            <button class="boton-panel boton-panel-secundario" name="rapida" value={d.destacada ? 'no-destacar' : 'destacar'}>{d.destacada ? 'Dejar de destacar' : 'Destacar en la portada'}</button>
+          </div>
+          <fieldset class="grid gap-2">
+            <legend class="mb-2 font-semibold">¿Hay ahora?</legend>
+            <div class="flex flex-wrap gap-2">
+              {(['disponible', 'bajo-pedido', 'agotado'] as const).map((v) => (
+                <button class:list={['boton-panel', d.disponibilidad !== v && 'boton-panel-secundario']} name="rapida" value={v} aria-pressed={d.disponibilidad === v ? 'true' : 'false'}>{ACCIONES_RAPIDAS[v]}</button>
+              ))}
+            </div>
+          </fieldset>
+        </form>
         <dl class="mt-6 grid gap-2 caja-panel p-4">
           <div><dt class="inline font-semibold">Precio: </dt><dd class="inline">{formatearPrecio(d.precioDesde ?? null, 'unidad', 'es')}</dd></div>
           <div><dt class="inline font-semibold">Hay ahora: </dt><dd class="inline">{disponibilidades[d.disponibilidad as keyof typeof disponibilidades]?.es}</dd></div>
@@ -32,7 +59,6 @@ const hecho = Astro.url.searchParams.get('hecho');
         <h2 class="titular-medio mt-8">¿Qué quieres hacer?</h2>
         <ul class="mt-4 grid gap-3" role="list">
           <li><a class="boton-panel w-full" href={`${base}/precio`}>Cambiar el precio</a></li>
-          <li><a class="boton-panel w-full" href={`${base}/disponibilidad`}>Cambiar si hay o no hay</a></li>
           <li><a class="boton-panel boton-panel-secundario w-full" href={`${base}/vista`}>Así se verá en la web</a></li>
           <li><a class="boton-panel w-full" href={`${base}/fotos`}>Fotos ({Array.isArray(d.fotos) ? d.fotos.length : 0})</a></li>
           <li><a class="boton-panel boton-panel-secundario w-full" href={`${base}/datos`}>Cambiar nombre, textos y medidas</a></li>

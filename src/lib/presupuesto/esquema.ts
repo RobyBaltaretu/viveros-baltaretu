@@ -1,8 +1,8 @@
 import { z } from 'astro/zod';
 import { SLUG_REGEX } from '../catalogo/schema';
 
-export const MAX_LINEAS = 50;
-export const MAX_CANTIDAD = 10_000;
+import { MAX_CANTIDAD, MAX_LINEAS } from './limites';
+export { MAX_CANTIDAD, MAX_LINEAS };
 
 /** Campo trampa: invisible para personas; si llega relleno, es un bot. */
 export const CAMPO_TRAMPA = 'sitio_web';

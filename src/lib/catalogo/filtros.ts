@@ -1,5 +1,5 @@
 import type { Familia, Formato } from './tipos';
-import { FAMILIAS, FORMATOS } from './schema';
+import { FAMILIAS, FORMATOS } from './constantes';
 
 /**
  * Filtros del catálogo. Lógica pura (sin DOM) compartida por el script del

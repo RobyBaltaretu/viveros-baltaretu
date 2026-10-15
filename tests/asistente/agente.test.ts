@@ -3,7 +3,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { leerContenido } from '../../scripts/contenido/archivos.mjs';
 import { AVISO_CUPO, borrarConversacion, CLAVE_NEURONAS, conversar, enviarFotos, LIMITE_NEURONAS_DIA, LIMITE_MENSAJES_PERSONA, responderPropuesta, usoDeHoy, type ModeloAsistente } from '../../src/server/asistente/agente.ts';
 import { textoSeguro } from '../../src/server/asistente/formato.ts';
-import { herramientasDe, type Contexto } from '../../src/server/asistente/herramientas.ts';
+import { herramientasDe, herramientasPara, type Contexto } from '../../src/server/asistente/herramientas.ts';
+import { accionRapida } from '../../src/server/panel/plantas.ts';
 import { importarContenido, type EntradaImportada } from '../../src/server/contenido/importacion.ts';
 import { aplicarMigraciones, crearRepositoriosD1, type Repositorios, type Usuario } from '../../src/server/data/index.ts';
 import { d1DePrueba } from '../panel/d1.ts';
@@ -176,6 +177,26 @@ describe('asistente completo', () => {
     expect(await borrarConversacion(c, primera)).toBe(true);
     expect(await r.listar(u.email)).toEqual([]);
     expect(await r.mensajes(primera)).toEqual([]);
+  });
+
+  it('solo se mandan al modelo las herramientas del tema (menos cupo de IA)', () => {
+    const todas = herramientasDe('propietario');
+    const nombres = (t: string) => herramientasPara(todas, t).map((h) => h.nombre);
+    expect(nombres('sube un 5 % las palmeras')).toEqual(expect.arrayContaining(['resumen_vivero', 'cambiar_plantas']));
+    expect(nombres('sube un 5 % las palmeras')).not.toContain('ver_facturas');
+    expect(nombres('marca como cobradas las facturas vencidas')).toContain('gestionar_facturas');
+    expect(nombres('hola')).toHaveLength(todas.length);
+  });
+
+  it('acciones rápidas de plantas: revisada, disponibilidad y quitar, con la validación del panel', async () => {
+    const autor = { email: 'rapida@example.com' };
+    expect(await accionRapida(repos, ['chamaerops-humilis', 'yucca-elephantipes'], 'agotado', autor)).toEqual({ hechas: 2, errores: [] });
+    expect((await repos.contenido.obtener('catalogo', 'yucca-elephantipes'))?.borrador.datos.disponibilidad).toBe('agotado');
+    await accionRapida(repos, ['chamaerops-humilis'], 'revisar', autor);
+    expect((await repos.contenido.obtener('catalogo', 'chamaerops-humilis'))?.borrador.datos.revisado).toBe(true);
+    await accionRapida(repos, ['chamaerops-humilis'], 'quitar', autor);
+    expect((await repos.contenido.obtener('catalogo', 'chamaerops-humilis'))?.archivada).toBe(true);
+    await accionRapida(repos, ['chamaerops-humilis'], 'recuperar', autor);
   });
 
   it('las herramientas dependen del rol', () => {

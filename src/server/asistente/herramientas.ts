@@ -1098,3 +1098,34 @@ export const HERRAMIENTAS: Herramienta[] = [
 
 export const herramientasDe = (rol: Usuario['rol']) => HERRAMIENTAS.filter((h) => puede(rol, h.permiso));
 export const herramienta = (nombre: string) => HERRAMIENTAS.find((h) => h.nombre === nombre);
+
+/**
+ * Grupos de herramientas por tema. En cada mensaje solo se mandan al modelo las
+ * de los temas que salen en la conversación reciente (las 26 juntas son ~22.000
+ * caracteres por paso: lo que más gasta del cupo diario de IA). Si no se reconoce
+ * ningún tema, van todas.
+ */
+const TEMAS: { palabras: RegExp; herramientas: string[] }[] = [
+  {
+    palabras: /plant|palmer|palmit|olivo|higuer|cica|yuca|especie|precio|agotad|disponib|stock|catalog|ficha|revisad|destacad|formato|maceta|cepell|altura|unidad|foto|familia|vend[eo]/,
+    herramientas: ['buscar_plantas', 'cambiar_planta', 'crear_planta', 'quitar_o_recuperar_planta', 'cambiar_plantas'],
+  },
+  { palabras: /presupuest|pedido|solicitud|peticion|pidi/, herramientas: ['ver_presupuestos', 'cambiar_presupuesto', 'cambiar_presupuestos'] },
+  {
+    palabras: /factur|client|cobr|nif|cif|rectific|emit|vencid|iva|deb[ei]|pendiente de pago|borrador/,
+    herramientas: ['ver_facturas', 'ver_clientes', 'guardar_cliente', 'crear_factura', 'gestionar_factura', 'gestionar_facturas', 'cambiar_clientes'],
+  },
+  { palabras: /gast|ticket|compra|proveedor|gasolin|recibo|tienda/, herramientas: ['ver_gastos', 'registrar_gasto', 'gestionar_gastos'] },
+  { palabras: /informe|ingres|benefic|resultado|margen|trimestre|cifra|ganad|ventas|facturad|mes |este mes|ano|año/, herramientas: ['informe'] },
+  {
+    palabras: /texto|web|portada|telefono|horario|condicion|pagina|publica|deshac|cambio|empresa|direccion|correo|email|minimo|plazo|envio/,
+    herramientas: ['ver_textos_web', 'cambiar_texto_web', 'cambiar_textos_web', 'publicar_cambios', 'cambios_recientes', 'deshacer_cambio'],
+  },
+];
+
+/** Herramientas para un texto (mensaje actual y los anteriores); `resumen_vivero` siempre. */
+export function herramientasPara(lista: Herramienta[], texto: string): Herramienta[] {
+  const t = normalizar(texto);
+  const nombres = new Set(['resumen_vivero', ...TEMAS.filter((g) => g.palabras.test(t)).flatMap((g) => g.herramientas)]);
+  return nombres.size === 1 ? lista : lista.filter((h) => nombres.has(h.nombre));
+}

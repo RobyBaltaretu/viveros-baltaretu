@@ -1,4 +1,5 @@
 ---
+import PdfEnNavegador from './PdfEnNavegador.astro';
 /**
  * Borrador de factura: líneas (concepto, cantidad, precio sin IVA, descuento e
  * IVA), fechas, forma de pago y notas. Funciona sin JavaScript; con él, los
@@ -205,3 +206,5 @@ const t = f.totales;
   };
   form?.addEventListener('input', recalcular);
 </script>
+
+<PdfEnNavegador />
