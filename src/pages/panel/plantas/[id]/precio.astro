@@ -4,6 +4,7 @@ import Mensajes from '../../../../components/panel/Mensajes.astro';
 import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
 import { aTexto, pantallaPlanta } from '../../../../server/panel/form-planta.ts';
 import { sesionCon } from '../../../../server/panel/pagina.ts';
+import { PANTALLAS_PLANTA } from '../../../../server/panel/plantas.ts';
 
 export const prerender = false;
 
@@ -18,7 +19,7 @@ const d = p.datos;
   <h1 class="titular-grande">Precio de {d?.nombre?.es}</h1>
   <Mensajes errores={p.errores} />
   <form method="post" class="mt-6 grid gap-6">
-    <input type="hidden" name="presentes" value="precioDesde,ventaUnitaria,precioUnidad" />
+    <input type="hidden" name="presentes" value={PANTALLAS_PLANTA.precio} />
     <Campo nombre="precioDesde" etiqueta="Precio al por mayor, desde (€)" tipo="number-texto" valor={aTexto(d?.precioDesde)} ayuda="Por ejemplo 18 o 18,50. Si lo dejas vacío, en la web pondrá «precio bajo presupuesto»." error={p.error('precioDesde')} />
     <label class="flex min-h-12 items-center gap-3 font-semibold">
       <input type="checkbox" name="ventaUnitaria" value="1" checked={Boolean(d?.ventaUnitaria)} class="size-6" />

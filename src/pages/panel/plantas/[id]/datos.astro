@@ -4,6 +4,7 @@ import Mensajes from '../../../../components/panel/Mensajes.astro';
 import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
 import { pantallaPlanta } from '../../../../server/panel/form-planta.ts';
 import { sesionCon } from '../../../../server/panel/pagina.ts';
+import { PANTALLAS_PLANTA } from '../../../../server/panel/plantas.ts';
 
 export const prerender = false;
 
@@ -11,7 +12,7 @@ const s = sesionCon(Astro.locals, 'editar');
 const p = await pantallaPlanta(s, Astro.params.id, Astro.request);
 if (s && !p.planta) return Astro.redirect('/panel/plantas', 303);
 if (p.guardado) return Astro.redirect(`${p.volver}?hecho=1`, 303);
-const PRESENTES = 'nombre.es,nombre.en,nombreCientifico,familia,descripcion.es,descripcion.en,alturaMin,alturaMax,perimetro,formatos,origen,destacada,revisado';
+const PRESENTES = PANTALLAS_PLANTA.datos;
 ---
 
 <PaginaPanel titulo="Cambiar nombre, textos y medidas" permiso="editar" volver={p.volver}>

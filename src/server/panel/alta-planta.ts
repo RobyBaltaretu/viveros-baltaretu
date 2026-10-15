@@ -10,7 +10,7 @@ export const PASOS = [
   { titulo: '¿Cuánto cuesta?', presentes: 'precioDesde,ventaUnitaria,precioUnidad', campos: ['precioDesde', 'precioUnidad'] },
   { titulo: '¿Hay ahora y cómo se entrega?', presentes: 'disponibilidad,formatos', campos: ['disponibilidad', 'formatos'] },
   { titulo: 'Descríbela', presentes: 'descripcion.es,nombre.en,descripcion.en', campos: ['descripcion.es', 'nombre.en', 'descripcion.en'] },
-  { titulo: 'Revisa y guarda', presentes: 'origen,destacada,revisado', campos: ['origen'] },
+  { titulo: 'Revisa y guarda', presentes: 'origen,destacada,revisado,silueta,datosDeEjemplo', campos: ['origen'] },
 ] as const;
 
 const BASE: DatosPlanta = { unidadPrecio: 'unidad', fotos: [], datosDeEjemplo: false, revisado: false, destacada: false, ventaUnitaria: false, formatos: [] };
