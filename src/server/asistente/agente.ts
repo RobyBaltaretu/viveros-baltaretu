@@ -28,7 +28,7 @@ export const LIMITE_MENSAJES_PERSONA = 80;
 /** Mensajes anteriores que ve el modelo. */
 const MEMORIA = 12;
 /** Pasos de herramientas por mensaje. */
-const PASOS = 6;
+const PASOS = 10;
 
 export const CLAVE_NEURONAS = '__neuronas__';
 
@@ -138,7 +138,7 @@ export async function conversar(ctx: Contexto, texto: string, modelos: ModeloAsi
           tools: herramientasModelo(ctx, conversacion, propuestas),
           stopWhen: isStepCount(PASOS),
           temperature: 0.2,
-          maxOutputTokens: 900,
+          maxOutputTokens: 1600,
         });
         const gastadas = Math.ceil(((r.totalUsage.inputTokens ?? 0) * m.neuronas.entrada + (r.totalUsage.outputTokens ?? 0) * m.neuronas.salida) / 1_000_000);
         if (gastadas) await repos.usoAsistente.sumar(CLAVE_NEURONAS, dia(ahora), gastadas);

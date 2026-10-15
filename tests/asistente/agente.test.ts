@@ -72,6 +72,51 @@ describe('asistente completo', () => {
     expect(malo.propuestas).toEqual([]);
   });
 
+  it('cambia muchas plantas con un solo «Sí» y se puede deshacer en bloque', async () => {
+    const u = usuario('bloque@example.com');
+    const c = ctx(u);
+    const palmeras = (await repos.contenido.listar('catalogo')).filter((e) => e.borrador.datos.familia === 'palmeras');
+    const conPrecio = palmeras.filter((e) => typeof e.borrador.datos.precioDesde === 'number');
+    expect(conPrecio.length).toBeGreaterThan(1);
+    const antes = new Map(conPrecio.map((e) => [e.id, e.borrador.datos.precioDesde as number]));
+
+    const r = await conversar(c, 'sube un 10 % las palmeras', [modelo({ herramienta: 'cambiar_plantas', argumentos: { seleccion: { familia: 'palmeras' }, ajustePrecio: { porcentaje: 10, redondeo: 'euro' } } }, 'Pulsa «Sí».')]);
+    expect(r.propuestas).toHaveLength(1);
+    expect(r.propuestas[0].resumen).toMatch(/plantas .*\+10 %, redondeado al euro/);
+    expect(await responderPropuesta(c, r.propuestas[0].id, true)).toMatchObject({ ok: true });
+    for (const [id, precio] of antes) expect((await repos.contenido.obtener('catalogo', id))?.borrador.datos.precioDesde).toBe(Math.round(precio * 1.1));
+
+    // Se deshace todo de una vez y cada ficha vuelve a su precio.
+    const ids = (await repos.contenido.historial({ limite: 50 })).filter((x) => x.email === u.email).map((x) => x.id);
+    const d = await conversar(c, 'deshaz eso', [modelo({ herramienta: 'deshacer_cambio', argumentos: { cambioIds: ids } }, 'Pulsa «Sí».')]);
+    expect(await responderPropuesta(c, d.propuestas[0].id, true)).toMatchObject({ ok: true });
+    for (const [id, precio] of antes) expect((await repos.contenido.obtener('catalogo', id))?.borrador.datos.precioDesde).toBe(precio);
+
+    // Sin decir qué plantas no hay propuesta; lo que rompe las reglas tampoco.
+    const sinSeleccion = await conversar(c, 'agótalo todo', [modelo({ herramienta: 'cambiar_plantas', argumentos: { seleccion: {}, cambios: { disponibilidad: 'agotado' } } }, '¿Qué plantas?')]);
+    expect(sinSeleccion.propuestas).toEqual([]);
+    const precioUnidad = await conversar(c, 'precio por unidad 5 a todas', [modelo({ herramienta: 'cambiar_plantas', argumentos: { seleccion: { todas: true, ventaUnitaria: false }, cambios: { precioUnidad: 5 } } }, 'No se puede.')]);
+    expect(precioUnidad.propuestas).toEqual([]);
+  });
+
+  it('presupuestos, textos y clientes también van en bloque', async () => {
+    const c = ctx(usuario('bloque2@example.com'));
+    for (const id of ['p1', 'p2']) {
+      await repos.presupuestos.guardar({ id, fecha: '2026-01-10T10:00:00Z', estado: 'nuevo', nombre: `Cliente ${id}`, empresa: '', email: `${id}@example.com`, telefono: '', provincia: 'Valencia', tipoPedido: 'mayor', mensaje: '', lineas: [], idioma: 'es' });
+    }
+    const p = await conversar(c, 'archiva los presupuestos viejos', [modelo({ herramienta: 'cambiar_presupuestos', argumentos: { estadoActual: 'nuevo', antesDe: '2026-02-01', estado: 'archivado' } }, 'Pulsa «Sí».')]);
+    expect(p.propuestas[0].resumen).toContain('2 presupuestos');
+    expect(await responderPropuesta(c, p.propuestas[0].id, true)).toMatchObject({ ok: true });
+    expect((await repos.presupuestos.obtener('p1'))?.estado).toBe('archivado');
+
+    const t = await conversar(c, 'cambia el pedido mínimo y el teléfono', [
+      modelo({ herramienta: 'cambiar_textos_web', argumentos: { textos: [{ seccion: 'ajustes/empresa', campo: 'telefono', valor: '+34 600 000 001' }, { seccion: 'ajustes/empresa', campo: 'nombre', valor: 'Viveros Baltaretu' }] } }, 'Pulsa «Sí».'),
+    ]);
+    expect(t.propuestas[0].resumen).toContain('2 textos');
+    expect(await responderPropuesta(c, t.propuestas[0].id, true)).toMatchObject({ ok: true });
+    expect((await repos.contenido.obtener('ajustes', 'empresa'))?.borrador.datos.telefono).toBe('+34 600 000 001');
+  });
+
   it('las herramientas dependen del rol', () => {
     const editor = herramientasDe('editor').map((h) => h.nombre);
     expect(editor).toContain('cambiar_planta');
