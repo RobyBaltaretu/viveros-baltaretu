@@ -5,12 +5,12 @@ import type { Rol } from '../data/tipos.ts';
  * todo salvo gestionar personas; el editor solo prepara cambios (no publica ni
  * ve presupuestos, facturas ni gastos). Como máximo hay un editor.
  */
-export const ACCIONES = ['editar', 'publicar', 'presupuestos', 'personas', 'asistente', 'facturas', 'gastos'] as const;
+export const ACCIONES = ['editar', 'publicar', 'presupuestos', 'personas', 'asistente', 'facturas', 'gastos', 'informes'] as const;
 export type Accion = (typeof ACCIONES)[number];
 
 const PERMISOS: Record<Rol, readonly Accion[]> = {
   propietario: ACCIONES,
-  gerente: ['editar', 'publicar', 'presupuestos', 'asistente', 'facturas', 'gastos'],
+  gerente: ['editar', 'publicar', 'presupuestos', 'asistente', 'facturas', 'gastos', 'informes'],
   editor: ['editar', 'asistente'],
 };
 

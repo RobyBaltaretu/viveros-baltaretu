@@ -60,6 +60,12 @@ Nada de lo que hagas en el panel puede romper la web: si algo está mal, el pane
 4. Elige el tipo de gasto y pulsa «Guardar el gasto». Hasta entonces queda «por revisar» y no cuenta en las cuentas.
 5. Si no tienes ticket, pulsa «No tengo ticket: escribirlo a mano».
 
+## Ver cómo van las ventas y los gastos
+1. Pulsa «Informes». Arriba eliges el mes, el trimestre o el año, y con «Anterior» y «Siguiente» te mueves.
+2. Verás los ingresos y los gastos sin IVA, el resultado, lo que falta por cobrar y la comparación con el periodo anterior.
+3. «Lo más importante» resume en frases lo que ha cambiado. Debajo, el gráfico de 12 meses (con sus datos en una tabla), en qué se gasta, los mejores clientes y lo más vendido.
+4. Solo cuentan las facturas emitidas y los tickets revisados.
+
 ## Me he equivocado: deshacer
 1. Pulsa «Cambios recientes».
 2. Busca el cambio y pulsa «Deshacer»: queda como estaba antes.

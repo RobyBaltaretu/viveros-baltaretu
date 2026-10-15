@@ -1,0 +1,183 @@
+---
+import Barras from '../../components/panel/graficos/Barras.astro';
+import Reparto from '../../components/panel/graficos/Reparto.astro';
+import PaginaPanel from '../../components/panel/PaginaPanel.astro';
+import { dinero } from '../../server/facturas/importes.ts';
+import { hoy } from '../../server/gastos/gastos.ts';
+import {
+  cifras,
+  cobros,
+  conclusiones,
+  conversion,
+  evolucionMensual,
+  gastosPorCategoria,
+  masVendido,
+  mejoresClientes,
+  periodoAnterior,
+  periodoDe,
+  periodoSiguiente,
+  variacion,
+  type TipoPeriodo,
+} from '../../server/informes/informes.ts';
+import { sesionCon } from '../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'informes');
+const dia = hoy();
+const pedidoTipo = Astro.url.searchParams.get('periodo');
+const tipo: TipoPeriodo = pedidoTipo === 'trimestre' || pedidoTipo === 'anio' ? pedidoTipo : 'mes';
+const pedidaFecha = Astro.url.searchParams.get('fecha') ?? '';
+const periodo = periodoDe(tipo, /^\d{4}-\d{2}-\d{2}$/.test(pedidaFecha) && pedidaFecha <= dia ? pedidaFecha : dia);
+const anterior = periodoAnterior(periodo);
+const siguiente = periodoSiguiente(periodo);
+
+// Un año y medio hacia atrás basta para el periodo, el anterior y los 12 meses del gráfico.
+const desde = new Date(`${periodo.hasta}T12:00:00Z`);
+desde.setUTCMonth(desde.getUTCMonth() - 24);
+const rango = { desde: desde.toISOString().slice(0, 10) };
+const [facturas, gastos, presupuestos, porRevisar] = s
+  ? await Promise.all([
+      s.repos.facturas.listar({ desde: rango.desde, limite: 20000 }),
+      s.repos.gastos.listar({ estado: 'confirmado', desde: rango.desde, limite: 20000 }),
+      s.repos.presupuestos.listar({ limite: 5000 }),
+      s.repos.gastos.listar({ estado: 'revisar' }),
+    ])
+  : [[], [], [], []];
+// Lo pendiente de cobro se mira en todas las facturas, no solo en las del rango.
+const todasPendientes = s ? await s.repos.facturas.listar({ estado: 'emitida', limite: 20000 }) : [];
+
+const a = cifras(facturas, gastos, presupuestos, periodo);
+const b = cifras(facturas, gastos, presupuestos, anterior);
+const c = cobros(todasPendientes, dia);
+const evolucion = evolucionMensual(facturas, gastos, periodo.hasta);
+const categorias = gastosPorCategoria(gastos, periodo);
+const clientes = mejoresClientes(facturas, periodo);
+const productos = masVendido(facturas, periodo);
+const conv = conversion(facturas, presupuestos, periodo);
+const frases = conclusiones({ actual: a, anterior: b, periodo, cobros: c, categorias, categoriasAntes: gastosPorCategoria(gastos, anterior), clientes, evolucion, conversion: conv, porRevisar: porRevisar.length });
+
+const cambio = (ahora: number, antes: number) => {
+  const v = variacion(ahora, antes);
+  if (v === null) return antes === 0 && ahora === 0 ? 'Sin datos todavía' : `Antes: ${dinero(antes)}`;
+  return `${v > 0 ? '▲' : v < 0 ? '▼' : '='} ${String(Math.abs(v)).replace('.', ',')} % frente a ${anterior.etiqueta}`;
+};
+const PESTANAS: [TipoPeriodo, string][] = [
+  ['mes', 'Mes'],
+  ['trimestre', 'Trimestre'],
+  ['anio', 'Año'],
+];
+const enlace = (t: TipoPeriodo, fecha: string) => `/panel/informes?periodo=${t}&fecha=${fecha}`;
+const mayus = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+const KPIS = [
+  { nombre: 'Ingresos (sin IVA)', valor: dinero(a.ingresos), nota: cambio(a.ingresos, b.ingresos) },
+  { nombre: 'Gastos (sin IVA)', valor: dinero(a.gastos), nota: cambio(a.gastos, b.gastos) },
+  { nombre: 'Resultado', valor: dinero(a.resultado), nota: a.margen !== null ? `Margen del ${String(a.margen).replace('.', ',')} %` : cambio(a.resultado, b.resultado) },
+  { nombre: 'Por cobrar hoy', valor: dinero(c.pendiente), nota: c.vencidas ? `${dinero(c.vencido)} con la fecha pasada` : `${c.facturas} ${c.facturas === 1 ? 'factura' : 'facturas'}, ninguna vencida` },
+];
+const DATOS = [
+  { nombre: 'Facturas emitidas', valor: String(a.facturas), nota: `Antes: ${b.facturas}` },
+  { nombre: 'Factura media', valor: a.ticketMedio !== null ? dinero(a.ticketMedio) : '—', nota: b.ticketMedio !== null ? `Antes: ${dinero(b.ticketMedio)}` : '' },
+  { nombre: 'Clientes con factura', valor: String(a.clientes), nota: `Antes: ${b.clientes}` },
+  { nombre: 'Cobrado en el periodo', valor: dinero(a.cobrado), nota: `Antes: ${dinero(b.cobrado)}` },
+  { nombre: 'Presupuestos recibidos', valor: String(conv.recibidos), nota: conv.tasa !== null ? `${conv.tasa} % ya facturados` : '' },
+  { nombre: 'IVA cobrado − IVA pagado', valor: dinero(a.ivaRepercutido - a.ivaSoportado), nota: `${dinero(a.ivaRepercutido)} − ${dinero(a.ivaSoportado)}` },
+];
+---
+
+<PaginaPanel titulo="Informes" permiso="informes">
+  <div class="informes">
+    <h1 class="titular-grande">Informes</h1>
+    <nav aria-label="Periodo" class="mt-6 grid gap-3">
+      <ul class="flex flex-wrap gap-2" role="list">
+        {
+          PESTANAS.map(([t, texto]) => (
+            <li>
+              <a href={enlace(t, periodo.hasta > dia ? dia : periodo.hasta)} class:list={['boton-panel', t !== tipo && 'boton-panel-secundario']} aria-current={t === tipo ? 'page' : undefined}>
+                {texto}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <a class="boton-panel boton-panel-secundario" href={enlace(tipo, anterior.desde)}>← Anterior</a>
+        <h2 class="titular-medio">{mayus(periodo.etiqueta)}</h2>
+        {siguiente.desde <= dia ? <a class="boton-panel boton-panel-secundario" href={enlace(tipo, siguiente.desde)}>Siguiente →</a> : <span />}
+      </div>
+    </nav>
+
+    <ul class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2" role="list">
+      {
+        KPIS.map((k) => (
+          <li class="grid gap-1 rounded-panel border-2 border-linea bg-papel p-4">
+            <span class="text-gris">{k.nombre}</span>
+            <span class="font-titular text-3xl font-bold">{k.valor}</span>
+            <span class="text-base text-gris">{k.nota}</span>
+          </li>
+        ))
+      }
+    </ul>
+
+    {
+      frases.length > 0 && (
+        <section class="mt-8 rounded-panel bg-verdor p-5" aria-labelledby="claves">
+          <h2 id="claves" class="titular-medio">
+            Lo más importante
+          </h2>
+          <ul class="mt-3 grid list-disc gap-2 pl-6">
+            {frases.map((f) => (
+              <li>{f}</li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <div class="mt-10">
+      <Barras
+        titulo="Ingresos y gastos de los últimos 12 meses"
+        categorias={evolucion.map((p) => p.etiqueta)}
+        nombres={evolucion.map((p) => p.nombre)}
+        series={[
+          { nombre: 'Ingresos (sin IVA)', color: 'var(--color-serie-1)', valores: evolucion.map((p) => p.ingresos) },
+          { nombre: 'Gastos (sin IVA)', color: 'var(--color-serie-2)', valores: evolucion.map((p) => p.gastos) },
+        ]}
+      />
+    </div>
+
+    <h2 class="titular-medio mt-10">Más datos de {periodo.etiqueta}</h2>
+    <ul class="mt-4 grid grid-cols-2 gap-3" role="list">
+      {
+        DATOS.map((k) => (
+          <li class="grid gap-1 rounded-tarjeta border-2 border-linea bg-papel p-3">
+            <span class="text-gris">{k.nombre}</span>
+            <span class="text-xl font-bold">{k.valor}</span>
+            {k.nota && <span class="text-base text-gris">{k.nota}</span>}
+          </li>
+        ))
+      }
+    </ul>
+    <p class="mt-2 text-base text-gris">El IVA es orientativo: la declaración la hace la gestoría.</p>
+
+    <div class="mt-10 grid gap-10">
+      <Reparto titulo="En qué se ha gastado" partes={categorias} vacio="No hay gastos revisados en este periodo." color="var(--color-serie-2-texto)" />
+      <Reparto titulo="Mejores clientes" partes={clientes} vacio="No hay facturas emitidas en este periodo." />
+      <Reparto titulo="Lo más vendido" partes={productos} vacio="No hay ventas en este periodo." />
+    </div>
+
+    <p class="mt-10 text-base text-gris">
+      Ingresos: base de las facturas emitidas en el periodo (las rectificativas restan). Gastos: tickets revisados, sin IVA cuando el ticket lo indica. Los borradores y los tickets por revisar no cuentan.
+    </p>
+  </div>
+</PaginaPanel>
+
+<style>
+  /* Colores de las series, comprobados con el validador de paleta (daltonismo y contraste).
+     El ocre no llega a 3:1 con el fondo: por eso hay leyenda, valores escritos y tabla. */
+  .informes {
+    --color-serie-1: #2f6e3a;
+    --color-serie-2: #d99a2b;
+    --color-serie-2-texto: #b27a17;
+  }
+</style>
