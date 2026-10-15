@@ -1,5 +1,4 @@
 ---
-import Silueta from './ilustraciones/Silueta.astro';
 import Boton from './ui/Boton.astro';
 import Contenedor from './ui/Contenedor.astro';
 import { navegacion, nombresIdioma, rutas, textos, type Idioma } from '../i18n/ui';
@@ -21,8 +20,7 @@ const esActual = (ruta: string) => actual === ruta || (ruta !== rutas.inicio[idi
 <header class="sticky top-0 z-40 border-b border-linea bg-papel/95 text-tinta backdrop-blur-md supports-[backdrop-filter]:bg-papel/85">
   <Contenedor class="flex h-18 items-center gap-6">
     <a href={rutas.inicio[idioma]} class="flex min-w-0 items-center gap-2.5 font-titular text-lg font-bold" aria-label={t.irAInicio}>
-      <Silueta tipo="palmera" quieta simple class="h-9 w-auto shrink-0 text-oliva" />
-      <span class="truncate text-oliva">{empresa.nombre}</span>
+      <img src="/logo.png" alt={empresa.nombre} width="433" height="160" class="logo-marca h-12 w-auto shrink-0 sm:h-14" fetchpriority="high" />
     </a>
 
     <nav aria-label={t.navegacionPrincipal} class="ml-auto hidden lg:block">

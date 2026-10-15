@@ -135,11 +135,7 @@ const textosScript = {
           </div>
 
           {
-            claveTurnstile ? (
-              <div class="cf-turnstile" data-sitekey={claveTurnstile} data-language={idioma} data-theme="light" />
-            ) : (
-              <p class="text-sm text-gris">{t.antispamPendiente}</p>
-            )
+            claveTurnstile && <div class="cf-turnstile" data-sitekey={claveTurnstile} data-language={idioma} data-theme="light" />
           }
 
           <div>

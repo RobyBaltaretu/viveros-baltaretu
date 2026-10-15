@@ -53,10 +53,15 @@ export const POST: APIRoute = async ({ request, url, redirect }) => {
   const entorno = env as unknown as EntornoPresupuesto;
   const secreto = entorno.TURNSTILE_SECRET_KEY || (import.meta.env.DEV ? TURNSTILE_PRUEBA.claveSecreta : undefined);
   const { EMAIL_DESTINO: destino, EMAIL_REMITENTE: remitente, EMAIL: binding } = entorno;
-  if (!secreto || !destino || !remitente || !binding) {
-    console.error('Faltan TURNSTILE_SECRET_KEY, EMAIL_DESTINO, EMAIL_REMITENTE o el binding EMAIL');
+  // Con el panel (D1) la petición se guarda siempre; el correo y Turnstile se usan si están
+  // configurados. Sin panel y sin correo no hay dónde dejarla: error de configuración.
+  const conCorreo = Boolean(destino && remitente && binding);
+  if (!conCorreo && !entorno.DB) {
+    console.error('Faltan EMAIL_DESTINO, EMAIL_REMITENTE o el binding EMAIL, y no hay base DB');
     return json({ ok: false, codigo: 'configuracion' }, 500);
   }
+  if (!secreto) console.warn('Sin TURNSTILE_SECRET_KEY: el formulario solo tiene el campo trampa como anti-spam');
+  if (!conCorreo) console.warn('Sin correo configurado: los presupuestos quedan solo en el panel');
 
   const especies = new Map(
     (await obtenerEspecies('es')).map(({ data }) => [
@@ -73,12 +78,13 @@ export const POST: APIRoute = async ({ request, url, redirect }) => {
           await repos?.presupuestos.guardar(presupuestoDesde(solicitud, especies));
         }
       : undefined,
-    verificarTurnstile: (token) =>
-      verificarTurnstile(token, secreto, request.headers.get('CF-Connecting-IP') ?? undefined),
-    enviarEmail: async ({ asunto, texto, html, responderA }) => {
-      await binding.send({
-        from: { email: remitente, name: 'Web del vivero' },
-        to: destino,
+    verificarTurnstile: secreto ? (token) => verificarTurnstile(token, secreto, request.headers.get('CF-Connecting-IP') ?? undefined) : undefined,
+    enviarEmail: !conCorreo
+      ? undefined
+      : async ({ asunto, texto, html, responderA }) => {
+      await binding!.send({
+        from: { email: remitente!, name: 'Web del vivero' },
+        to: destino!,
         replyTo: responderA,
         subject: asunto,
         text: texto,

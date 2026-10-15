@@ -23,9 +23,9 @@ const ventajas = [t.ventajaMayor, t.ventajaUnidad, t.datoReparto];
   <Contenedor class="grid items-center gap-x-16 gap-y-12 py-14 sm:py-20 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:py-24">
     <div class="min-w-0">
       <h1 class="titular-gigante">
-        {portada.titular[idioma]} <span class="text-oliva">{portada.titularDestacado[idioma]}</span>
+        <span class="linea-entra">{portada.titular[idioma]}</span> <span class="linea-entra linea-entra-2 text-oliva">{portada.titularDestacado[idioma]}</span>
       </h1>
-      <p class="mt-6 max-w-xl texto-entrada text-gris">{portada.entradilla[idioma]}</p>
+      <p class="linea-entra linea-entra-3 mt-6 max-w-xl texto-entrada text-gris">{portada.entradilla[idioma]}</p>
       <div class="mt-8 flex flex-wrap gap-3">
         <Boton href={rutas.catalogo[idioma]} tamano="grande" flecha>{t.verCatalogo}</Boton>
         <Boton href={rutas.presupuesto[idioma]} tamano="grande" variante="secundario">{t.pedirPresupuesto}</Boton>
@@ -53,4 +53,22 @@ const ventajas = [t.ventajaMayor, t.ventajaUnidad, t.datoReparto];
       <div class="absolute inset-x-0 bottom-0 h-[3%] bg-oliva/15"></div>
     </div>
   </Contenedor>
+  <div class="cinta border-y border-linea bg-papel py-4" aria-hidden="true">
+    <div class="cinta-pista">
+      {
+        [0, 1].map(() => (
+          <ul class="flex shrink-0 items-center gap-10 pr-10 font-titular text-xl font-semibold text-oliva sm:text-2xl" role="list">
+            {[...ventajas, ...ventajas].map((v) => (
+              <li class="flex items-center gap-10 whitespace-nowrap">
+                {v}
+                <svg class="size-5 text-terracota" viewBox="0 0 20 20" focusable="false">
+                  <path fill="currentColor" d="M10 2c2.5 3 2.5 13 0 16C7.5 15 7.5 5 10 2Z" />
+                </svg>
+              </li>
+            ))}
+          </ul>
+        ))
+      }
+    </div>
+  </div>
 </section>

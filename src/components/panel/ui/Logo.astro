@@ -1,28 +1,15 @@
 ---
-/**
- * Marca del panel: la palmera del icono de la web, en los colores de la marca
- * (oliva y crema), con el nombre al lado.
- */
+/** Marca del panel: el monograma de Viveros Baltaretu con el nombre al lado (en public/: el build reescribe src/assets). */
+
 interface Props {
-  /** Solo el símbolo (barra de arriba en el móvil). */
+  /** Solo el monograma. */
   compacto?: boolean;
 }
 const { compacto = false } = Astro.props;
-const hoja = 'M0 0 C18 -17 46 -18 68 9 C46 -3 21 -3 0 5 Z';
-const giros = ['rotate(-58)', 'rotate(-26)', 'rotate(6)', 'rotate(34)', 'scale(-1 1) rotate(-58)', 'scale(-1 1) rotate(-26)', 'scale(-1 1) rotate(6)', 'scale(-1 1) rotate(34)'];
 ---
 
 <span class="logo-panel inline-flex items-center gap-3">
-  <svg viewBox="0 0 64 64" class="size-10 shrink-0" aria-hidden="true" focusable="false">
-    <rect width="64" height="64" rx="16" fill="var(--color-oliva)" />
-    <g transform="translate(32 22) scale(.2)">
-      <path fill="#c9d3b4" d="M-9 196 C-8 140 -6 70 -4 2 L4 2 C4 70 5 140 9 196 Z" />
-      <g fill="var(--color-crema)">
-        {giros.map((g) => <path transform={g} d={hoja} />)}
-      </g>
-    </g>
-    <circle cx="49" cy="49" r="4" fill="var(--color-terracota)" />
-  </svg>
+  <img src="/monograma.png" alt="" width="40" height="40" class="size-10 shrink-0" />
   {
     !compacto && (
       <span class="flex flex-col leading-tight">

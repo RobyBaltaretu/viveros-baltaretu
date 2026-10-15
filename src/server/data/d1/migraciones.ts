@@ -193,6 +193,11 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       )`,
     ],
   },
+  {
+    version: 7,
+    nombre: 'cambios deshechos',
+    sql: [`ALTER TABLE cambios ADD COLUMN deshecho INTEGER NOT NULL DEFAULT 0`],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

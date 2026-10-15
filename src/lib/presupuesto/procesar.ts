@@ -9,8 +9,10 @@ export type CodigoError = 'datos-invalidos' | 'antispam' | 'especie-desconocida'
 
 export interface DependenciasPresupuesto {
   especies: ReadonlyMap<string, EspecieEmail>;
-  verificarTurnstile: (token: string) => Promise<boolean>;
-  enviarEmail: (mensaje: MensajeEmail & { responderA: string }) => Promise<void>;
+  /** Sin Turnstile configurado no se pasa: quedan el campo trampa y la validación. */
+  verificarTurnstile?: (token: string) => Promise<boolean>;
+  /** Sin correo configurado no se pasa: la petición queda solo en el panel. */
+  enviarEmail?: (mensaje: MensajeEmail & { responderA: string }) => Promise<void>;
   /** Guarda la petición para la bandeja del panel. Si falla, sigue valiendo el email. */
   guardar?: (solicitud: SolicitudPresupuesto) => Promise<void>;
 }
@@ -38,7 +40,7 @@ export async function procesarPresupuesto(
     return { ok: false, estado: 400, codigo: 'especie-desconocida' };
   }
 
-  if (!(await deps.verificarTurnstile(solicitud.turnstile))) {
+  if (deps.verificarTurnstile && !(await deps.verificarTurnstile(solicitud.turnstile))) {
     return { ok: false, estado: 403, codigo: 'antispam' };
   }
 
@@ -53,6 +55,7 @@ export async function procesarPresupuesto(
     }
   }
 
+  if (!deps.enviarEmail) return guardado ? { ok: true } : { ok: false, estado: 500, codigo: 'configuracion' };
   try {
     await deps.enviarEmail({ ...componerEmail(solicitud, deps.especies), responderA: solicitud.email });
   } catch (error) {

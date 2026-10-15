@@ -5,12 +5,12 @@ import { expect, type Page } from '@playwright/test';
 export async function auditar(page: Page) {
   // Se mide el estado final: se espera a que acaben las animaciones de entrada
   // (con opacidad a medias, el contraste saldría más bajo de lo que se ve).
-  // Las que se repiten sin fin (el balanceo de las hojas) no se esperan.
+  // Las que se repiten sin fin (hojas, cinta) y las ligadas al scroll no se esperan.
   await page.evaluate(() =>
     Promise.all(
       document
         .getAnimations()
-        .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+        .filter((a) => a.timeline instanceof DocumentTimeline && a.effect?.getTiming().iterations !== Infinity)
         .map((a) => a.finished.catch(() => undefined)),
     ),
   );

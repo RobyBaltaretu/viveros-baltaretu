@@ -63,7 +63,7 @@ export interface RepositorioContenido {
   /** Contenido publicado, para el build. */
   publicadas(): Promise<{ coleccion: Coleccion; id: string; documento: Documento }[]>;
   historial(opciones?: { coleccion?: Coleccion; id?: string; limite?: number }): Promise<Cambio[]>;
-  /** Devuelve la entrada al estado de antes de un cambio (como un cambio nuevo). */
+  /** Devuelve la entrada al estado de antes de un cambio (como un cambio nuevo). Solo una vez: después el cambio deja de salir en el historial. */
   deshacer(cambioId: number, autor: Autor): Promise<Cambio | null>;
   /** Carga inicial: escribe borrador y publicado a la vez. */
   importar(entradas: { coleccion: Coleccion; id: string; documento: Documento }[], autor: Autor): Promise<number>;

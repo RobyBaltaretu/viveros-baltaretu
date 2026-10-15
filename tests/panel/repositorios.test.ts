@@ -34,7 +34,9 @@ describe('repositorio de contenido', () => {
     await c.deshacer(ultimo.id, autor);
     expect((await c.obtener('catalogo', 'olivo'))?.borrador.datos.precioDesde).toBe(10);
     expect(await c.pendientes()).toEqual([]);
-    expect((await c.historial({ limite: 1 }))[0].origen).toBe('deshacer');
+    // Solo se deshace una vez y desaparece del historial.
+    expect((await c.historial()).some((x) => x.id === ultimo.id || x.origen === 'deshacer')).toBe(false);
+    expect(await c.deshacer(ultimo.id, autor)).toBeNull();
   });
 
   it('archiva y lo saca de la web al publicar', async () => {
