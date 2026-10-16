@@ -10,24 +10,26 @@ interface Props {
   idioma: Idioma;
   slug: string;
   nombre: string;
+  /** Versión pequeña para las tarjetas del catálogo. */
+  compacto?: boolean;
 }
 
-const { idioma, slug, nombre } = Astro.props;
+const { idioma, slug, nombre, compacto = false } = Astro.props;
 const t = textos[idioma];
 ---
 
 <boton-lista
   class="solo-js contents"
   data-slug={slug}
-  data-texto={t.anadirLista}
-  data-texto-anadida={t.anadidaLista}
+  data-texto={compacto ? t.anadirCorto : t.anadirLista}
+  data-texto-anadida={compacto ? t.anadidaCorto : t.anadidaLista}
   data-aviso={t.avisoAnadida.replace('{nombre}', nombre)}
 >
-  <Boton type="button" tamano="grande">
+  <Boton type="button" tamano={compacto ? 'normal' : 'grande'} aria-label={compacto ? t.anadirNombre.replace('{nombre}', nombre) : undefined}>
     <svg class="size-5" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
       <path fill="currentColor" d="M10 3a1 1 0 0 1 1 1v5h5a1 1 0 1 1 0 2h-5v5a1 1 0 1 1-2 0v-5H4a1 1 0 1 1 0-2h5V4a1 1 0 0 1 1-1Z" />
     </svg>
-    <span data-texto-boton>{t.anadirLista}</span>
+    <span data-texto-boton>{compacto ? t.anadirCorto : t.anadirLista}</span>
   </Boton>
   <p class="sr-only" role="status" data-aviso-lista></p>
 </boton-lista>

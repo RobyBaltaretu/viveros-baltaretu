@@ -1,13 +1,15 @@
 ---
 /**
- * Tarjeta de especie del catálogo: foto (o dibujo), nombre, altura y precio.
- * Los atributos data-* permiten filtrarla en el navegador sin volver a
- * renderizar (ver FiltrosCatalogo).
+ * Tarjeta de especie del catálogo: foto (o dibujo) grande con lo que más
+ * importa para decidir encima (si hay, altura, si se vende por unidad), nombre,
+ * precio y «Añadir» a la lista de presupuesto sin salir del catálogo.
+ * Los atributos data-* permiten filtrarla en el navegador (ver FiltrosCatalogo).
  */
 import type { CollectionEntry } from 'astro:content';
+import BotonLista from '../ficha/BotonLista.astro';
 import { siluetaDe } from '../ilustraciones/siluetas';
 import FotoOPlaceholder from '../ui/FotoOPlaceholder.astro';
-import { disponibilidades, rutaFicha, textos, type Idioma } from '../../i18n/ui';
+import { disponibilidades, familias, rutaFicha, textos, type Idioma } from '../../i18n/ui';
 import { formatearImporte, formatearPrecio, formatearRango } from '../../lib/catalogo/formato';
 
 interface Props {
@@ -20,10 +22,11 @@ const { especie, idioma, prioridad = false } = Astro.props;
 const { data } = especie;
 const t = textos[idioma];
 const foto = data.fotos[0];
+const agotada = data.disponibilidad === 'agotado';
 ---
 
 <li
-  class="tarjeta-especie group relative flex flex-col rounded-panel border border-linea bg-papel p-3 transition-[border-color,translate,box-shadow] duration-300 ease-(--ease-suave) hover:border-oliva"
+  class="tarjeta-especie group relative flex flex-col overflow-hidden rounded-panel border border-linea bg-papel transition-[border-color,translate,box-shadow] duration-300 ease-(--ease-suave) hover:border-oliva"
   data-familia={data.familia}
   data-altura-min={data.alturaMin}
   data-altura-max={data.alturaMax}
@@ -31,43 +34,83 @@ const foto = data.fotos[0];
   data-perimetro={data.perimetroTroncoCm?.join('-')}
   data-unidad={data.ventaUnitaria ? '1' : undefined}
 >
-  <div class="relative">
+  <div class:list={['relative', agotada && 'opacity-80 grayscale-[35%]']}>
     <FotoOPlaceholder
       foto={foto && { imagen: foto.imagen, alt: foto.alt[idioma] }}
       pendiente={data.nombre[idioma]}
       silueta={siluetaDe(data)}
       prioridad={prioridad}
       proporcion="4 / 3"
-      sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
+      sizes="(min-width: 1280px) 26vw, (min-width: 640px) 45vw, 100vw"
     />
-    {
-      data.ventaUnitaria && (
-        <span class="absolute top-3 left-3 rounded-full bg-papel px-3 py-1 text-sm font-semibold text-oliva shadow-sm">
-          {t.ventaUnitaria}
-        </span>
-      )
-    }
+    <div class="pointer-events-none absolute inset-x-3 top-3 flex flex-wrap items-start justify-between gap-2">
+      <span class:list={['etiqueta-tarjeta', `disponibilidad-${data.disponibilidad}`]}>
+        <span class="punto" aria-hidden="true"></span>
+        {disponibilidades[data.disponibilidad][idioma]}
+      </span>
+      {data.ventaUnitaria && <span class="etiqueta-tarjeta">{t.ventaUnitaria}</span>}
+    </div>
+    <span class="etiqueta-tarjeta absolute bottom-3 left-3 tabular-nums">
+      <svg class="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+        <path d="M8 1.5v13M5.5 4 8 1.5 10.5 4M5.5 12 8 14.5 10.5 12" />
+      </svg>
+      <span class="sr-only">{t.alturaEjemplar}:</span>
+      {formatearRango(data.alturaMin, data.alturaMax, 'm', idioma)}
+    </span>
   </div>
 
-  <div class="flex flex-1 flex-col px-2 pt-4 pb-2">
+  <div class="flex flex-1 flex-col gap-1 p-5">
+    <p class="antetitulo text-oliva">{familias[data.familia][idioma]}</p>
     <h3 class="titular-medio">
       <a href={rutaFicha(idioma, data.slug)} class="subrayado-hover after:absolute after:inset-0 after:rounded-panel">
         {data.nombre[idioma]}
       </a>
     </h3>
-    <p class="mt-1 text-gris">
-      {t.alturaEjemplar}: {formatearRango(data.alturaMin, data.alturaMax, 'm', idioma)}
-      {data.disponibilidad === 'agotado' && <> · {disponibilidades.agotado[idioma]}</>}
-    </p>
-    <p class="mt-auto pt-4 font-semibold">
-      {formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}
+    {data.nombreCientifico && <p class="text-sm text-gris italic">{data.nombreCientifico}</p>}
+    <div class="mt-auto flex flex-wrap items-end justify-between gap-3 pt-5">
+      <p class="font-semibold">
+        <span class="text-lg">{formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}</span>
+        {
+          data.ventaUnitaria && data.precioUnidad != null && (
+            <span class="block text-sm font-normal text-gris">{t.porUnidadDesde.replace('{precio}', formatearImporte(data.precioUnidad, idioma))}</span>
+          )
+        }
+      </p>
       {
-        data.ventaUnitaria && data.precioUnidad != null && (
-          <span class="block text-sm font-normal text-gris">
-            {t.porUnidadDesde.replace('{precio}', formatearImporte(data.precioUnidad, idioma))}
-          </span>
+        !agotada && (
+          <div class="relative z-10">
+            <BotonLista idioma={idioma} slug={data.slug} nombre={data.nombre[idioma]} compacto />
+          </div>
         )
       }
-    </p>
+    </div>
   </div>
 </li>
+
+<style>
+  .etiqueta-tarjeta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--color-papel) 92%, transparent);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-tinta);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+    backdrop-filter: blur(6px);
+  }
+  .punto {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--color-gris);
+  }
+  .disponibilidad-disponible .punto {
+    background: #3f7a35;
+  }
+  .disponibilidad-bajo-pedido .punto {
+    background: #b07a1f;
+  }
+</style>

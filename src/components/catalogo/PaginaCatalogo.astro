@@ -6,6 +6,8 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import FiltrosCatalogo from './FiltrosCatalogo.astro';
 import TarjetaEspecie from './TarjetaEspecie.astro';
+import Silueta from '../ilustraciones/Silueta.astro';
+import { SILUETA_POR_FAMILIA } from '../ilustraciones/siluetas';
 import Contenedor from '../ui/Contenedor.astro';
 import Seccion from '../ui/Seccion.astro';
 import { familias, rutaFamilia, rutaFicha, rutas, textos, type Idioma } from '../../i18n/ui';
@@ -54,28 +56,38 @@ const idVacio = 'sin-resultados';
   alternativas={alternativas}
   datosEstructurados={datos}
 >
-  <Seccion espacio="ninguno" class="pt-12 pb-20 sm:pt-16 sm:pb-28">
+  <Seccion espacio="ninguno" class="pt-10 pb-20 sm:pt-14 sm:pb-28">
     <Contenedor>
-      <nav aria-label={t.familiasNav}>
-        <ul class="flex flex-wrap gap-2">
+      <header class="cabecera-catalogo">
+        <div class="max-w-2xl">
+          <h1 class="titular-grande">{tituloH1}</h1>
+          <p class="mt-4 texto-entrada text-gris">{textosPagina.entradilla[idioma]}</p>
+        </div>
+        <p class="rotulo text-oliva">
+          {especies.length === 1 ? t.resultadosUno : t.resultados.replace('{n}', String(especies.length))}
+        </p>
+      </header>
+
+      <nav aria-label={t.familiasNav} class="mt-8">
+        <ul class="familias-catalogo">
           <li>
-            <a
-              href={rutas.catalogo[idioma]}
-              aria-current={!familia ? 'page' : undefined}
-              class="inline-flex min-h-11 items-center rounded-full border border-linea bg-papel px-4 text-sm font-semibold hover:border-oliva aria-[current=page]:border-oliva aria-[current=page]:bg-oliva aria-[current=page]:text-crema"
-            >
-              {t.todas}
+            <a href={rutas.catalogo[idioma]} aria-current={!familia ? 'page' : undefined} class="ficha-familia">
+              <span class="dibujo-familia" aria-hidden="true">
+                {familiasDisponibles.slice(0, 3).map((f) => <Silueta tipo={SILUETA_POR_FAMILIA[f]} quieta simple class="h-full w-auto" />)}
+              </span>
+              <span class="font-semibold">{t.todas}</span>
+              <span class="text-sm text-gris tabular-nums">{todas.length}</span>
             </a>
           </li>
           {
             familiasDisponibles.map((f) => (
               <li>
-                <a
-                  href={rutaFamilia(idioma, f)}
-                  aria-current={familia === f ? 'page' : undefined}
-                  class="inline-flex min-h-11 items-center rounded-full border border-linea bg-papel px-4 text-sm font-semibold hover:border-oliva aria-[current=page]:border-oliva aria-[current=page]:bg-oliva aria-[current=page]:text-crema"
-                >
-                  {familias[f][idioma]}
+                <a href={rutaFamilia(idioma, f)} aria-current={familia === f ? 'page' : undefined} class="ficha-familia">
+                  <span class="dibujo-familia" aria-hidden="true">
+                    <Silueta tipo={SILUETA_POR_FAMILIA[f]} quieta simple class="h-full w-auto" />
+                  </span>
+                  <span class="font-semibold">{familias[f][idioma]}</span>
+                  <span class="text-sm text-gris tabular-nums">{todas.filter((e) => e.data.familia === f).length}</span>
                 </a>
               </li>
             ))
@@ -83,40 +95,142 @@ const idVacio = 'sin-resultados';
         </ul>
       </nav>
 
-      <h1 class="titular-grande mt-10">{tituloH1}</h1>
-      <p class="rotulo mt-3 text-oliva">
-        {especies.length === 1 ? t.resultadosUno : t.resultados.replace('{n}', String(especies.length))}
-      </p>
-      <p class="mt-6 max-w-2xl texto-entrada text-gris">{textosPagina.entradilla[idioma]}</p>
-
       {
         especies.length === 0 ? (
           <p class="mt-12 texto-entrada">{t.catalogoVacio}</p>
         ) : (
-          <>
-            <div class="mt-12">
-              <FiltrosCatalogo
-                idioma={idioma}
-                alturaMaxima={alturaMaxima}
-                idLista={idLista}
-                idVacio={idVacio}
-                familiaFija={familia}
-                familiasDisponibles={familiasDisponibles}
-                hayVentaUnitaria={especies.some((e) => e.data.ventaUnitaria)}
-              />
+          <div class="disposicion-catalogo mt-10">
+            <aside class="lado-filtros">
+              <details class="caja-filtros" data-filtros-abiertos-escritorio>
+                <summary class="resumen-filtros">
+                  <svg class="size-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+                    <path d="M3 5h14M6 10h8M8.5 15h3" />
+                  </svg>
+                  {t.filtrar}
+                </summary>
+                <div class="pt-4">
+                  <FiltrosCatalogo
+                    idioma={idioma}
+                    alturaMaxima={alturaMaxima}
+                    idLista={idLista}
+                    idVacio={idVacio}
+                    familiaFija={familia}
+                    familiasDisponibles={familiasDisponibles}
+                    hayVentaUnitaria={especies.some((e) => e.data.ventaUnitaria)}
+                  />
+                </div>
+              </details>
+            </aside>
+            <div>
+              <h2 class="sr-only">{tituloH1}</h2>
+              <ul id={idLista} class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {especies.map((especie, i) => (
+                  <TarjetaEspecie especie={especie} idioma={idioma} prioridad={i === 0} />
+                ))}
+              </ul>
+              <p id={idVacio} class="mt-12 texto-entrada text-gris" hidden>
+                {t.sinResultados}
+              </p>
             </div>
-            <h2 class="sr-only">{tituloH1}</h2>
-            <ul id={idLista} class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {especies.map((especie, i) => (
-                <TarjetaEspecie especie={especie} idioma={idioma} prioridad={i === 0} />
-              ))}
-            </ul>
-            <p id={idVacio} class="mt-12 texto-entrada text-gris" hidden>
-              {t.sinResultados}
-            </p>
-          </>
+          </div>
         )
       }
     </Contenedor>
   </Seccion>
 </BaseLayout>
+
+<style>
+  .cabecera-catalogo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+  }
+  .familias-catalogo {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(9rem, 1fr);
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scroll-snap-type: x mandatory;
+  }
+  .familias-catalogo li {
+    scroll-snap-align: start;
+  }
+  .ficha-familia {
+    display: grid;
+    min-height: 3rem;
+    justify-items: start;
+    gap: 0.125rem;
+    border: 1px solid var(--color-linea);
+    border-radius: var(--radius-panel, 1rem);
+    background: var(--color-papel);
+    padding: 0.75rem 1rem;
+    color: var(--color-tinta);
+    text-decoration: none;
+    transition: border-color 200ms ease, background-color 200ms ease, translate 200ms var(--ease-suave);
+  }
+  .ficha-familia:hover {
+    border-color: var(--color-oliva);
+  }
+  .ficha-familia[aria-current='page'] {
+    border-color: var(--color-oliva);
+    background: var(--color-verdor);
+  }
+  .dibujo-familia {
+    display: flex;
+    height: 3.5rem;
+    align-items: flex-end;
+    gap: 0.25rem;
+    margin-bottom: 0.375rem;
+    color: var(--color-oliva);
+  }
+  .disposicion-catalogo {
+    display: grid;
+    gap: 2rem;
+  }
+  .caja-filtros {
+    border: 1px solid var(--color-linea);
+    border-radius: var(--radius-panel, 1rem);
+    background: var(--color-papel);
+    padding: 0.5rem 1rem 1rem;
+  }
+  .resumen-filtros {
+    display: flex;
+    min-height: 3rem;
+    cursor: pointer;
+    list-style: none;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+  }
+  .resumen-filtros::-webkit-details-marker {
+    display: none;
+  }
+  @media (min-width: 64rem) {
+    .disposicion-catalogo {
+      grid-template-columns: 19rem 1fr;
+      align-items: start;
+    }
+    .lado-filtros {
+      position: sticky;
+      top: 6rem;
+      max-height: calc(100dvh - 7rem);
+      overflow-y: auto;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .ficha-familia:hover {
+      translate: 0 -2px;
+    }
+  }
+</style>
+
+<script>
+  // En pantallas anchas los filtros se ven siempre (barra lateral); en el móvil, al pulsar «Filtrar».
+  for (const d of document.querySelectorAll<HTMLDetailsElement>('[data-filtros-abiertos-escritorio]')) {
+    if (matchMedia('(min-width: 64rem)').matches) d.open = true;
+  }
+</script>
