@@ -43,7 +43,7 @@ const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa
               empresa.telefono && (
                 <div>
                   <dt class="sr-only">{t.telefono}</dt>
-                  <dd>{telefonoEnlace ? <a href={telefonoEnlace} class="underline underline-offset-4 hover:text-white">{empresa.telefono}</a> : empresa.telefono}</dd>
+                  <dd>{telefonoEnlace ? <a href={telefonoEnlace} class="inline-flex min-h-6 items-center underline underline-offset-4 hover:text-white">{empresa.telefono}</a> : empresa.telefono}</dd>
                 </div>
               )
             }
@@ -51,7 +51,7 @@ const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa
               empresa.email && (
                 <div>
                   <dt class="sr-only">{t.email}</dt>
-                  <dd class="break-words">{emailEnlace ? <a href={emailEnlace} class="underline underline-offset-4 hover:text-white">{empresa.email}</a> : empresa.email}</dd>
+                  <dd class="break-words">{emailEnlace ? <a href={emailEnlace} class="inline-flex min-h-6 items-center underline underline-offset-4 hover:text-white">{empresa.email}</a> : empresa.email}</dd>
                 </div>
               )
             }
@@ -61,8 +61,8 @@ const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa
         <nav aria-label={t.navegacion}>
           <h2 class="antetitulo text-verdor">{t.navegacion}</h2>
           <ul class="mt-4 space-y-3">
-            <li><a href={rutas.inicio[idioma]} class="hover:text-white">{t.inicio}</a></li>
-            {navegacion.map((clave) => <li><a href={rutas[clave][idioma]} class="hover:text-white">{t[clave]}</a></li>)}
+            <li><a href={rutas.inicio[idioma]} class="inline-flex min-h-6 items-center hover:text-white">{t.inicio}</a></li>
+            {navegacion.map((clave) => <li><a href={rutas[clave][idioma]} class="inline-flex min-h-6 items-center hover:text-white">{t[clave]}</a></li>)}
           </ul>
         </nav>
 
@@ -70,7 +70,7 @@ const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa
           <nav aria-label={t.legal}>
             <h2 class="antetitulo text-verdor">{t.legal}</h2>
             <ul class="mt-4 space-y-3">
-              {legales.map((clave) => <li><a href={rutas[clave][idioma]} class="hover:text-white">{t[clave]}</a></li>)}
+              {legales.map((clave) => <li><a href={rutas[clave][idioma]} class="inline-flex min-h-6 items-center hover:text-white">{t[clave]}</a></li>)}
               {
                 idAnalitica() && (
                   <li class="solo-js">
@@ -85,7 +85,7 @@ const emailEnlace = esPlaceholder(empresa.email) ? undefined : `mailto:${empresa
           <div>
           <h2 class="antetitulo text-verdor">{t.idioma}</h2>
           <p class="mt-4">
-            <a href={alternativas[otroIdioma]} hreflang={otroIdioma} lang={otroIdioma} class="underline underline-offset-4 hover:text-white">
+            <a href={alternativas[otroIdioma]} hreflang={otroIdioma} lang={otroIdioma} class="inline-flex min-h-6 items-center underline underline-offset-4 hover:text-white">
               {nombresIdioma[otroIdioma]}
             </a>
           </p>

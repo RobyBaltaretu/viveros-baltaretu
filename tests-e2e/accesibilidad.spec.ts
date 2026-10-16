@@ -42,7 +42,7 @@ test.describe('WCAG 2.1 AA (axe)', () => {
   test('panel de la lista abierto', async ({ page }) => {
     await sinAvisoCookies(page);
     await page.goto('/catalogo/phoenix-canariensis/');
-    await page.getByRole('button', { name: 'Añadir a la lista de presupuesto' }).click();
+    await page.getByRole('button', { name: 'Añadir a mi lista' }).click();
     await page.locator('[data-abrir-lista]').click();
     await expect(page.locator('dialog[open]')).toBeVisible();
     await auditar(page);
@@ -99,7 +99,7 @@ test.describe('teclado', () => {
 
   test('el panel de la lista se cierra con Esc y devuelve el foco', async ({ page }) => {
     await page.goto('/catalogo/higuera-comun/');
-    await page.getByRole('button', { name: 'Añadir a la lista de presupuesto' }).click();
+    await page.getByRole('button', { name: 'Añadir a mi lista' }).click();
     const abrir = page.locator('[data-abrir-lista]');
     await abrir.focus();
     await page.keyboard.press('Enter');
