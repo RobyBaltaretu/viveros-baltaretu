@@ -53,7 +53,7 @@ describe('asistente completo', () => {
     expect(r).toMatchObject({ texto: 'La **Yuca** está desde 20 €.', propuestas: [], modelo: 'simulado' });
     // El resultado de la herramienta llegó al modelo como datos.
     expect(JSON.stringify(vistos.at(-1))).toContain('yucca-elephantipes');
-    expect(await repos.usoAsistente.obtener(CLAVE_NEURONAS, '2026-10-15')).toBeGreaterThan(0);
+    expect(await repos.usoAsistente.obtener(CLAVE_NEURONAS, new Date().toISOString().slice(0, 10))).toBeGreaterThan(0);
   });
 
   it('un cambio solo se aplica al decir «Sí», y con la validación del panel', async () => {
@@ -148,10 +148,11 @@ describe('asistente completo', () => {
   });
 
   it('el uso de hoy cuenta los mensajes de la persona y el cupo de IA', async () => {
-    const ahora = new Date('2026-10-15T10:00:00Z');
-    await repos.usoAsistente.sumar('uso@example.com', '2026-10-15', 3);
+    const ahora = new Date(`${new Date().toISOString().slice(0, 10)}T10:00:00Z`);
+    await repos.usoAsistente.sumar('uso@example.com', ahora.toISOString().slice(0, 10), 3);
     const u = await usoDeHoy(repos, 'uso@example.com', ahora);
-    expect(u).toMatchObject({ mensajes: 3, limiteMensajes: LIMITE_MENSAJES_PERSONA, limiteNeuronas: LIMITE_NEURONAS_DIA, renueva: '02:00' });
+    expect(u).toMatchObject({ mensajes: 3, limiteMensajes: LIMITE_MENSAJES_PERSONA, limiteNeuronas: LIMITE_NEURONAS_DIA });
+    expect(u.renueva).toMatch(/^0[12]:00$/);
     expect(u.neuronas).toBeGreaterThan(0);
   });
 
@@ -197,6 +198,37 @@ describe('asistente completo', () => {
     await accionRapida(repos, ['chamaerops-humilis'], 'quitar', autor);
     expect((await repos.contenido.obtener('catalogo', 'chamaerops-humilis'))?.archivada).toBe(true);
     await accionRapida(repos, ['chamaerops-humilis'], 'recuperar', autor);
+  });
+
+  it('una llamada escrita como texto se ejecuta igual y nunca se enseña', async () => {
+    const u = usuario('texto@example.com');
+    const markup = '<tool_call>guardar_cliente<arg_key>nombre</arg_key><arg_value>Cliente Texto</arg_value><arg_key>codigoPostal</arg_key><arg_value>46000</arg_value><arg_key>poblacion</arg_key><arg_value>Valencia</arg_value></tool_call>';
+    const r = await conversar(ctx(u), 'crea el cliente', [modelo(null, markup)]);
+    expect(r.propuestas).toHaveLength(1);
+    expect(r.propuestas[0].resumen).toContain('Cliente Texto');
+    expect(r.texto).not.toContain('<');
+  });
+
+  it('«sí» escrito aplica lo pendiente; sin propuesta nunca se pide pulsar «Sí»', async () => {
+    const u = usuario('escrito@example.com');
+    const c = ctx(u);
+    const r = await conversar(c, 'pon la yuca a 23', [modelo({ herramienta: 'cambiar_planta', argumentos: { planta: 'yuca', cambios: { precioDesde: 23 } } }, 'Pulsa «Sí».')]);
+    expect(r.propuestas).toHaveLength(1);
+    const si = await conversar(c, 'Si', [modelo(null, 'no debería usarse')]);
+    expect(si.modelo).toBe('confirmación');
+    expect((await repos.contenido.obtener('catalogo', 'yucca-elephantipes'))?.borrador.datos.precioDesde).toBe(23);
+    expect((await conversar(c, 'sí', [modelo(null, 'no debería usarse')])).texto).toContain('No hay nada pendiente');
+
+    const mentira = await conversar(c, 'márcalas todas', [modelo(null, 'He preparado la propuesta. Pulsa **Sí** para aplicar.')]);
+    expect(mentira.texto).toContain('No he llegado a preparar el cambio');
+  });
+
+  it('se pueden elegir las plantas sin fotos', async () => {
+    const r = await conversar(ctx(usuario('sinfotos@example.com')), 'revisa las que no tienen foto', [
+      modelo({ herramienta: 'cambiar_plantas', argumentos: { seleccion: { sinFotos: true }, cambios: { revisado: true } } }, 'Pulsa «Sí».'),
+    ]);
+    expect(r.propuestas).toHaveLength(1);
+    expect(r.propuestas[0].resumen).not.toContain('Palmera canaria');
   });
 
   it('las herramientas dependen del rol', () => {

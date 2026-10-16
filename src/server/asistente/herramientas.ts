@@ -91,6 +91,8 @@ const fichaCorta = (p: PlantaCandidata) => ({
   ventaUnitaria: Boolean(p.datos.ventaUnitaria),
   precioUnidad: p.datos.precioUnidad ?? null,
   alturas: `${p.datos.alturaMin}–${p.datos.alturaMax} m`,
+  revisada: Boolean(p.datos.revisado),
+  fotos: Array.isArray(p.datos.fotos) ? p.datos.fotos.length : 0,
   enLaWeb: Boolean(p.datos.revisado) && !p.datos.datosDeEjemplo && !p.archivada,
   quitada: p.archivada,
 });
@@ -170,6 +172,8 @@ const SELECCION_PLANTAS = z.object({
   precioMinimo: opcional(z.number().min(0)).describe('Precio «desde» igual o mayor que este'),
   precioMaximo: opcional(z.number().min(0)).describe('Precio «desde» igual o menor que este'),
   quitadas: opcional(z.boolean()).describe('true = solo las quitadas de la web'),
+  sinFotos: opcional(z.boolean()).describe('true = solo las que no tienen ninguna foto; false = solo las que tienen'),
+  revisadas: opcional(z.boolean()).describe('true = solo las ya revisadas; false = solo las sin revisar'),
 });
 type SeleccionPlantas = z.infer<typeof SELECCION_PLANTAS>;
 
@@ -217,6 +221,8 @@ async function elegirPlantas(repos: Repositorios, s: SeleccionPlantas, incluirQu
   if (s.disponibilidad) elegidas = elegidas.filter((p) => p.datos.disponibilidad === s.disponibilidad);
   if (s.ventaUnitaria != null) elegidas = elegidas.filter((p) => Boolean(p.datos.ventaUnitaria) === s.ventaUnitaria);
   if (s.enLaWeb != null) elegidas = elegidas.filter((p) => fichaCorta(p).enLaWeb === s.enLaWeb);
+  if (s.sinFotos != null) elegidas = elegidas.filter((p) => (!Array.isArray(p.datos.fotos) || p.datos.fotos.length === 0) === s.sinFotos);
+  if (s.revisadas != null) elegidas = elegidas.filter((p) => Boolean(p.datos.revisado) === s.revisadas);
   if (s.sinPrecio) elegidas = elegidas.filter((p) => p.datos.precioDesde == null);
   if (s.precioMinimo != null) elegidas = elegidas.filter((p) => p.datos.precioDesde != null && Number(p.datos.precioDesde) >= s.precioMinimo!);
   if (s.precioMaximo != null) elegidas = elegidas.filter((p) => p.datos.precioDesde != null && Number(p.datos.precioDesde) <= s.precioMaximo!);
@@ -1107,7 +1113,7 @@ export const herramienta = (nombre: string) => HERRAMIENTAS.find((h) => h.nombre
  */
 const TEMAS: { palabras: RegExp; herramientas: string[] }[] = [
   {
-    palabras: /plant|palmer|palmit|olivo|higuer|cica|yuca|especie|precio|agotad|disponib|stock|catalog|ficha|revisad|destacad|formato|maceta|cepell|altura|unidad|foto|familia|vend[eo]/,
+    palabras: /plant|imagen|palmer|palmit|olivo|higuer|cica|yuca|especie|precio|agotad|disponib|stock|catalog|ficha|revisad|destacad|formato|maceta|cepell|altura|unidad|foto|familia|vend[eo]/,
     herramientas: ['buscar_plantas', 'cambiar_planta', 'crear_planta', 'quitar_o_recuperar_planta', 'cambiar_plantas'],
   },
   { palabras: /presupuest|pedido|solicitud|peticion|pidi/, herramientas: ['ver_presupuestos', 'cambiar_presupuesto', 'cambiar_presupuestos'] },
