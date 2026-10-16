@@ -60,6 +60,8 @@ const frases = conclusiones({ actual: a, anterior: b, periodo, cobros: c, catego
 const cambio = (ahora: number, antes: number) => {
   const v = variacion(ahora, antes);
   if (v === null) return antes === 0 && ahora === 0 ? 'Sin datos todavía' : `Antes: ${dinero(antes)}`;
+  // Con una base muy pequeña el tanto por ciento no dice nada (p. ej. «▲ 1741 %»): mejor la cifra de antes.
+  if (Math.abs(v) > 300) return `Antes: ${dinero(antes)}`;
   return `${v > 0 ? '▲' : v < 0 ? '▼' : '='} ${String(Math.abs(v)).replace('.', ',')} % frente a ${anterior.etiqueta}`;
 };
 const PESTANAS: [TipoPeriodo, string][] = [

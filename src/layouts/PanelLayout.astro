@@ -125,14 +125,6 @@ const iniciales = (usuario?.nombre || usuario?.email || '?').trim().slice(0, 1).
           <a href="/panel" class="flex min-h-12 items-center no-underline" aria-label="Inicio del panel">
             <Logo />
           </a>
-          {
-            usuario && (
-              <a href="/cdn-cgi/access/logout" class="boton-panel boton-panel-secundario !min-h-12 !px-4">
-                <Icono nombre="salir" clase="size-5" />
-                {tp.salir}
-              </a>
-            )
-          }
         </header>
         <main id="principal" class:list={['contenido-panel relative mx-auto px-4 pt-5 pb-32 sm:px-6 lg:px-10 lg:pt-10 lg:pb-16', ancho === 'amplio' ? 'max-w-6xl' : 'max-w-3xl']}>
           {
@@ -147,12 +139,13 @@ const iniciales = (usuario?.nombre || usuario?.email || '?').trim().slice(0, 1).
           }
           {
             enPruebas && (
-              <p class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-arena-prueba px-4 py-2 text-base font-semibold">
+              <p class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-arena-prueba px-4 py-1.5 text-base font-semibold" title="Hay datos inventados y las facturas que emitas son de prueba.">
                 <Icono nombre="aviso" clase="size-5 text-terracota" />
-                Modo de pruebas: hay datos inventados y las facturas que emitas son de prueba.
+                Modo de pruebas
                 {Astro.url.pathname !== '/panel/pruebas' && (
                   <a href="/panel/pruebas" class="enlace-panel">
-                    Quitar los datos de prueba
+                    Quitar
+                    <span class="sr-only"> los datos de prueba</span>
                   </a>
                 )}
               </p>

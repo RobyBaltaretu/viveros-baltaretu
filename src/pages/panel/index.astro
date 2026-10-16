@@ -59,7 +59,7 @@ const fecha = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'nu
   <section class="saludo caja-panel relative overflow-hidden p-6 sm:p-8" aria-labelledby="saludo">
     <div class="relative z-10 max-w-xl">
       <p class="text-gris first-letter:uppercase">{fecha}</p>
-      <h1 id="saludo" class="titular-grande mt-1">{tp.hola(s?.usuario.nombre ?? '')}</h1>
+      <h1 id="saludo" class="titular-grande mt-1">{tp.hola(s?.usuario.nombre || (s?.usuario.email.split('@')[0] ?? ''))}</h1>
       <p class="mt-2 text-gris">{s && tp.roles[s.usuario.rol]}</p>
       {
         tareas.length === 0 ? (

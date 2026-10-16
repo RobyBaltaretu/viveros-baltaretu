@@ -4,6 +4,8 @@ import Tarjeta from '../../components/panel/Tarjeta.astro';
 import type { Escena } from '../../components/panel/ui/Ilustracion.astro';
 import { gruposDe } from '../../server/panel/navegacion.ts';
 import { sesionCon } from '../../server/panel/pagina.ts';
+import Icono from '../../components/panel/ui/Icono.astro';
+import { tp } from '../../i18n/panel';
 
 export const prerender = false;
 
@@ -29,5 +31,16 @@ const grupos = s ? gruposDe(s.usuario.rol).map((g) => ({ ...g, secciones: g.secc
           </ul>
         </section>
       ))
+  }
+  {
+    s && (
+      <section class="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-linea pt-6" aria-label="Tu sesión">
+        <p class="text-gris">{s.usuario.email}</p>
+        <a href="/cdn-cgi/access/logout" class="boton-panel boton-panel-secundario">
+          <Icono nombre="salir" clase="size-5" />
+          {tp.salir}
+        </a>
+      </section>
+    )
   }
 </PaginaPanel>

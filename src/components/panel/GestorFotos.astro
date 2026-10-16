@@ -14,7 +14,7 @@ const { fotos, vacio } = Astro.props;
     <input type="hidden" name="accion" value="subir" />
     <label for="foto" class="font-titular text-xl font-bold">Añadir una foto</label>
     <p id="foto-ayuda" class="text-gris">Al pulsar el botón de elegir archivo, el móvil te deja hacerla con la cámara o elegir una de la galería. Se recorta y se reduce sola para que cargue rápido.</p>
-    <input id="foto" name="foto" type="file" accept="image/jpeg,image/png,image/webp,image/*" required aria-describedby="foto-ayuda" class="campo-panel" />
+    <input id="foto" name="foto" type="file" accept="image/jpeg,image/png,image/webp,image/*" required aria-describedby="foto-ayuda" class="campo-panel file:mr-3 file:min-h-10 file:cursor-pointer file:rounded-xl file:border-0 file:bg-oliva file:px-4 file:font-semibold file:text-crema" />
     <p><button class="boton-panel">Subir la foto</button></p>
     <p data-estado role="status" class="font-semibold"></p>
   </form>
