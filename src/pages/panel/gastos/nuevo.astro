@@ -31,7 +31,7 @@ if (s && Astro.request.method === 'POST') {
   <form method="post" enctype="multipart/form-data" class="mt-6 grid gap-4 caja-panel p-5" data-ticket>
     <label for="ticket" class="font-titular text-xl font-bold">Foto del ticket</label>
     <p id="ticket-ayuda" class="text-gris">Al pulsar el botón de elegir archivo, el móvil te deja hacer la foto con la cámara o elegirla de la galería. Que se vea entero, recto y con luz.</p>
-    <input id="ticket" name="ticket" type="file" accept="image/*" required aria-describedby="ticket-ayuda" class="campo-panel" />
+    <input id="ticket" name="ticket" type="file" accept="image/*" required aria-describedby="ticket-ayuda" class="campo-panel file:mr-3 file:min-h-10 file:cursor-pointer file:rounded-xl file:border-0 file:bg-oliva file:px-4 file:font-semibold file:text-crema" />
     <p><button class="boton-panel">Leer el ticket</button></p>
     <p data-estado role="status" class="font-semibold"></p>
   </form>
