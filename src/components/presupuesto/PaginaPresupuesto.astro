@@ -1,4 +1,5 @@
 ---
+import { PROVINCIAS } from '../../lib/presupuesto/provincias';
 /**
  * Página de presupuesto: resumen de la lista y formulario. Se envía a
  * /api/presupuesto (Worker) con Turnstile. Con JavaScript, por fetch y mensajes
@@ -57,9 +58,20 @@ const textosScript = {
   </Seccion>
 
   <Seccion tono="papel">
-    <Contenedor class="grid gap-12 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:gap-16">
+    <Contenedor class="grid gap-10 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:gap-x-16">
+      <section class="min-w-0 lg:col-start-2 lg:row-start-1" aria-labelledby="resumen-lista">
+        <div class="rounded-panel superficie-verde p-6 sm:p-8">
+          <h2 id="resumen-lista" class="titular-medio">{t.resumenLista}</h2>
+          <ul data-resumen class="mt-6 grid gap-3"></ul>
+          <p data-resumen-vacio class="mt-6 text-gris">{t.sinEspeciesFormulario}</p>
+          <p data-resumen-total class="mt-6 font-semibold" hidden></p>
+          <p class="solo-js mt-6">
+            <Boton type="button" variante="secundario" data-abrir-lista>{t.editarLista}</Boton>
+          </p>
+        </div>
+      </section>
       <formulario-presupuesto
-        class="min-w-0"
+        class="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1"
         data-enviado={rutas.presupuestoEnviado[idioma]}
         data-indice="/indice-especies.json"
         data-idioma={idioma}
@@ -111,7 +123,11 @@ const textosScript = {
           </div>
           <div>
             <label for="campo-provincia" class={etiqueta}>{t.campoProvincia}</label>
-            <input id="campo-provincia" name="provincia" type="text" maxlength="60" autocomplete="address-level1" class={campo} />
+            <select id="campo-provincia" name="provincia" autocomplete="address-level1" class={campo}>
+              <option value="">{t.eligeProvincia}</option>
+              {PROVINCIAS.map((p) => <option value={p}>{p}</option>)}
+              <option value={t.fueraDeEspana}>{t.fueraDeEspana}</option>
+            </select>
           </div>
           <div>
             <label for="campo-mensaje" class={etiqueta}>{t.campoMensaje}</label>
@@ -128,8 +144,8 @@ const textosScript = {
           <input type="hidden" name="lineas" value="[]" />
 
           <div class="flex items-start gap-3">
-            <input id="campo-consentimiento" name="consentimiento" type="checkbox" required class="mt-1 size-5 shrink-0 accent-oliva" />
-            <label for="campo-consentimiento">
+            <input id="campo-consentimiento" name="consentimiento" type="checkbox" required class="mt-0.5 size-6 shrink-0 accent-oliva" />
+            <label for="campo-consentimiento" class="cursor-pointer">
               {t.campoConsentimiento.split(t.politicaPrivacidad)[0]}<a href={rutas.privacidad[idioma]} class="font-semibold underline underline-offset-4">{t.politicaPrivacidad}</a>{t.campoConsentimiento.split(t.politicaPrivacidad)[1]}
             </label>
           </div>
@@ -144,16 +160,7 @@ const textosScript = {
         </form>
       </formulario-presupuesto>
 
-      <aside class="min-w-0 lg:sticky lg:top-28 lg:self-start" aria-labelledby="resumen-lista">
-        <div class="rounded-panel superficie-verde p-6 sm:p-8">
-          <h2 id="resumen-lista" class="titular-medio">{t.resumenLista}</h2>
-          <ul data-resumen class="mt-6 grid gap-3"></ul>
-          <p data-resumen-vacio class="mt-6 text-gris">{t.sinEspeciesFormulario}</p>
-          <p data-resumen-total class="mt-6 font-semibold" hidden></p>
-          <p class="solo-js mt-6">
-            <Boton type="button" variante="secundario" data-abrir-lista>{t.editarLista}</Boton>
-          </p>
-        </div>
+      <aside class="min-w-0 lg:col-start-2 lg:row-start-2" aria-label={t.condicionesVenta}>
         {
           contactos.length > 0 && (
             <dl class="mt-8 grid gap-4">

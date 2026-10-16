@@ -87,9 +87,9 @@ const medidas: [string, string][] = [
     <Contenedor>
       <nav aria-label={t.migas}>
         <ol class="flex flex-wrap items-center gap-2 text-sm text-gris">
-          <li><a href={rutas.catalogo[idioma]} class="underline-offset-4 hover:text-oliva hover:underline">{t.catalogo}</a></li>
+          <li><a href={rutas.catalogo[idioma]} class="inline-flex min-h-6 items-center underline-offset-4 hover:text-oliva hover:underline">{t.catalogo}</a></li>
           <li aria-hidden="true">/</li>
-          <li><a href={rutaFamilia(idioma, data.familia)} class="underline-offset-4 hover:text-oliva hover:underline">{familias[data.familia][idioma]}</a></li>
+          <li><a href={rutaFamilia(idioma, data.familia)} class="inline-flex min-h-6 items-center underline-offset-4 hover:text-oliva hover:underline">{familias[data.familia][idioma]}</a></li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" class="text-tinta">{nombre}</li>
         </ol>
@@ -147,16 +147,16 @@ const medidas: [string, string][] = [
                 </div>
               )
             }
-            {
-              data.ventaUnitaria && (
-                <p class="text-sm text-gris sm:col-span-2">
-                  {t.ventaUnitariaDetalle} {condiciones.envioUnidad[idioma]}
-                </p>
-              )
-            }
           </dl>
+          {
+            data.ventaUnitaria && (
+              <p class="mt-3 text-sm text-gris">
+                {t.ventaUnitariaDetalle} {condiciones.envioUnidad[idioma]}
+              </p>
+            )
+          }
 
-          <div class="mt-8 flex flex-wrap gap-3">
+          <div class="mt-8 flex flex-wrap gap-3" data-acciones-ficha>
             <BotonLista idioma={idioma} slug={data.slug} nombre={nombre} />
             <Boton href={rutas.presupuesto[idioma]} tamano="grande" variante="secundario">{t.pedirPresupuesto}</Boton>
           </div>
@@ -212,4 +212,58 @@ const medidas: [string, string][] = [
       </Seccion>
     )
   }
+          {
+            data.disponibilidad !== 'agotado' && (
+              <div class="barra-ficha solo-js lg:hidden" data-barra-ficha hidden>
+                <p class="min-w-0 leading-tight">
+                  <span class="block truncate text-sm text-gris">{nombre}</span>
+                  <span class="font-semibold">{formatearPrecio(data.precioDesde, data.unidadPrecio, idioma)}</span>
+                </p>
+                <BotonLista idioma={idioma} slug={data.slug} nombre={nombre} compacto />
+              </div>
+            )
+          }
 </BaseLayout>
+
+<style>
+  .barra-ficha {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 25;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem max(0.625rem, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-linea);
+    background: color-mix(in oklab, var(--color-papel) 94%, transparent);
+    backdrop-filter: blur(10px);
+  }
+  .barra-ficha[hidden] {
+    display: none;
+  }
+  /* Con la barra a la vista, el botón de WhatsApp sube para no taparla. */
+  :global(body:has([data-barra-ficha]:not([hidden])) .boton-whatsapp) {
+    bottom: 5.5rem;
+  }
+</style>
+
+<script>
+  // En el móvil, cuando los botones principales salen de la pantalla, aparece la barra fija con «Añadir».
+  const barra = document.querySelector<HTMLElement>('[data-barra-ficha]');
+  const acciones = document.querySelector('[data-acciones-ficha]');
+  if (barra && acciones) {
+    let pendiente = false;
+    const revisar = () => {
+      pendiente = false;
+      barra.hidden = acciones.getBoundingClientRect().bottom > 0;
+    };
+    addEventListener('scroll', () => {
+      if (!pendiente) {
+        pendiente = true;
+        requestAnimationFrame(revisar);
+      }
+    }, { passive: true });
+    revisar();
+  }
+</script>
