@@ -7,6 +7,7 @@ import { atenderMensaje } from './conversacion.ts';
 import { aplicarFotos, descartarFotos, HERRAMIENTA_FOTOS, prepararFotos } from './fotos.ts';
 import { herramienta, herramientasDe, herramientasPara, type Cambio, type Consulta, type Contexto } from './herramientas.ts';
 import { instruccionesDe } from './instrucciones.ts';
+import { argumentosValidos, llamadasEnTexto, sinLlamadas, tieneLlamadas } from './llamadas.ts';
 import { MAXIMO_TEXTO, type BindingAI } from './interprete.ts';
 
 /**
@@ -175,29 +176,73 @@ export async function conversar(ctx: Contexto, texto: string, modelos: ModeloAsi
   const previos = await repos.conversaciones.mensajes(conversacion, MEMORIA);
   await repos.conversaciones.anadir({ conversacion, rol: 'usuario', texto: mensaje, propuestas: [] });
 
+  // «Sí» o «No» escritos con propuestas esperando: es lo mismo que pulsar el botón (sin gastar IA).
+  const ids = previos.flatMap((m) => m.propuestas);
+  const conocidas = new Map((await repos.conversaciones.propuestas(ids)).map((p) => [p.id, p]));
+  const confirmacion = /^(s[ií]+|vale|ok|okay|de acuerdo|hazlo|adelante|confirmo|confirmado|aplica(lo)?|dale|perfecto)(?![a-zñáéíóú])[\s,.!¡]*(hazlo|por favor|adelante|aplicalo|aplícalo)?[\s.!]*$/i.test(mensaje)
+    ? 'si'
+    : /^(no|cancela(lo)?|d[eé]jalo|mejor no)(?![a-zñáéíóú])[\s,.!]*$/i.test(mensaje)
+      ? 'no'
+      : null;
+  if (confirmacion) {
+    const pendientes = [...conocidas.values()].filter((p) => p.estado === 'pendiente');
+    if (pendientes.length) {
+      const resultados = [];
+      for (const p of pendientes) resultados.push(await responderPropuesta(ctx, p.id, confirmacion === 'si'));
+      return { texto: resultados.map((r) => r.texto).join(' '), propuestas: [], modelo: 'confirmación' };
+    }
+    if (confirmacion === 'si') {
+      const texto = 'No hay nada pendiente de confirmar: no he preparado ningún cambio. Dime qué quieres cambiar y te lo preparo con su botón «Sí».';
+      await repos.conversaciones.anadir({ conversacion, rol: 'asistente', texto, propuestas: [] });
+      return { texto, propuestas: [], modelo: 'confirmación' };
+    }
+  }
+
   let respuesta: Respuesta | null = null;
   const usadas = await repos.usoAsistente.obtener(CLAVE_NEURONAS, dia(ahora));
   const mios = await repos.usoAsistente.sumar(usuario.email, dia(ahora));
   const conCupo = usadas < LIMITE_NEURONAS_DIA && mios <= LIMITE_MENSAJES_PERSONA;
 
   if (modelos.length && conCupo) {
-    const ids = previos.flatMap((m) => m.propuestas);
-    const conocidas = new Map((await repos.conversaciones.propuestas(ids)).map((p) => [p.id, p]));
     for (const m of modelos) {
       const propuestas: Propuesta[] = [];
       try {
-        const r = await generateText({
-          model: m.modelo,
-          system: instruccionesDe(ctx),
-          messages: [...historial(previos, conocidas), { role: 'user', content: mensaje }],
-          tools: herramientasModelo(ctx, conversacion, propuestas, [...previos.slice(-3).map((m) => m.texto), mensaje].join(' ')),
-          stopWhen: isStepCount(PASOS),
-          temperature: 0.2,
-          maxOutputTokens: 1600,
-        });
-        const gastadas = Math.ceil(((r.totalUsage.inputTokens ?? 0) * m.neuronas.entrada + (r.totalUsage.outputTokens ?? 0) * m.neuronas.salida) / 1_000_000);
-        if (gastadas) await repos.usoAsistente.sumar(CLAVE_NEURONAS, dia(ahora), gastadas);
-        const final = r.text.trim() || (propuestas.length ? '¿Lo hago? Pulsa «Sí» para aplicarlo.' : '');
+        const herramientas = herramientasModelo(ctx, conversacion, propuestas, [...previos.slice(-3).map((x) => x.texto), mensaje].join(' '));
+        const mensajes: ModelMessage[] = [...historial(previos, conocidas), { role: 'user', content: mensaje }];
+        const pedir = (lista: ModelMessage[]) =>
+          generateText({ model: m.modelo, system: instruccionesDe(ctx), messages: lista, tools: herramientas, stopWhen: isStepCount(PASOS), temperature: 0.2, maxOutputTokens: 1600 });
+        let r = await pedir(mensajes);
+        let gastadas = r.totalUsage;
+        let texto = r.text;
+        // Llamadas escritas como texto: se ejecutan igual; si eran consultas, el modelo responde con sus datos.
+        if (tieneLlamadas(texto)) {
+          const llamadas = llamadasEnTexto(texto).filter((l) => herramientas[l.nombre]);
+          const resultados: { llamada: (typeof llamadas)[number]; id: string; salida: unknown }[] = [];
+          for (const [i, l] of llamadas.entries()) {
+            const h = herramienta(l.nombre)!;
+            const salida = await herramientas[l.nombre].execute!(argumentosValidos(h.esquema, l), { toolCallId: `texto-${i}`, messages: [] } as never);
+            resultados.push({ llamada: l, id: `texto-${i}`, salida });
+          }
+          const consultas = resultados.filter((x) => herramienta(x.llamada.nombre)?.tipo === 'consulta');
+          if (consultas.length) {
+            r = await pedir([
+              ...mensajes,
+              { role: 'assistant', content: consultas.map((x) => ({ type: 'tool-call' as const, toolCallId: x.id, toolName: x.llamada.nombre, input: x.llamada.argumentos })) },
+              { role: 'tool', content: consultas.map((x) => ({ type: 'tool-result' as const, toolCallId: x.id, toolName: x.llamada.nombre, output: { type: 'json' as const, value: x.salida as never } })) },
+            ]);
+            gastadas = { ...gastadas, inputTokens: (gastadas.inputTokens ?? 0) + (r.totalUsage.inputTokens ?? 0), outputTokens: (gastadas.outputTokens ?? 0) + (r.totalUsage.outputTokens ?? 0) };
+            texto = r.text;
+          } else {
+            const errores = resultados.map((x) => (x.salida as { error?: string })?.error).filter(Boolean);
+            texto = errores.length ? `No he podido prepararlo: ${errores.join(' ')}` : '';
+          }
+        }
+        const neuronas = Math.ceil(((gastadas.inputTokens ?? 0) * m.neuronas.entrada + (gastadas.outputTokens ?? 0) * m.neuronas.salida) / 1_000_000);
+        if (neuronas) await repos.usoAsistente.sumar(CLAVE_NEURONAS, dia(ahora), neuronas);
+        let final = sinLlamadas(texto) || (propuestas.length ? '¿Lo hago? Pulsa «Sí» para aplicarlo.' : '');
+        // Nunca se pide pulsar «Sí» si no hay nada que confirmar.
+        if (!propuestas.length && /puls[ae][^.]{0,12}s[ií]|propuesta preparada|he preparado la propuesta|bot[oó]n «?s[ií]/i.test(final))
+          final = 'No he llegado a preparar el cambio, así que no hay nada que confirmar. ¿Me lo dices de otra forma, con las plantas o los datos concretos?';
         if (!final) throw new Error('respuesta vacía');
         respuesta = { texto: final, propuestas, modelo: m.nombre };
         break;
