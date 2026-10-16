@@ -41,8 +41,8 @@ const fecha = (iso: string) => new Date(iso).toLocaleString('es-ES', { dateStyle
   <ul class="mt-6 grid gap-3" role="list">
     {
       lista.map((p) => (
-        <li class="caja-panel flex flex-wrap items-center gap-2 pr-3">
-          <a href={`/panel/presupuestos/${p.id}`} class="group flex min-h-12 min-w-0 flex-1 flex-col gap-1 p-4 no-underline">
+        <li class="caja-panel flex flex-col sm:flex-row sm:items-center sm:gap-2 sm:pr-3">
+          <a href={`/panel/presupuestos/${p.id}`} class="group flex min-h-12 min-w-0 flex-1 flex-col gap-1 p-4 pb-2 no-underline sm:pb-4">
             <span class="font-titular text-xl font-bold text-tinta group-hover:underline">
               {p.nombre}
               {p.empresa && ` · ${p.empresa}`}
@@ -51,7 +51,7 @@ const fecha = (iso: string) => new Date(iso).toLocaleString('es-ES', { dateStyle
               {fecha(p.fecha)} · {p.tipoPedido === 'unidad' ? 'por unidad' : 'al por mayor'} · {p.lineas.length} {p.lineas.length === 1 ? 'planta' : 'plantas'}
             </span>
           </a>
-          <form method="post" class="flex flex-wrap gap-2 pb-3 pl-4 sm:pb-0 sm:pl-0">
+          <form method="post" class="flex flex-wrap gap-2 px-4 pb-4 sm:shrink-0 sm:p-0">
             {p.estado === 'nuevo' && (
               <button class="boton-panel boton-panel-secundario" name="cambiar" value={`respondido:${p.id}`} aria-label={`Marcar como respondido: ${p.nombre}`}>
                 Respondido
