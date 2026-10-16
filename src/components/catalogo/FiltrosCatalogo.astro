@@ -53,7 +53,7 @@ const chip =
   data-textos={JSON.stringify(textosScript)}
 >
   <form class="grid gap-6" aria-label={t.eligePorTamano}>
-    <fieldset class="regla rounded-panel border border-linea bg-verdor p-6 sm:p-8">
+    <fieldset class="regla rounded-panel border border-linea bg-verdor p-5">
       <legend class="sr-only">{t.eligePorTamano}</legend>
       <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <p class="antetitulo text-gris" aria-hidden="true">{t.eligePorTamano}</p>
@@ -80,7 +80,7 @@ const chip =
       </div>
     </fieldset>
 
-    <div class="grid gap-8 md:grid-cols-2">
+    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-1">
       {
         !familiaFija && (
           <fieldset>
@@ -116,7 +116,7 @@ const chip =
         {t.masFiltros}
         <span class="transition-transform group-open/mas:rotate-45" aria-hidden="true">+</span>
       </summary>
-      <div class="grid gap-8 px-5 pt-2 pb-6 md:grid-cols-2">
+      <div class="grid gap-8 px-5 pt-2 pb-6 md:grid-cols-2 lg:grid-cols-1">
       <fieldset>
         <legend class="antetitulo text-gris">{t.filtroFormato}</legend>
         <div class="mt-4 flex flex-wrap gap-2">
