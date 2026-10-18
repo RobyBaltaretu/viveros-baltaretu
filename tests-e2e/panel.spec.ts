@@ -3,7 +3,7 @@ import { auditar, controlesGrandes } from './ayudas';
 
 // El build de los e2e usa el entorno `desarrollo`: D1 local con el contenido importado
 // y entrada al panel sin Access desde localhost como propietario@example.com.
-const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/publicar', '/panel/cambios', '/panel/plantas/washingtonia-robusta/vista', '/panel/presupuestos?estado=archivado', '/panel/asistente', '/panel/textos/proyectos/proyecto-de-ejemplo/fotos', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos', '/panel/facturas', '/panel/facturas/nueva', '/panel/facturas/clientes', '/panel/facturas/clientes/nuevo', '/panel/facturas/datos', '/panel/gastos', '/panel/gastos/nuevo', '/panel/informes', '/panel/informes?periodo=anio', '/panel/pruebas'];
+const PANTALLAS = ['/panel', '/panel/personas', '/panel/plantas', '/panel/plantas/nueva', '/panel/plantas/washingtonia-robusta', '/panel/plantas/washingtonia-robusta/precio', '/panel/plantas/washingtonia-robusta/disponibilidad', '/panel/plantas/washingtonia-robusta/datos', '/panel/plantas/washingtonia-robusta/archivar', '/panel/plantas/phoenix-canariensis/fotos', '/panel/textos/ajustes/empresa', '/panel/textos/ajustes/portada?parte=pasos', '/panel/textos/ajustes/catalogo', '/panel/textos/paginas/reparto', '/panel/textos/proyectos', '/panel/textos/proyectos/proyecto-de-ejemplo', '/panel/textos/guias/nuevo', '/panel/publicar', '/panel/cambios', '/panel/plantas/washingtonia-robusta/vista', '/panel/presupuestos?estado=archivado', '/panel/asistente', '/panel/textos/proyectos/proyecto-de-ejemplo/fotos', '/panel/fotos', '/panel/textos', '/panel/ayuda', '/panel/presupuestos', '/panel/facturas', '/panel/facturas/nueva', '/panel/facturas/clientes', '/panel/facturas/clientes/nuevo', '/panel/facturas/datos', '/panel/gastos', '/panel/gastos/nuevo', '/panel/informes', '/panel/informes?periodo=anio', '/panel/pruebas', '/panel/inventario', '/panel/inventario/yucca-elephantipes'];
 
 test.describe('panel: accesibilidad y tamaño de los controles', () => {
   for (const ruta of PANTALLAS) {
@@ -260,6 +260,26 @@ test('plantas: cambios rápidos desde la lista y la ficha', async ({ page }) => 
   await expect(page.getByRole('button', { name: 'Bajo pedido' })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Disponible' }).click();
   await expect(page.getByRole('button', { name: 'Disponible' })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('inventario: entrada y baja (desperdicio) con su motivo', async ({ page }) => {
+  // Móvil y escritorio a la vez: cada uno con su planta.
+  const planta = test.info().project.name === 'movil' ? 'cycas-revoluta' : 'naranjo-amargo';
+  await page.goto(`/panel/inventario/${planta}`);
+  const disponibles = async () => Number(await page.locator('dd').first().textContent());
+  const antes = await disponibles();
+  await page.getByLabel(/^Entrada/).check();
+  await page.getByLabel('Cuántas plantas').fill('10');
+  await page.getByLabel('Motivo', { exact: true }).selectOption('Producción propia');
+  await page.getByRole('button', { name: 'Guardar el movimiento' }).click();
+  await expect(page.getByRole('status')).toContainText(`Ahora hay ${antes + 10}`);
+  await page.getByLabel(/^Baja/).check();
+  await page.getByLabel('Cuántas plantas').fill('3');
+  await page.getByLabel('Motivo', { exact: true }).selectOption('Se ha muerto');
+  await page.getByRole('button', { name: 'Guardar el movimiento' }).click();
+  await expect(page.getByRole('status')).toContainText(`Ahora hay ${antes + 7}`);
+  await expect(page.getByRole('region', { name: 'Historial' }).getByText('Se ha muerto').first()).toBeVisible();
+  await auditar(page);
 });
 
 test('navegación: menú fijo y, tras guardar, ir atrás no vuelve al formulario', async ({ page }) => {

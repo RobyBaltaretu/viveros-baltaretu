@@ -32,6 +32,7 @@ export const MENU: SeccionMenu[] = [
   { href: '/panel/asistente', texto: 'AgricolAI', permiso: 'asistente', grupo: 'dia', icono: 'asistente', escena: 'asistente', descripcion: 'Tu asistente: pide lo que necesites con tus palabras' },
   { href: '/panel/presupuestos', texto: 'Presupuestos', permiso: 'presupuestos', grupo: 'dia', icono: 'presupuestos', escena: 'presupuestos', descripcion: 'Lo que piden los clientes desde la web' },
   { href: '/panel/plantas', texto: 'Plantas', permiso: 'editar', grupo: 'vivero', icono: 'plantas', escena: 'plantas', descripcion: 'Precios, disponibilidad y plantas nuevas' },
+  { href: '/panel/inventario', texto: 'Inventario', permiso: 'inventario', grupo: 'vivero', icono: 'inventario', escena: 'plantas', descripcion: 'Cuántas plantas hay, entradas, salidas y bajas' },
   { href: '/panel/fotos', texto: 'Fotos', permiso: 'editar', grupo: 'vivero', icono: 'fotos', escena: 'fotos', descripcion: 'Las fotos de cada planta' },
   { href: '/panel/textos', texto: 'Textos', permiso: 'editar', grupo: 'vivero', icono: 'textos', escena: 'textos', descripcion: 'Empresa, portada, condiciones y páginas' },
   { href: '/panel/publicar', texto: 'Publicar', permiso: 'publicar', grupo: 'vivero', icono: 'publicar', escena: 'publicar', descripcion: 'Llevar los cambios a la web' },

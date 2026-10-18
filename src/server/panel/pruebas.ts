@@ -175,6 +175,18 @@ export async function cargarDatosPrueba(repos: Repositorios, email: string, hoy:
     if (r.ok) guias++;
   }
 
+  // Inventario de ejemplo: entradas para cada planta, alguna venta y alguna baja (se quitan con el resto).
+  await repos.inventario.borrarPruebas();
+  const plantas = await repos.contenido.listar('catalogo');
+  await repos.inventario.registrar(
+    plantas.flatMap((e, i) => [
+      { planta: e.id, tipo: 'entrada' as const, cantidad: 20 + ((i * 37) % 180), motivo: 'Producción propia', nota: 'Prueba', referencia: `prueba:entrada:${e.id}` },
+      ...(i % 3 === 0 ? [{ planta: e.id, tipo: 'salida' as const, cantidad: -(5 + i), motivo: 'Venta sin factura', nota: 'Prueba', referencia: `prueba:salida:${e.id}` }] : []),
+      ...(i % 4 === 1 ? [{ planta: e.id, tipo: 'baja' as const, cantidad: -(2 + (i % 5)), motivo: 'Se ha muerto', nota: 'Prueba', referencia: `prueba:baja:${e.id}` }] : []),
+    ]),
+    email,
+  );
+
   await repos.ajustesPrivados.guardar(CLAVE_MODO_PRUEBAS, { activo: true, desde: new Date().toISOString() }, email);
   await repos.auditoria.registrar(email, 'datos de prueba', 'cargados');
   return { clientes: clientes.length, presupuestos: PRESUPUESTOS.length, facturas, gastos: GASTOS.length, proyectos, guias };
@@ -183,6 +195,7 @@ export async function cargarDatosPrueba(repos: Repositorios, email: string, hoy:
 /** Quita todo lo de prueba (incluidas las facturas emitidas en modo de pruebas) y apaga el modo. */
 export async function quitarDatosPrueba(repos: Repositorios, email: string): Promise<ResumenPruebas> {
   const facturas = await repos.facturas.borrarPruebas();
+  await repos.inventario.borrarPruebas();
   let clientes = 0;
   for (const c of await repos.clientes.listar({ incluirArchivados: true })) if (c.id.startsWith(PREFIJO) && (await repos.clientes.borrar(c.id))) clientes++;
   let presupuestos = 0;

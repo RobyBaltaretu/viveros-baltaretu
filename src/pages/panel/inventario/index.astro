@@ -1,0 +1,133 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import Icono from '../../../components/panel/ui/Icono.astro';
+import { campo, sesionCon } from '../../../server/panel/pagina.ts';
+import { inventarioCompleto, NOMBRE_TIPO } from '../../../server/panel/inventario.ts';
+import { accionRapida } from '../../../server/panel/plantas.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'inventario');
+// Desde aquí solo se marca «agotada» en la web una planta que ya no tiene existencias.
+if (s && Astro.request.method === 'POST') {
+  const id = campo(await Astro.request.formData(), 'agotar');
+  const r = id ? await accionRapida(s.repos, [id], 'agotado', { email: s.usuario.email }) : { hechas: 0, errores: [] };
+  return Astro.redirect(`/panel/inventario?mensaje=${encodeURIComponent(r.hechas ? 'Marcada como agotada. Saldrá así en la web al publicar.' : 'No se ha podido cambiar.')}`, 303);
+}
+
+const ver = Astro.url.searchParams.get('ver') ?? 'todas';
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+const filas = s ? await inventarioCompleto(s.repos) : [];
+const inicioMes = new Date().toISOString().slice(0, 8) + '01';
+const recientes = s ? await s.repos.inventario.movimientos({ limite: 8 }) : [];
+const bajasMes = s ? (await s.repos.inventario.movimientos({ tipo: 'baja', desde: inicioMes, limite: 5000 })).reduce((t, m) => t - m.cantidad, 0) : 0;
+const nombres = new Map(filas.map((f) => [f.id, f.nombre]));
+const sinTildes = (t: string) =>
+  t
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+const FILTROS = {
+  todas: { texto: 'Todas', vale: () => true },
+  sin: { texto: 'Sin existencias', vale: (f: (typeof filas)[number]) => f.existencias.disponible <= 0 },
+  desperdicio: { texto: 'Con bajas', vale: (f: (typeof filas)[number]) => f.existencias.desperdicio > 0 },
+} as const;
+const filtro = FILTROS[ver as keyof typeof FILTROS] ?? FILTROS.todas;
+const lista = filas.filter(filtro.vale).filter((f) => !q || sinTildes(f.nombre).includes(sinTildes(q)));
+const total = filas.reduce((t, f) => t + Math.max(0, f.existencias.disponible), 0);
+const sinExistencias = filas.filter((f) => f.existencias.disponible <= 0).length;
+const fecha = (iso: string) => new Date(iso).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
+const mensaje = Astro.url.searchParams.get('mensaje');
+---
+
+<PaginaPanel titulo="Inventario" permiso="inventario">
+  <h1 class="titular-grande">Inventario</h1>
+  <p class="mt-2 max-w-xl text-gris">Cuántas plantas hay de cada especie. Las facturas emitidas restan solas; las entradas, salidas y bajas se apuntan en cada planta.</p>
+  {mensaje && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{mensaje}</p>}
+
+  <dl class="mt-6 grid grid-cols-3 gap-3">
+    <div class="caja-panel p-4">
+      <dt class="text-sm text-gris">Plantas disponibles</dt>
+      <dd class="font-titular text-2xl font-bold tabular">{total.toLocaleString('es-ES')}</dd>
+    </div>
+    <div class="caja-panel p-4">
+      <dt class="text-sm text-gris">Especies sin existencias</dt>
+      <dd class="font-titular text-2xl font-bold tabular">{sinExistencias}</dd>
+    </div>
+    <div class="caja-panel p-4">
+      <dt class="text-sm text-gris">Bajas este mes</dt>
+      <dd class="font-titular text-2xl font-bold tabular">{bajasMes}</dd>
+    </div>
+  </dl>
+
+  <nav class="mt-6 flex flex-wrap gap-2" aria-label="Ver">
+    {
+      (Object.keys(FILTROS) as (keyof typeof FILTROS)[]).map((k) => (
+        <a href={`/panel/inventario?ver=${k}`} class:list={['boton-panel', k !== ver && 'boton-panel-secundario']} aria-current={k === ver ? 'page' : undefined}>
+          {FILTROS[k].texto}
+        </a>
+      ))
+    }
+  </nav>
+  <form method="get" class="mt-4 flex gap-2" role="search">
+    <input type="hidden" name="ver" value={ver} />
+    <label for="buscar-inventario" class="sr-only">Buscar una planta</label>
+    <input id="buscar-inventario" name="q" value={q} type="search" placeholder="Buscar por nombre…" class="campo-panel flex-1" />
+    <button class="boton-panel boton-panel-secundario">Buscar</button>
+  </form>
+
+  {lista.length === 0 && <p class="mt-6">Ninguna planta coincide.</p>}
+  <ul class="mt-6 grid gap-3" role="list">
+    {
+      lista.map((f) => {
+        const sin = f.existencias.disponible <= 0;
+        return (
+          <li class="caja-panel">
+            <a href={`/panel/inventario/${f.id}`} class="group flex min-h-12 items-center justify-between gap-4 p-4 no-underline">
+              <span class="min-w-0">
+                <span class="block font-titular text-xl font-bold text-tinta group-hover:underline">{f.nombre}</span>
+                <span class="text-gris">
+                  {f.existencias.desperdicio > 0 ? `${f.existencias.desperdicio} de baja` : 'Sin bajas'}
+                  {f.existencias.ultimo ? ` · último cambio ${fecha(f.existencias.ultimo)}` : ' · sin movimientos'}
+                </span>
+              </span>
+              <span class:list={['shrink-0 text-right font-titular text-3xl font-bold tabular', sin && 'text-terracota']}>
+                {f.existencias.disponible}
+                <span class="block text-sm font-normal text-gris">disponibles</span>
+              </span>
+            </a>
+            {sin && f.disponibilidad === 'disponible' && (
+              <form method="post" class="flex flex-wrap items-center gap-2 border-t border-linea px-4 py-3">
+                <Icono nombre="aviso" clase="size-5 text-terracota" />
+                <span class="flex-1 text-base">No quedan, pero en la web sale como disponible.</span>
+                <button name="agotar" value={f.id} class="boton-panel boton-panel-secundario">
+                  Marcar agotada
+                </button>
+              </form>
+            )}
+          </li>
+        );
+      })
+    }
+  </ul>
+
+  {
+    recientes.length > 0 && (
+      <section class="mt-10" aria-labelledby="recientes">
+        <h2 id="recientes" class="titular-medio">Últimos movimientos</h2>
+        <ul class="mt-3 grid gap-2" role="list">
+          {recientes.map((m) => (
+            <li class="flex flex-wrap items-baseline justify-between gap-2 border-b border-linea py-2">
+              <span>
+                <strong>{nombres.get(m.planta) ?? m.planta}</strong> · {NOMBRE_TIPO[m.tipo].toLowerCase()} · {m.motivo}
+              </span>
+              <span class="tabular">
+                <strong class={m.cantidad < 0 ? 'text-terracota' : 'text-oliva'}>{m.cantidad > 0 ? `+${m.cantidad}` : m.cantidad}</strong> <span class="text-sm text-gris">{fecha(m.fecha)}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+</PaginaPanel>

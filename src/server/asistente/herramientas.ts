@@ -11,6 +11,8 @@ import { puede, type Accion } from '../panel/permisos.ts';
 import { guardarPlanta, revisarPlanta, seoPorDefecto, slugDesde, type DatosPlanta } from '../panel/plantas.ts';
 import { describirCambio, describirPendiente, publicarCambios, type EntornoPublicar } from '../panel/publicar.ts';
 import { guardarTextos, SECCIONES } from '../panel/textos.ts';
+import { inventarioCompleto, MOTIVOS, moverInventario, NOMBRE_TIPO } from '../panel/inventario.ts';
+import { TIPOS_MOVIMIENTO, type TipoMovimiento } from '../data/tipos.ts';
 import { buscarPlanta, normalizar } from './coincidencia.ts';
 
 /**
@@ -679,7 +681,9 @@ export const HERRAMIENTAS: Herramienta[] = [
       const c = await ctx.repos.clientes.obtener(a.cliente);
       if (!c) return { ok: false, texto: 'Ese cliente ya no está.' };
       const f = nuevaFactura(c, ctx.usuario.email, await ajustesFacturacion(ctx.repos));
-      f.lineas = a.lineas.map((l) => ({ ...lineaVacia(), ...l, iva: l.iva ?? IVA_POR_DEFECTO, descuento: l.descuento ?? 0 }));
+      // Las líneas cuyo concepto es el nombre de una planta descuentan del inventario al emitir.
+      const catalogo = await plantas(ctx.repos, true);
+      f.lineas = a.lineas.map((l) => ({ ...lineaVacia(), ...l, iva: l.iva ?? IVA_POR_DEFECTO, descuento: l.descuento ?? 0, planta: catalogo.find((p) => p.nombres.some((n) => normalizar(n) === normalizar(l.concepto)))?.id ?? null }));
       f.totales = calcularTotales(f.lineas, c.recargo);
       f.notas = a.notas ?? '';
       f.presupuestoId = a.presupuestoId ?? null;
@@ -1102,6 +1106,49 @@ export const HERRAMIENTAS: Herramienta[] = [
   }),
 ];
 
+/* ---------- Inventario ---------- */
+
+HERRAMIENTAS.push(
+  consulta({
+    nombre: 'ver_inventario',
+    descripcion: 'Existencias del vivero: cuántas plantas hay disponibles y de baja (desperdicio) de cada especie. Con «planta», sus últimos movimientos (entradas, salidas, bajas y facturas).',
+    permiso: 'inventario',
+    esquema: z.object({ planta: opcional(z.string()).describe('Nombre o id para ver una planta con su historial'), sinExistencias: opcional(z.boolean()) }),
+    async consultar({ repos }, a: { planta?: string | null; sinExistencias?: boolean | null }) {
+      if (a.planta) {
+        const r = await unaPlanta(repos, a.planta, true);
+        if (!r.ok) return r;
+        const e = (await repos.inventario.existencias())[r.planta.id] ?? { disponible: 0, desperdicio: 0 };
+        const movimientos = await repos.inventario.movimientos({ planta: r.planta.id, limite: 15 });
+        return { planta: r.planta.nombre, id: r.planta.id, disponible: e.disponible, desperdicio: e.desperdicio, movimientos: movimientos.map((m) => ({ fecha: m.fecha.slice(0, 10), tipo: m.tipo, cantidad: m.cantidad, motivo: m.motivo, nota: recortar(m.nota, 60) })) };
+      }
+      let filas = await inventarioCompleto(repos);
+      if (a.sinExistencias) filas = filas.filter((f) => f.existencias.disponible <= 0);
+      return { plantas: filas.map((f) => ({ id: f.id, nombre: f.nombre, disponible: f.existencias.disponible, desperdicio: f.existencias.desperdicio })) };
+    },
+  }),
+  cambio({
+    nombre: 'mover_inventario',
+    descripcion: `Apunta un movimiento del inventario de una planta: «entrada» (suman), «salida» (restan) o «baja» (restan y van a desperdicio: muertas, dañadas…). Motivos válidos: entrada: ${MOTIVOS.entrada.join(', ')}; salida: ${MOTIVOS.salida.join(', ')}; baja: ${MOTIVOS.baja.join(', ')}. Con «Otro motivo», la nota es obligatoria. Las ventas con factura restan solas al emitirla: no las apuntes aquí.`,
+    permiso: 'inventario',
+    esquema: z.object({ planta: z.string(), tipo: z.enum(TIPOS_MOVIMIENTO), cantidad: z.number().int().positive().max(100000), motivo: z.string(), nota: opcional(z.string().max(300)) }),
+    async preparar({ repos }, a: { planta: string; tipo: TipoMovimiento; cantidad: number; motivo: string; nota?: string | null }) {
+      const r = await unaPlanta(repos, a.planta, true);
+      if (!r.ok) return r;
+      const motivo = MOTIVOS[a.tipo].find((m) => normalizar(m) === normalizar(a.motivo)) ?? a.motivo;
+      if (!MOTIVOS[a.tipo].includes(motivo)) return { ok: false, error: `Ese motivo no vale para «${a.tipo}». Usa uno de estos: ${MOTIVOS[a.tipo].join(', ')}.` };
+      const hay = (await repos.inventario.existencias())[r.planta.id]?.disponible ?? 0;
+      if (a.tipo !== 'entrada' && a.cantidad > hay) return { ok: false, error: `Solo hay ${hay} de ${r.planta.nombre}: no se pueden quitar ${a.cantidad}.` };
+      const despues = a.tipo === 'entrada' ? hay + a.cantidad : hay - a.cantidad;
+      return { ok: true, resumen: `${r.planta.nombre}: ${NOMBRE_TIPO[a.tipo].toLowerCase()} de ${a.cantidad} (${motivo}${a.nota ? `, ${a.nota}` : ''}). Pasará de ${hay} a ${despues}.`, argumentos: { ...a, planta: r.planta.id, motivo } };
+    },
+    async aplicar(ctx, a: { planta: string; tipo: TipoMovimiento; cantidad: number; motivo: string; nota?: string | null }) {
+      const r = await moverInventario(ctx.repos, a.planta, { tipo: a.tipo, cantidad: a.cantidad, motivo: a.motivo, nota: a.nota ?? '' }, ctx.usuario.email);
+      return r.ok ? { ok: true, texto: r.texto } : { ok: false, texto: r.error };
+    },
+  }),
+);
+
 export const herramientasDe = (rol: Usuario['rol']) => HERRAMIENTAS.filter((h) => puede(rol, h.permiso));
 export const herramienta = (nombre: string) => HERRAMIENTAS.find((h) => h.nombre === nombre);
 
@@ -1116,6 +1163,7 @@ const TEMAS: { palabras: RegExp; herramientas: string[] }[] = [
     palabras: /plant|imagen|palmer|palmit|olivo|higuer|cica|yuca|especie|precio|agotad|disponib|stock|catalog|ficha|revisad|destacad|formato|maceta|cepell|altura|unidad|foto|familia|vend[eo]/,
     herramientas: ['buscar_plantas', 'cambiar_planta', 'crear_planta', 'quitar_o_recuperar_planta', 'cambiar_plantas'],
   },
+  { palabras: /inventari|existencia|stock|quedan|cuantas hay|cuantos hay|murier|muert|desperdicio|baja|entrad|recuento|almacen/, herramientas: ['ver_inventario', 'mover_inventario', 'buscar_plantas'] },
   { palabras: /presupuest|pedido|solicitud|peticion|pidi/, herramientas: ['ver_presupuestos', 'cambiar_presupuesto', 'cambiar_presupuestos'] },
   {
     palabras: /factur|client|cobr|nif|cif|rectific|emit|vencid|iva|deb[ei]|pendiente de pago|borrador/,

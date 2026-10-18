@@ -199,7 +199,7 @@ export interface Planta {
 export function lineasDePresupuesto(p: Presupuesto, plantas: Planta[]): LineaFactura[] {
   return p.lineas.map((l) => {
     const planta = plantas.find((x) => x.slug === l.especie);
-    return { ...lineaVacia(), concepto: planta?.nombre ?? l.nombre, cantidad: l.cantidad, precio: planta?.precio ?? 0 };
+    return { ...lineaVacia(), concepto: planta?.nombre ?? l.nombre, cantidad: l.cantidad, precio: planta?.precio ?? 0, planta: planta?.slug ?? null };
   });
 }
 
@@ -235,6 +235,8 @@ export function leerBorrador(form: FormData, previa: Factura, plantas: Planta[])
   const n = Math.min(Number(v('lineas')) || 0, 200);
   for (let i = 0; i < n; i++) {
     const concepto = v(`l${i}.concepto`);
+    const slug = v(`l${i}.planta`);
+    const planta = plantas.some((p) => p.slug === slug) ? slug : null;
     const textos = [v(`l${i}.cantidad`), v(`l${i}.precio`), v(`l${i}.descuento`)];
     if (!concepto && textos.every((t) => !t || t === '0' || t === '1')) {
       lineas.push({ ...lineaVacia(), cantidad: leerNumero(textos[0]) ?? 1 });
@@ -253,6 +255,7 @@ export function leerBorrador(form: FormData, previa: Factura, plantas: Planta[])
       precio: precio !== null && Number.isFinite(precio) ? precio : 0,
       descuento: descuento !== null && Number.isFinite(descuento) ? descuento : 0,
       iva: (TIPOS_IVA as readonly number[]).includes(iva) ? iva : IVA_POR_DEFECTO,
+      ...(planta ? { planta } : {}),
     });
   }
   const fecha = v('fecha') || previa.fecha;
@@ -278,7 +281,7 @@ export function leerBorrador(form: FormData, previa: Factura, plantas: Planta[])
     const p = plantas.find((x) => x.slug === accion.slug);
     if (p) {
       const vacia = lineas.findIndex((l) => !l.concepto && l.precio === 0);
-      const nueva = { ...lineaVacia(), concepto: p.nombre, precio: p.precio ?? 0 };
+      const nueva = { ...lineaVacia(), concepto: p.nombre, precio: p.precio ?? 0, planta: p.slug };
       if (vacia >= 0) lineas[vacia] = nueva;
       else lineas.push(nueva);
     } else errores.push({ campo: 'planta', mensaje: 'Elige una planta de la lista.' });
