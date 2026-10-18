@@ -1,3 +1,4 @@
+import { descontarFactura } from './inventario.ts';
 import type { DatosEmisor, Factura, Repositorios } from '../data/tipos.ts';
 import {
   AJUSTES_VACIOS,
@@ -129,5 +130,6 @@ export async function emitirFactura(repos: Repositorios, borrador: Factura, emai
   });
   if (!emitida) return { ok: false, errores: [{ campo: 'estado', mensaje: 'Esa factura ya no es un borrador.' }] };
   await repos.auditoria.registrar(email, 'factura emitida', `${emitida.codigo} · ${emitida.totales.total}`);
+  await descontarFactura(repos, emitida, email);
   return { ok: true, factura: emitida };
 }

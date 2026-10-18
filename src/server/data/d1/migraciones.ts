@@ -204,6 +204,25 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
     // `usada`: último uso; la conversación abierta es la usada más recientemente.
     sql: [`ALTER TABLE asistente_conversaciones ADD COLUMN usada TEXT`, `UPDATE asistente_conversaciones SET usada = creada`],
   },
+  {
+    version: 9,
+    nombre: 'inventario',
+    sql: [
+      `CREATE TABLE inventario_movimientos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        planta TEXT NOT NULL,
+        tipo TEXT NOT NULL CHECK (tipo IN ('entrada', 'salida', 'baja')),
+        cantidad INTEGER NOT NULL,
+        motivo TEXT NOT NULL,
+        nota TEXT NOT NULL DEFAULT '',
+        referencia TEXT,
+        fecha TEXT NOT NULL,
+        email TEXT NOT NULL
+      )`,
+      `CREATE INDEX inventario_planta ON inventario_movimientos (planta, id)`,
+      `CREATE UNIQUE INDEX inventario_referencia ON inventario_movimientos (referencia) WHERE referencia IS NOT NULL`,
+    ],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

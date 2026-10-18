@@ -4,6 +4,7 @@ import { disponibilidades } from '../../../../i18n/ui';
 import { formatearPrecio, formatearRango } from '../../../../lib/catalogo/formato';
 import Icono from '../../../../components/panel/ui/Icono.astro';
 import { campo, sesionCon } from '../../../../server/panel/pagina.ts';
+import { puede } from '../../../../server/panel/permisos.ts';
 import { plantaActual } from '../../../../server/panel/planta-actual.ts';
 import { ACCIONES_RAPIDAS, accionRapida, avisosPublicacion, esAccionRapida } from '../../../../server/panel/plantas.ts';
 
@@ -21,6 +22,7 @@ if (s && !planta) return Astro.redirect('/panel/plantas', 303);
 const d = planta?.datos;
 const base = `/panel/plantas/${Astro.params.id}`;
 const hecho = Astro.url.searchParams.get('hecho');
+const existencias = s && puede(s.usuario.rol, 'inventario') && Astro.params.id ? ((await s.repos.inventario.existencias())[Astro.params.id] ?? { disponible: 0, desperdicio: 0 }) : null;
 ---
 
 <PaginaPanel titulo={d?.nombre?.es ?? 'Planta'} permiso="editar" volver="/panel/plantas">
@@ -54,6 +56,14 @@ const hecho = Astro.url.searchParams.get('hecho');
           <div><dt class="inline font-semibold">Precio: </dt><dd class="inline">{formatearPrecio(d.precioDesde ?? null, 'unidad', 'es')}</dd></div>
           <div><dt class="inline font-semibold">Hay ahora: </dt><dd class="inline">{disponibilidades[d.disponibilidad as keyof typeof disponibilidades]?.es}</dd></div>
           <div><dt class="inline font-semibold">Alturas: </dt><dd class="inline">{formatearRango(Number(d.alturaMin), Number(d.alturaMax), 'm', 'es')}</dd></div>
+          {existencias && (
+            <div>
+              <dt class="inline font-semibold">En el vivero: </dt>
+              <dd class="inline">
+                {existencias.disponible} {existencias.disponible === 1 ? 'planta' : 'plantas'} · <a href={`/panel/inventario/${Astro.params.id}`} class="enlace-panel">Inventario</a>
+              </dd>
+            </div>
+          )}
           <div><dt class="inline font-semibold">Por unidad: </dt><dd class="inline">{d.ventaUnitaria ? `sí${d.precioUnidad ? `, ${formatearPrecio(d.precioUnidad, 'unidad', 'es')}` : ''}` : 'no'}</dd></div>
         </dl>
         <h2 class="titular-medio mt-8">¿Qué quieres hacer?</h2>

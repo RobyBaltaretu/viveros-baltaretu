@@ -62,6 +62,21 @@ const t = f.totales;
                   <label for={`l${i}-concepto`} class="font-semibold">Concepto</label>
                   <input id={`l${i}-concepto`} name={`l${i}.concepto`} class="campo-panel" value={valor(`l${i}.concepto`, l.concepto)} maxlength="300" />
               </div>
+              {plantas.length > 0 && (
+                <div class="grid gap-1">
+                  <label for={`l${i}-planta`} class="font-semibold">
+                    Descontar del inventario
+                  </label>
+                  <select id={`l${i}-planta`} name={`l${i}.planta`} class="campo-panel">
+                    <option value="">No (no es una planta o no se lleva inventario)</option>
+                    {plantas.map((p) => (
+                      <option value={p.slug} selected={(valor(`l${i}.planta`, l.planta ?? '') || '') === p.slug}>
+                        {p.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div class="grid gap-1">
                   <label for={`l${i}-cantidad`} class="font-semibold">Cantidad</label>

@@ -14,6 +14,7 @@ import {
   House,
   ImagePlus,
   Images,
+  Package,
   Inbox,
   LogOut,
   MessageSquarePlus,
@@ -70,6 +71,7 @@ export const ICONOS = {
   anadirFoto: interior(ImagePlus),
   cerrar: interior(X),
   borrar: interior(Trash2),
+  inventario: interior(Package),
 } as const;
 
 export type NombreIcono = keyof typeof ICONOS;

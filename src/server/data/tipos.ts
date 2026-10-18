@@ -217,6 +217,8 @@ export interface LineaFactura {
   descuento: number;
   /** Tipo de IVA en % (21, 10, 4 o 0). */
   iva: number;
+  /** Planta del catálogo (slug) que descuenta del inventario al emitir; opcional. */
+  planta?: string | null;
 }
 
 export interface DesgloseIva {
@@ -417,6 +419,41 @@ export interface RepositorioConversaciones {
   anotar(id: string, estado: Exclude<EstadoPropuesta, 'pendiente'>, resultado: string): Promise<void>;
 }
 
+/** Entrada (+), salida (−) o baja por desperdicio (−, se cuenta aparte). */
+export const TIPOS_MOVIMIENTO = ['entrada', 'salida', 'baja'] as const;
+export type TipoMovimiento = (typeof TIPOS_MOVIMIENTO)[number];
+
+export interface MovimientoInventario {
+  id: number;
+  planta: string;
+  tipo: TipoMovimiento;
+  /** Con signo: positiva suma, negativa resta. */
+  cantidad: number;
+  motivo: string;
+  nota: string;
+  /** «factura:<id>:<línea>» o «prueba:…»; vacío en los manuales. */
+  referencia: string | null;
+  fecha: string;
+  email: string;
+}
+
+export type NuevoMovimiento = Pick<MovimientoInventario, 'planta' | 'tipo' | 'cantidad' | 'motivo'> & { nota?: string; referencia?: string | null };
+
+export interface Existencias {
+  disponible: number;
+  desperdicio: number;
+  ultimo: string;
+}
+
+export interface RepositorioInventario {
+  /** Guarda movimientos (los de una misma referencia, una sola vez). Devuelve cuántos ha guardado. */
+  registrar(movimientos: NuevoMovimiento[], email: string): Promise<number>;
+  /** Existencias de cada planta con movimientos. */
+  existencias(): Promise<Record<string, Existencias>>;
+  movimientos(filtro?: { planta?: string; tipo?: TipoMovimiento; desde?: string; limite?: number }): Promise<MovimientoInventario[]>;
+  borrarPruebas(): Promise<number>;
+}
+
 export interface Repositorios {
   contenido: RepositorioContenido;
   fotos: RepositorioFotos;
@@ -431,4 +468,5 @@ export interface Repositorios {
   gastos: RepositorioGastos;
   tickets: RepositorioTickets;
   conversaciones: RepositorioConversaciones;
+  inventario: RepositorioInventario;
 }
