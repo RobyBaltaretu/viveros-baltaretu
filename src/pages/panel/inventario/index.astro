@@ -41,7 +41,10 @@ const mensaje = Astro.url.searchParams.get('mensaje');
 ---
 
 <PaginaPanel titulo="Inventario" permiso="inventario">
-  <h1 class="titular-grande">Inventario</h1>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="titular-grande">Inventario</h1>
+    <a href="/panel/inventario/resumen" class="boton-panel boton-panel-secundario"><Icono nombre="informes" clase="size-5" />Ver el resumen</a>
+  </div>
   <p class="mt-2 max-w-xl text-gris">Cuántas plantas hay de cada especie. Las facturas emitidas restan solas; las entradas, salidas y bajas se apuntan en cada planta.</p>
   {mensaje && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{mensaje}</p>}
 

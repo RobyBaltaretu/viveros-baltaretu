@@ -24,5 +24,6 @@ describe('menú del panel', () => {
     expect(zonasDe('editor').map((z) => z.zona)).toEqual(['inicio', 'asistente', 'plantas', 'web', 'ajustes']);
     expect(zonaActual('/panel/facturas/clientes/nuevo')).toBe('ventas');
     expect(zonaActual('/panel/inventario/olivo')).toBe('plantas');
+    expect(seccionActual('/panel/inventario/resumen')).toBe('/panel/inventario/resumen');
   });
 });

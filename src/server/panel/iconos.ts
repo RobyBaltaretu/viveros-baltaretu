@@ -8,6 +8,7 @@ import {
   CircleCheck,
   CircleHelp,
   CloudUpload,
+  Download,
   Ellipsis,
   FileText,
   History,
@@ -31,13 +32,17 @@ import {
   Users,
   Wallet,
   X,
-} from 'lucide-static';
+} from "lucide-static";
 
 /**
  * Iconos del panel (Lucide, licencia ISC). Se guarda solo el contenido del SVG;
  * `Icono.astro` pone el marco, el tamaño y el color.
  */
-const interior = (svg: string) => svg.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '').trim();
+const interior = (svg: string) =>
+  svg
+    .replace(/^[\s\S]*?<svg[^>]*>/, "")
+    .replace(/<\/svg>\s*$/, "")
+    .trim();
 
 export const ICONOS = {
   inicio: interior(House),
@@ -72,6 +77,7 @@ export const ICONOS = {
   cerrar: interior(X),
   borrar: interior(Trash2),
   inventario: interior(Package),
+  descargar: interior(Download),
 } as const;
 
 export type NombreIcono = keyof typeof ICONOS;
