@@ -45,8 +45,6 @@ const borrada = Astro.url.searchParams.get('hecho') === 'borrada';
   }
   <p class="mt-4 flex flex-wrap gap-3">
     <a href={cliente ? `/panel/facturas/nueva?cliente=${cliente.id}` : '/panel/facturas/nueva'} class="boton-panel">Nueva factura</a>
-    <a href="/panel/facturas/clientes" class="boton-panel boton-panel-secundario">Clientes</a>
-    <a href="/panel/facturas/datos" class="boton-panel boton-panel-secundario">Datos de facturación</a>
   </p>
   {
     pendientes.length > 0 && (
@@ -91,22 +89,26 @@ const borrada = Astro.url.searchParams.get('hecho') === 'borrada';
       ))
     }
   </ul>
-  <h2 class="titular-medio mt-10">Para la gestoría</h2>
-  <p class="mt-2">Libro de facturas emitidas, en una hoja de cálculo:</p>
-  <p class="mt-3 flex flex-wrap gap-3">
-    <a class="boton-panel boton-panel-secundario" href={`/api/panel/facturas.csv?anio=${anio}`} download>Descargar {anio}</a>
-    <a class="boton-panel boton-panel-secundario" href={`/api/panel/facturas.csv?anio=${anio - 1}`} download>Descargar {anio - 1}</a>
-  </p>
-  {
-    esPropietario && (
-      <>
-        <p class="mt-6">Copia de seguridad de toda la facturación (guárdala fuera del panel cada cierto tiempo):</p>
-        <p class="mt-3">
-          <a class="boton-panel boton-panel-secundario" href="/api/panel/facturas-copia" download>
-            Descargar la copia
-          </a>
-        </p>
-      </>
-    )
-  }
+  <details class="mt-10 caja-panel">
+    <summary class="flex min-h-12 cursor-pointer items-center px-4 font-semibold">Descargas para la gestoría</summary>
+    <div class="grid gap-3 px-4 pb-4">
+      <p>Libro de facturas emitidas, en una hoja de cálculo:</p>
+      <p class="flex flex-wrap gap-3">
+        <a class="boton-panel boton-panel-secundario" href={`/api/panel/facturas.csv?anio=${anio}`} download>Descargar {anio}</a>
+        <a class="boton-panel boton-panel-secundario" href={`/api/panel/facturas.csv?anio=${anio - 1}`} download>Descargar {anio - 1}</a>
+      </p>
+      {
+        esPropietario && (
+          <>
+            <p>Copia de seguridad de toda la facturación (guárdala fuera del panel cada cierto tiempo):</p>
+            <p>
+              <a class="boton-panel boton-panel-secundario" href="/api/panel/facturas-copia" download>
+                Descargar la copia
+              </a>
+            </p>
+          </>
+        )
+      }
+    </div>
+  </details>
 </PaginaPanel>

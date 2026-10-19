@@ -79,7 +79,10 @@ const BLOQUE: (keyof typeof ACCIONES_RAPIDAS)[] = filtro === 'quitadas' ? ['recu
   {
     plantas.length > 0 && (
       <form method="post" class="mt-6" data-lista-plantas>
-        <p class="mb-3 text-base text-gris">Marca varias para cambiarlas a la vez, o usa los botones de cada planta.</p>
+        <p class="mb-3 flex flex-wrap items-center justify-between gap-2 text-base text-gris">
+          <span data-ayuda-eleccion>Marca varias para cambiarlas a la vez.</span>
+          <button type="button" class="boton-panel boton-panel-secundario solo-con-js" data-elegir-varias aria-pressed="false">Elegir varias</button>
+        </p>
         <ul class="grid gap-3" role="list">
           {plantas.map((p) => {
             const d = p.borrador.datos as DatosPlanta;
@@ -185,6 +188,18 @@ const BLOQUE: (keyof typeof ACCIONES_RAPIDAS)[] = filtro === 'quitadas' ? ['recu
     padding: 0.75rem;
     box-shadow: var(--sombra-suave);
   }
+  .solo-con-js {
+    display: none;
+  }
+  :global(html:not(.sin-js)) .solo-con-js {
+    display: inline-flex;
+  }
+  .sin-eleccion .elegir {
+    display: none;
+  }
+  .sin-eleccion .fila-planta {
+    padding-left: 1rem;
+  }
   .barra-bloque[hidden] {
     display: none;
   }
@@ -210,4 +225,20 @@ const BLOQUE: (keyof typeof ACCIONES_RAPIDAS)[] = filtro === 'quitadas' ? ['recu
   };
   form?.addEventListener('change', contar);
   contar();
+
+  // Elegir varias a la vez es lo menos habitual: las casillas solo salen al pedirlas.
+  const boton = form?.querySelector<HTMLButtonElement>('[data-elegir-varias]');
+  const ayuda = form?.querySelector<HTMLElement>('[data-ayuda-eleccion]');
+  const modo = (activo: boolean) => {
+    form?.classList.toggle('sin-eleccion', !activo);
+    boton?.setAttribute('aria-pressed', String(activo));
+    if (boton) boton.textContent = activo ? 'Terminar' : 'Elegir varias';
+    if (ayuda) ayuda.textContent = activo ? 'Marca las que quieras cambiar.' : '';
+    if (!activo) {
+      form?.querySelectorAll<HTMLInputElement>('input[name=ids]').forEach((c) => (c.checked = false));
+      contar();
+    }
+  };
+  boton?.addEventListener('click', () => modo(form?.classList.contains('sin-eleccion') ?? false));
+  modo(false);
 </script>

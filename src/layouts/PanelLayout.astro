@@ -12,7 +12,7 @@ import Ilustracion, { type Escena } from '../components/panel/ui/Ilustracion.ast
 import Logo from '../components/panel/ui/Logo.astro';
 import { tp } from '../i18n/panel';
 import { modoPruebas } from '../server/panel/facturacion.ts';
-import { barraDe, gruposDe, MAS, menuDe, seccionActual } from '../server/panel/navegacion.ts';
+import { barraDe, MAS, menuDe, seccionActual, zonaActual, zonasDe } from '../server/panel/navegacion.ts';
 
 interface Props {
   titulo: string;
@@ -26,10 +26,15 @@ const { titulo, volver = '/panel', ancho = 'normal' } = Astro.props;
 const sesion = Astro.locals.panel;
 const usuario = sesion?.estado === 'ok' ? sesion.usuario : null;
 const menu = usuario ? menuDe(usuario.rol) : [];
-const grupos = usuario ? gruposDe(usuario.rol) : [];
+const zonas = usuario ? zonasDe(usuario.rol) : [];
 const barra = usuario ? barraDe(usuario.rol) : [];
-const actual = Astro.url.pathname.replace(/\/+$/, '') === MAS ? MAS : seccionActual(Astro.url.pathname, menu);
-const enBarra = barra.some((s) => s.href === actual);
+const enMas = Astro.url.pathname.replace(/\/+$/, '') === MAS;
+const actual = enMas ? MAS : seccionActual(Astro.url.pathname, menu);
+const zona = enMas ? null : zonaActual(Astro.url.pathname, menu);
+const zonaVista = zonas.find((z) => z.zona === zona);
+// Pestañas de la zona (por ejemplo, Ventas: Presupuestos · Facturas · Clientes).
+const pestanas = zonaVista && zonaVista.secciones.length > 1 ? zonaVista.secciones : [];
+const enBarra = barra.some((z) => z.zona === zona);
 // El enlace "volver" sobra si lleva a una sección que ya está en el menú.
 const mostrarVolver = volver && volver !== '/panel' && !menu.some((s) => s.href === volver);
 // En la portada de cada sección, su dibujo arriba a la derecha (decorativo, desde tableta).
@@ -88,22 +93,17 @@ const iniciales = (usuario?.nombre || usuario?.email || '?').trim().slice(0, 1).
             <a href="/panel" class="flex min-h-12 items-center rounded-2xl px-2 no-underline" aria-label="Inicio del panel">
               <Logo />
             </a>
-            <nav aria-label={tp.menu} class="mt-6 grid flex-1 content-start gap-5 overflow-y-auto">
-              {grupos.map((g) => (
-                <div class="grid gap-1">
-                  <p class="px-3 text-sm font-semibold text-gris">{g.titulo}</p>
-                  <ul class="grid gap-0.5" role="list">
-                    {g.secciones.map((s) => (
-                      <li>
-                        <a href={s.href} aria-current={s.href === actual ? 'page' : undefined} class="enlace-lateral">
-                          <Icono nombre={s.icono} clase="size-5" />
-                          {s.texto}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+            <nav aria-label={tp.menu} class="mt-6 flex-1 overflow-y-auto">
+              <ul class="grid gap-1" role="list">
+                {zonas.map((z) => (
+                  <li>
+                    <a href={z.href} aria-current={z.zona === zona ? 'page' : undefined} class="enlace-lateral">
+                      <Icono nombre={z.icono} clase="size-5" />
+                      {z.texto}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </nav>
             <div class="mt-4 flex items-center gap-3 rounded-2xl bg-papel p-3 shadow-[0_1px_0_var(--color-linea)]">
               <span class="grid size-10 shrink-0 place-items-center rounded-full bg-verdor font-titular font-bold text-oliva" aria-hidden="true">
@@ -151,6 +151,21 @@ const iniciales = (usuario?.nombre || usuario?.email || '?').trim().slice(0, 1).
               </p>
             )
           }
+          {
+            pestanas.length > 0 && (
+              <nav aria-label={zonaVista!.texto} class="pestanas-zona">
+                <ul class="flex gap-2" role="list">
+                  {pestanas.map((p) => (
+                    <li>
+                      <a href={p.href} aria-current={p.href === actual ? 'page' : undefined} class="pestana-zona">
+                        {p.texto}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )
+          }
           {portada && <Ilustracion escena={portada.escena as Escena} clase="pointer-events-none absolute top-3 right-4 hidden w-20 sm:block lg:top-7 lg:right-10 lg:w-24" />}
           <slot />
         </main>
@@ -160,13 +175,9 @@ const iniciales = (usuario?.nombre || usuario?.email || '?').trim().slice(0, 1).
       barra.length > 0 && (
         <nav aria-label={tp.menu} class="inferior-panel lg:hidden">
           <ul class="mx-auto grid max-w-md grid-cols-5" role="list">
-            {[...barra, { href: MAS, texto: 'Más', icono: 'mas' as const }].map((s) => (
+            {[...barra.map((z) => ({ href: z.href, texto: z.texto, icono: z.icono, activa: z.zona === zona, central: z.zona === 'asistente' })), { href: MAS, texto: 'Más', icono: 'mas' as const, activa: enMas || (!!zona && !enBarra), central: false }].map((s) => (
               <li>
-                <a
-                  href={s.href}
-                  aria-current={s.href === actual || (s.href === MAS && actual && !enBarra) ? 'page' : undefined}
-                  class:list={['pestana-panel', s.href === '/panel/asistente' && 'pestana-central']}
-                >
+                <a href={s.href} aria-current={s.activa ? 'page' : undefined} class:list={['pestana-panel', s.central && 'pestana-central']}>
                   <span class="pestana-icono">
                     <Icono nombre={s.icono} clase="size-6" />
                   </span>
@@ -215,6 +226,30 @@ const iniciales = (usuario?.nombre || usuario?.email || '?').trim().slice(0, 1).
     padding: 1.25rem 1rem;
     border-right: 1px solid var(--color-linea);
     background: color-mix(in oklab, var(--color-crema) 60%, var(--color-papel));
+  }
+  .pestanas-zona {
+    margin: -0.25rem -1rem 1.25rem;
+    overflow-x: auto;
+    padding: 0.25rem 1rem;
+    scrollbar-width: none;
+  }
+  .pestana-zona {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    white-space: nowrap;
+    border-radius: 999px;
+    border: 1px solid var(--color-linea);
+    background: var(--color-papel);
+    padding: 0 1.125rem;
+    font-weight: 600;
+    color: var(--color-tinta);
+    text-decoration: none;
+  }
+  .pestana-zona[aria-current='page'] {
+    border-color: var(--color-oliva);
+    background: var(--color-oliva);
+    color: var(--color-crema);
   }
   .enlace-lateral {
     display: flex;

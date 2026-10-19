@@ -18,7 +18,7 @@ test.describe('panel: accesibilidad y tamaño de los controles', () => {
 
 test('inicio con las tarjetas principales', async ({ page }) => {
   await page.goto('/panel');
-  for (const nombre of ['Plantas', 'Presupuestos', 'Fotos', 'Textos', 'Ayuda', 'Nueva factura', 'Añadir un ticket']) {
+  for (const nombre of ['Nueva factura', 'Añadir un ticket', 'Añadir una planta']) {
     await expect(page.getByRole('main').getByRole('link', { name: new RegExp(`^${nombre}`) })).toBeVisible();
   }
   await expect(page.getByRole('heading', { name: 'Empezar algo' })).toBeVisible();
@@ -92,9 +92,10 @@ test('alta guiada de una planta, paso a paso', async ({ page }) => {
   await expect(page.getByRole('alert')).toContainText('solo se usa si la planta también se vende por unidad');
   await page.getByLabel('También se vende por unidad, con envío').check();
   await page.getByRole('button', { name: 'Guardar el precio' }).click();
-  await expect(page.getByText('sí, desde 40 €')).toBeVisible();
+  await expect(page.getByText(/por unidad desde 40/)).toBeVisible();
 
-  await page.getByRole('link', { name: 'Quitar de la web (archivar)' }).click();
+  await page.getByText('Más opciones').click();
+  await page.getByRole('link', { name: 'Quitar de la web' }).click();
   await page.getByRole('button', { name: 'Sí, quitarla' }).click();
   await expect(page.getByRole('status')).toContainText('Planta quitada');
   await expect(page.getByRole('link', { name: new RegExp(nombre) })).toHaveCount(0);

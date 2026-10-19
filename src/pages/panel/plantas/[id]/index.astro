@@ -1,7 +1,6 @@
 ---
 import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
-import { disponibilidades } from '../../../../i18n/ui';
-import { formatearPrecio, formatearRango } from '../../../../lib/catalogo/formato';
+import { formatearPrecio } from '../../../../lib/catalogo/formato';
 import Icono from '../../../../components/panel/ui/Icono.astro';
 import { campo, sesionCon } from '../../../../server/panel/pagina.ts';
 import { puede } from '../../../../server/panel/permisos.ts';
@@ -33,48 +32,97 @@ const existencias = s && puede(s.usuario.rol, 'inventario') && Astro.params.id ?
         {hecho && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{hecho === 'archivada' ? 'Planta archivada.' : 'Guardado. Saldrá en la web cuando publiques los cambios.'}</p>}
         {Astro.url.searchParams.get('error') && <p role="alert" class="mt-4 rounded-tarjeta bg-arena-prueba p-3 font-semibold">{Astro.url.searchParams.get('error')}</p>}
         {avisosPublicacion(d).map((a) => <p class="mt-3 font-semibold text-terracota">{a}</p>)}
-        <form method="post" class="mt-6 grid gap-4 caja-panel p-4">
-          <h2 class="titular-medio">Cambios rápidos</h2>
-          <div class="flex flex-wrap items-center gap-2">
-            {d.revisado ? (
-              <button class="boton-panel boton-panel-secundario" name="rapida" value="no-revisar">Quitar «revisada»</button>
-            ) : (
-              <button class="boton-panel" name="rapida" value="revisar"><Icono nombre="hecho" clase="size-5" />Marcar como revisada</button>
-            )}
-            <button class="boton-panel boton-panel-secundario" name="rapida" value={d.destacada ? 'no-destacar' : 'destacar'}>{d.destacada ? 'Dejar de destacar' : 'Destacar en la portada'}</button>
+        <form method="post" class="ajustes-planta mt-6 caja-panel">
+          <div class="fila-ajuste">
+            <div>
+              <p class="font-semibold">Precio</p>
+              <p class="text-gris">
+                {formatearPrecio(d.precioDesde ?? null, 'unidad', 'es')}
+                {d.ventaUnitaria ? ` · por unidad ${d.precioUnidad ? formatearPrecio(d.precioUnidad, 'unidad', 'es') : 'sí'}` : ''}
+              </p>
+            </div>
+            <a class="boton-panel boton-panel-secundario" href={`${base}/precio`}>Cambiar<span class="sr-only"> el precio</span></a>
           </div>
-          <fieldset class="grid gap-2">
-            <legend class="mb-2 font-semibold">¿Hay ahora?</legend>
+          <fieldset class="fila-ajuste">
+            <legend class="sr-only">¿Hay ahora?</legend>
+            <p class="font-semibold" aria-hidden="true">¿Hay ahora?</p>
             <div class="flex flex-wrap gap-2">
               {(['disponible', 'bajo-pedido', 'agotado'] as const).map((v) => (
                 <button class:list={['boton-panel', d.disponibilidad !== v && 'boton-panel-secundario']} name="rapida" value={v} aria-pressed={d.disponibilidad === v ? 'true' : 'false'}>{ACCIONES_RAPIDAS[v]}</button>
               ))}
             </div>
           </fieldset>
-        </form>
-        <dl class="mt-6 grid gap-2 caja-panel p-4">
-          <div><dt class="inline font-semibold">Precio: </dt><dd class="inline">{formatearPrecio(d.precioDesde ?? null, 'unidad', 'es')}</dd></div>
-          <div><dt class="inline font-semibold">Hay ahora: </dt><dd class="inline">{disponibilidades[d.disponibilidad as keyof typeof disponibilidades]?.es}</dd></div>
-          <div><dt class="inline font-semibold">Alturas: </dt><dd class="inline">{formatearRango(Number(d.alturaMin), Number(d.alturaMax), 'm', 'es')}</dd></div>
-          {existencias && (
+          <div class="fila-ajuste">
             <div>
-              <dt class="inline font-semibold">En el vivero: </dt>
-              <dd class="inline">
-                {existencias.disponible} {existencias.disponible === 1 ? 'planta' : 'plantas'} · <a href={`/panel/inventario/${Astro.params.id}`} class="enlace-panel">Inventario</a>
-              </dd>
+              <p class="font-semibold">Fotos</p>
+              <p class="text-gris">{Array.isArray(d.fotos) && d.fotos.length ? `${d.fotos.length} ${d.fotos.length === 1 ? 'foto' : 'fotos'}` : 'Sin fotos'}</p>
+            </div>
+            <a class="boton-panel boton-panel-secundario" href={`${base}/fotos`}>{Array.isArray(d.fotos) && d.fotos.length ? 'Ver' : 'Añadir'}<span class="sr-only"> fotos</span></a>
+          </div>
+          <div class="fila-ajuste">
+            <div>
+              <p class="font-semibold">En la web</p>
+              <p class="text-gris">{d.revisado ? 'Revisada: sale al publicar' : 'Sin revisar: todavía no sale'}</p>
+            </div>
+            {d.revisado ? (
+              <button class="boton-panel boton-panel-secundario" name="rapida" value="no-revisar">Quitar «revisada»</button>
+            ) : (
+              <button class="boton-panel" name="rapida" value="revisar"><Icono nombre="hecho" clase="size-5" />Marcar revisada</button>
+            )}
+          </div>
+          {existencias && (
+            <div class="fila-ajuste">
+              <div>
+                <p class="font-semibold">En el vivero</p>
+                <p class="text-gris">{existencias.disponible} {existencias.disponible === 1 ? 'planta' : 'plantas'}</p>
+              </div>
+              <a class="boton-panel boton-panel-secundario" href={`/panel/inventario/${Astro.params.id}`}>Inventario</a>
             </div>
           )}
-          <div><dt class="inline font-semibold">Por unidad: </dt><dd class="inline">{d.ventaUnitaria ? `sí${d.precioUnidad ? `, ${formatearPrecio(d.precioUnidad, 'unidad', 'es')}` : ''}` : 'no'}</dd></div>
-        </dl>
-        <h2 class="titular-medio mt-8">¿Qué quieres hacer?</h2>
-        <ul class="mt-4 grid gap-3" role="list">
-          <li><a class="boton-panel w-full" href={`${base}/precio`}>Cambiar el precio</a></li>
-          <li><a class="boton-panel boton-panel-secundario w-full" href={`${base}/vista`}>Así se verá en la web</a></li>
-          <li><a class="boton-panel w-full" href={`${base}/fotos`}>Fotos ({Array.isArray(d.fotos) ? d.fotos.length : 0})</a></li>
-          <li><a class="boton-panel boton-panel-secundario w-full" href={`${base}/datos`}>Cambiar nombre, textos y medidas</a></li>
-          <li><a class="boton-panel boton-panel-secundario w-full" href={`${base}/archivar`}>Quitar de la web (archivar)</a></li>
-        </ul>
+        </form>
+
+        <details class="mt-4 caja-panel mas-opciones">
+          <summary>Más opciones</summary>
+          <ul class="grid gap-2 px-4 pb-4" role="list">
+            <li>
+              <form method="post">
+                <button class="boton-panel boton-panel-secundario w-full" name="rapida" value={d.destacada ? 'no-destacar' : 'destacar'}>{d.destacada ? 'Dejar de destacar en la portada' : 'Destacar en la portada'}</button>
+              </form>
+            </li>
+            <li><a class="boton-panel boton-panel-secundario w-full" href={`${base}/datos`}>Nombre, textos y medidas</a></li>
+            <li><a class="boton-panel boton-panel-secundario w-full" href={`${base}/vista`}>Así se verá en la web</a></li>
+            <li><a class="boton-panel boton-panel-secundario w-full" href={`${base}/archivar`}>Quitar de la web</a></li>
+          </ul>
+        </details>
       </>
     )
   }
 </PaginaPanel>
+
+<style>
+  .ajustes-planta {
+    display: grid;
+  }
+  .fila-ajuste {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border: 0;
+    border-bottom: 1px solid var(--color-linea);
+    margin: 0;
+    padding: 1rem;
+  }
+  .fila-ajuste:last-child {
+    border-bottom: 0;
+  }
+  .mas-opciones summary {
+    display: flex;
+    min-height: 3rem;
+    cursor: pointer;
+    align-items: center;
+    padding: 0 1rem;
+    font-weight: 600;
+  }
+</style>
