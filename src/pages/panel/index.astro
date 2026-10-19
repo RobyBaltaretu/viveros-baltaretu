@@ -8,7 +8,6 @@ import { dinero } from '../../server/facturas/importes.ts';
 import { hoy } from '../../server/gastos/gastos.ts';
 import { cifras, cobros, periodoDe } from '../../server/informes/informes.ts';
 import type { NombreIcono } from '../../server/panel/iconos.ts';
-import { gruposDe } from '../../server/panel/navegacion.ts';
 import { sesionCon } from '../../server/panel/pagina.ts';
 import { puede } from '../../server/panel/permisos.ts';
 
@@ -45,13 +44,6 @@ const RAPIDAS: { href: string; titulo: string; texto: string; escena: Escena; pe
   { href: '/panel/asistente', titulo: 'Pedir a AgricolAI', texto: 'Tu asistente: dile lo que quieres con tus palabras', escena: 'asistente', permiso: 'asistente' },
 ];
 const rapidas = RAPIDAS.filter((r) => puede(rol, r.permiso));
-const grupos = gruposDe(rol).map((g) => ({ ...g, secciones: g.secciones.filter((x) => x.href !== '/panel') }));
-const avisos: Record<string, string | undefined> = {
-  '/panel/presupuestos': nuevos ? tp.nuevos(nuevos) : undefined,
-  '/panel/gastos': porRevisar ? `${porRevisar} por revisar` : undefined,
-  '/panel/facturas': emitidas.length ? `${emitidas.length} por cobrar` : undefined,
-  '/panel/publicar': pendientes ? `${pendientes}` : undefined,
-};
 const fecha = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Madrid' });
 ---
 
@@ -127,22 +119,6 @@ const fecha = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'nu
     )
   }
 
-  {
-    grupos
-      .filter((g) => g.secciones.length)
-      .map((g) => (
-        <section class="mt-8" aria-labelledby={`grupo-${g.grupo}`}>
-          <h2 id={`grupo-${g.grupo}`} class="titular-medio">
-            {g.titulo}
-          </h2>
-          <ul class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="list">
-            {g.secciones.map((x) => (
-              <Tarjeta href={x.href} titulo={x.texto} texto={x.descripcion} escena={x.escena as Escena | undefined} aviso={avisos[x.href]} />
-            ))}
-          </ul>
-        </section>
-      ))
-  }
 </PaginaPanel>
 
 <style>

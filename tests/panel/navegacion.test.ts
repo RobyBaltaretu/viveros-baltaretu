@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barraDe, gruposDe, menuDe, seccionActual } from '../../src/server/panel/navegacion.ts';
+import { barraDe, menuDe, seccionActual, zonaActual, zonasDe } from '../../src/server/panel/navegacion.ts';
 
 describe('menú del panel', () => {
   it('marca la sección de cada ruta', () => {
@@ -17,9 +17,12 @@ describe('menú del panel', () => {
     expect(editor).not.toContain('/panel/publicar');
   });
 
-  it('la barra del móvil lleva cuatro accesos con el asistente en el centro', () => {
-    expect(barraDe('propietario').map((s) => s.href)).toEqual(['/panel', '/panel/plantas', '/panel/asistente', '/panel/facturas']);
-    expect(barraDe('editor').map((s) => s.href)).toEqual(['/panel', '/panel/plantas', '/panel/asistente', '/panel/textos']);
-    expect(gruposDe('editor').map((g) => g.grupo)).toEqual(['dia', 'vivero', 'ajustes']);
+  it('pocas zonas en el menú y la barra del móvil con AgricolAI en el centro', () => {
+    expect(zonasDe('propietario').map((z) => z.texto)).toEqual(['Inicio', 'AgricolAI', 'Ventas', 'Plantas', 'Cuentas', 'Web', 'Ajustes']);
+    expect(barraDe('propietario').map((z) => z.href)).toEqual(['/panel', '/panel/plantas', '/panel/asistente', '/panel/presupuestos']);
+    expect(barraDe('editor').map((z) => z.href)).toEqual(['/panel', '/panel/plantas', '/panel/asistente', '/panel/textos']);
+    expect(zonasDe('editor').map((z) => z.zona)).toEqual(['inicio', 'asistente', 'plantas', 'web', 'ajustes']);
+    expect(zonaActual('/panel/facturas/clientes/nuevo')).toBe('ventas');
+    expect(zonaActual('/panel/inventario/olivo')).toBe('plantas');
   });
 });

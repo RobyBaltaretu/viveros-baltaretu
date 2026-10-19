@@ -2,7 +2,7 @@
 import PaginaPanel from '../../components/panel/PaginaPanel.astro';
 import Tarjeta from '../../components/panel/Tarjeta.astro';
 import type { Escena } from '../../components/panel/ui/Ilustracion.astro';
-import { gruposDe } from '../../server/panel/navegacion.ts';
+import { zonasDe } from '../../server/panel/navegacion.ts';
 import { sesionCon } from '../../server/panel/pagina.ts';
 import Icono from '../../components/panel/ui/Icono.astro';
 import { tp } from '../../i18n/panel';
@@ -11,7 +11,7 @@ export const prerender = false;
 
 /** «Más» en el móvil: todas las secciones del panel, agrupadas. */
 const s = sesionCon(Astro.locals);
-const grupos = s ? gruposDe(s.usuario.rol).map((g) => ({ ...g, secciones: g.secciones.filter((x) => x.href !== '/panel') })) : [];
+const grupos = s ? zonasDe(s.usuario.rol).filter((z) => z.zona !== 'inicio').map((z) => ({ ...z, grupo: z.zona, titulo: z.texto })) : [];
 ---
 
 <PaginaPanel titulo="Todo el panel" volver={false} ancho="amplio">
