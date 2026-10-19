@@ -12,8 +12,10 @@ interface Props {
   partes: Parte[];
   vacio: string;
   color?: string;
+  /** Cantidades (plantas) en vez de euros. */
+  unidades?: boolean;
 }
-const { titulo, partes, vacio, color = 'var(--color-serie-1)' } = Astro.props;
+const { titulo, partes, vacio, color = 'var(--color-serie-1)', unidades = false } = Astro.props;
 const max = Math.max(...partes.map((p) => p.valor), 0);
 const total = partes.reduce((t, p) => t + p.valor, 0);
 ---
@@ -28,7 +30,7 @@ const total = partes.reduce((t, p) => t + p.valor, 0);
           <div class="flex flex-wrap justify-between gap-x-3">
             <span>{p.nombre}</span>
             <span class="font-semibold">
-              {dinero(p.valor)}
+              {unidades ? p.valor.toLocaleString('es-ES') : dinero(p.valor)}
               <span class="font-normal text-gris">
                 {' '}
                 · {total ? Math.round((p.valor / total) * 100) : 0} %{p.detalle && ` · ${p.detalle}`}

@@ -1,0 +1,136 @@
+---
+import Barras from '../../../components/panel/graficos/Barras.astro';
+import Reparto from '../../../components/panel/graficos/Reparto.astro';
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import Icono from '../../../components/panel/ui/Icono.astro';
+import { dinero } from '../../../server/facturas/importes.ts';
+import { hoy } from '../../../server/gastos/gastos.ts';
+import { inicioDeMes, inventarioCompleto, inventarioCsv, MESES_RESUMEN, POCAS, resumenInventario, type FilaInventario } from '../../../server/panel/inventario.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'inventario');
+const dia = hoy();
+const filas = s ? await inventarioCompleto(s.repos) : [];
+
+if (s && Astro.url.searchParams.get('formato') === 'csv') {
+  return new Response(inventarioCsv(filas), {
+    headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="inventario-${dia}.csv"`, 'Cache-Control': 'no-store' },
+  });
+}
+
+const movimientos = s ? await s.repos.inventario.movimientos({ desde: inicioDeMes(dia, MESES_RESUMEN - 1), limite: 20_000 }) : [];
+const r = resumenInventario(filas, movimientos, dia);
+const n = (v: number) => v.toLocaleString('es-ES');
+const plantas = (v: number) => `${n(v)} ${v === 1 ? 'planta' : 'plantas'}`;
+const frente = (ahora: number, antes: number) => (ahora === antes ? `Igual que en ${r.mesPasado.etiqueta}` : `${ahora > antes ? '▲' : '▼'} ${n(Math.abs(ahora - antes))} frente a ${r.mesPasado.etiqueta}`);
+const vendidasMes = r.esteMes.vendidas + r.esteMes.salidas;
+
+const KPIS = [
+  { nombre: 'Plantas en el vivero', valor: n(r.unidades), nota: `${r.conExistencias} de ${r.especies} especies con existencias` },
+  {
+    nombre: 'Valor aproximado',
+    valor: dinero(r.valor),
+    nota: r.sinPrecio ? `A precio «desde». ${r.sinPrecio} ${r.sinPrecio === 1 ? 'especie no tiene' : 'especies no tienen'} precio` : 'A precio «desde», sin IVA',
+  },
+  { nombre: 'Han salido este mes', valor: n(vendidasMes), nota: `${n(r.esteMes.vendidas)} con factura · ${frente(vendidasMes, r.mesPasado.vendidas + r.mesPasado.salidas)}` },
+  {
+    nombre: 'Bajas este mes',
+    valor: n(r.esteMes.bajas),
+    nota: r.tasaDesperdicio !== null ? `${String(r.tasaDesperdicio).replace('.', ',')} % de lo que ha salido en ${MESES_RESUMEN} meses` : frente(r.esteMes.bajas, r.mesPasado.bajas),
+  },
+];
+
+const nombresDe = (lista: FilaInventario[]) => {
+  const primeras = lista.slice(0, 4).map((f) => f.nombre);
+  return lista.length > 4 ? `${primeras.join(', ')} y ${lista.length - 4} más` : primeras.join(', ');
+};
+const AVISOS = [
+  { lista: r.sinStockEnWeb, texto: 'No quedan, pero en la web salen como disponibles', enlace: '/panel/inventario?ver=sin', boton: 'Revisar' },
+  { lista: r.agotadasConStock, texto: 'Hay existencias, pero en la web salen agotadas', enlace: '/panel/plantas?ver=agotadas', boton: 'Revisar' },
+  { lista: r.pocas, texto: `Quedan ${POCAS} o menos`, enlace: '/panel/inventario', boton: 'Ver' },
+  { lista: r.paradas, texto: 'Sin movimientos en los últimos 90 días', enlace: '/panel/inventario', boton: 'Ver' },
+].filter((a) => a.lista.length);
+const fecha = new Date(`${dia}T12:00:00Z`).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+---
+
+<PaginaPanel titulo="Estado del inventario" permiso="inventario">
+  <div class="resumen-inventario">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h1 class="titular-grande">Estado del inventario</h1>
+      <a href="/panel/inventario/resumen?formato=csv" class="boton-panel boton-panel-secundario" download><Icono nombre="descargar" clase="size-5" />Descargar para Excel</a>
+    </div>
+    <p class="mt-2 text-gris">Hoy, {fecha}. Las entradas, salidas y bajas se apuntan en la pestaña «Inventario».</p>
+
+    <ul class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2" role="list">
+      {
+        KPIS.map((k) => (
+          <li class="grid gap-1 caja-panel p-4">
+            <span class="text-gris">{k.nombre}</span>
+            <span class="font-titular text-3xl font-bold tabular">{k.valor}</span>
+            <span class="text-base text-gris">{k.nota}</span>
+          </li>
+        ))
+      }
+    </ul>
+
+    <section class="mt-8" aria-labelledby="atencion">
+      <h2 id="atencion" class="titular-medio">Necesita tu atención</h2>
+      {AVISOS.length === 0 && <p class="mt-3 rounded-tarjeta bg-verdor p-4 font-semibold">Todo en orden: nada que revisar.</p>}
+      <ul class="mt-3 grid gap-3" role="list">
+        {
+          AVISOS.map((a) => (
+            <li class="flex flex-wrap items-center gap-3 caja-panel p-4">
+              <Icono nombre="aviso" clase="size-6 shrink-0 text-terracota" />
+              <span class="min-w-0 flex-1">
+                <strong class="block">
+                  {a.texto}: {a.lista.length}
+                </strong>
+                <span class="text-gris">{nombresDe(a.lista)}</span>
+              </span>
+              <a href={a.enlace} class="boton-panel boton-panel-secundario">
+                {a.boton}
+                <span class="sr-only">: {a.texto.toLowerCase()}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <div class="mt-10">
+      <Barras
+        titulo={`Movimientos de los últimos ${MESES_RESUMEN} meses (plantas)`}
+        categorias={r.meses.map((m) => m.etiqueta)}
+        nombres={r.meses.map((m) => m.nombre)}
+        unidades
+        series={[
+          { nombre: 'Entradas', color: 'var(--color-serie-1)', valores: r.meses.map((m) => m.entradas) },
+          { nombre: 'Salidas (con y sin factura)', color: 'var(--color-serie-2)', valores: r.meses.map((m) => m.vendidas + m.salidas) },
+          { nombre: 'Bajas', color: 'var(--color-serie-3)', valores: r.meses.map((m) => m.bajas) },
+        ]}
+      />
+    </div>
+
+    <div class="mt-10 grid gap-10">
+      <Reparto titulo="De lo que más hay" partes={r.masExistencias} vacio="Todavía no hay existencias apuntadas." unidades />
+      <Reparto titulo={`Lo más vendido con factura (${MESES_RESUMEN} meses)`} partes={r.masVendidas} vacio="No hay ventas con factura que descuenten del inventario." unidades color="var(--color-serie-2-texto)" />
+      <Reparto titulo={`Por qué se pierden plantas (${MESES_RESUMEN} meses)`} partes={r.bajasPorMotivo} vacio="No hay bajas: ninguna planta perdida." unidades color="var(--color-serie-3)" />
+    </div>
+
+    <p class="mt-10 text-base text-gris">
+      {plantas(r.unidades)} en total. Las facturas emitidas restan solas y las rectificativas devuelven. El valor es orientativo: existencias por el precio «desde» de cada ficha.
+    </p>
+  </div>
+</PaginaPanel>
+
+<style>
+  /* Mismos colores que Informes, más un azul pizarra para las bajas. */
+  .resumen-inventario {
+    --color-serie-1: #2f6e3a;
+    --color-serie-2: #d99a2b;
+    --color-serie-2-texto: #b27a17;
+    --color-serie-3: #4a6a9a;
+  }
+</style>
