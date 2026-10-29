@@ -10,6 +10,8 @@ import { cifras, cobros, periodoDe } from '../../server/informes/informes.ts';
 import type { NombreIcono } from '../../server/panel/iconos.ts';
 import { sesionCon } from '../../server/panel/pagina.ts';
 import { puede } from '../../server/panel/permisos.ts';
+import { rutaDisponible } from '../../plataforma/actual.ts';
+import { vocabularioPanel } from '../../plataforma/vocabulario.ts';
 
 export const prerender = false;
 
@@ -37,13 +39,16 @@ if (nuevos) tareas.push({ href: '/panel/presupuestos', icono: 'presupuestos', te
 if (porRevisar) tareas.push({ href: '/panel/gastos', icono: 'ticket', texto: `${porRevisar} ${porRevisar === 1 ? 'ticket' : 'tickets'} por revisar` });
 if (pendientes && puede(rol, 'publicar')) tareas.push({ href: '/panel/publicar', icono: 'publicar', texto: `${pendientes} ${pendientes === 1 ? 'cambio guardado' : 'cambios guardados'} sin publicar en la web` });
 
+// Solo lo que existe para este cliente (sus módulos y su sector).
+const paraHoy = tareas.filter((t) => rutaDisponible(t.href));
+
 const RAPIDAS: { href: string; titulo: string; texto: string; escena: Escena; permiso: Parameters<typeof puede>[1] }[] = [
   { href: '/panel/facturas/nueva', titulo: 'Nueva factura', texto: 'Para un cliente o desde un presupuesto', escena: 'facturas', permiso: 'facturas' },
   { href: '/panel/gastos/nuevo', titulo: 'Añadir un ticket', texto: 'Foto del ticket y se apunta solo', escena: 'gastos', permiso: 'gastos' },
   { href: '/panel/plantas/nueva', titulo: 'Añadir una planta', texto: 'Paso a paso, con sus fotos', escena: 'plantas', permiso: 'editar' },
-  { href: '/panel/asistente', titulo: 'Pedir a AgricolAI', texto: 'Tu asistente: dile lo que quieres con tus palabras', escena: 'asistente', permiso: 'asistente' },
+  { href: '/panel/asistente', titulo: `Pedir a ${vocabularioPanel().nombreAsistente}`, texto: 'Tu asistente: dile lo que quieres con tus palabras', escena: 'asistente', permiso: 'asistente' },
 ];
-const rapidas = RAPIDAS.filter((r) => puede(rol, r.permiso));
+const rapidas = RAPIDAS.filter((r) => puede(rol, r.permiso) && rutaDisponible(r.href));
 const fecha = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Madrid' });
 ---
 
@@ -54,14 +59,14 @@ const fecha = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'nu
       <h1 id="saludo" class="titular-grande mt-1">{tp.hola(s?.usuario.nombre || (s?.usuario.email.split('@')[0] ?? ''))}</h1>
       <p class="mt-2 text-gris">{s && tp.roles[s.usuario.rol]}</p>
       {
-        tareas.length === 0 ? (
+        paraHoy.length === 0 ? (
           <p class="mt-5 inline-flex items-center gap-2 rounded-full bg-verdor px-4 py-2 font-semibold text-oliva">
             <Icono nombre="hecho" clase="size-5" />
             Todo al día
           </p>
         ) : (
           <ul class="mt-5 grid gap-2" role="list" aria-label="Para hoy">
-            {tareas.map((t) => (
+            {paraHoy.map((t) => (
               <li>
                 <a href={t.href} class:list={['tarea-hoy', t.urgente && 'tarea-urgente']}>
                   <Icono nombre={t.icono} clase="size-5" />

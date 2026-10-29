@@ -2,6 +2,7 @@
   "id": "baltaretu",
   "nombre": "Viveros Baltaretu",
   "sector": "vivero",
+  "marca": { "nombreCorto": "Baltaretu", "monograma": "/monograma.png" },
   "plan": "completo",
   "dominio": null,
   "webPublica": true,

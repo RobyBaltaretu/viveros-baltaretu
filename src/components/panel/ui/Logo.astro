@@ -1,20 +1,40 @@
 ---
-/** Marca del panel: el monograma de Viveros Baltaretu con el nombre al lado (en public/: el build reescribe src/assets). */
+/**
+ * Marca del panel: el monograma del cliente (en public/: el build reescribe
+ * src/assets) o sus iniciales, con el nombre y el título del panel al lado.
+ */
+import { clienteActual } from '../../../plataforma/actual.ts';
+import { vocabularioPanel } from '../../../plataforma/vocabulario.ts';
 
 interface Props {
   /** Solo el monograma. */
   compacto?: boolean;
 }
 const { compacto = false } = Astro.props;
+const { marca } = clienteActual();
+const iniciales = marca.nombreCorto
+  .split(/\s+/)
+  .map((p) => p[0])
+  .join('')
+  .slice(0, 2)
+  .toUpperCase();
 ---
 
 <span class="logo-panel inline-flex items-center gap-3">
-  <img src="/monograma.png" alt="" width="40" height="40" class="size-10 shrink-0" />
+  {
+    marca.monograma ? (
+      <img src={marca.monograma} alt="" width="40" height="40" class="size-10 shrink-0" />
+    ) : (
+      <span class="grid size-10 shrink-0 place-items-center rounded-full bg-oliva font-titular text-base font-bold text-crema" aria-hidden="true">
+        {iniciales}
+      </span>
+    )
+  }
   {
     !compacto && (
       <span class="flex flex-col leading-tight">
-        <span class="font-titular text-lg font-bold text-tinta">Baltaretu</span>
-        <span class="text-sm text-gris">Panel del vivero</span>
+        <span class="font-titular text-lg font-bold text-tinta">{marca.nombreCorto}</span>
+        <span class="text-sm text-gris">{vocabularioPanel().tituloPanel}</span>
       </span>
     )
   }
