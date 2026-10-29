@@ -7,6 +7,7 @@ import { clienteActual } from '../../plataforma/actual.ts';
 import { AMBITO as AMBITO_PORTAFOLIO, anadirFoto } from '../portafolio/portafolio.ts';
 import { FOTO_ANTES, FOTO_DESPUES, PROYECTOS_EJEMPLO } from '../portafolio/ejemplos.ts';
 import { guardarTextos } from './textos.ts';
+import { cargarPresupuestosCarpinteria, clientesCarpinteria, FACTURAS_CARPINTERIA, GASTOS_CARPINTERIA } from './pruebas-carpinteria.ts';
 
 /**
  * Datos de prueba para probar el panel con algo dentro (unos 5 de cada cosa).
@@ -94,11 +95,16 @@ export interface ResumenPruebas {
 export async function cargarDatosPrueba(repos: Repositorios, email: string, hoy: string): Promise<ResumenPruebas> {
   const hace = (dias: number) => sumarDias(hoy, -dias);
   const autor = { email };
+  // La carpintería tiene sus propios ejemplos (src/server/panel/pruebas-carpinteria.ts).
+  const carpinteria = clienteActual().sector === 'carpinteria';
+  const DATOS_CLIENTES = carpinteria ? clientesCarpinteria(cif, dni) : CLIENTES;
+  const DATOS_FACTURAS = carpinteria ? FACTURAS_CARPINTERIA : FACTURAS;
+  const DATOS_GASTOS = carpinteria ? GASTOS_CARPINTERIA : GASTOS;
 
-  const clientes: Cliente[] = CLIENTES.map((c, i) => ({ ...clienteVacio(`${PREFIJO}cliente-${i + 1}`), ...c, notas: 'Cliente de prueba' }));
+  const clientes: Cliente[] = DATOS_CLIENTES.map((c, i) => ({ ...clienteVacio(`${PREFIJO}cliente-${i + 1}`), ...c, notas: 'Cliente de prueba' }));
   for (const c of clientes) await repos.clientes.guardar(c, email);
 
-  for (const [i, p] of PRESUPUESTOS.entries()) {
+  for (const [i, p] of carpinteria ? [] : [...PRESUPUESTOS.entries()]) {
     const fecha = new Date(`${hace(p.dias)}T09:${String(10 + i).padStart(2, '0')}:00Z`).toISOString();
     await repos.presupuestos.borrar(`${PREFIJO}presupuesto-${i + 1}`);
     await repos.presupuestos.guardar({ id: `${PREFIJO}presupuesto-${i + 1}`, fecha, estado: p.estado, idioma: 'es', tipoPedido: p.tipo, nombre: p.nombre, email: `presupuesto${i + 1}@example.com`, telefono: `+34 600 000 1${i}`, empresa: p.empresa, provincia: p.provincia, mensaje: p.mensaje, lineas: p.lineas.map(([especie, nombre, cantidad]) => ({ especie, nombre, cantidad })) });
@@ -107,7 +113,7 @@ export async function cargarDatosPrueba(repos: Repositorios, email: string, hoy:
   // Facturas en orden de fecha, para que la numeración de la serie de prueba vaya seguida.
   await repos.facturas.borrarPruebas();
   let facturas = 0;
-  for (const [ci, dias, plazo, lineas, cobrada, borrador] of [...FACTURAS].sort((a, b) => b[1] - a[1])) {
+  for (const [ci, dias, plazo, lineas, cobrada, borrador] of [...DATOS_FACTURAS].sort((a, b) => b[1] - a[1])) {
     const c = clientes[ci];
     const fecha = hace(dias);
     const f: Factura = { ...nuevaFactura(c, email, AJUSTES_VACIOS), id: `${PREFIJO}factura-${facturas + 1}`, fecha, vencimiento: sumarDias(fecha, plazo), prueba: true };
@@ -129,7 +135,7 @@ export async function cargarDatosPrueba(repos: Repositorios, email: string, hoy:
     if (cobrada !== null) await repos.facturas.marcarCobrada(f.id, sumarDias(fecha, cobrada));
   }
 
-  for (const [i, g] of GASTOS.entries()) {
+  for (const [i, g] of DATOS_GASTOS.entries()) {
     const gasto: Gasto = { ...gastoVacio(email, `${PREFIJO}gasto-${i + 1}`), estado: g.estado, fecha: hace(g.dias), proveedor: g.proveedor, categoria: g.categoria, total: g.total, base: g.base, iva: g.iva, formaPago: g.formaPago, lineas: [{ concepto: g.concepto, cantidad: 1, importe: g.total }], notas: 'Gasto de prueba' };
     await repos.gastos.guardar(gasto);
   }
@@ -203,9 +209,11 @@ export async function cargarDatosPrueba(repos: Repositorios, email: string, hoy:
     email,
   );
 
+  const presupuestos = carpinteria ? await cargarPresupuestosCarpinteria(repos, clientes, email, hoy) : PRESUPUESTOS.length;
+
   await repos.ajustesPrivados.guardar(CLAVE_MODO_PRUEBAS, { activo: true, desde: new Date().toISOString() }, email);
   await repos.auditoria.registrar(email, 'datos de prueba', 'cargados');
-  return { clientes: clientes.length, presupuestos: PRESUPUESTOS.length, facturas, gastos: GASTOS.length, proyectos, guias };
+  return { clientes: clientes.length, presupuestos, facturas, gastos: DATOS_GASTOS.length, proyectos, guias };
 }
 
 async function quitarProyectoPrueba(repos: Repositorios, id: string) {
@@ -221,6 +229,7 @@ export async function quitarDatosPrueba(repos: Repositorios, email: string): Pro
   for (const c of await repos.clientes.listar({ incluirArchivados: true })) if (c.id.startsWith(PREFIJO) && (await repos.clientes.borrar(c.id))) clientes++;
   let presupuestos = 0;
   for (const p of await repos.presupuestos.listar({ limite: 5000 })) if (p.id.startsWith(PREFIJO) && (await repos.presupuestos.borrar(p.id))) presupuestos++;
+  presupuestos += await repos.presupuestosCliente.borrarPruebas();
   let gastos = 0;
   for (const g of await repos.gastos.listar({ limite: 20000 })) if (g.id.startsWith(PREFIJO) && (await repos.gastos.borrar(g.id))) gastos++;
   const autor = { email };

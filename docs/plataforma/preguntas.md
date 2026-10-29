@@ -45,6 +45,7 @@ Salen de [dominio-carpinteria.md](dominio-carpinteria.md). Son hipótesis del se
 | T-17 | Simulador: ¿qué muebles primero (armario empotrado, vestidor, cocina)? ¿Qué opciones (material, color, acabado, tirador, distribución)? | Armario empotrado, con material, color, acabado y tirador. |
 | T-18 | Textos legales, datos fiscales, logotipo, colores y tipografías. | `[PLACEHOLDER]` hasta recibirlos. Los legales los revisa un asesor. |
 | T-19 | ¿Margen por obra con coste de materiales, gastos y horas? ¿Apuntáis horas? | Materiales (pedidos) + gastos de la obra; sin horas en la primera versión. |
+| T-20 | Categorías de gasto de la carpintería (tableros, herrajes, acabados, maquinaria…). Hoy son las del vivero y los gastos de taller van a «Otros». | Categorías por sector en el paquete de la carpintería, junto con el catálogo. |
 
 ## Respuestas del propietario
 
@@ -56,3 +57,5 @@ Salen de [dominio-carpinteria.md](dominio-carpinteria.md). Son hipótesis del se
 | P-05 | 29-10-2026 | Sin dominio pagado de momento. Nombre: `creacionesturia`. | Worker y D1 `creacionesturia` en `clientes/turia/cliente.config.json`, con la URL de `*.workers.dev`. |
 | Web de Turia | 29-10-2026 | **Sin web pública.** Solo un portafolio privado para el propietario: proyectos con su antes y después de la reforma. | F2 rehecha en `plan.md`: el portafolio va en el panel y `presupuestosWeb` queda apagado para Turia. Se trabaja por orden. |
 | P-11 | 29-10-2026 | **No fusionar** la PR 61. | Se deja abierta sin fusionar. Su plan no es el vigente. |
+| Diseño | 29-10-2026 | El diseño del panel no le gusta: hay que **mejorar mucho la usabilidad y la experiencia**. Aprueba el prototipo y aplicarlo **primero solo a Turia**. Para Turia lo más importante son **los KPIs, el catálogo y los presupuestos y facturas**. | Armazón nuevo (PR diseño 1) e inicio con KPIs (diseño 2); después catálogo, presupuestos y facturas con el diseño nuevo. Baltaretu, en una PR aparte cuando lo apruebe. |
+| Catálogo | 29-10-2026 | Un **catálogo completo de carpintero**: no solo el armario, sino todo lo que conlleva hacerlo. | Catálogo de artículos (materiales, herrajes, acabados, mano de obra y servicios) y plantillas con su escandallo (Catálogo A y B). |

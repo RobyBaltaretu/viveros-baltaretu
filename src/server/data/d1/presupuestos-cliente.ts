@@ -99,6 +99,10 @@ export function crearRepositorioPresupuestosCliente(db: BaseD1): Pick<Repositori
           .bind(p.estado, p.fecha, p.validez, p.clienteId, p.obraId, p.anticipoPct, p.totales.total, datosDe(p), ahora(), email, p.id)
           .run();
       },
+      async borrarPruebas() {
+        const r = await db.prepare("DELETE FROM presupuestos_cliente WHERE id LIKE 'prueba-%'").run();
+        return r.meta?.changes ?? 0;
+      },
     },
   };
 }

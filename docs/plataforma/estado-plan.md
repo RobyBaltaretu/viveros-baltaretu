@@ -22,16 +22,16 @@ Cada sesión **empieza por aquí** y lo actualiza al cerrar cada PR. El plan est
 | 3.1b Presupuestos a cliente: pantallas | Fusionada (#78) | `/panel/presupuestos-cliente`: lista por estado, alta y edición (líneas, extras, material, anticipo; IVA fijo del 21 % en Turia), ficha con resumen, **versión para imprimir o guardar en PDF** desde el navegador (sin coste de CPU en el Worker), envío por correo (mailto) y WhatsApp con el texto preparado, estados y **paso a factura**: de anticipo (suma exactamente el anticipo) y final (descuenta el anticipo con una línea de cantidad −1). Números a la española («1.250,50»). e2e de Turia. |
 
 | Diseño 1: armazón nuevo del panel | En revisión | Petición del propietario (29-10-2026): mejorar mucho la usabilidad. Solo Turia (`panel.diseno: "nuevo"`). `src/panel-nuevo/`: armazón, navegación (barra lateral por grupos, «Crear» con popover nativo, barra del móvil) y estilos en línea; Tailwind no mira la carpeta (`@source not`), así el CSS de Baltaretu no cambia. Tema de Turia neutro con acento `#0e6b87`. Las pantallas de siempre se ven con el estilo nuevo (clases `.nv .boton-panel`, etc.). |
+| Diseño 2: inicio con KPIs | En revisión | `src/panel-nuevo/inicio.ts` (puro y probado) e `InicioNuevo.astro`: facturado del mes frente al anterior, por cobrar (y vencido), presupuestos en juego, aceptación de 90 días; «Por hacer» con un botón por cosa (facturas vencidas, presupuestos que caducan en 5 días, anticipos por facturar o cobrar, sin respuesta en 15 días (T-07), borradores, tickets); barras de lo facturado en seis meses. Datos de prueba propios de la carpintería (`pruebas-carpinteria.ts`), con presupuestos a cliente en la serie `PRUEBA-P…`. |
 
 ## Siguiente
 
 Prioridad del propietario para Turia: **KPIs, catálogo, presupuestos y facturas**, con una experiencia de uso cuidada.
 
-1. **Diseño 2** Inicio de Turia: KPIs del mes y «Por hacer» con su acción (sustituye a la 3.3).
-2. **Catálogo A** (migración 12): artículos (tableros, maderas, cantos, herrajes, acabados, mano de obra, servicios) con unidad, coste, merma y margen, y **plantillas paramétricas** (escandallo: medidas → piezas, cantos, herrajes, horas y precio). Absorbe «materiales» de la 3.4.
-3. **Catálogo B** Pantallas del catálogo y calculadora de plantillas.
-4. **Presupuestos v2**: editor en tabla con totales en vivo y «Añadir del catálogo».
-5. **Facturas v2** en Turia; después 3.2 (clientes con dirección de obra) y 3.4 (proveedores).
+1. **Catálogo A** (migración 12): artículos (tableros, maderas, cantos, herrajes, acabados, mano de obra, servicios) con unidad, coste, merma y margen, y **plantillas paramétricas** (escandallo: medidas → piezas, cantos, herrajes, horas y precio). Absorbe «materiales» de la 3.4.
+2. **Catálogo B** Pantallas del catálogo y calculadora de plantillas.
+3. **Presupuestos v2**: editor en tabla con totales en vivo y «Añadir del catálogo».
+4. **Facturas v2** en Turia; después 3.2 (clientes con dirección de obra) y 3.4 (proveedores).
 
 ## Avisos para la próxima sesión
 
