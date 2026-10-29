@@ -99,3 +99,4 @@ Peticiones del propietario: publicación automática, facturas, control de gasto
 - Catálogo de Turia, pantallas (PR catálogo B): zona «Taller» con el catálogo (trabajos y artículos), «Poner los precios», ficha de artículo y calculadora de cada trabajo con su escandallo y «Llevar al presupuesto». Editar, duplicar y crear trabajos: PR catálogo B2.
 - Presupuestos de Turia con el diseño nuevo (PR presupuestos v2): lista con siguiente paso, editor con el total al escribir y artículos del catálogo a un clic, y ficha con el recorrido y lo que toca ahora.
 - Presupuestos y facturas de Turia enganchados al catálogo («Añadir del catálogo»: artículos y trabajos con sus medidas) además de las líneas a mano; editor de facturas nuevo con el total al escribir.
+- Facturas de Turia con el diseño nuevo (PR facturas v2): lista con las cifras de cobro y ficha de la emitida con lo que toca ahora.

@@ -28,12 +28,14 @@ Cada sesión **empieza por aquí** y lo actualiza al cerrar cada PR. El plan est
 | Catálogo B2: editar trabajos | Fusionada (#83) | `/panel/catalogo/plantillas/[id]/editar` (y `nueva/editar`): datos, medidas (cm o unidades, con su clave para las fórmulas, que sale del nombre), materiales que se eligen y partes con artículo y fórmula; ayuda con las claves y funciones; errores de fórmula en español antes de guardar; «Añadir más filas», «Duplicar para hacer otro parecido» y «Archivar». **Catálogo completo.** |
 | Presupuestos v2 (Turia) | En revisión | Con el diseño nuevo (`src/panel-nuevo/presupuestos/`), las mismas reglas y los mismos campos: **lista** en tabla con estado, **siguiente paso** (`pasos.ts`, probado) y total, filtros con su número y búsqueda; **editor** con las líneas en tabla (tarjetas en el móvil), total, IVA, anticipo y restante **al escribir**, anticipo y validez con un toque, añadir y quitar líneas sin recargar, **artículos del catálogo a un clic** y «Calcular un trabajo del catálogo» (que vuelve al mismo borrador); **ficha** con el recorrido (hecho → enviado → aceptado → anticipo → factura → cobrado), «Ahora» con el botón de lo que toca, importes, envío y cobros. Total flotante en el móvil. |
 | Catálogo en presupuestos y facturas | En revisión | Petición del propietario (29-10-2026): los presupuestos y las facturas van enganchados al catálogo, sin perder las líneas a mano. **«Añadir del catálogo»** (`src/panel-nuevo/SelectorCatalogo.astro`): ventana con buscador, artículos a un clic con su precio de venta y **trabajos** con sus medidas y materiales, cuyo precio se calcula al momento (`/api/panel/catalogo-trabajo`, nunca con costes) y se añaden en una línea o por partes. **Editor de facturas nuevo** para Turia (`src/panel-nuevo/facturas/EditorFacturaNuevo.astro`): mismas reglas y campos que el de siempre, líneas en tabla, IVA fijo, total al escribir, añadir y quitar sin recargar, vencimiento con un toque y el catálogo. |
+| Facturas v2 (Turia) | En revisión | Lista con cifras de cobro (por cobrar, vencido, cobrado este mes, borradores), pestañas con su número, búsqueda y tabla con estado (borrador, por cobrar, vencida, cobrada); ficha de la emitida con «Ahora» (cobrarla o deshacer), líneas, totales, PDF y envío, y otras acciones. Mismas acciones y reglas que siempre. |
 
 ## Siguiente
 
 Prioridad del propietario para Turia: **KPIs, catálogo, presupuestos y facturas**, con una experiencia de uso cuidada.
 
-1. **Facturas v2** en Turia (lista y ficha con el diseño nuevo; el editor ya está); después 3.2 (clientes con dirección de obra) y 3.4 (proveedores).
+1. **3.2** Clientes con el diseño nuevo (dirección de obra, contacto y forma de pago habitual) y categorías de gasto de la carpintería (T-20).
+2. **3.4** Proveedores y pedidos de material desde el catálogo.
 
 ## Avisos para la próxima sesión
 

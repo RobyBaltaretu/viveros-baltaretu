@@ -2022,3 +2022,24 @@
 .nv-dialogo-pie .nv-boton {
   flex: 1 1 12rem;
 }
+.nv-descargas {
+  margin-top: 1.5rem;
+}
+.nv-descargas summary {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  padding: 0 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.nv-boton-ancho-total {
+  width: 100%;
+  justify-content: flex-start;
+}
+.nv-siguiente .nv-campo {
+  min-width: 10rem;
+}
+.nv-seccion > .nv-nota-pie {
+  margin: 0.75rem 0 0;
+}

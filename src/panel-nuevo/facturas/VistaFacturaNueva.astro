@@ -1,0 +1,157 @@
+---
+/**
+ * Factura emitida con el diseño nuevo: estado y lo que toca (cobrarla), PDF y
+ * envío, líneas, totales y otras acciones (hacer otra igual, rectificativa).
+ * Mismas acciones que la vista de siempre (las procesa la página).
+ */
+import PdfEnNavegador from '../../components/panel/PdfEnNavegador.astro';
+import Icono from '../../components/panel/ui/Icono.astro';
+import type { Factura } from '../../server/data/tipos.ts';
+import { hoy, vencida } from '../../server/facturas/facturas.ts';
+import { dinero, importeLinea } from '../../server/facturas/importes.ts';
+
+interface Props {
+  factura: Factura;
+}
+const { factura: f } = Astro.props;
+const fecha = (iso: string) => iso.split('-').reverse().join('/');
+const pdf = `/api/panel/factura-pdf?id=${f.id}`;
+const [tono, estado] = f.estado === 'cobrada' ? ['verde', 'Cobrada'] : vencida(f) ? ['rojo', 'Vencida'] : ['azul', 'Por cobrar'];
+const lineas = f.lineas.filter((l) => l.concepto);
+---
+
+<p class="nv-fecha">
+  <span class={`nv-chip nv-chip-${tono}`}>{estado}</span>
+  {f.cliente.nombre} · del {fecha(f.fecha)}{f.rectificaCodigo && ` · rectifica a ${f.rectificaCodigo}`}
+</p>
+
+{
+  f.estado === 'emitida' ? (
+    <form method="post" class:list={['nv-siguiente', vencida(f) && 'nv-siguiente-urgente']}>
+      <input type="hidden" name="accion" value="cobrada" />
+      <div>
+        <h2>Ahora</h2>
+        <p>
+          {vencida(f) ? `Cobrar: la fecha de pago (${fecha(f.vencimiento)}) ya ha pasado` : `Pendiente de cobro hasta el ${fecha(f.vencimiento)}`} · {dinero(f.totales.total)}
+        </p>
+      </div>
+      <div class="nv-acciones-siguiente">
+        <label class="nv-campo">
+          <span class="sr-only">Día del cobro</span>
+          <input type="date" name="fechaCobro" value={hoy()} class="campo-panel" required aria-label="Día del cobro" />
+        </label>
+        <button class="nv-boton">Marcar como cobrada</button>
+      </div>
+    </form>
+  ) : (
+    <form method="post" class="nv-siguiente">
+      <input type="hidden" name="accion" value="pendiente" />
+      <div>
+        <h2>Cobrada</h2>
+        <p>{f.cobradaEl ? `El ${fecha(f.cobradaEl)}` : 'Cobrada'}</p>
+      </div>
+      <button class="nv-boton nv-boton-secundario">No está cobrada (deshacer)</button>
+    </form>
+  )
+}
+
+<div class="nv-ficha">
+  <section class="nv-tarjeta" aria-labelledby="lineas-factura">
+    <div class="nv-cabeza-tarjeta">
+      <h2 id="lineas-factura">Qué se factura</h2>
+      <span class="nv-gris">Precios sin IVA</span>
+    </div>
+    <div class="nv-tabla-caja" tabindex="0" role="region" aria-label="Líneas de la factura">
+      <table class="nv-tabla">
+        <caption class="sr-only">Líneas de la factura</caption>
+        <thead>
+          <tr>
+            <th scope="col">Concepto</th>
+            <th scope="col" class="nv-num">Cantidad</th>
+            <th scope="col" class="nv-num">Precio</th>
+            <th scope="col" class="nv-num">IVA</th>
+            <th scope="col" class="nv-num">Importe</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            lineas.map((l) => (
+              <tr>
+                <td>
+                  {l.concepto}
+                  {l.descuento > 0 && <small>Descuento del {String(l.descuento).replace('.', ',')} %</small>}
+                </td>
+                <td class="nv-num">{String(l.cantidad).replace('.', ',')}</td>
+                <td class="nv-num">{dinero(l.precio)}</td>
+                <td class="nv-num">{l.iva} %</td>
+                <td class="nv-num">{dinero(importeLinea(l))}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="nv-ficha-lado">
+    <section class="nv-tarjeta nv-resumen" aria-labelledby="importes-factura">
+      <h2 id="importes-factura">{f.codigo}</h2>
+      <dl class="nv-filas-resumen nv-sin-raya">
+        <div>
+          <dt>Base imponible</dt>
+          <dd>{dinero(f.totales.base)}</dd>
+        </div>
+        <div>
+          <dt>IVA</dt>
+          <dd>{dinero(f.totales.cuotaIva)}</dd>
+        </div>
+        {
+          f.totales.cuotaRecargo > 0 && (
+            <div>
+              <dt>Recargo de equivalencia</dt>
+              <dd>{dinero(f.totales.cuotaRecargo)}</dd>
+            </div>
+          )
+        }
+      </dl>
+      <div class="nv-total">
+        <span>Total</span>
+        <strong>{dinero(f.totales.total)}</strong>
+      </div>
+      <div class="nv-botones-columna nv-arriba">
+        <a href={pdf} class="nv-boton">
+          <Icono nombre="descargar" />
+          Ver el PDF
+        </a>
+        <a href={`${pdf}&descargar=1`} class="nv-boton nv-boton-secundario">
+          Descargar
+        </a>
+        <button type="button" class="nv-boton nv-boton-secundario" data-compartir={pdf} data-nombre={`${f.codigo}.pdf`} hidden>
+          <Icono nombre="enviar" />
+          Enviar (WhatsApp, correo…)
+        </button>
+      </div>
+    </section>
+
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="otras-acciones">
+      <h2 id="otras-acciones">Otras acciones</h2>
+      <div class="nv-botones-columna">
+        <form method="post">
+          <input type="hidden" name="accion" value="duplicar" />
+          <button class="nv-boton nv-boton-secundario nv-boton-ancho-total">Hacer otra igual</button>
+        </form>
+        {
+          f.tipo === 'ordinaria' && (
+            <form method="post">
+              <input type="hidden" name="accion" value="rectificar" />
+              <button class="nv-boton nv-boton-secundario nv-boton-ancho-total">Corregir o anular (rectificativa)</button>
+            </form>
+          )
+        }
+      </div>
+      <p class="nv-gris nv-nota-pie">Una factura emitida no se cambia ni se borra: los errores se corrigen con una rectificativa.</p>
+    </section>
+  </div>
+</div>
+
+<PdfEnNavegador />
