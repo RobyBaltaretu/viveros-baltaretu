@@ -48,6 +48,8 @@ export const esquemaCliente = z
     plan: z.string().min(1),
     /** Dominio público sin https://, o null mientras se use el de SITE_URL. */
     dominio: z.string().nullable(),
+    /** false: sin páginas públicas, solo el panel (src/plataforma/sin-web.ts). */
+    webPublica: z.boolean(),
     idiomas: z.array(z.enum(IDIOMAS_POSIBLES)).min(1),
     idiomaPorDefecto: z.enum(IDIOMAS_POSIBLES),
     cloudflare: z.object({ worker: recurso, d1: recurso }).strict(),
