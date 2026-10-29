@@ -1,0 +1,284 @@
+{
+  "herramientas": [
+    {
+      "nombre": "resumen_vivero",
+      "tipo": "consulta",
+      "permiso": "asistente",
+      "descripcion": "4caa394d2a265d74",
+      "argumentos": "25c7d85c859a6f78"
+    },
+    {
+      "nombre": "buscar_plantas",
+      "tipo": "consulta",
+      "permiso": "asistente",
+      "descripcion": "8801231673425b1c",
+      "argumentos": "8fc5bb6af40f0393"
+    },
+    {
+      "nombre": "ver_presupuestos",
+      "tipo": "consulta",
+      "permiso": "presupuestos",
+      "descripcion": "9de101be84d3fea2",
+      "argumentos": "8e985c1ca97b1ef4"
+    },
+    {
+      "nombre": "ver_clientes",
+      "tipo": "consulta",
+      "permiso": "facturas",
+      "descripcion": "10e0eb3d2c38bce5",
+      "argumentos": "504c5968a726f422"
+    },
+    {
+      "nombre": "ver_facturas",
+      "tipo": "consulta",
+      "permiso": "facturas",
+      "descripcion": "fb7844c3bb341c04",
+      "argumentos": "f964cb734aec6f27"
+    },
+    {
+      "nombre": "ver_gastos",
+      "tipo": "consulta",
+      "permiso": "gastos",
+      "descripcion": "f920e88fee3a750a",
+      "argumentos": "d9e9c37ffdb65e04"
+    },
+    {
+      "nombre": "informe",
+      "tipo": "consulta",
+      "permiso": "informes",
+      "descripcion": "9c4ca21a4128a86a",
+      "argumentos": "be272f7a585bf69d"
+    },
+    {
+      "nombre": "ver_textos_web",
+      "tipo": "consulta",
+      "permiso": "editar",
+      "descripcion": "d940d6ec7d8a2f71",
+      "argumentos": "ad66cf3b03cf6f39"
+    },
+    {
+      "nombre": "cambios_recientes",
+      "tipo": "consulta",
+      "permiso": "editar",
+      "descripcion": "7e9b3cfd0a449b88",
+      "argumentos": "32d491d6b8fcec34"
+    },
+    {
+      "nombre": "cambiar_planta",
+      "tipo": "cambio",
+      "permiso": "editar",
+      "descripcion": "f04e75ca08e24850",
+      "argumentos": "46fedc3f072dec5e"
+    },
+    {
+      "nombre": "crear_planta",
+      "tipo": "cambio",
+      "permiso": "editar",
+      "descripcion": "40e81f5c4d20cfcc",
+      "argumentos": "e6ff37b32e3c9c5a"
+    },
+    {
+      "nombre": "quitar_o_recuperar_planta",
+      "tipo": "cambio",
+      "permiso": "editar",
+      "descripcion": "b134c027f335c627",
+      "argumentos": "ef7daba76549895a"
+    },
+    {
+      "nombre": "cambiar_presupuesto",
+      "tipo": "cambio",
+      "permiso": "presupuestos",
+      "descripcion": "eaf1f6ef43d09183",
+      "argumentos": "5ddc656645850278"
+    },
+    {
+      "nombre": "guardar_cliente",
+      "tipo": "cambio",
+      "permiso": "facturas",
+      "descripcion": "70a3dfe6e79fe427",
+      "argumentos": "d41fcc70ebeedb4b"
+    },
+    {
+      "nombre": "crear_factura",
+      "tipo": "cambio",
+      "permiso": "facturas",
+      "descripcion": "6410dd568f3b7c8f",
+      "argumentos": "7be3350c31bfaa83"
+    },
+    {
+      "nombre": "gestionar_factura",
+      "tipo": "cambio",
+      "permiso": "facturas",
+      "descripcion": "4e51b92af495f0e1",
+      "argumentos": "b7f6d18c4b847217"
+    },
+    {
+      "nombre": "registrar_gasto",
+      "tipo": "cambio",
+      "permiso": "gastos",
+      "descripcion": "2366f04ccb4c03c7",
+      "argumentos": "c774b29e78b25fe9"
+    },
+    {
+      "nombre": "cambiar_texto_web",
+      "tipo": "cambio",
+      "permiso": "editar",
+      "descripcion": "2c96ba6ce71258c8",
+      "argumentos": "41aab0e1c4bf35bd"
+    },
+    {
+      "nombre": "publicar_cambios",
+      "tipo": "cambio",
+      "permiso": "publicar",
+      "descripcion": "8b3df1164cc71749",
+      "argumentos": "25c7d85c859a6f78"
+    },
+    {
+      "nombre": "deshacer_cambio",
+      "tipo": "cambio",
+      "permiso": "editar",
+      "descripcion": "499cb593ff72c686",
+      "argumentos": "cf4ee0f82044af26"
+    },
+    {
+      "nombre": "cambiar_plantas",
+      "tipo": "cambio",
+      "permiso": "editar",
+      "descripcion": "7f447f28cb9e338b",
+      "argumentos": "a448bc8161da9b67"
+    },
+    {
+      "nombre": "cambiar_presupuestos",
+      "tipo": "cambio",
+      "permiso": "presupuestos",
+      "descripcion": "ed3f0950653b6d41",
+      "argumentos": "5bf528cb081ccb9a"
+    },
+    {
+      "nombre": "gestionar_facturas",
+      "tipo": "cambio",
+      "permiso": "facturas",
+      "descripcion": "b85c71bcc895451f",
+      "argumentos": "f29f7dbd6923366e"
+    },
+    {
+      "nombre": "gestionar_gastos",
+      "tipo": "cambio",
+      "permiso": "gastos",
+      "descripcion": "2a66542789f1611b",
+      "argumentos": "33cbea4541dcc2a0"
+    },
+    {
+      "nombre": "cambiar_clientes",
+      "tipo": "cambio",
+      "permiso": "facturas",
+      "descripcion": "b5f3b56f69a57b9e",
+      "argumentos": "2bf2846725fdb3f2"
+    },
+    {
+      "nombre": "cambiar_textos_web",
+      "tipo": "cambio",
+      "permiso": "editar",
+      "descripcion": "647376745493e2c9",
+      "argumentos": "c4ae00aef8c4c4a4"
+    },
+    {
+      "nombre": "ver_inventario",
+      "tipo": "consulta",
+      "permiso": "inventario",
+      "descripcion": "93511a31f85baabc",
+      "argumentos": "a1a04ad897644d6b"
+    },
+    {
+      "nombre": "mover_inventario",
+      "tipo": "cambio",
+      "permiso": "inventario",
+      "descripcion": "2907a649969bd72b",
+      "argumentos": "3e15572896e68dfb"
+    }
+  ],
+  "porRol": {
+    "propietario": {
+      "herramientas": [
+        "resumen_vivero",
+        "buscar_plantas",
+        "ver_presupuestos",
+        "ver_clientes",
+        "ver_facturas",
+        "ver_gastos",
+        "informe",
+        "ver_textos_web",
+        "cambios_recientes",
+        "cambiar_planta",
+        "crear_planta",
+        "quitar_o_recuperar_planta",
+        "cambiar_presupuesto",
+        "guardar_cliente",
+        "crear_factura",
+        "gestionar_factura",
+        "registrar_gasto",
+        "cambiar_texto_web",
+        "publicar_cambios",
+        "deshacer_cambio",
+        "cambiar_plantas",
+        "cambiar_presupuestos",
+        "gestionar_facturas",
+        "gestionar_gastos",
+        "cambiar_clientes",
+        "cambiar_textos_web",
+        "ver_inventario",
+        "mover_inventario"
+      ],
+      "instrucciones": "e3e3dad675b7b831"
+    },
+    "gerente": {
+      "herramientas": [
+        "resumen_vivero",
+        "buscar_plantas",
+        "ver_presupuestos",
+        "ver_clientes",
+        "ver_facturas",
+        "ver_gastos",
+        "informe",
+        "ver_textos_web",
+        "cambios_recientes",
+        "cambiar_planta",
+        "crear_planta",
+        "quitar_o_recuperar_planta",
+        "cambiar_presupuesto",
+        "guardar_cliente",
+        "crear_factura",
+        "gestionar_factura",
+        "registrar_gasto",
+        "cambiar_texto_web",
+        "publicar_cambios",
+        "deshacer_cambio",
+        "cambiar_plantas",
+        "cambiar_presupuestos",
+        "gestionar_facturas",
+        "gestionar_gastos",
+        "cambiar_clientes",
+        "cambiar_textos_web",
+        "ver_inventario",
+        "mover_inventario"
+      ],
+      "instrucciones": "f01756e7f3263c63"
+    },
+    "editor": {
+      "herramientas": [
+        "resumen_vivero",
+        "buscar_plantas",
+        "ver_textos_web",
+        "cambios_recientes",
+        "cambiar_planta",
+        "crear_planta",
+        "quitar_o_recuperar_planta",
+        "cambiar_texto_web",
+        "deshacer_cambio",
+        "cambiar_plantas",
+        "cambiar_textos_web"
+      ],
+      "instrucciones": "abab83c30b1bc47c"
+    }
+  }
+}

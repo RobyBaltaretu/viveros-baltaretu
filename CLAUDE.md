@@ -30,6 +30,7 @@ Español en la raíz (`/`) e inglés bajo `/en/`. Cada texto se escribe en los d
 - Accesibilidad WCAG 2.1 AA: etiquetas en formularios, contraste, navegación con teclado, textos alternativos.
 - Cookies: Google Analytics 4 solo se carga tras el consentimiento del usuario (`AvisoCookies.astro`, ID en `PUBLIC_GA4_ID`; sin ID no hay aviso ni analítica).
 - Textos legales: los revisa un asesor. No presentarlos como definitivos.
+- Red de seguridad (`tests/baseline/`): la web, el panel, el asistente y la base de datos de Viveros Baltaretu no pueden cambiar sin aprobación del propietario. Si una comprobación de la línea base falla, el PR se detiene y se explica por qué. Las migraciones de D1 son solo aditivas.
 - Datos de prueba: `src/lib/pruebas/datos.ts` rellena los huecos pendientes (`[PLACEHOLDER]` o vacíos) solo en desarrollo y en builds de ramas que no son `main`, con un aviso visible "Vista de prueba". Nunca pisan un dato real ni llegan a producción. Los contactos de prueba usan valores que no llevan a nadie (email en example.com).
 
 ## Esquema de cada especie
@@ -59,9 +60,10 @@ Requiere Node 22 (22.12 o superior, ver `.nvmrc`).
 - `npm run asistente:banco`: precisión del asistente con el banco de frases.
 - `npm run test:e2e`: Playwright + axe sobre el build servido en workerd. Comprueba WCAG 2.1 AA en las páginas clave, en móvil y en escritorio, y los recorridos con teclado. En local, `CHROMIUM_PATH` permite usar un Chromium ya instalado.
 - `npm run check:worker`: `wrangler deploy --dry-run`, que valida `wrangler.jsonc` y el bundle sin desplegar.
+- `npm run baseline:actualizar`: regenera la línea base de Baltaretu (`tests/baseline/`). Solo con un cambio aprobado por el propietario y explicado en el PR.
 - Variables: las de build en `.env.example` y las de runtime en `.dev.vars.example`. Los pasos en Cloudflare están en el README.
 
-La CI (`.github/workflows/ci.yml`) ejecuta `npm run lint`, `npm test`, `npm run build` y `npm run check:worker` en cada PR, y en trabajos aparte `npm run test:e2e` (web y panel, con D1 local) y `npm run contenido:equivalencia`.
+La CI (`.github/workflows/ci.yml`) ejecuta `npm run lint`, `npm test`, `npm run build` y `npm run check:worker` en cada PR, y en trabajos aparte `npm run test:e2e` (web y panel, con D1 local) y `npm run contenido:equivalencia` (que también compara la web con la línea base de `tests/baseline/`).
 
 ## SEO
 - Cada página tiene canonical, hreflang (es, en y x-default), Open Graph y JSON-LD (`src/lib/seo/`). Los datos estructurados nunca incluyen datos de empresa en `[PLACEHOLDER]` ni precios que no estén en la ficha.

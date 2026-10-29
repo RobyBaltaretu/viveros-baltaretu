@@ -1,0 +1,231 @@
+{
+  "propietario": {
+    "permisos": [
+      "editar",
+      "publicar",
+      "presupuestos",
+      "personas",
+      "asistente",
+      "facturas",
+      "gastos",
+      "informes",
+      "inventario"
+    ],
+    "zonas": [
+      {
+        "zona": "inicio",
+        "texto": "Inicio",
+        "href": "/panel",
+        "secciones": [
+          "Inicio /panel"
+        ]
+      },
+      {
+        "zona": "asistente",
+        "texto": "AgricolAI",
+        "href": "/panel/asistente",
+        "secciones": [
+          "AgricolAI /panel/asistente"
+        ]
+      },
+      {
+        "zona": "ventas",
+        "texto": "Ventas",
+        "href": "/panel/presupuestos",
+        "secciones": [
+          "Presupuestos /panel/presupuestos",
+          "Facturas /panel/facturas",
+          "Clientes /panel/facturas/clientes"
+        ]
+      },
+      {
+        "zona": "plantas",
+        "texto": "Plantas",
+        "href": "/panel/plantas",
+        "secciones": [
+          "Catálogo /panel/plantas",
+          "Inventario /panel/inventario",
+          "Resumen /panel/inventario/resumen",
+          "Fotos /panel/fotos"
+        ]
+      },
+      {
+        "zona": "cuentas",
+        "texto": "Cuentas",
+        "href": "/panel/gastos",
+        "secciones": [
+          "Gastos /panel/gastos",
+          "Informes /panel/informes"
+        ]
+      },
+      {
+        "zona": "web",
+        "texto": "Web",
+        "href": "/panel/textos",
+        "secciones": [
+          "Textos /panel/textos",
+          "Publicar /panel/publicar",
+          "Cambios /panel/cambios"
+        ]
+      },
+      {
+        "zona": "ajustes",
+        "texto": "Ajustes",
+        "href": "/panel/personas",
+        "secciones": [
+          "Personas /panel/personas",
+          "Facturación /panel/facturas/datos",
+          "Datos de prueba /panel/pruebas",
+          "Ayuda /panel/ayuda"
+        ]
+      }
+    ],
+    "barraMovil": [
+      "/panel",
+      "/panel/plantas",
+      "/panel/asistente",
+      "/panel/presupuestos"
+    ]
+  },
+  "gerente": {
+    "permisos": [
+      "editar",
+      "publicar",
+      "presupuestos",
+      "asistente",
+      "facturas",
+      "gastos",
+      "informes",
+      "inventario"
+    ],
+    "zonas": [
+      {
+        "zona": "inicio",
+        "texto": "Inicio",
+        "href": "/panel",
+        "secciones": [
+          "Inicio /panel"
+        ]
+      },
+      {
+        "zona": "asistente",
+        "texto": "AgricolAI",
+        "href": "/panel/asistente",
+        "secciones": [
+          "AgricolAI /panel/asistente"
+        ]
+      },
+      {
+        "zona": "ventas",
+        "texto": "Ventas",
+        "href": "/panel/presupuestos",
+        "secciones": [
+          "Presupuestos /panel/presupuestos",
+          "Facturas /panel/facturas",
+          "Clientes /panel/facturas/clientes"
+        ]
+      },
+      {
+        "zona": "plantas",
+        "texto": "Plantas",
+        "href": "/panel/plantas",
+        "secciones": [
+          "Catálogo /panel/plantas",
+          "Inventario /panel/inventario",
+          "Resumen /panel/inventario/resumen",
+          "Fotos /panel/fotos"
+        ]
+      },
+      {
+        "zona": "cuentas",
+        "texto": "Cuentas",
+        "href": "/panel/gastos",
+        "secciones": [
+          "Gastos /panel/gastos",
+          "Informes /panel/informes"
+        ]
+      },
+      {
+        "zona": "web",
+        "texto": "Web",
+        "href": "/panel/textos",
+        "secciones": [
+          "Textos /panel/textos",
+          "Publicar /panel/publicar",
+          "Cambios /panel/cambios"
+        ]
+      },
+      {
+        "zona": "ajustes",
+        "texto": "Ajustes",
+        "href": "/panel/facturas/datos",
+        "secciones": [
+          "Facturación /panel/facturas/datos",
+          "Ayuda /panel/ayuda"
+        ]
+      }
+    ],
+    "barraMovil": [
+      "/panel",
+      "/panel/plantas",
+      "/panel/asistente",
+      "/panel/presupuestos"
+    ]
+  },
+  "editor": {
+    "permisos": [
+      "editar",
+      "asistente"
+    ],
+    "zonas": [
+      {
+        "zona": "inicio",
+        "texto": "Inicio",
+        "href": "/panel",
+        "secciones": [
+          "Inicio /panel"
+        ]
+      },
+      {
+        "zona": "asistente",
+        "texto": "AgricolAI",
+        "href": "/panel/asistente",
+        "secciones": [
+          "AgricolAI /panel/asistente"
+        ]
+      },
+      {
+        "zona": "plantas",
+        "texto": "Plantas",
+        "href": "/panel/plantas",
+        "secciones": [
+          "Catálogo /panel/plantas",
+          "Fotos /panel/fotos"
+        ]
+      },
+      {
+        "zona": "web",
+        "texto": "Web",
+        "href": "/panel/textos",
+        "secciones": [
+          "Textos /panel/textos",
+          "Cambios /panel/cambios"
+        ]
+      },
+      {
+        "zona": "ajustes",
+        "texto": "Ajustes",
+        "href": "/panel/ayuda",
+        "secciones": [
+          "Ayuda /panel/ayuda"
+        ]
+      }
+    ],
+    "barraMovil": [
+      "/panel",
+      "/panel/plantas",
+      "/panel/asistente",
+      "/panel/textos"
+    ]
+  }
+}
