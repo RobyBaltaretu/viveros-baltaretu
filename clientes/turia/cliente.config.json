@@ -9,7 +9,7 @@
   "cloudflare": { "worker": "creacionesturia", "d1": "creacionesturia" },
   "modulos": {
     "catalogo": true,
-    "presupuestosWeb": true,
+    "presupuestosWeb": false,
     "presupuestosCliente": true,
     "obras": true,
     "agenda": true,

@@ -8,13 +8,13 @@ El detalle de cada PR está en [plan.md](plan.md) y lo hecho, en [estado-plan.md
 | --- | --- | --- |
 | **F0** | Documentación y red de seguridad de Baltaretu | Cualquier cambio visible en Baltaretu hace fallar la CI. |
 | **F1** | Cimientos multicliente: configuración, módulos, tema, idiomas, vocabulario y tipos de contenido | `CLIENTE_ID=turia` construye una web vacía de Turia, y Baltaretu queda idéntico. |
-| **F2** | Web pública de Creaciones Turia | Portafolio interactivo, servicios, formulario de proyecto y muestrario. |
+| **F2** | Portafolio privado de Creaciones Turia (solo para el propietario, dentro del panel) | Proyectos con su antes y después. Sin web pública. |
 | **F3a** | Panel mínimo para salir: presupuestos a cliente, clientes y facturas, e inicio | Turia puede presupuestar, facturar y cobrar. |
 | **F3b** | Proveedores, materiales, pedidos, obras, agenda, garantía, KPIs y asistente del sector | El flujo completo: petición → visita → presupuesto → anticipo → pedido → montaje → factura → garantía. |
 | **F4** | Simulador: entrega A (sin IA), spike y entrega B (con IA, si la calidad es aceptable) | Imagen orientativa enviable como petición. |
 | **F5** | Operación: alta y baja de clientes, copia diaria multicliente y estado por cliente | Mantenible por una sola persona. |
 
-Orden de trabajo: F0 → F1 → F2.1 y F3a en paralelo → F2 resto → F3b → F4 → F5. La F5.2 (copias) se adelanta en cuanto haya un segundo cliente en producción.
+Orden de trabajo: por orden, F0 → F1 → F2 → F3a → F3b → F4 → F5. La F5.2 (copias) se adelanta en cuanto haya un segundo cliente en producción.
 
 ## Escala
 

@@ -12,11 +12,13 @@ Cada sesión **empieza por aquí** y lo actualiza al cerrar cada PR. El plan est
 
 ## Siguiente
 
-1. **1.2** Módulos con guardias (navegación, middleware, API y asistente) y `ProveedorDeAcceso`.
+1. **1.2** (en curso) Módulos con guardias (navegación, middleware, API y asistente) y `ProveedorDeAcceso`.
 2. **1.3** Tema por cliente.
 3. **1.4** Idiomas por cliente.
 
 ## Avisos para la próxima sesión
+
+- Turia **no tiene web pública**: solo un portafolio privado en el panel (F2 rehecha). Se trabaja **por orden**.
 
 - Si una comprobación de `tests/baseline/` falla, **se para**: o es un error o es un cambio que tiene que aprobar el propietario (`npm run baseline:actualizar` solo entonces).
 
