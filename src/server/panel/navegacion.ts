@@ -1,12 +1,15 @@
 import type { Rol } from "../data/tipos.ts";
 import type { NombreIcono } from "./iconos.ts";
+import { permitido } from "../../plataforma/actual.ts";
+import { moduloDeRuta } from "../../plataforma/modulos.ts";
 import { puede, type Accion } from "./permisos.ts";
 
 /**
  * Mapa del panel, pensado para no perderse: pocas **zonas** (lo que sale en el
  * menú) y, dentro de cada una, sus **secciones** como pestañas. Lo usan la
  * barra lateral (ordenador), la barra de abajo (móvil), «Más» y las pestañas
- * de arriba de cada pantalla. Solo sale lo que el rol puede usar.
+ * de arriba de cada pantalla. Solo sale lo que el rol puede usar y lo de los
+ * módulos activos del cliente (src/plataforma/modulos.ts).
  */
 export type Zona =
   "inicio" | "asistente" | "ventas" | "plantas" | "cuentas" | "web" | "ajustes";
@@ -246,7 +249,7 @@ export const MENU: SeccionMenu[] = [
 ];
 
 export const menuDe = (rol: Rol) =>
-  MENU.filter((s) => !s.permiso || puede(rol, s.permiso));
+  MENU.filter((s) => (!s.permiso || puede(rol, s.permiso)) && permitido(moduloDeRuta(s.href)));
 
 /** Zonas del rol con sus secciones visibles (las vacías no salen). */
 export function zonasDe(rol: Rol): ZonaMenu[] {
