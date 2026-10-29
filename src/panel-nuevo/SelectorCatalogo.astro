@@ -220,7 +220,10 @@ const hay = datos.articulos.length > 0 || datos.trabajos.length > 0;
       $('[data-buscar]').focus();
     };
     $('[data-trabajo-form]').addEventListener('input', () => {
-      // Hasta tener el precio de las medidas nuevas, no se puede añadir.
+      // Hasta tener el precio de las medidas nuevas, no se puede añadir. Una
+      // respuesta que llegue ahora es de las medidas de antes: se descarta.
+      pedido++;
+      lineas = null;
       $('[data-anadir-trabajo]').disabled = true;
       $('[data-trabajo-precio]').textContent = '…';
       clearTimeout(reloj);
