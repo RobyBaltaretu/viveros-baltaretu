@@ -10,12 +10,15 @@ import { cifras, cobros, periodoDe } from '../../server/informes/informes.ts';
 import type { NombreIcono } from '../../server/panel/iconos.ts';
 import { sesionCon } from '../../server/panel/pagina.ts';
 import { puede } from '../../server/panel/permisos.ts';
-import { rutaDisponible } from '../../plataforma/actual.ts';
+import { clienteActual, rutaDisponible } from '../../plataforma/actual.ts';
 import { vocabularioPanel } from '../../plataforma/vocabulario.ts';
+import InicioNuevo from '../../panel-nuevo/InicioNuevo.astro';
 
 export const prerender = false;
 
-const s = sesionCon(Astro.locals);
+// Clientes con el diseño nuevo: su propio inicio (src/panel-nuevo/InicioNuevo.astro).
+const nuevo = clienteActual().panel?.diseno === 'nuevo';
+const s = nuevo ? null : sesionCon(Astro.locals);
 const rol = s?.usuario.rol ?? 'editor';
 const dia = hoy();
 const mes = periodoDe('mes', dia);
@@ -53,6 +56,7 @@ const fecha = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'nu
 ---
 
 <PaginaPanel titulo={tp.inicio} volver={false} ancho="amplio">
+  {nuevo ? <InicioNuevo /> : <Fragment>
   <section class="saludo caja-panel relative overflow-hidden p-6 sm:p-8" aria-labelledby="saludo">
     <div class="relative z-10 max-w-xl">
       <p class="text-gris first-letter:uppercase">{fecha}</p>
@@ -124,6 +128,7 @@ const fecha = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'nu
     )
   }
 
+  </Fragment>}
 </PaginaPanel>
 
 <style>

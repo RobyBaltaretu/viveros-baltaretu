@@ -578,6 +578,7 @@
 }
 .nv-cifra {
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* ---------- Pantallas de siempre con el diseño nuevo ---------- */
@@ -592,6 +593,9 @@
 @media (min-width: 64rem) {
   .nv-solo-ancho {
     display: inline;
+  }
+  .nv-solo-estrecho {
+    display: none;
   }
 }
 .nv .caja-panel {
@@ -672,6 +676,275 @@
 }
 .nv .pestana-zona[aria-current='page'] {
   border-color: var(--nv-acento-suave);
+  background: var(--nv-acento-suave);
+  color: var(--nv-acento-oscuro);
+}
+
+/* ---------- Inicio ---------- */
+.nv-fecha {
+  margin: 0 0 0.125rem;
+  font-size: 0.9375rem;
+  color: var(--nv-gris);
+}
+.nv-fecha::first-letter {
+  text-transform: uppercase;
+}
+.nv-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 64rem) {
+  .nv-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+.nv-kpi {
+  display: flex;
+  height: 100%;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem 1.125rem;
+  color: var(--nv-tinta);
+  text-decoration: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .nv-kpi:hover {
+    border-color: var(--nv-borde-fuerte);
+  }
+}
+.nv-kpi-nombre {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--nv-gris);
+}
+.nv-kpi-valor {
+  font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.625rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.nv-kpi-nota {
+  font-size: 0.8125rem;
+  color: var(--nv-gris);
+}
+.nv-aviso {
+  font-weight: 600;
+  color: var(--nv-naranja);
+}
+.nv-bien {
+  font-weight: 600;
+  color: var(--nv-verde);
+}
+.nv-gris {
+  font-size: 0.875rem;
+  color: var(--nv-gris);
+}
+.nv-inicio-columnas {
+  display: grid;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (min-width: 64rem) {
+  .nv-inicio-columnas {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+.nv-inicio-lado {
+  display: grid;
+  gap: 1.25rem;
+}
+.nv-cabeza-tarjeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--nv-borde);
+}
+.nv-cabeza-tarjeta h2,
+.nv-atajos h2 {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+.nv-por-hacer ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nv-tarea {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--nv-borde);
+}
+.nv-tarea:last-child {
+  border-bottom: 0;
+}
+.nv-tarea-texto {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.nv-tarea-texto strong {
+  font-weight: 600;
+}
+.nv-tarea-texto span {
+  font-size: 0.875rem;
+  color: var(--nv-gris);
+}
+.nv-punto {
+  width: 0.625rem;
+  height: 0.625rem;
+  flex: none;
+  border-radius: 999px;
+}
+.nv-punto-rojo {
+  background: var(--nv-rojo);
+}
+.nv-punto-naranja {
+  background: #c26a00;
+}
+.nv-punto-azul {
+  background: var(--nv-acento);
+}
+.nv-punto-gris {
+  background: var(--nv-borde-fuerte);
+}
+.nv-mas {
+  margin: 0;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--nv-borde);
+  font-size: 0.875rem;
+  color: var(--nv-gris);
+}
+.nv-vacio {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 1.25rem;
+  color: var(--nv-gris);
+}
+.nv-vacio p {
+  margin: 0;
+}
+.nv-vacio strong {
+  color: var(--nv-tinta);
+}
+.nv-vacio-icono {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--nv-verde-suave);
+  color: var(--nv-verde);
+}
+.nv-grafica .enlace-panel {
+  margin: 0 1.25rem 0.5rem;
+}
+.nv-barras {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.5rem;
+  height: 11rem;
+  margin: 0;
+  padding: 1rem 1.25rem 0.5rem;
+  list-style: none;
+}
+.nv-barras li {
+  display: grid;
+  grid-template-rows: 1.25rem minmax(0, 1fr) auto;
+  min-width: 0;
+  text-align: center;
+}
+.nv-barra-valor {
+  overflow: hidden;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.nv-barra-hueco {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-bottom: 1px solid var(--nv-borde-fuerte);
+}
+.nv-barra {
+  display: block;
+  width: min(2.25rem, 100%);
+  border-radius: 4px 4px 0 0;
+  background: color-mix(in oklab, var(--nv-acento) 35%, white);
+}
+.nv-barra-actual .nv-barra {
+  background: var(--nv-acento);
+}
+.nv-barra-mes {
+  padding-top: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--nv-gris);
+}
+.nv-barra-actual .nv-barra-mes {
+  font-weight: 600;
+  color: var(--nv-tinta);
+}
+/* En el móvil, «Crear» ya está en la barra de abajo. */
+@media (max-width: 63.99rem) {
+  .nv-atajos {
+    display: none;
+  }
+}
+.nv-atajos ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 40rem) and (max-width: 63.99rem) {
+  .nv-atajos ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.nv-atajo {
+  display: flex;
+  min-height: 3.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  color: var(--nv-tinta);
+  text-decoration: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .nv-atajo:hover {
+    border-color: var(--nv-borde-fuerte);
+  }
+}
+.nv-atajo strong {
+  display: block;
+  font-weight: 600;
+}
+.nv-atajo small {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--nv-gris);
+}
+.nv-atajo-icono {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  place-items: center;
+  border-radius: var(--nv-radio-control);
   background: var(--nv-acento-suave);
   color: var(--nv-acento-oscuro);
 }

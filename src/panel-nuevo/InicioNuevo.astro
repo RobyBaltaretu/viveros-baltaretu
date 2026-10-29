@@ -1,0 +1,180 @@
+---
+/**
+ * Inicio con el diseño nuevo: saludo, las cifras del mes (cada una lleva a su
+ * sección), «Por hacer» con un botón por cosa, lo facturado en seis meses y
+ * atajos para crear. Los cálculos están en inicio.ts.
+ */
+import Icono from '../components/panel/ui/Icono.astro';
+import { dinero } from '../server/facturas/importes.ts';
+import { hoy } from '../server/gastos/gastos.ts';
+import { periodoAnterior, periodoDe } from '../server/informes/informes.ts';
+import { menuDe } from '../server/panel/navegacion.ts';
+import { sesionCon } from '../server/panel/pagina.ts';
+import { puede } from '../server/panel/permisos.ts';
+import { rutaDisponible } from '../plataforma/actual.ts';
+import { evolucion, kpis, porHacer, saludo, type DatosInicio } from './inicio.ts';
+import { accionesCrear } from './navegacion.ts';
+
+const s = sesionCon(Astro.locals);
+const rol = s?.usuario.rol ?? 'editor';
+const dia = hoy();
+const mes = periodoDe('mes', dia);
+let desde = mes;
+for (let i = 0; i < 5; i++) desde = periodoAnterior(desde);
+const ver = {
+  facturas: puede(rol, 'facturas') && rutaDisponible('/panel/facturas'),
+  presupuestos: puede(rol, 'facturas') && rutaDisponible('/panel/presupuestos-cliente'),
+  gastos: puede(rol, 'gastos') && rutaDisponible('/panel/gastos'),
+  informes: puede(rol, 'informes') && rutaDisponible('/panel/informes'),
+};
+const [facturas, gastosMes, revisar, presupuestos] = s
+  ? await Promise.all([
+      ver.facturas ? s.repos.facturas.listar({ desde: desde.desde }) : [],
+      ver.informes ? s.repos.gastos.listar({ estado: 'confirmado', desde: mes.desde, hasta: mes.hasta }) : [],
+      ver.gastos ? s.repos.gastos.listar({ estado: 'revisar' }).then((l) => l.length) : 0,
+      ver.presupuestos ? s.repos.presupuestosCliente.listar() : [],
+    ])
+  : [[], [], 0, []];
+// Las vencidas pueden ser de hace más de seis meses: se piden aparte.
+const emitidas = ver.facturas && s ? await s.repos.facturas.listar({ estado: 'emitida' }) : [];
+const todas = [...facturas, ...emitidas.filter((f) => !facturas.some((x) => x.id === f.id))];
+const datos: DatosInicio = { hoy: dia, facturas: todas, gastosMes, ticketsPorRevisar: revisar, presupuestos, ver };
+const cifras = kpis(datos);
+const tareas = porHacer(datos);
+const VISIBLES = 8;
+const meses = ver.facturas ? evolucion(datos) : [];
+const maximo = Math.max(...meses.map((m) => m.base), 0);
+const crear = accionesCrear(s ? menuDe(rol) : []);
+
+const eur = dinero;
+const eurCorto = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000).toLocaleString('es-ES')}\u00a0mil\u00a0€` : `${Math.round(n).toLocaleString('es-ES', { useGrouping: true })}\u00a0€`);
+const valor = (k: (typeof cifras)[number]) => (k.valor === null ? '—' : k.formato === 'euros' ? eur(k.valor) : `${k.valor}\u00a0%`);
+const ahora = new Date();
+const hora = Number(ahora.toLocaleString('es-ES', { hour: 'numeric', hour12: false, timeZone: 'Europe/Madrid' }));
+const fecha = ahora.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Madrid' });
+const nombre = (s?.usuario.nombre || '').split(' ')[0];
+---
+
+<div class="nv-inicio">
+  <div class="nv-titulo">
+    <div>
+      <p class="nv-fecha">{fecha}</p>
+      <h1>{saludo(hora)}{nombre ? `, ${nombre}` : ''}</h1>
+      <p>{tareas.length ? `Tienes ${tareas.length === 1 ? '1 cosa' : `${tareas.length} cosas`} por hacer. Empieza por la primera.` : 'No tienes nada pendiente.'}</p>
+    </div>
+  </div>
+
+  {
+    cifras.length > 0 && (
+      <section aria-labelledby="nv-cifras">
+        <h2 id="nv-cifras" class="sr-only">
+          Cifras de {mes.etiqueta}
+        </h2>
+        <ul class="nv-kpis" role="list">
+          {cifras.map((k) => (
+            <li>
+              <a href={k.href} class="nv-kpi nv-tarjeta">
+                <span class="nv-kpi-nombre">{k.nombre}</span>
+                <span class="nv-kpi-valor nv-cifra">{valor(k)}</span>
+                <span class:list={['nv-kpi-nota', k.tono === 'aviso' && 'nv-aviso', k.tono === 'bien' && 'nv-bien']}>{k.nota}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  <div class="nv-inicio-columnas">
+    <section class="nv-tarjeta nv-por-hacer" aria-labelledby="nv-por-hacer">
+      <div class="nv-cabeza-tarjeta">
+        <h2 id="nv-por-hacer">Por hacer</h2>
+        {tareas.length > 0 && <span class="nv-chip">{tareas.length}</span>}
+      </div>
+      {
+        tareas.length === 0 ? (
+          <div class="nv-vacio">
+            <span class="nv-vacio-icono" aria-hidden="true">
+              <Icono nombre="hecho" />
+            </span>
+            <p>
+              <strong>Todo al día</strong>
+              <br />
+              Cuando algo necesite tu atención (un cobro, un presupuesto que caduca…), saldrá aquí.
+            </p>
+          </div>
+        ) : (
+          <ul role="list">
+            {tareas.slice(0, VISIBLES).map((t) => (
+              <li class="nv-tarea">
+                <span class:list={['nv-punto', `nv-punto-${t.color}`]} aria-hidden="true" />
+                <span class="nv-tarea-texto">
+                  <strong>{t.titulo}</strong>
+                  <span>{t.detalle}</span>
+                </span>
+                <a href={t.href} class="nv-boton nv-boton-secundario">
+                  {t.accion}
+                  <span class="sr-only">: {t.titulo}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      {tareas.length > VISIBLES && <p class="nv-mas">Y {tareas.length - VISIBLES} más: resuelve estas primero.</p>}
+    </section>
+
+    <div class="nv-inicio-lado">
+      {
+        meses.length > 0 && (
+          <section class="nv-tarjeta nv-grafica" aria-labelledby="nv-grafica">
+            <div class="nv-cabeza-tarjeta">
+              <h2 id="nv-grafica">Facturado sin IVA</h2>
+              <span class="nv-gris">Últimos 6 meses</span>
+            </div>
+            <ol class="nv-barras" role="list">
+              {meses.map((m) => (
+                <li class:list={[m.actual && 'nv-barra-actual']} title={`${m.etiqueta}: ${eur(m.base)}`}>
+                  <span class="nv-barra-valor nv-cifra">{m.actual || m.base === maximo ? eurCorto(m.base) : ''}</span>
+                  <span class="nv-barra-hueco" aria-hidden="true">
+                    <span class="nv-barra" style={`height:${maximo > 0 ? Math.max(2, (m.base / maximo) * 100) : 2}%`} />
+                  </span>
+                  <span class="nv-barra-mes">{m.etiqueta}</span>
+                  <span class="sr-only">{eur(m.base)}</span>
+                </li>
+              ))}
+            </ol>
+            {ver.informes && (
+              <a href="/panel/informes" class="enlace-panel">
+                Ver informes
+              </a>
+            )}
+          </section>
+        )
+      }
+
+      {
+        crear.length > 0 && (
+          <section class="nv-atajos" aria-labelledby="nv-atajos">
+            <h2 id="nv-atajos">Crear</h2>
+            <ul role="list">
+              {crear.slice(0, 4).map((c) => (
+                <li>
+                  <a href={c.href} class="nv-atajo nv-tarjeta">
+                    <span class="nv-atajo-icono" aria-hidden="true">
+                      <Icono nombre={c.icono} clase="size-5" />
+                    </span>
+                    <span>
+                      <strong>{c.texto}</strong>
+                      <small>{c.descripcion}</small>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+    </div>
+  </div>
+</div>

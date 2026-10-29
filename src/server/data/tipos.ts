@@ -560,6 +560,8 @@ export interface RepositorioPresupuestosCliente {
   /** Alta con el número siguiente de la serie (correlativo, sin huecos ni repetidos). */
   crear(p: Omit<PresupuestoCliente, 'numero' | 'codigo' | 'actualizado'>, email: string): Promise<PresupuestoCliente>;
   guardar(p: PresupuestoCliente, email: string): Promise<void>;
+  /** Quita los de prueba (id `prueba-…`). Devuelve cuántos. */
+  borrarPruebas(): Promise<number>;
 }
 
 export interface Repositorios {
