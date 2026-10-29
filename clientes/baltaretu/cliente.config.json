@@ -1,0 +1,37 @@
+{
+  "id": "baltaretu",
+  "nombre": "Viveros Baltaretu",
+  "sector": "vivero",
+  "plan": "completo",
+  "dominio": null,
+  "idiomas": ["es", "en"],
+  "idiomaPorDefecto": "es",
+  "cloudflare": { "worker": "viveros-baltaretu", "d1": "viveros-baltaretu" },
+  "modulos": {
+    "catalogo": true,
+    "presupuestosWeb": true,
+    "presupuestosCliente": false,
+    "obras": false,
+    "agenda": false,
+    "proveedores": false,
+    "materiales": false,
+    "pedidosProveedor": false,
+    "facturas": true,
+    "gastos": true,
+    "informes": true,
+    "asistente": true,
+    "simulador": false,
+    "whatsapp": true
+  },
+  "iva": { "general": 10, "fijo": false },
+  "tema": {
+    "crema": "#f5efe6",
+    "papel": "#fdfaf4",
+    "verdor": "#e8e8db",
+    "oliva": "#3a4632",
+    "tinta": "#232a1d",
+    "gris": "#5e6450",
+    "terracota": "#8a6240",
+    "linea": "#d6c9b4"
+  }
+}

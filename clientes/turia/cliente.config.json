@@ -1,0 +1,27 @@
+{
+  "id": "turia",
+  "nombre": "Creaciones Turia",
+  "sector": "carpinteria",
+  "plan": "completo",
+  "dominio": null,
+  "idiomas": ["es"],
+  "idiomaPorDefecto": "es",
+  "cloudflare": { "worker": "creaciones-turia", "d1": "creaciones-turia" },
+  "modulos": {
+    "catalogo": true,
+    "presupuestosWeb": true,
+    "presupuestosCliente": true,
+    "obras": true,
+    "agenda": true,
+    "proveedores": true,
+    "materiales": true,
+    "pedidosProveedor": true,
+    "facturas": true,
+    "gastos": true,
+    "informes": true,
+    "asistente": true,
+    "simulador": true,
+    "whatsapp": true
+  },
+  "iva": { "general": 21, "fijo": true }
+}

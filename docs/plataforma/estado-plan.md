@@ -7,13 +7,14 @@ Cada sesión **empieza por aquí** y lo actualiza al cerrar cada PR. El plan est
 | PR | Estado | Notas |
 | --- | --- | --- |
 | 0.1 Documentación e inventario de acoplamientos | Fusionada (#62) | Este documento y los demás de `docs/plataforma/`. |
-| 0.2 Red de seguridad | En revisión | `tests/baseline/`: web (producción y pruebas), esquema y migración de D1, panel y asistente por rol. Ver `tests/baseline/README.md`. |
+| 0.2 Red de seguridad | Fusionada (#63) | `tests/baseline/`: web (producción y pruebas), esquema y migración de D1, panel y asistente por rol. Ver `tests/baseline/README.md`. |
+| 1.1 Configuración de clientes | En revisión | `clientes/<id>/cliente.config.json` (Baltaretu = valores de hoy; Turia en español, IVA 21 % fijo), esquema en `src/plataforma/configuracion.ts`, carga en `astro.config.mjs` (inyecta `CLIENTE_ID` y la configuración) y `clienteActual()`. Todavía no la lee ninguna página. |
 
 ## Siguiente
 
-1. **1.1** `cliente.config.json`, `CLIENTE_ID` y cargador tipado.
-2. **1.2** Módulos con guardias.
-3. **1.3** Tema por cliente.
+1. **1.2** Módulos con guardias (navegación, middleware, API y asistente) y `ProveedorDeAcceso`.
+2. **1.3** Tema por cliente.
+3. **1.4** Idiomas por cliente.
 
 ## Avisos para la próxima sesión
 

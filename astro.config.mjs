@@ -2,6 +2,11 @@
 import { defineConfig, fontProviders } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import tailwindcss from '@tailwindcss/vite';
+import { cargarCliente } from './src/plataforma/cargar.ts';
+
+// Cliente de la plataforma (docs/plataforma/plan.md). Sin CLIENTE_ID, Viveros
+// Baltaretu: el build es el de siempre. Un cliente desconocido para el build.
+const cliente = cargarCliente(process.env.CLIENTE_ID);
 
 // URL pública para canonical y hreflang. En Workers Builds es obligatoria
 // (variable de build SITE_URL): mientras no haya dominio propio, la URL *.workers.dev.
@@ -77,6 +82,9 @@ export default defineConfig({
       // prerender corre en workerd, así que se inyectan como constantes.
       'import.meta.env.WORKERS_CI_BRANCH': JSON.stringify(process.env.WORKERS_CI_BRANCH ?? ''),
       'import.meta.env.PRODUCTION_BRANCH': JSON.stringify(process.env.PRODUCTION_BRANCH ?? 'main'),
+      // Cliente del build, ya validado (src/plataforma/actual.ts).
+      'import.meta.env.CLIENTE_ID': JSON.stringify(cliente.id),
+      'import.meta.env.CLIENTE_CONFIG': JSON.stringify(JSON.stringify(cliente)),
     },
   },
 });
