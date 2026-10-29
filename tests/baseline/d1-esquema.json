@@ -1,6 +1,67 @@
 {
-  "version": 9,
+  "version": 10,
   "tablas": {
+    "adjuntos": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "ambito",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "ref",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "tipo",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "bytes",
+          "tipo": "BLOB",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "tamano",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE adjuntos ( id TEXT PRIMARY KEY, ambito TEXT NOT NULL, ref TEXT NOT NULL, tipo TEXT NOT NULL, bytes BLOB NOT NULL, tamano INTEGER NOT NULL, creado TEXT NOT NULL, creado_por TEXT NOT NULL )"
+    },
     "ajustes_privados": {
       "columnas": [
         {
@@ -750,6 +811,74 @@
       ],
       "sql": "CREATE TABLE inventario_movimientos ( id INTEGER PRIMARY KEY AUTOINCREMENT, planta TEXT NOT NULL, tipo TEXT NOT NULL CHECK (tipo IN ('entrada', 'salida', 'baja')), cantidad INTEGER NOT NULL, motivo TEXT NOT NULL, nota TEXT NOT NULL DEFAULT '', referencia TEXT, fecha TEXT NOT NULL, email TEXT NOT NULL )"
     },
+    "portafolio": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "titulo",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "categoria",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "orden",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "archivado",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE portafolio ( id TEXT PRIMARY KEY, titulo TEXT NOT NULL, categoria TEXT NOT NULL DEFAULT '', datos TEXT NOT NULL, orden INTEGER NOT NULL DEFAULT 0, archivado INTEGER NOT NULL DEFAULT 0, creado TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL )"
+    },
     "presupuestos": {
       "columnas": [
         {
@@ -975,6 +1104,11 @@
     }
   },
   "indices": [
+    {
+      "nombre": "adjuntos_ref",
+      "tabla": "adjuntos",
+      "sql": "CREATE INDEX adjuntos_ref ON adjuntos (ambito, ref)"
+    },
     {
       "nombre": "asistente_conversaciones_email",
       "tabla": "asistente_conversaciones",

@@ -14,13 +14,14 @@ Cada sesión **empieza por aquí** y lo actualiza al cerrar cada PR. El plan est
 | 1.3 Tema por cliente | Fusionada (#68) | `src/plataforma/tema.ts` y `TemaCliente.astro`: si los colores del cliente no son los del núcleo, un `<style>` con `html:root` en la cabecera (gana a `@theme`). Turia con colores provisionales en tonos madera (T-18). `tests/tokens.test.ts` recorre todos los clientes. Pendiente: colores del PDF por cliente, en 3.2 (tocarlos ahora cambiaría el JS de Baltaretu). |
 | 1.4 Web pública por cliente | Fusionada (#69) | `webPublica: false` (Turia): del build solo queda el panel, la portada lleva a `/panel` y robots bloquea todo. El idioma único con web pública queda aplazado hasta que haga falta. |
 | 1.5 Vocabulario por sector | Fusionada (#70) | `paquetes-sector/<sector>/vocabulario.ts` (título del panel, nombre del asistente y zona del catálogo) y `marca` en la configuración (nombre corto y monograma, o iniciales). Las pantallas y herramientas de plantas, inventario y fotos son del sector vivero: en Turia no existen. Turia: «Creaciones Turia», «Panel de la carpintería», «Asistente». Pendiente para 3.11: el nombre dentro del chat del asistente (está en su script del navegador). |
-| 1.6 (rehecha) Sin web pública, sin zona «Web» | En revisión | En clientes sin `webPublica`: no hay textos, publicar ni cambios, ni sus herramientas, ni `/api/contenido/*`. Los tipos de contenido declarativos quedan aplazados hasta que un cliente con web pública los necesite. **F1 terminada.** |
+| 1.6 (rehecha) Sin web pública, sin zona «Web» | Fusionada (#71) | En clientes sin `webPublica`: no hay textos, publicar ni cambios, ni sus herramientas, ni `/api/contenido/*`. Los tipos de contenido declarativos quedan aplazados hasta que un cliente con web pública los necesite. **F1 terminada.** |
+| 2.1 Portafolio privado: datos | En revisión | **Migración 10** (`adjuntos` y `portafolio`, solo aditiva: la base de la versión 9 migra sin pérdidas). Repositorios en `src/server/data/d1/portafolio.ts`; reglas en `src/server/portafolio/portafolio.ts` (validación; fotos de antes y después comprobadas por sus bytes, como mucho 1,9 MB y 8 por lado; nunca en `fotos`). |
 
 ## Siguiente
 
-1. **2.1** Portafolio privado: proyectos y fotos (migración 10).
-2. **2.2** Pantallas del portafolio con el comparador antes/después.
-3. **3.1** Presupuestos a cliente con PDF y paso a factura.
+1. **2.2** Pantallas del portafolio con el comparador antes/después (y datos de ejemplo para Turia).
+2. **3.1** Presupuestos a cliente con PDF y paso a factura (migración 11).
+3. **3.2** Clientes y facturas con IVA fijo.
 
 ## Avisos para la próxima sesión
 
@@ -32,7 +33,7 @@ Cada sesión **empieza por aquí** y lo actualiza al cerrar cada PR. El plan est
 
 - Si una comprobación de `tests/baseline/` falla, **se para**: o es un error o es un cambio que tiene que aprobar el propietario (`npm run baseline:actualizar` solo entonces).
 
-- La próxima migración es la **10** ([D-01](discrepancias.md)).
+- La próxima migración es la **11** (la 10 es la del portafolio).
 - Decisiones del propietario del 29-10-2026 en `preguntas.md` («Respuestas»): pasar a Workers Paid más adelante, cupo de IA pensado sobre todo para Turia, datos de Baltaretu en D1 desechables, Turia = `creacionesturia` y no fusionar la PR 61.
 - `developers.cloudflare.com` no se puede abrir desde la sesión. Las cifras van «por confirmar» ([P-07](preguntas.md)).
 - Prettier no tiene configuración en el repositorio. **No se pasa a archivos existentes**: reformatea todo ([D-15](discrepancias.md)).

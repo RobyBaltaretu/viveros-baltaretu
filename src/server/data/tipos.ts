@@ -454,6 +454,48 @@ export interface RepositorioInventario {
   borrarPruebas(): Promise<number>;
 }
 
+/** Proyecto del portafolio privado (carpintería): lo ve solo el negocio. */
+export interface ProyectoPortafolio {
+  id: string;
+  titulo: string;
+  categoria: string;
+  descripcion: string;
+  materiales: string;
+  anio: number | null;
+  localidad: string;
+  /** Fotos de antes y de después de la reforma (ids de `adjuntos`). */
+  antes: string[];
+  despues: string[];
+  destacado: boolean;
+  orden: number;
+  archivado: boolean;
+  actualizado: string;
+}
+
+export interface RepositorioPortafolio {
+  listar(opciones?: { incluirArchivados?: boolean }): Promise<ProyectoPortafolio[]>;
+  obtener(id: string): Promise<ProyectoPortafolio | null>;
+  guardar(p: Omit<ProyectoPortafolio, 'actualizado' | 'archivado'>, email: string): Promise<void>;
+  archivar(id: string, archivado: boolean, email: string): Promise<boolean>;
+}
+
+/** Archivo privado (foto del portafolio…): nunca se publica ni pasa por el build. */
+export interface Adjunto {
+  id: string;
+  ambito: string;
+  ref: string;
+  tipo: string;
+  tamano: number;
+  creado: string;
+}
+
+export interface RepositorioAdjuntos {
+  guardar(a: { id: string; ambito: string; ref: string; tipo: string; bytes: Uint8Array }, email: string): Promise<void>;
+  obtener(id: string): Promise<(Adjunto & { bytes: Uint8Array }) | null>;
+  listar(ambito: string, ref: string): Promise<Adjunto[]>;
+  borrar(id: string): Promise<boolean>;
+}
+
 export interface Repositorios {
   contenido: RepositorioContenido;
   fotos: RepositorioFotos;
@@ -469,4 +511,6 @@ export interface Repositorios {
   tickets: RepositorioTickets;
   conversaciones: RepositorioConversaciones;
   inventario: RepositorioInventario;
+  portafolio: RepositorioPortafolio;
+  adjuntos: RepositorioAdjuntos;
 }

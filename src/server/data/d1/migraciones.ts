@@ -223,6 +223,35 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       `CREATE UNIQUE INDEX inventario_referencia ON inventario_movimientos (referencia) WHERE referencia IS NOT NULL`,
     ],
   },
+  {
+    version: 10,
+    nombre: 'portafolio y adjuntos',
+    sql: [
+      // Archivos privados (fotos del portafolio, más adelante de obras): nunca se publican.
+      `CREATE TABLE adjuntos (
+        id TEXT PRIMARY KEY,
+        ambito TEXT NOT NULL,
+        ref TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        bytes BLOB NOT NULL,
+        tamano INTEGER NOT NULL,
+        creado TEXT NOT NULL,
+        creado_por TEXT NOT NULL
+      )`,
+      `CREATE INDEX adjuntos_ref ON adjuntos (ambito, ref)`,
+      `CREATE TABLE portafolio (
+        id TEXT PRIMARY KEY,
+        titulo TEXT NOT NULL,
+        categoria TEXT NOT NULL DEFAULT '',
+        datos TEXT NOT NULL,
+        orden INTEGER NOT NULL DEFAULT 0,
+        archivado INTEGER NOT NULL DEFAULT 0,
+        creado TEXT NOT NULL,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL
+      )`,
+    ],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

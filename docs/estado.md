@@ -89,3 +89,4 @@ Peticiones del propietario: publicación automática, facturas, control de gasto
 - Clientes sin web pública (PR 1.4): con `webPublica: false` (Turia) el build solo deja el panel.
 - Vocabulario y marca por sector (PR 1.5): el panel de Turia dice «Creaciones Turia» y «Panel de la carpintería», y no tiene las pantallas de plantas; el de Baltaretu no cambia.
 - Sin web pública, sin zona «Web» en el panel (PR 1.6): Turia no ve textos, publicar ni cambios. Con esto acaban los cimientos multicliente (F1).
+- Portafolio privado, datos (PR 2.1): migración 10 (`adjuntos` y `portafolio`). Las fotos de antes y después son privadas y nunca se publican.
