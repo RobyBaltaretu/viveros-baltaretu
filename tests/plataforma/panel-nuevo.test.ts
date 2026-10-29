@@ -25,8 +25,7 @@ describe('diseño nuevo del panel', () => {
     expect(grupos[0]!.secciones.map((s) => s.href)).toEqual(['/panel', '/panel/asistente']);
     const ventas = grupos.find((g) => g.texto === 'Ventas');
     expect(ventas?.secciones.map((s) => s.texto)).toEqual(['Presupuestos', 'Facturas', 'Clientes']);
-    // Un grupo de una sección con su mismo nombre no repite el rótulo.
-    expect(grupos.find((g) => g.secciones.some((s) => s.href === '/panel/portafolio'))?.texto).toBe('');
+    expect(grupos.find((g) => g.texto === 'Taller')?.secciones.map((s) => s.texto)).toEqual(['Catálogo', 'Portafolio']);
   });
 
   it('«Crear» solo ofrece lo que el rol puede usar', () => {
@@ -36,6 +35,7 @@ describe('diseño nuevo del panel', () => {
       '/panel/facturas/nueva',
       '/panel/gastos/nuevo',
       '/panel/facturas/clientes/nuevo',
+      '/panel/catalogo/articulos/nuevo',
       '/panel/portafolio/nuevo',
     ]);
     expect(accionesCrear(menuDe('editor')).map((a) => a.href)).not.toContain('/panel/facturas/nueva');
@@ -44,7 +44,7 @@ describe('diseño nuevo del panel', () => {
   it('barra del móvil: Inicio, Ventas, Crear, la zona del sector y Más', () => {
     cliente('turia');
     const p = pestanasMovil(zonasDe('propietario'), 'ventas', false, true);
-    expect(p.map((x) => (x.tipo === 'crear' ? '+' : x.texto))).toEqual(['Inicio', 'Ventas', '+', 'Portafolio', 'Más']);
+    expect(p.map((x) => (x.tipo === 'crear' ? '+' : x.texto))).toEqual(['Inicio', 'Ventas', '+', 'Taller', 'Más']);
     expect(p.find((x) => x.tipo === 'enlace' && x.activa)).toMatchObject({ texto: 'Ventas' });
     // Una sección que no está en la barra marca «Más».
     expect(pestanasMovil(zonasDe('propietario'), 'cuentas', false, true).at(-1)).toMatchObject({ texto: 'Más', activa: true });

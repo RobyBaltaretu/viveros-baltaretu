@@ -1,0 +1,238 @@
+---
+/**
+ * Alta (`/panel/catalogo/articulos/nuevo`) o cambio de un artículo del
+ * catálogo. El precio de venta se ve mientras se escribe (coste + margen, o
+ * uno fijo). Los números se escriben a la española («12,50», «1.250»).
+ */
+import Mensajes from '../../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { CATEGORIAS, categoria, guardarArticulo, MARGEN_PROPUESTO, NOMBRE_UNIDAD, UNIDADES, type EntradaArticulo } from '../../../../server/catalogo/catalogo.ts';
+import type { ArticuloCatalogo } from '../../../../server/data/tipos.ts';
+import { campo, sesionCon } from '../../../../server/panel/pagina.ts';
+import { numero } from '../../../../server/presupuestos-cliente/formulario.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+const id = Astro.params.id ?? '';
+const nuevo = id === 'nuevo';
+const guardado: ArticuloCatalogo | null = s && !nuevo ? await s.repos.catalogo.articulo(id) : null;
+if (s && !nuevo && !guardado) return new Response('No existe', { status: 404 });
+
+const cat0 = categoria(Astro.url.searchParams.get('categoria') ?? '') ?? CATEGORIAS[0]!;
+let v: Record<string, string> = guardado
+  ? {
+      categoria: guardado.categoria,
+      nombre: guardado.nombre,
+      unidad: guardado.unidad,
+      coste: guardado.coste ? String(guardado.coste).replace('.', ',') : '',
+      merma: String(guardado.merma).replace('.', ','),
+      margen: String(guardado.margen).replace('.', ','),
+      precioFijo: guardado.precioFijo === null ? '' : String(guardado.precioFijo).replace('.', ','),
+      referencia: guardado.referencia,
+      proveedor: guardado.proveedor,
+      espesor: guardado.espesor === null ? '' : String(guardado.espesor).replace('.', ','),
+      acabado: guardado.acabado,
+      notas: guardado.notas,
+    }
+  : { categoria: cat0.id, nombre: '', unidad: cat0.unidad, coste: '', merma: String(cat0.merma), margen: String(MARGEN_PROPUESTO), precioFijo: '', referencia: '', proveedor: '', espesor: '', acabado: '', notas: '' };
+let error = '';
+if (s && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  if (form.get('accion') === 'archivar' && guardado) {
+    await s.repos.catalogo.archivarArticulo(guardado.id, true, s.usuario.email);
+    return Astro.redirect('/panel/catalogo?ver=articulos&hecho=archivado', 303);
+  }
+  v = Object.fromEntries(Object.keys(v).map((k) => [k, campo(form, k)]));
+  const n = (k: string) => numero(v[k]!);
+  const entrada: EntradaArticulo = {
+    ...(guardado ? { id: guardado.id } : {}),
+    categoria: v.categoria!,
+    nombre: v.nombre!,
+    unidad: v.unidad as EntradaArticulo['unidad'],
+    coste: n('coste') ?? 0,
+    merma: n('merma') ?? 0,
+    margen: n('margen') ?? 0,
+    precioFijo: n('precioFijo'),
+    referencia: v.referencia,
+    proveedor: v.proveedor,
+    espesor: n('espesor'),
+    acabado: v.acabado,
+    notas: v.notas,
+  };
+  const r = await guardarArticulo(s.repos, entrada, s.usuario.email);
+  if (r.ok) return Astro.redirect(`/panel/catalogo?ver=articulos&categoria=${r.valor.categoria}&hecho=guardado`, 303);
+  error = r.error;
+  Astro.response.status = 400;
+}
+const titulo = guardado ? guardado.nombre : 'Nuevo artículo';
+---
+
+<PaginaPanel titulo={titulo} permiso="facturas" volver="/panel/catalogo?ver=articulos">
+  <div class="nv-titulo">
+    <div>
+      <h1>{titulo}</h1>
+      <p>{guardado ? `${categoria(guardado.categoria)?.nombre ?? ''}` : 'Un material, un herraje, una hora de trabajo o un servicio, con lo que te cuesta y lo que cobras.'}</p>
+    </div>
+  </div>
+  <Mensajes errores={error ? [{ campo: 'articulo', mensaje: error }] : []} />
+
+  <form method="post" id="form-articulo" novalidate>
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="que-es">
+      <h2 id="que-es">Qué es</h2>
+      <div class="nv-rejilla nv-rejilla-2">
+        <label class="nv-campo">
+          Categoría
+          <select name="categoria" class="campo-panel" data-categoria>
+            {
+              CATEGORIAS.map((c) => (
+                <option value={c.id} selected={c.id === v.categoria} data-unidad={c.unidad} data-merma={c.merma}>
+                  {c.nombre}
+                </option>
+              ))
+            }
+          </select>
+        </label>
+        <label class="nv-campo">
+          Nombre
+          <input name="nombre" value={v.nombre} class="campo-panel" required maxlength="120" placeholder="Por ejemplo: Melamina blanca 19 mm" />
+        </label>
+        <label class="nv-campo">
+          Unidad
+          <select name="unidad" class="campo-panel" data-unidad>
+            {
+              UNIDADES.map((u) => (
+                <option value={u} selected={u === v.unidad}>
+                  {u} ({NOMBRE_UNIDAD[u]})
+                </option>
+              ))
+            }
+          </select>
+        </label>
+        <label class="nv-campo">
+          Color, textura o acabado <small>(opcional)</small>
+          <input name="acabado" value={v.acabado} class="campo-panel" maxlength="80" placeholder="Por ejemplo: Roble natural" />
+        </label>
+        <label class="nv-campo">
+          Espesor <small>(opcional)</small>
+          <span class="nv-con-unidad">
+            <input name="espesor" value={v.espesor} class="campo-panel" inputmode="decimal" />
+            <span aria-hidden="true">mm</span>
+          </span>
+        </label>
+      </div>
+    </section>
+
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="precio">
+      <h2 id="precio">Precio</h2>
+      <div class="nv-rejilla nv-rejilla-3">
+        <label class="nv-campo">
+          Coste por <span data-texto-unidad>{v.unidad}</span>
+          <small>Lo que te cuesta, sin IVA</small>
+          <span class="nv-con-unidad">
+            <input name="coste" value={v.coste} class="campo-panel" inputmode="decimal" placeholder="0,00" data-calc />
+            <span aria-hidden="true">€</span>
+          </span>
+        </label>
+        <label class="nv-campo">
+          Margen
+          <small>Lo que ganas sobre el coste</small>
+          <span class="nv-con-unidad">
+            <input name="margen" value={v.margen} class="campo-panel" inputmode="decimal" data-calc />
+            <span aria-hidden="true">%</span>
+          </span>
+        </label>
+        <label class="nv-campo">
+          Merma
+          <small>Lo que se pierde al cortar</small>
+          <span class="nv-con-unidad">
+            <input name="merma" value={v.merma} class="campo-panel" inputmode="decimal" data-merma />
+            <span aria-hidden="true">%</span>
+          </span>
+        </label>
+        <label class="nv-campo">
+          Precio de venta fijo <small>(opcional; si lo pones, no se usa el margen)</small>
+          <span class="nv-con-unidad">
+            <input name="precioFijo" value={v.precioFijo} class="campo-panel" inputmode="decimal" data-calc />
+            <span aria-hidden="true">€</span>
+          </span>
+        </label>
+      </div>
+      <p class="nv-caja-aviso nv-caja-info" aria-live="polite">
+        <span>Precio de venta: <strong data-precio>—</strong> por <span data-texto-unidad>{v.unidad}</span>, sin IVA.</span>
+      </p>
+    </section>
+
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="compra">
+      <h2 id="compra">Dónde lo compras <small class="nv-gris">(opcional)</small></h2>
+      <div class="nv-rejilla nv-rejilla-2">
+        <label class="nv-campo">
+          Proveedor
+          <input name="proveedor" value={v.proveedor} class="campo-panel" maxlength="80" />
+        </label>
+        <label class="nv-campo">
+          Referencia del proveedor
+          <input name="referencia" value={v.referencia} class="campo-panel" maxlength="60" />
+        </label>
+        <label class="nv-campo nv-ancho-todo">
+          Notas
+          <textarea name="notas" class="campo-panel" rows="2" maxlength="500">{v.notas}</textarea>
+        </label>
+      </div>
+    </section>
+
+    <div class="nv-acciones">
+      <button class="nv-boton">Guardar el artículo</button>
+      <a href="/panel/catalogo?ver=articulos" class="nv-boton nv-boton-secundario">Cancelar</a>
+    </div>
+  </form>
+  {
+    guardado && (
+      <form method="post" class="nv-acciones">
+        <input type="hidden" name="accion" value="archivar" />
+        <button class="enlace-panel nv-enlace-boton">
+          Archivar este artículo
+        </button>
+        <span class="nv-gris">Deja de salir en el catálogo; los presupuestos hechos no cambian.</span>
+      </form>
+    )
+  }
+</PaginaPanel>
+
+<script is:inline data-nuevo={nuevo ? '1' : ''}>
+  (() => {
+    const f = document.getElementById('form-articulo');
+    if (!f) return;
+    const nuevo = document.currentScript?.dataset.nuevo === '1';
+    // Números a la española: «1.250,50», «12,5», «12.5».
+    const num = (t) => {
+      const l = String(t).trim().replace(/\s|€|%/g, '');
+      if (!l) return null;
+      if (l.includes(',')) return Number(l.replace(/\./g, '').replace(',', '.'));
+      return Number(/^-?\d{1,3}(\.\d{3})+$/.test(l) ? l.replace(/\./g, '') : l);
+    };
+    const eur = (n) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true }) + ' €';
+    const salida = f.querySelector('[data-precio]');
+    const calcular = () => {
+      const fijo = num(f.precioFijo.value);
+      const coste = num(f.coste.value);
+      const margen = num(f.margen.value) ?? 0;
+      const p = fijo !== null && Number.isFinite(fijo) ? fijo : coste !== null && Number.isFinite(coste) && Number.isFinite(margen) ? Math.round(coste * (1 + margen / 100) * 100) / 100 : null;
+      salida.textContent = p === null ? '—' : eur(p);
+    };
+    const unidad = () => f.querySelectorAll('[data-texto-unidad]').forEach((e) => (e.textContent = f.unidad.value));
+    f.addEventListener('input', (e) => {
+      if (e.target.matches('[data-calc]')) calcular();
+    });
+    f.unidad.addEventListener('change', unidad);
+    // En un artículo nuevo, la categoría propone su unidad y su merma.
+    f.categoria.addEventListener('change', () => {
+      if (!nuevo) return;
+      const o = f.categoria.selectedOptions[0];
+      f.unidad.value = o.dataset.unidad;
+      f.merma.value = o.dataset.merma;
+      unidad();
+    });
+    calcular();
+  })();
+</script>

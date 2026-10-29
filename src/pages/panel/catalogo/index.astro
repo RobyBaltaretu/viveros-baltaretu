@@ -1,0 +1,211 @@
+---
+/**
+ * Catálogo de la carpintería: los trabajos (plantillas con su escandallo) y
+ * los artículos (materiales, herrajes, acabados, horas y servicios) con su
+ * coste y precio. Privado: solo propietario y gerente.
+ */
+import Mensajes from '../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import Icono from '../../../components/panel/ui/Icono.astro';
+import { CATEGORIAS, precioVenta, sinPrecio } from '../../../server/catalogo/catalogo.ts';
+import { cargarCatalogoDePartida } from '../../../server/catalogo/partida.ts';
+import { dinero } from '../../../server/facturas/importes.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+if (s && Astro.request.method === 'POST') {
+  const r = await cargarCatalogoDePartida(s.repos, s.usuario.email);
+  return Astro.redirect(`/panel/catalogo?hecho=partida&a=${r.articulos}&p=${r.plantillas}`, 303);
+}
+const url = Astro.url.searchParams;
+const [articulos, plantillas] = s ? await Promise.all([s.repos.catalogo.articulos(), s.repos.catalogo.plantillas()]) : [[], []];
+const faltan = articulos.filter(sinPrecio);
+const ver = url.get('ver') === 'articulos' || url.get('ver') === 'sin-precio' ? url.get('ver')! : 'trabajos';
+const q = (url.get('q') ?? '').trim();
+const cat = url.get('categoria') ?? '';
+const normal = (t: string) =>
+  t
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+const lista = articulos.filter((a) => (ver !== 'sin-precio' || sinPrecio(a)) && (!cat || a.categoria === cat) && (!q || normal(`${a.nombre} ${a.referencia} ${a.proveedor} ${a.acabado}`).includes(normal(q))));
+const porCategoria = CATEGORIAS.map((c) => ({ c, articulos: lista.filter((a) => a.categoria === c.id) })).filter((g) => g.articulos.length);
+const porId = new Map(articulos.map((a) => [a.id, a]));
+const faltanEn = (p: (typeof plantillas)[number]) => {
+  const ids = [...p.componentes.flatMap((c) => ('id' in c.articulo ? [c.articulo.id] : [])), ...p.opciones.flatMap((o) => (o.defecto ? [o.defecto] : []))];
+  return ids.some((id) => {
+    const a = porId.get(id);
+    return !a || sinPrecio(a);
+  });
+};
+const hecho = url.get('hecho') === 'partida' ? `Catálogo de partida cargado: ${url.get('p')} trabajos y ${url.get('a')} artículos. Ahora pon tus precios.` : url.get('hecho') === 'precios' ? `Precios guardados (${url.get('n')}).` : url.get('hecho') === 'archivado' ? 'Artículo archivado: ya no sale en el catálogo.' : undefined;
+const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
+---
+
+<PaginaPanel titulo="Catálogo" permiso="facturas" ancho="amplio">
+  <div class="nv-titulo">
+    <div>
+      <h1>Catálogo</h1>
+      <p>Lo que haces, lo que usas y lo que cuesta. Es privado: los costes y márgenes nunca salen en los presupuestos.</p>
+    </div>
+    {
+      articulos.length > 0 && (
+        <a href="/panel/catalogo/articulos/nuevo" class="nv-boton nv-boton-secundario">
+          <Icono nombre="nuevo" />
+          Nuevo artículo
+        </a>
+      )
+    }
+  </div>
+  <Mensajes hecho={hecho} />
+
+  {
+    articulos.length === 0 && plantillas.length === 0 ? (
+      <section class="nv-tarjeta nv-seccion" aria-labelledby="empezar">
+        <h2 id="empezar">Empieza con el catálogo de una carpintería</h2>
+        <p>
+          Te cargamos 9 trabajos completos (armario empotrado de correderas y abatible, vestidor, cocina, puerta de paso, mueble a medida, mueble de baño, revestimiento y tarima) con todo lo que lleva cada uno: tableros,
+          cantos, herrajes, acabados, horas de taller y de montaje y transporte. Y los 48 artículos que usan, <strong>sin precios</strong>: los pones tú.
+        </p>
+        <div class="nv-acciones">
+          <form method="post">
+            <button class="nv-boton">Cargar el catálogo de partida</button>
+          </form>
+          <a href="/panel/catalogo/articulos/nuevo" class="nv-boton nv-boton-secundario">
+            O empezar con un artículo
+          </a>
+        </div>
+      </section>
+    ) : (
+      <>
+        {faltan.length > 0 && (
+          <p class="nv-caja-aviso">
+            <span>
+              <strong>{faltan.length === 1 ? 'Falta el precio de 1 artículo.' : `Faltan los precios de ${faltan.length} artículos.`}</strong> Sin ellos, los trabajos que los usan no dan un precio completo.
+            </span>
+            <a href="/panel/catalogo/precios" class="nv-boton">
+              Poner los precios
+            </a>
+          </p>
+        )}
+
+        <nav class="nv-pestanas" aria-label="Partes del catálogo">
+          <a href="/panel/catalogo" aria-current={ver === 'trabajos' ? 'page' : undefined}>
+            Trabajos <span class="nv-chip">{plantillas.length}</span>
+          </a>
+          <a href="/panel/catalogo?ver=articulos" aria-current={ver === 'articulos' ? 'page' : undefined}>
+            Artículos <span class="nv-chip">{articulos.length}</span>
+          </a>
+          {faltan.length > 0 && (
+            <a href="/panel/catalogo?ver=sin-precio" aria-current={ver === 'sin-precio' ? 'page' : undefined}>
+              Sin precio <span class="nv-chip nv-chip-naranja">{faltan.length}</span>
+            </a>
+          )}
+        </nav>
+
+        {ver === 'trabajos' ? (
+          plantillas.length === 0 ? (
+            <p>Todavía no hay trabajos. Carga el catálogo de partida para tener los más habituales.</p>
+          ) : (
+            <ul class="nv-trabajos" role="list">
+              {plantillas.map((p) => (
+                <li>
+                  <article class="nv-tarjeta nv-trabajo">
+                    <span class="nv-tipo-trabajo">{p.tipoTrabajo || 'Otros'}</span>
+                    <h3>{p.nombre}</h3>
+                    <p>{p.descripcion}</p>
+                    <div class="nv-etiquetas">
+                      <span class="nv-chip">{p.componentes.length} partes</span>
+                      <span class="nv-chip">{p.parametros.length} medidas</span>
+                      {faltanEn(p) && <span class="nv-chip nv-chip-naranja">Faltan precios</span>}
+                    </div>
+                    <a href={`/panel/catalogo/plantillas/${p.id}`} class="nv-boton">
+                      <Icono nombre="calcular" />
+                      Calcular el precio
+                      <span class="sr-only">: {p.nombre}</span>
+                    </a>
+                  </article>
+                </li>
+              ))}
+            </ul>
+          )
+        ) : (
+          <>
+            <form method="get" class="nv-filtros" role="search">
+              <input type="hidden" name="ver" value={ver} />
+              <label class="nv-campo">
+                Buscar
+                <input type="search" name="q" value={q} class="campo-panel" placeholder="Nombre, referencia, proveedor…" />
+              </label>
+              <label class="nv-campo">
+                Categoría
+                <select name="categoria" class="campo-panel">
+                  <option value="">Todas</option>
+                  {CATEGORIAS.map((c) => (
+                    <option value={c.id} selected={c.id === cat}>
+                      {c.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button class="nv-boton nv-boton-secundario">Buscar</button>
+            </form>
+            {porCategoria.length === 0 ? (
+              <p>Nada con esa búsqueda.</p>
+            ) : (
+              <div class="nv-tarjeta nv-tabla-caja" tabindex="0" role="region" aria-label="Artículos">
+                <table class="nv-tabla">
+                  <caption class="sr-only">Artículos del catálogo, por categoría</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Artículo</th>
+                      <th scope="col">Unidad</th>
+                      <th scope="col" class="nv-num">
+                        Coste
+                      </th>
+                      <th scope="col" class="nv-num">
+                        Merma
+                      </th>
+                      <th scope="col" class="nv-num">
+                        Margen
+                      </th>
+                      <th scope="col" class="nv-num">
+                        Precio de venta
+                      </th>
+                    </tr>
+                  </thead>
+                  {porCategoria.map((g) => (
+                    <tbody>
+                      <tr class="nv-grupo-fila">
+                        <th scope="colgroup" colspan="6">
+                          {g.c.nombre}
+                        </th>
+                      </tr>
+                      {g.articulos.map((a) => (
+                        <tr>
+                          <td>
+                            <a href={`/panel/catalogo/articulos/${a.id}`}>{a.nombre}</a>
+                            {(a.acabado || a.proveedor) && <small>{[a.acabado, a.proveedor].filter(Boolean).join(' · ')}</small>}
+                          </td>
+                          <td>{a.unidad}</td>
+                          <td class="nv-num">{sinPrecio(a) ? <span class="nv-chip nv-chip-naranja">Sin precio</span> : dinero(a.coste)}</td>
+                          <td class="nv-num">{a.merma ? pct(a.merma) : '—'}</td>
+                          <td class="nv-num">{a.precioFijo !== null ? 'Fijo' : pct(a.margen)}</td>
+                          <td class="nv-num">
+                            <strong>{sinPrecio(a) ? '—' : dinero(precioVenta(a))}</strong>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  ))}
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </>
+    )
+  }
+</PaginaPanel>

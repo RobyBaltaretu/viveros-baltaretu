@@ -23,8 +23,9 @@ describe('vocabulario y marca por sector', () => {
     expect(clienteActual().marca).toEqual({ nombreCorto: 'Creaciones Turia', monograma: null });
     for (const r of ['/panel/plantas', '/panel/inventario', '/panel/fotos', '/api/panel/foto']) expect(rutaDisponible(r), r).toBe(false);
     expect(rutaDisponible('/panel/facturas')).toBe(true);
-    // La zona del catálogo es el portafolio privado, con su única pantalla.
-    expect(zonasDe('propietario').find((z) => z.zona === 'plantas')).toMatchObject({ texto: 'Portafolio', href: '/panel/portafolio', secciones: [expect.objectContaining({ href: '/panel/portafolio' })] });
+    // La zona del sector es el taller: el catálogo con precios y el portafolio privado.
+    expect(zonasDe('propietario').find((z) => z.zona === 'plantas')).toMatchObject({ texto: 'Taller', href: '/panel/catalogo', secciones: [expect.objectContaining({ href: '/panel/catalogo' }), expect.objectContaining({ href: '/panel/portafolio' })] });
+    expect(rutaDisponible('/panel/catalogo/plantillas/armario-correderas')).toBe(true);
     expect(rutaDisponible('/panel/portafolio/abc/fotos')).toBe(true);
     expect(zonasDe('editor').map((z) => z.zona)).not.toContain('plantas');
     expect(zonasDe('propietario').find((z) => z.zona === 'asistente')?.texto).toBe('Asistente');

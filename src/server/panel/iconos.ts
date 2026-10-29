@@ -1,6 +1,8 @@
 import {
   ArrowLeft,
   Bell,
+  BookOpen,
+  Calculator,
   CalendarDays,
   Camera,
   ChartColumn,
@@ -77,6 +79,8 @@ export const ICONOS = {
   cerrar: interior(X),
   borrar: interior(Trash2),
   inventario: interior(Package),
+  catalogo: interior(BookOpen),
+  calcular: interior(Calculator),
   descargar: interior(Download),
 } as const;
 

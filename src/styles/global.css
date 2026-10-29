@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 /* El diseño nuevo del panel lleva su CSS en línea: Tailwind no lo mira (así no cambia el CSS de la web). */
 @source not '../panel-nuevo';
+@source not '../pages/panel/catalogo';
 
 /*
  * Sistema de diseño con la identidad visual de Viveros Baltaretu: crema de fondo,
