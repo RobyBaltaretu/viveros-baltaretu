@@ -73,8 +73,11 @@ const deCategoria = (cats: string[]) => articulos.filter((a) => cats.includes(a.
             <h1>{plantilla.nombre}</h1>
             <p>{plantilla.descripcion}</p>
           </div>
+          <a href={`/panel/catalogo/plantillas/${plantilla.id}/editar`} class="nv-boton nv-boton-secundario">
+            Editar el trabajo
+          </a>
         </div>
-        <Mensajes errores={error ? [{ campo: 'presupuesto', mensaje: error }] : []} />
+        <Mensajes hecho={Astro.url.searchParams.get('hecho') === 'guardada' ? 'Trabajo guardado. Pruébalo con unas medidas.' : undefined} errores={error ? [{ campo: 'presupuesto', mensaje: error }] : []} />
 
         <p class="sr-only" aria-live="polite" id="anuncio-precio" />
         <div class="nv-calculadora" id="calculadora">

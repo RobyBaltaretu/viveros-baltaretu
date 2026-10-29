@@ -58,3 +58,24 @@ test('artículo nuevo: el precio de venta se ve mientras se escribe', async ({ p
   await expect(page).toHaveURL(/ver=articulos&categoria=herrajes/);
   await expect(page.getByRole('link', { name: `Bisagra de prueba ${test.info().project.name}` })).toBeVisible();
 });
+
+test('editar un trabajo: duplicar, una fórmula mal escrita se explica, guardar, probar y archivar', async ({ page }) => {
+  await page.goto('/panel/catalogo/plantillas/armario-correderas/editar');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Editar «Armario empotrado de puertas correderas»');
+  await page.getByRole('button', { name: 'Duplicar para hacer otro parecido' }).click();
+  await expect(page).toHaveURL(/\/panel\/catalogo\/plantillas\/[a-z0-9-]+\/editar$/);
+  const nombre = `Armario de prueba ${test.info().project.name}`;
+  await page.getByLabel('Nombre', { exact: true }).fill(nombre);
+  await page.getByLabel('Cantidad de la parte 9 (fórmula)').fill('puertas * profundo');
+  await page.getByRole('button', { name: 'Guardar y probar' }).click();
+  await expect(page.getByRole('alert')).toContainText('No hay ninguna medida que se llame «profundo»');
+  await auditar(page);
+  await page.getByLabel('Cantidad de la parte 9 (fórmula)').fill('puertas * 2');
+  await page.getByRole('button', { name: 'Guardar y probar' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(nombre);
+  await expect(page.getByRole('status')).toContainText('Trabajo guardado');
+  await page.getByRole('link', { name: 'Editar el trabajo' }).click();
+  await page.getByRole('button', { name: 'Archivar este trabajo' }).click();
+  await expect(page).toHaveURL(/\/panel\/catalogo$/);
+  await expect(page.getByText(nombre)).toHaveCount(0);
+});

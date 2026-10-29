@@ -25,14 +25,14 @@ Cada sesión **empieza por aquí** y lo actualiza al cerrar cada PR. El plan est
 | Diseño 2: inicio con KPIs | Fusionada (#80) | `src/panel-nuevo/inicio.ts` (puro y probado) e `InicioNuevo.astro`: facturado del mes frente al anterior, por cobrar (y vencido), presupuestos en juego, aceptación de 90 días; «Por hacer» con un botón por cosa (facturas vencidas, presupuestos que caducan en 5 días, anticipos por facturar o cobrar, sin respuesta en 15 días (T-07), borradores, tickets); barras de lo facturado en seis meses. Datos de prueba propios de la carpintería (`pruebas-carpinteria.ts`), con presupuestos a cliente en la serie `PRUEBA-P…`. |
 | Catálogo A: datos y escandallo | En revisión | **Migración 12** (`catalogo_articulos` y `catalogo_plantillas`, solo aditiva). `src/server/catalogo/`: categorías (tableros, macizos, chapas, cantos, encimeras, cristal, herrajes, tiradores, accesorios, iluminación, consumibles, acabados, mano de obra, servicios), artículo con coste, merma, margen o precio fijo; plantillas paramétricas (medidas en cm → metros en las fórmulas, materiales a elegir, partes con fórmula); **fórmulas con un analizador propio** (sin `eval`); escandallo en céntimos (merma, coste, precio, margen, grupos, avisos y descripción para el presupuesto). **Catálogo de partida**: 48 artículos sin precio y 9 plantillas (armario de correderas, armario abatible, vestidor, cocina, puerta de paso, mueble a medida, mueble de baño, revestimiento y tarima); en «Datos de prueba», con precios de ejemplo. Sin pantallas todavía. |
 | Catálogo B: pantallas | En revisión | `/panel/catalogo` (zona «Taller» de Turia, con el portafolio; módulo `materiales`, solo carpintería, propietario y gerente): trabajos en tarjetas y artículos por categoría con buscador; estado vacío con «Cargar el catálogo de partida»; aviso y pestaña «Sin precio»; **«Poner los precios»** de muchos artículos a la vez; ficha de artículo con el precio de venta al escribir; **calculadora de cada trabajo** (medidas y materiales → precio, coste, margen y escandallo; se recalcula al escribir pidiendo la misma página, sin JS empaquetado; en el móvil, el precio flota sobre la barra) y **«Llevar al presupuesto»** (nuevo o un borrador; en una línea o por partes; nunca con costes). Las páginas del catálogo también quedan fuera del escaneo de Tailwind. |
+| Catálogo B2: editar trabajos | En revisión | `/panel/catalogo/plantillas/[id]/editar` (y `nueva/editar`): datos, medidas (cm o unidades, con su clave para las fórmulas, que sale del nombre), materiales que se eligen y partes con artículo y fórmula; ayuda con las claves y funciones; errores de fórmula en español antes de guardar; «Añadir más filas», «Duplicar para hacer otro parecido» y «Archivar». **Catálogo completo.** |
 
 ## Siguiente
 
 Prioridad del propietario para Turia: **KPIs, catálogo, presupuestos y facturas**, con una experiencia de uso cuidada.
 
-1. **Catálogo B2**: editar las plantillas (medidas, materiales a elegir, partes y fórmulas), duplicar una y crear una nueva.
-2. **Presupuestos v2**: editor en tabla con totales en vivo y «Añadir del catálogo».
-3. **Facturas v2** en Turia; después 3.2 (clientes con dirección de obra) y 3.4 (proveedores).
+1. **Presupuestos v2**: editor en tabla con totales en vivo y «Añadir del catálogo».
+2. **Facturas v2** en Turia; después 3.2 (clientes con dirección de obra) y 3.4 (proveedores).
 
 ## Avisos para la próxima sesión
 
