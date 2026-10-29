@@ -1,0 +1,1052 @@
+{
+ "version": 9,
+ "generado": "2026-10-29",
+ "tablas": {
+  "ajustes_privados": [
+   {
+    "clave": "modo-pruebas",
+    "valor": "{\"activo\":true,\"desde\":\"2026-10-29T11:29:54.793Z\"}",
+    "actualizado": "2026-10-29T11:29:54.800Z",
+    "actualizado_por": "propietario@example.com"
+   }
+  ],
+  "asistente_conversaciones": [
+   {
+    "id": "9cc98b78-de81-4a6f-aa88-ac29b41e2761",
+    "email": "propietario@example.com",
+    "creada": "2026-10-29T11:29:55.036Z",
+    "usada": "2026-10-29T11:29:55.107Z"
+   }
+  ],
+  "asistente_mensajes": [
+   {
+    "id": 1,
+    "conversacion": "9cc98b78-de81-4a6f-aa88-ac29b41e2761",
+    "rol": "usuario",
+    "texto": "Sube un 5 % las palmeras",
+    "propuestas": "[]",
+    "fecha": "2026-10-29T11:29:55.055Z"
+   },
+   {
+    "id": 2,
+    "conversacion": "9cc98b78-de81-4a6f-aa88-ac29b41e2761",
+    "rol": "asistente",
+    "texto": "Pulsa «Sí» para aplicarlo.",
+    "propuestas": "[\"propuesta-base\"]",
+    "fecha": "2026-10-29T11:29:55.107Z"
+   }
+  ],
+  "asistente_propuestas": [
+   {
+    "id": "propuesta-base",
+    "conversacion": "9cc98b78-de81-4a6f-aa88-ac29b41e2761",
+    "email": "propietario@example.com",
+    "herramienta": "cambiar_plantas",
+    "argumentos": "{\"familia\":\"palmeras\",\"ajustePrecio\":{\"porcentaje\":5}}",
+    "resumen": "Subir un 5 % las palmeras",
+    "estado": "pendiente",
+    "resultado": "",
+    "creada": "2026-10-29T11:29:55.081Z"
+   }
+  ],
+  "asistente_uso": [
+   {
+    "email": "propietario@example.com",
+    "dia": "2026-10-29",
+    "usos": 120
+   }
+  ],
+  "auditoria": [
+   {
+    "id": 1,
+    "fecha": "2026-10-29T11:29:53.504Z",
+    "email": "propietario@example.com",
+    "accion": "importar contenido",
+    "detalle": "21 entradas"
+   },
+   {
+    "id": 2,
+    "fecha": "2026-10-29T11:29:54.821Z",
+    "email": "propietario@example.com",
+    "accion": "datos de prueba",
+    "detalle": "cargados"
+   },
+   {
+    "id": 3,
+    "fecha": "2026-10-29T11:29:54.894Z",
+    "email": "propietario@example.com",
+    "accion": "inventario",
+    "detalle": "Yuca: +40 (Producción propia)"
+   },
+   {
+    "id": 4,
+    "fecha": "2026-10-29T11:29:54.955Z",
+    "email": "propietario@example.com",
+    "accion": "inventario",
+    "detalle": "Yuca: -2 (Otro motivo)"
+   }
+  ],
+  "cambios": [
+   {
+    "id": 1,
+    "fecha": "2026-10-29T11:29:54.329Z",
+    "email": "propietario@example.com",
+    "coleccion": "proyectos",
+    "entrada_id": "prueba-rotonda-de-acceso",
+    "antes": null,
+    "despues": "{\"datos\":{\"slug\":\"prueba-rotonda-de-acceso\",\"titulo\":{\"es\":\"Rotonda de acceso a un polígono (prueba)\",\"en\":\"Industrial estate roundabout (test)\"},\"resumen\":{\"es\":\"Palmeras y planta tapizante para una rotonda municipal.\",\"en\":\"Palms and ground cover for a municipal roundabout.\"},\"ubicacion\":\"Municipio de prueba\",\"especies\":[\"phoenix-canariensis\",\"yucca-elephantipes\"],\"fotos\":[],\"secciones\":[{\"titulo\":{\"es\":\"El encargo\",\"en\":\"The brief\"},\"texto\":{\"es\":\"Palmeras y planta tapizante para una rotonda municipal. Datos inventados para probar el panel.\",\"en\":\"Palms and ground cover for a municipal roundabout. Made-up data to try the panel.\"}}],\"seoDescripcion\":{\"es\":\"Proyecto de prueba: Palmeras y planta tapizante para una rotonda municipal.\",\"en\":\"Test project: Palms and ground cover for a municipal roundabout.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "origen": "panel",
+    "deshecho": 0
+   },
+   {
+    "id": 2,
+    "fecha": "2026-10-29T11:29:54.373Z",
+    "email": "propietario@example.com",
+    "coleccion": "proyectos",
+    "entrada_id": "prueba-patio-de-un-hotel",
+    "antes": null,
+    "despues": "{\"datos\":{\"slug\":\"prueba-patio-de-un-hotel\",\"titulo\":{\"es\":\"Patio de un hotel en la costa (prueba)\",\"en\":\"Seaside hotel courtyard (test)\"},\"resumen\":{\"es\":\"Olivos y cicas en contenedor para el patio central de un hotel.\",\"en\":\"Container olive trees and cycads for a hotel courtyard.\"},\"ubicacion\":\"Municipio de prueba\",\"especies\":[\"olivo-ornamental-copa\",\"cycas-revoluta\"],\"fotos\":[],\"secciones\":[{\"titulo\":{\"es\":\"El encargo\",\"en\":\"The brief\"},\"texto\":{\"es\":\"Olivos y cicas en contenedor para el patio central de un hotel. Datos inventados para probar el panel.\",\"en\":\"Container olive trees and cycads for a hotel courtyard. Made-up data to try the panel.\"}}],\"seoDescripcion\":{\"es\":\"Proyecto de prueba: Olivos y cicas en contenedor para el patio central de un hotel.\",\"en\":\"Test project: Container olive trees and cycads for a hotel courtyard.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "origen": "panel",
+    "deshecho": 0
+   },
+   {
+    "id": 3,
+    "fecha": "2026-10-29T11:29:54.420Z",
+    "email": "propietario@example.com",
+    "coleccion": "proyectos",
+    "entrada_id": "prueba-parque-infantil",
+    "antes": null,
+    "despues": "{\"datos\":{\"slug\":\"prueba-parque-infantil\",\"titulo\":{\"es\":\"Zona verde de un parque infantil (prueba)\",\"en\":\"Playground green area (test)\"},\"resumen\":{\"es\":\"Planta resistente y sin espinas para un parque de barrio.\",\"en\":\"Hardy, thornless plants for a neighbourhood park.\"},\"ubicacion\":\"Municipio de prueba\",\"especies\":[\"chamaerops-humilis\",\"higuera-comun\"],\"fotos\":[],\"secciones\":[{\"titulo\":{\"es\":\"El encargo\",\"en\":\"The brief\"},\"texto\":{\"es\":\"Planta resistente y sin espinas para un parque de barrio. Datos inventados para probar el panel.\",\"en\":\"Hardy, thornless plants for a neighbourhood park. Made-up data to try the panel.\"}}],\"seoDescripcion\":{\"es\":\"Proyecto de prueba: Planta resistente y sin espinas para un parque de barrio.\",\"en\":\"Test project: Hardy, thornless plants for a neighbourhood park.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "origen": "panel",
+    "deshecho": 0
+   },
+   {
+    "id": 4,
+    "fecha": "2026-10-29T11:29:54.478Z",
+    "email": "propietario@example.com",
+    "coleccion": "proyectos",
+    "entrada_id": "prueba-tienda-de-jardineria",
+    "antes": null,
+    "despues": "{\"datos\":{\"slug\":\"prueba-tienda-de-jardineria\",\"titulo\":{\"es\":\"Reposición de temporada de una jardinería (prueba)\",\"en\":\"Seasonal restock for a garden centre (test)\"},\"resumen\":{\"es\":\"Surtido variado para la temporada de primavera de una tienda.\",\"en\":\"Mixed range for a garden centre spring season.\"},\"ubicacion\":\"Municipio de prueba\",\"especies\":[\"naranjo-amargo\",\"washingtonia-robusta\"],\"fotos\":[],\"secciones\":[{\"titulo\":{\"es\":\"El encargo\",\"en\":\"The brief\"},\"texto\":{\"es\":\"Surtido variado para la temporada de primavera de una tienda. Datos inventados para probar el panel.\",\"en\":\"Mixed range for a garden centre spring season. Made-up data to try the panel.\"}}],\"seoDescripcion\":{\"es\":\"Proyecto de prueba: Surtido variado para la temporada de primavera de una tienda.\",\"en\":\"Test project: Mixed range for a garden centre spring season.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "origen": "panel",
+    "deshecho": 0
+   },
+   {
+    "id": 5,
+    "fecha": "2026-10-29T11:29:54.509Z",
+    "email": "propietario@example.com",
+    "coleccion": "guias",
+    "entrada_id": "prueba-como-regar-palmeras",
+    "antes": null,
+    "despues": "{\"datos\":{\"slug\":\"prueba-como-regar-palmeras\",\"titulo\":{\"es\":\"Cómo regar las palmeras recién plantadas (prueba)\",\"en\":\"How to water newly planted palms (test)\"},\"resumen\":{\"es\":\"Riegos de las primeras semanas para que la palmera arraigue bien.\",\"en\":\"How to water newly planted palms. Test guide.\"},\"secciones\":[{\"titulo\":{\"es\":\"Lo básico\",\"en\":\"The basics\"},\"texto\":{\"es\":\"Riegos de las primeras semanas para que la palmera arraigue bien. Texto de prueba para ver cómo queda.\",\"en\":\"Test text to see how it looks.\"}}],\"seoDescripcion\":{\"es\":\"Guía de prueba: Riegos de las primeras semanas para que la palmera arraigue bien.\",\"en\":\"Test guide: How to water newly planted palms.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "origen": "panel",
+    "deshecho": 0
+   },
+   {
+    "id": 6,
+    "fecha": "2026-10-29T11:29:54.550Z",
+    "email": "propietario@example.com",
+    "coleccion": "guias",
+    "entrada_id": "prueba-transporte-de-planta-grande",
+    "antes": null,
+    "despues": "{\"datos\":{\"slug\":\"prueba-transporte-de-planta-grande\",\"titulo\":{\"es\":\"Qué tener en cuenta al recibir el camión (prueba)\",\"en\":\"What to check when the lorry arrives (test)\"},\"resumen\":{\"es\":\"Accesos, descarga y comprobaciones al recibir un pedido.\",\"en\":\"What to check when the lorry arrives. Test guide.\"},\"secciones\":[{\"titulo\":{\"es\":\"Lo básico\",\"en\":\"The basics\"},\"texto\":{\"es\":\"Accesos, descarga y comprobaciones al recibir un pedido. Texto de prueba para ver cómo queda.\",\"en\":\"Test text to see how it looks.\"}}],\"seoDescripcion\":{\"es\":\"Guía de prueba: Accesos, descarga y comprobaciones al recibir un pedido.\",\"en\":\"Test guide: What to check when the lorry arrives.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "origen": "panel",
+    "deshecho": 0
+   },
+   {
+    "id": 7,
+    "fecha": "2026-10-29T11:29:54.583Z",
+    "email": "propietario@example.com",
+    "coleccion": "guias",
+    "entrada_id": "prueba-olivos-en-maceta",
+    "antes": null,
+    "despues": "{\"datos\":{\"slug\":\"prueba-olivos-en-maceta\",\"titulo\":{\"es\":\"Olivos en maceta: tamaño y cuidados (prueba)\",\"en\":\"Potted olive trees: size and care (test)\"},\"resumen\":{\"es\":\"Qué contenedor elegir y cómo mantener un olivo en maceta.\",\"en\":\"Potted olive trees: size and care. Test guide.\"},\"secciones\":[{\"titulo\":{\"es\":\"Lo básico\",\"en\":\"The basics\"},\"texto\":{\"es\":\"Qué contenedor elegir y cómo mantener un olivo en maceta. Texto de prueba para ver cómo queda.\",\"en\":\"Test text to see how it looks.\"}}],\"seoDescripcion\":{\"es\":\"Guía de prueba: Qué contenedor elegir y cómo mantener un olivo en maceta.\",\"en\":\"Test guide: Potted olive trees: size and care.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "origen": "panel",
+    "deshecho": 0
+   },
+   {
+    "id": 8,
+    "fecha": "2026-10-29T11:29:54.618Z",
+    "email": "propietario@example.com",
+    "coleccion": "guias",
+    "entrada_id": "prueba-mejor-epoca-para-plantar",
+    "antes": null,
+    "despues": "{\"datos\":{\"slug\":\"prueba-mejor-epoca-para-plantar\",\"titulo\":{\"es\":\"La mejor época para plantar (prueba)\",\"en\":\"The best time to plant (test)\"},\"resumen\":{\"es\":\"Cuándo conviene plantar cada familia en la zona mediterránea.\",\"en\":\"The best time to plant. Test guide.\"},\"secciones\":[{\"titulo\":{\"es\":\"Lo básico\",\"en\":\"The basics\"},\"texto\":{\"es\":\"Cuándo conviene plantar cada familia en la zona mediterránea. Texto de prueba para ver cómo queda.\",\"en\":\"Test text to see how it looks.\"}}],\"seoDescripcion\":{\"es\":\"Guía de prueba: Cuándo conviene plantar cada familia en la zona mediterránea.\",\"en\":\"Test guide: The best time to plant.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "origen": "panel",
+    "deshecho": 0
+   }
+  ],
+  "clientes": [
+   {
+    "id": "prueba-cliente-1",
+    "nombre": "Jardinería Turia SL (prueba)",
+    "nif": "B46123451",
+    "datos": "{\"id\":\"prueba-cliente-1\",\"nombre\":\"Jardinería Turia SL (prueba)\",\"nif\":\"B46123451\",\"direccion\":\"Calle de Prueba 1\",\"codigoPostal\":\"46001\",\"poblacion\":\"Valencia\",\"provincia\":\"Valencia\",\"pais\":\"España\",\"email\":\"prueba1@example.com\",\"telefono\":\"+34 600 000 001\",\"recargo\":false,\"notas\":\"Cliente de prueba\",\"archivado\":false}",
+    "archivado": 0,
+    "actualizado": "2026-10-29T11:29:53.573Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "id": "prueba-cliente-2",
+    "nombre": "Paisajes del Sur SL (prueba)",
+    "nif": "B41234568",
+    "datos": "{\"id\":\"prueba-cliente-2\",\"nombre\":\"Paisajes del Sur SL (prueba)\",\"nif\":\"B41234568\",\"direccion\":\"Avenida de Prueba 22\",\"codigoPostal\":\"41001\",\"poblacion\":\"Sevilla\",\"provincia\":\"Sevilla\",\"pais\":\"España\",\"email\":\"prueba2@example.com\",\"telefono\":\"+34 600 000 002\",\"recargo\":false,\"notas\":\"Cliente de prueba\",\"archivado\":false}",
+    "archivado": 0,
+    "actualizado": "2026-10-29T11:29:53.590Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "id": "prueba-cliente-3",
+    "nombre": "Construcciones Levante SA (prueba)",
+    "nif": "A36543213",
+    "datos": "{\"id\":\"prueba-cliente-3\",\"nombre\":\"Construcciones Levante SA (prueba)\",\"nif\":\"A36543213\",\"direccion\":\"Polígono de Prueba, nave 3\",\"codigoPostal\":\"03001\",\"poblacion\":\"Alicante\",\"provincia\":\"Alicante\",\"pais\":\"España\",\"email\":\"prueba3@example.com\",\"telefono\":\"+34 600 000 003\",\"recargo\":false,\"notas\":\"Cliente de prueba\",\"archivado\":false}",
+    "archivado": 0,
+    "actualizado": "2026-10-29T11:29:53.608Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "id": "prueba-cliente-4",
+    "nombre": "Floristería La Rosa (prueba)",
+    "nif": "12345678Z",
+    "datos": "{\"id\":\"prueba-cliente-4\",\"nombre\":\"Floristería La Rosa (prueba)\",\"nif\":\"12345678Z\",\"direccion\":\"Plaza de Prueba 4\",\"codigoPostal\":\"12001\",\"poblacion\":\"Castellón de la Plana\",\"provincia\":\"Castellón\",\"pais\":\"España\",\"email\":\"prueba4@example.com\",\"telefono\":\"+34 600 000 004\",\"recargo\":true,\"notas\":\"Cliente de prueba\",\"archivado\":false}",
+    "archivado": 0,
+    "actualizado": "2026-10-29T11:29:53.632Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "id": "prueba-cliente-5",
+    "nombre": "Garden Center Mediterráneo SL (prueba)",
+    "nif": "B30765432",
+    "datos": "{\"id\":\"prueba-cliente-5\",\"nombre\":\"Garden Center Mediterráneo SL (prueba)\",\"nif\":\"B30765432\",\"direccion\":\"Carretera de Prueba km 5\",\"codigoPostal\":\"30001\",\"poblacion\":\"Murcia\",\"provincia\":\"Murcia\",\"pais\":\"España\",\"email\":\"prueba5@example.com\",\"telefono\":\"+34 600 000 005\",\"recargo\":false,\"notas\":\"Cliente de prueba\",\"archivado\":false}",
+    "archivado": 0,
+    "actualizado": "2026-10-29T11:29:53.648Z",
+    "actualizado_por": "propietario@example.com"
+   }
+  ],
+  "entradas": [
+   {
+    "coleccion": "catalogo",
+    "id": "chamaerops-humilis",
+    "borrador": "{\"datos\":{\"slug\":\"chamaerops-humilis\",\"familia\":\"palmeras\",\"nombre\":{\"es\":\"Palmito\",\"en\":\"Mediterranean fan palm\"},\"nombreCientifico\":\"Chamaerops humilis\",\"descripcion\":{\"es\":\"Palmera autóctona del Mediterráneo, de porte bajo y varios troncos, muy resistente a la sequía y de poco mantenimiento.\",\"en\":\"Native Mediterranean palm with a low, multi-stemmed habit, very drought-tolerant and low maintenance.\"},\"alturaMin\":0.4,\"alturaMax\":2.5,\"formatos\":[\"contenedor\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":12,\"precioUnidad\":19,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":true,\"seo\":{\"es\":{\"titulo\":\"Palmito al por mayor | Viveros Baltaretu\",\"descripcion\":\"Palmito (Chamaerops humilis) al por mayor, desde 12 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Mediterranean fan palm wholesale | Viveros Baltaretu\",\"descripcion\":\"Mediterranean fan palm (Chamaerops humilis) wholesale from €12. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"slug\":\"chamaerops-humilis\",\"familia\":\"palmeras\",\"nombre\":{\"es\":\"Palmito\",\"en\":\"Mediterranean fan palm\"},\"nombreCientifico\":\"Chamaerops humilis\",\"descripcion\":{\"es\":\"Palmera autóctona del Mediterráneo, de porte bajo y varios troncos, muy resistente a la sequía y de poco mantenimiento.\",\"en\":\"Native Mediterranean palm with a low, multi-stemmed habit, very drought-tolerant and low maintenance.\"},\"alturaMin\":0.4,\"alturaMax\":2.5,\"formatos\":[\"contenedor\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":12,\"precioUnidad\":19,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":true,\"seo\":{\"es\":{\"titulo\":\"Palmito al por mayor | Viveros Baltaretu\",\"descripcion\":\"Palmito (Chamaerops humilis) al por mayor, desde 12 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Mediterranean fan palm wholesale | Viveros Baltaretu\",\"descripcion\":\"Mediterranean fan palm (Chamaerops humilis) wholesale from €12. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.289Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "catalogo",
+    "id": "cycas-revoluta",
+    "borrador": "{\"datos\":{\"slug\":\"cycas-revoluta\",\"familia\":\"otras-ornamentales\",\"nombre\":{\"es\":\"Cica\",\"en\":\"Sago palm\"},\"nombreCientifico\":\"Cycas revoluta\",\"descripcion\":{\"es\":\"Planta de aspecto palmeriforme y crecimiento lento, muy decorativa y adecuada para jardines secos y zonas soleadas.\",\"en\":\"Palm-like, slow-growing plant, highly decorative and well suited to dry gardens and sunny spots.\"},\"alturaMin\":0.3,\"alturaMax\":1.5,\"formatos\":[\"contenedor\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":15,\"precioUnidad\":24,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":true,\"fotos\":[{\"imagen\":\"../../assets/catalogo/cycas-revoluta/foto-prueba-1.jpg\",\"alt\":{\"es\":\"Foto de prueba de una cica en contenedor\",\"en\":\"Test photo of a sago palm in a container\"}}],\"seo\":{\"es\":{\"titulo\":\"Cica al por mayor | Viveros Baltaretu\",\"descripcion\":\"Cica (Cycas revoluta) al por mayor, desde 15 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Sago palm wholesale | Viveros Baltaretu\",\"descripcion\":\"Sago palm (Cycas revoluta) wholesale from €15. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"slug\":\"cycas-revoluta\",\"familia\":\"otras-ornamentales\",\"nombre\":{\"es\":\"Cica\",\"en\":\"Sago palm\"},\"nombreCientifico\":\"Cycas revoluta\",\"descripcion\":{\"es\":\"Planta de aspecto palmeriforme y crecimiento lento, muy decorativa y adecuada para jardines secos y zonas soleadas.\",\"en\":\"Palm-like, slow-growing plant, highly decorative and well suited to dry gardens and sunny spots.\"},\"alturaMin\":0.3,\"alturaMax\":1.5,\"formatos\":[\"contenedor\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":15,\"precioUnidad\":24,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":true,\"fotos\":[{\"imagen\":\"../../assets/catalogo/cycas-revoluta/foto-prueba-1.jpg\",\"alt\":{\"es\":\"Foto de prueba de una cica en contenedor\",\"en\":\"Test photo of a sago palm in a container\"}}],\"seo\":{\"es\":{\"titulo\":\"Cica al por mayor | Viveros Baltaretu\",\"descripcion\":\"Cica (Cycas revoluta) al por mayor, desde 15 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Sago palm wholesale | Viveros Baltaretu\",\"descripcion\":\"Sago palm (Cycas revoluta) wholesale from €15. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.298Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "catalogo",
+    "id": "higuera-comun",
+    "borrador": "{\"datos\":{\"slug\":\"higuera-comun\",\"familia\":\"higueras\",\"nombre\":{\"es\":\"Higuera común\",\"en\":\"Common fig tree\"},\"nombreCientifico\":\"Ficus carica\",\"descripcion\":{\"es\":\"Árbol caducifolio de hoja grande y porte amplio, apreciado por su sombra y su aspecto escultórico en invierno.\",\"en\":\"Deciduous tree with large leaves and a broad habit, prized for its shade and sculptural winter look.\"},\"alturaMin\":1,\"alturaMax\":3.5,\"perimetroTroncoCm\":[15,50],\"formatos\":[\"contenedor\",\"raiz-desnuda\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":25,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":false,\"seo\":{\"es\":{\"titulo\":\"Higuera común al por mayor | Viveros Baltaretu\",\"descripcion\":\"Higuera común (Ficus carica) al por mayor, desde 25 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Common fig tree wholesale | Viveros Baltaretu\",\"descripcion\":\"Common fig tree (Ficus carica) wholesale from €25. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"slug\":\"higuera-comun\",\"familia\":\"higueras\",\"nombre\":{\"es\":\"Higuera común\",\"en\":\"Common fig tree\"},\"nombreCientifico\":\"Ficus carica\",\"descripcion\":{\"es\":\"Árbol caducifolio de hoja grande y porte amplio, apreciado por su sombra y su aspecto escultórico en invierno.\",\"en\":\"Deciduous tree with large leaves and a broad habit, prized for its shade and sculptural winter look.\"},\"alturaMin\":1,\"alturaMax\":3.5,\"perimetroTroncoCm\":[15,50],\"formatos\":[\"contenedor\",\"raiz-desnuda\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":25,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":false,\"seo\":{\"es\":{\"titulo\":\"Higuera común al por mayor | Viveros Baltaretu\",\"descripcion\":\"Higuera común (Ficus carica) al por mayor, desde 25 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Common fig tree wholesale | Viveros Baltaretu\",\"descripcion\":\"Common fig tree (Ficus carica) wholesale from €25. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.307Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "catalogo",
+    "id": "naranjo-amargo",
+    "borrador": "{\"datos\":{\"slug\":\"naranjo-amargo\",\"familia\":\"otras-ornamentales\",\"nombre\":{\"es\":\"Naranjo amargo\",\"en\":\"Bitter orange tree\"},\"nombreCientifico\":\"Citrus aurantium\",\"descripcion\":{\"es\":\"Árbol de hoja perenne muy usado en calles y jardines de la zona mediterránea por su sombra y su floración perfumada.\",\"en\":\"Evergreen tree widely used in Mediterranean streets and gardens for its shade and fragrant blossom.\"},\"alturaMin\":1,\"alturaMax\":3,\"perimetroTroncoCm\":[8,25],\"formatos\":[\"contenedor\",\"cepellon\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":40,\"precioUnidad\":59,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":true,\"silueta\":\"higuera\",\"seo\":{\"es\":{\"titulo\":\"Naranjo amargo al por mayor | Viveros Baltaretu\",\"descripcion\":\"Naranjo amargo (Citrus aurantium) al por mayor, desde 40 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Bitter orange tree wholesale | Viveros Baltaretu\",\"descripcion\":\"Bitter orange tree (Citrus aurantium) wholesale from €40. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"slug\":\"naranjo-amargo\",\"familia\":\"otras-ornamentales\",\"nombre\":{\"es\":\"Naranjo amargo\",\"en\":\"Bitter orange tree\"},\"nombreCientifico\":\"Citrus aurantium\",\"descripcion\":{\"es\":\"Árbol de hoja perenne muy usado en calles y jardines de la zona mediterránea por su sombra y su floración perfumada.\",\"en\":\"Evergreen tree widely used in Mediterranean streets and gardens for its shade and fragrant blossom.\"},\"alturaMin\":1,\"alturaMax\":3,\"perimetroTroncoCm\":[8,25],\"formatos\":[\"contenedor\",\"cepellon\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":40,\"precioUnidad\":59,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":true,\"silueta\":\"higuera\",\"seo\":{\"es\":{\"titulo\":\"Naranjo amargo al por mayor | Viveros Baltaretu\",\"descripcion\":\"Naranjo amargo (Citrus aurantium) al por mayor, desde 40 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Bitter orange tree wholesale | Viveros Baltaretu\",\"descripcion\":\"Bitter orange tree (Citrus aurantium) wholesale from €40. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.320Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "catalogo",
+    "id": "olivo-gran-perimetro",
+    "borrador": "{\"datos\":{\"slug\":\"olivo-gran-perimetro\",\"familia\":\"olivos\",\"nombre\":{\"es\":\"Olivo de gran perímetro\",\"en\":\"Large-girth olive tree\"},\"nombreCientifico\":\"Olea europaea\",\"descripcion\":{\"es\":\"Olivo de tronco grueso para actuaciones singulares. El origen del ejemplar y su documentación deben acreditarse en cada lote.\",\"en\":\"Thick-trunked olive tree for landmark projects. The origin and paperwork of each specimen must be documented per batch.\"},\"alturaMin\":2,\"alturaMax\":4,\"perimetroTroncoCm\":[80,250],\"formatos\":[\"cepellon\",\"contenedor\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":450,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":false,\"seo\":{\"es\":{\"titulo\":\"Olivo de gran perímetro al por mayor | Viveros Baltaretu\",\"descripcion\":\"Olivo de gran perímetro (Olea europaea) al por mayor, desde 450 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Large-girth olive tree wholesale | Viveros Baltaretu\",\"descripcion\":\"Large-girth olive tree (Olea europaea) wholesale from €450. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"slug\":\"olivo-gran-perimetro\",\"familia\":\"olivos\",\"nombre\":{\"es\":\"Olivo de gran perímetro\",\"en\":\"Large-girth olive tree\"},\"nombreCientifico\":\"Olea europaea\",\"descripcion\":{\"es\":\"Olivo de tronco grueso para actuaciones singulares. El origen del ejemplar y su documentación deben acreditarse en cada lote.\",\"en\":\"Thick-trunked olive tree for landmark projects. The origin and paperwork of each specimen must be documented per batch.\"},\"alturaMin\":2,\"alturaMax\":4,\"perimetroTroncoCm\":[80,250],\"formatos\":[\"cepellon\",\"contenedor\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":450,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":false,\"seo\":{\"es\":{\"titulo\":\"Olivo de gran perímetro al por mayor | Viveros Baltaretu\",\"descripcion\":\"Olivo de gran perímetro (Olea europaea) al por mayor, desde 450 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Large-girth olive tree wholesale | Viveros Baltaretu\",\"descripcion\":\"Large-girth olive tree (Olea europaea) wholesale from €450. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.329Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "catalogo",
+    "id": "olivo-ornamental-copa",
+    "borrador": "{\"datos\":{\"slug\":\"olivo-ornamental-copa\",\"familia\":\"olivos\",\"nombre\":{\"es\":\"Olivo ornamental de copa\",\"en\":\"Ornamental olive tree\"},\"nombreCientifico\":\"Olea europaea\",\"descripcion\":{\"es\":\"Olivo formado en vivero con copa definida, pensado para jardines, terrazas y proyectos de paisajismo.\",\"en\":\"Nursery-formed olive tree with a defined crown, designed for gardens, terraces and landscaping projects.\"},\"alturaMin\":1.2,\"alturaMax\":3,\"perimetroTroncoCm\":[20,60],\"formatos\":[\"contenedor\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":60,\"precioUnidad\":85,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":true,\"fotos\":[{\"imagen\":\"../../assets/catalogo/olivo-ornamental-copa/foto-prueba-1.jpg\",\"alt\":{\"es\":\"Foto de prueba de un olivo ornamental de copa\",\"en\":\"Test photo of an ornamental olive tree\"}}],\"seo\":{\"es\":{\"titulo\":\"Olivo ornamental de copa al por mayor | Viveros Baltaretu\",\"descripcion\":\"Olivo ornamental de copa (Olea europaea) al por mayor, desde 60 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Ornamental olive tree wholesale | Viveros Baltaretu\",\"descripcion\":\"Ornamental olive tree (Olea europaea) wholesale from €60. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"slug\":\"olivo-ornamental-copa\",\"familia\":\"olivos\",\"nombre\":{\"es\":\"Olivo ornamental de copa\",\"en\":\"Ornamental olive tree\"},\"nombreCientifico\":\"Olea europaea\",\"descripcion\":{\"es\":\"Olivo formado en vivero con copa definida, pensado para jardines, terrazas y proyectos de paisajismo.\",\"en\":\"Nursery-formed olive tree with a defined crown, designed for gardens, terraces and landscaping projects.\"},\"alturaMin\":1.2,\"alturaMax\":3,\"perimetroTroncoCm\":[20,60],\"formatos\":[\"contenedor\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":60,\"precioUnidad\":85,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":true,\"fotos\":[{\"imagen\":\"../../assets/catalogo/olivo-ornamental-copa/foto-prueba-1.jpg\",\"alt\":{\"es\":\"Foto de prueba de un olivo ornamental de copa\",\"en\":\"Test photo of an ornamental olive tree\"}}],\"seo\":{\"es\":{\"titulo\":\"Olivo ornamental de copa al por mayor | Viveros Baltaretu\",\"descripcion\":\"Olivo ornamental de copa (Olea europaea) al por mayor, desde 60 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Ornamental olive tree wholesale | Viveros Baltaretu\",\"descripcion\":\"Ornamental olive tree (Olea europaea) wholesale from €60. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.367Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "catalogo",
+    "id": "phoenix-canariensis",
+    "borrador": "{\"datos\":{\"slug\":\"phoenix-canariensis\",\"familia\":\"palmeras\",\"nombre\":{\"es\":\"Palmera canaria\",\"en\":\"Canary Island date palm\"},\"nombreCientifico\":\"Phoenix canariensis\",\"descripcion\":{\"es\":\"Palmera robusta de tronco grueso y copa densa, un clásico del paisajismo mediterráneo. Su movimiento comercial está sujeto a normativa fitosanitaria.\",\"en\":\"Robust palm with a thick trunk and dense crown, a classic of Mediterranean landscaping. Its trade is subject to plant-health regulations.\"},\"alturaMin\":0.6,\"alturaMax\":4,\"formatos\":[\"contenedor\",\"cepellon\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":35,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":false,\"fotos\":[{\"imagen\":\"../../assets/catalogo/phoenix-canariensis/foto-prueba-1.jpg\",\"alt\":{\"es\":\"Foto de prueba de una palmera canaria\",\"en\":\"Test photo of a Canary Island date palm\"}},{\"imagen\":\"../../assets/catalogo/phoenix-canariensis/foto-prueba-2.jpg\",\"alt\":{\"es\":\"Foto de prueba: detalle de la palmera canaria\",\"en\":\"Test photo: Canary Island date palm detail\"}}],\"seo\":{\"es\":{\"titulo\":\"Palmera canaria al por mayor | Viveros Baltaretu\",\"descripcion\":\"Palmera canaria (Phoenix canariensis) al por mayor, desde 35 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Canary Island date palm wholesale | Viveros Baltaretu\",\"descripcion\":\"Canary Island date palm (Phoenix canariensis) wholesale from €35. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"slug\":\"phoenix-canariensis\",\"familia\":\"palmeras\",\"nombre\":{\"es\":\"Palmera canaria\",\"en\":\"Canary Island date palm\"},\"nombreCientifico\":\"Phoenix canariensis\",\"descripcion\":{\"es\":\"Palmera robusta de tronco grueso y copa densa, un clásico del paisajismo mediterráneo. Su movimiento comercial está sujeto a normativa fitosanitaria.\",\"en\":\"Robust palm with a thick trunk and dense crown, a classic of Mediterranean landscaping. Its trade is subject to plant-health regulations.\"},\"alturaMin\":0.6,\"alturaMax\":4,\"formatos\":[\"contenedor\",\"cepellon\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":35,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":false,\"fotos\":[{\"imagen\":\"../../assets/catalogo/phoenix-canariensis/foto-prueba-1.jpg\",\"alt\":{\"es\":\"Foto de prueba de una palmera canaria\",\"en\":\"Test photo of a Canary Island date palm\"}},{\"imagen\":\"../../assets/catalogo/phoenix-canariensis/foto-prueba-2.jpg\",\"alt\":{\"es\":\"Foto de prueba: detalle de la palmera canaria\",\"en\":\"Test photo: Canary Island date palm detail\"}}],\"seo\":{\"es\":{\"titulo\":\"Palmera canaria al por mayor | Viveros Baltaretu\",\"descripcion\":\"Palmera canaria (Phoenix canariensis) al por mayor, desde 35 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Canary Island date palm wholesale | Viveros Baltaretu\",\"descripcion\":\"Canary Island date palm (Phoenix canariensis) wholesale from €35. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.375Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "catalogo",
+    "id": "phoenix-dactylifera",
+    "borrador": "{\"datos\":{\"slug\":\"phoenix-dactylifera\",\"familia\":\"palmeras\",\"nombre\":{\"es\":\"Palmera datilera\",\"en\":\"Date palm\"},\"nombreCientifico\":\"Phoenix dactylifera\",\"descripcion\":{\"es\":\"Palmera de porte elegante y hojas plateadas, muy valorada en jardines y espacios de estilo mediterráneo o árabe.\",\"en\":\"Elegant palm with silvery-green fronds, highly valued in Mediterranean and Arabic-style gardens.\"},\"alturaMin\":1,\"alturaMax\":4,\"formatos\":[\"contenedor\",\"cepellon\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":45,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":false,\"seo\":{\"es\":{\"titulo\":\"Palmera datilera al por mayor | Viveros Baltaretu\",\"descripcion\":\"Palmera datilera (Phoenix dactylifera) al por mayor, desde 45 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Date palm wholesale | Viveros Baltaretu\",\"descripcion\":\"Date palm (Phoenix dactylifera) wholesale from €45. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"slug\":\"phoenix-dactylifera\",\"familia\":\"palmeras\",\"nombre\":{\"es\":\"Palmera datilera\",\"en\":\"Date palm\"},\"nombreCientifico\":\"Phoenix dactylifera\",\"descripcion\":{\"es\":\"Palmera de porte elegante y hojas plateadas, muy valorada en jardines y espacios de estilo mediterráneo o árabe.\",\"en\":\"Elegant palm with silvery-green fronds, highly valued in Mediterranean and Arabic-style gardens.\"},\"alturaMin\":1,\"alturaMax\":4,\"formatos\":[\"contenedor\",\"cepellon\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":45,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":false,\"seo\":{\"es\":{\"titulo\":\"Palmera datilera al por mayor | Viveros Baltaretu\",\"descripcion\":\"Palmera datilera (Phoenix dactylifera) al por mayor, desde 45 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Date palm wholesale | Viveros Baltaretu\",\"descripcion\":\"Date palm (Phoenix dactylifera) wholesale from €45. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.383Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "catalogo",
+    "id": "washingtonia-robusta",
+    "borrador": "{\"datos\":{\"slug\":\"washingtonia-robusta\",\"familia\":\"palmeras\",\"nombre\":{\"es\":\"Washingtonia robusta\",\"en\":\"Mexican fan palm\"},\"nombreCientifico\":\"Washingtonia robusta\",\"descripcion\":{\"es\":\"Palmera esbelta y de crecimiento rápido, muy usada en jardines, rotondas y avenidas. Se planta joven y gana altura en pocos años.\",\"en\":\"Slender, fast-growing palm, a favourite for gardens, roundabouts and avenues. Planted young, it puts on height within a few years.\"},\"alturaMin\":0.8,\"alturaMax\":4,\"formatos\":[\"contenedor\",\"cepellon\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":18,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":false,\"seo\":{\"es\":{\"titulo\":\"Washingtonia robusta al por mayor | Viveros Baltaretu\",\"descripcion\":\"Washingtonia robusta (Washingtonia robusta) al por mayor, desde 18 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Mexican fan palm wholesale | Viveros Baltaretu\",\"descripcion\":\"Mexican fan palm (Washingtonia robusta) wholesale from €18. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"slug\":\"washingtonia-robusta\",\"familia\":\"palmeras\",\"nombre\":{\"es\":\"Washingtonia robusta\",\"en\":\"Mexican fan palm\"},\"nombreCientifico\":\"Washingtonia robusta\",\"descripcion\":{\"es\":\"Palmera esbelta y de crecimiento rápido, muy usada en jardines, rotondas y avenidas. Se planta joven y gana altura en pocos años.\",\"en\":\"Slender, fast-growing palm, a favourite for gardens, roundabouts and avenues. Planted young, it puts on height within a few years.\"},\"alturaMin\":0.8,\"alturaMax\":4,\"formatos\":[\"contenedor\",\"cepellon\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":18,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":false,\"seo\":{\"es\":{\"titulo\":\"Washingtonia robusta al por mayor | Viveros Baltaretu\",\"descripcion\":\"Washingtonia robusta (Washingtonia robusta) al por mayor, desde 18 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Mexican fan palm wholesale | Viveros Baltaretu\",\"descripcion\":\"Mexican fan palm (Washingtonia robusta) wholesale from €18. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.392Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "catalogo",
+    "id": "yucca-elephantipes",
+    "borrador": "{\"datos\":{\"slug\":\"yucca-elephantipes\",\"familia\":\"otras-ornamentales\",\"nombre\":{\"es\":\"Yuca\",\"en\":\"Spineless yucca\"},\"nombreCientifico\":\"Yucca elephantipes\",\"descripcion\":{\"es\":\"Planta de tronco robusto y hojas largas sin espinas, de bajo mantenimiento y buena resistencia a la sequía.\",\"en\":\"Robust-trunked plant with long spineless leaves, low maintenance and good drought resistance.\"},\"alturaMin\":0.6,\"alturaMax\":3,\"formatos\":[\"contenedor\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":20,\"precioUnidad\":29,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":true,\"seo\":{\"es\":{\"titulo\":\"Yuca al por mayor | Viveros Baltaretu\",\"descripcion\":\"Yuca (Yucca elephantipes) al por mayor, desde 20 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Spineless yucca wholesale | Viveros Baltaretu\",\"descripcion\":\"Spineless yucca (Yucca elephantipes) wholesale from €20. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"slug\":\"yucca-elephantipes\",\"familia\":\"otras-ornamentales\",\"nombre\":{\"es\":\"Yuca\",\"en\":\"Spineless yucca\"},\"nombreCientifico\":\"Yucca elephantipes\",\"descripcion\":{\"es\":\"Planta de tronco robusto y hojas largas sin espinas, de bajo mantenimiento y buena resistencia a la sequía.\",\"en\":\"Robust-trunked plant with long spineless leaves, low maintenance and good drought resistance.\"},\"alturaMin\":0.6,\"alturaMax\":3,\"formatos\":[\"contenedor\"],\"disponibilidad\":\"bajo-pedido\",\"precioDesde\":20,\"precioUnidad\":29,\"unidadPrecio\":\"unidad\",\"origen\":\"Vivero en la provincia de Valencia (POR CONFIRMAR)\",\"destacada\":false,\"ventaUnitaria\":true,\"seo\":{\"es\":{\"titulo\":\"Yuca al por mayor | Viveros Baltaretu\",\"descripcion\":\"Yuca (Yucca elephantipes) al por mayor, desde 20 €. Reparto a toda España. Pide tu presupuesto.\"},\"en\":{\"titulo\":\"Spineless yucca wholesale | Viveros Baltaretu\",\"descripcion\":\"Spineless yucca (Yucca elephantipes) wholesale from €20. Delivery across Spain. Request a quote.\"}},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.398Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "ajustes",
+    "id": "catalogo",
+    "borrador": "{\"datos\":{\"catalogo\":{\"entradilla\":{\"es\":\"Palmeras, olivos, higueras y ornamentales de hasta 4 m. Filtra por familia o por altura.\",\"en\":\"Palms, olive trees, fig trees and ornamentals up to 4 m. Filter by family or by height.\"},\"seoDescripcion\":{\"es\":\"Catálogo mayorista de palmeras, olivos, higueras y plantas ornamentales con altura real de cada ejemplar. Reparto a toda España.\",\"en\":\"Wholesale catalogue of palms, olive trees, fig trees and ornamental plants, with the real height of each specimen. Delivery across Spain.\"}},\"palmeras\":{\"entradilla\":{\"es\":\"Palmeras de distintos tamaños para jardines, rotondas y paisajismo.\",\"en\":\"Palms in a range of sizes for gardens, roundabouts and landscaping.\"},\"seoDescripcion\":{\"es\":\"Palmeras al por mayor con altura real de cada ejemplar. Reparto a toda España desde la provincia de Valencia.\",\"en\":\"Wholesale palm trees with the real height of each specimen. Delivery across Spain from the province of Valencia.\"}},\"olivos\":{\"entradilla\":{\"es\":\"Olivos ornamentales, desde ejemplares formados en vivero hasta troncos de gran perímetro.\",\"en\":\"Ornamental olive trees, from nursery-trained specimens to large-girth trunks.\"},\"seoDescripcion\":{\"es\":\"Olivos ornamentales al por mayor con altura y perímetro de tronco reales. Reparto a toda España.\",\"en\":\"Wholesale ornamental olive trees with real height and trunk girth. Delivery across Spain.\"}},\"higueras\":{\"entradilla\":{\"es\":\"Higueras de porte amplio, con sombra en verano y forma escultórica en invierno.\",\"en\":\"Broad fig trees that give shade in summer and a sculptural shape in winter.\"},\"seoDescripcion\":{\"es\":\"Higueras al por mayor con altura real de cada ejemplar. Reparto a toda España.\",\"en\":\"Wholesale fig trees with the real height of each specimen. Delivery across Spain.\"}},\"otras-ornamentales\":{\"entradilla\":{\"es\":\"Cítricos, cicas, yucas y otras ornamentales para completar cada proyecto.\",\"en\":\"Citrus, sago palms, yuccas and other ornamentals to round off every project.\"},\"seoDescripcion\":{\"es\":\"Plantas ornamentales al por mayor con altura real de cada ejemplar. Reparto a toda España.\",\"en\":\"Wholesale ornamental plants with the real height of each specimen. Delivery across Spain.\"}}},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"catalogo\":{\"entradilla\":{\"es\":\"Palmeras, olivos, higueras y ornamentales de hasta 4 m. Filtra por familia o por altura.\",\"en\":\"Palms, olive trees, fig trees and ornamentals up to 4 m. Filter by family or by height.\"},\"seoDescripcion\":{\"es\":\"Catálogo mayorista de palmeras, olivos, higueras y plantas ornamentales con altura real de cada ejemplar. Reparto a toda España.\",\"en\":\"Wholesale catalogue of palms, olive trees, fig trees and ornamental plants, with the real height of each specimen. Delivery across Spain.\"}},\"palmeras\":{\"entradilla\":{\"es\":\"Palmeras de distintos tamaños para jardines, rotondas y paisajismo.\",\"en\":\"Palms in a range of sizes for gardens, roundabouts and landscaping.\"},\"seoDescripcion\":{\"es\":\"Palmeras al por mayor con altura real de cada ejemplar. Reparto a toda España desde la provincia de Valencia.\",\"en\":\"Wholesale palm trees with the real height of each specimen. Delivery across Spain from the province of Valencia.\"}},\"olivos\":{\"entradilla\":{\"es\":\"Olivos ornamentales, desde ejemplares formados en vivero hasta troncos de gran perímetro.\",\"en\":\"Ornamental olive trees, from nursery-trained specimens to large-girth trunks.\"},\"seoDescripcion\":{\"es\":\"Olivos ornamentales al por mayor con altura y perímetro de tronco reales. Reparto a toda España.\",\"en\":\"Wholesale ornamental olive trees with real height and trunk girth. Delivery across Spain.\"}},\"higueras\":{\"entradilla\":{\"es\":\"Higueras de porte amplio, con sombra en verano y forma escultórica en invierno.\",\"en\":\"Broad fig trees that give shade in summer and a sculptural shape in winter.\"},\"seoDescripcion\":{\"es\":\"Higueras al por mayor con altura real de cada ejemplar. Reparto a toda España.\",\"en\":\"Wholesale fig trees with the real height of each specimen. Delivery across Spain.\"}},\"otras-ornamentales\":{\"entradilla\":{\"es\":\"Cítricos, cicas, yucas y otras ornamentales para completar cada proyecto.\",\"en\":\"Citrus, sago palms, yuccas and other ornamentals to round off every project.\"},\"seoDescripcion\":{\"es\":\"Plantas ornamentales al por mayor con altura real de cada ejemplar. Reparto a toda España.\",\"en\":\"Wholesale ornamental plants with the real height of each specimen. Delivery across Spain.\"}}},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.407Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "ajustes",
+    "id": "condiciones",
+    "borrador": "{\"datos\":{\"pedidoMinimo\":{\"es\":\"[PLACEHOLDER: pedido mínimo al por mayor]\",\"en\":\"[PLACEHOLDER: minimum wholesale order]\"},\"plazosMayor\":{\"es\":\"[PLACEHOLDER: plazos de entrega al por mayor]\",\"en\":\"[PLACEHOLDER: wholesale delivery times]\"},\"envioUnidad\":{\"es\":\"[PLACEHOLDER: gastos y plazos de envío por unidad]\",\"en\":\"[PLACEHOLDER: shipping costs and times for single plants]\"}},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"pedidoMinimo\":{\"es\":\"[PLACEHOLDER: pedido mínimo al por mayor]\",\"en\":\"[PLACEHOLDER: minimum wholesale order]\"},\"plazosMayor\":{\"es\":\"[PLACEHOLDER: plazos de entrega al por mayor]\",\"en\":\"[PLACEHOLDER: wholesale delivery times]\"},\"envioUnidad\":{\"es\":\"[PLACEHOLDER: gastos y plazos de envío por unidad]\",\"en\":\"[PLACEHOLDER: shipping costs and times for single plants]\"}},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.415Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "ajustes",
+    "id": "empresa",
+    "borrador": "{\"datos\":{\"nombre\":\"Viveros Baltaretu\",\"telefono\":\"+34 600 000 000\",\"whatsapp\":\"34600000000\",\"email\":\"info@example.com\",\"direccion\":\"Calle Ejemplo 1, 46000 Valencia (dirección provisional)\"},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"nombre\":\"Viveros Baltaretu\",\"telefono\":\"+34 600 000 000\",\"whatsapp\":\"34600000000\",\"email\":\"info@example.com\",\"direccion\":\"Calle Ejemplo 1, 46000 Valencia (dirección provisional)\"},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.422Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "ajustes",
+    "id": "portada",
+    "borrador": "{\"datos\":{\"titular\":{\"es\":\"Planta ornamental al por mayor,\",\"en\":\"Wholesale ornamental plants,\"},\"titularDestacado\":{\"es\":\"desde Valencia a toda España.\",\"en\":\"from Valencia to all of Spain.\"},\"entradilla\":{\"es\":\"Palmeras, olivos, higueras y otras ornamentales de hasta 4 m para jardinerías, paisajistas y obra. Algunas especies también se venden por unidad y te las enviamos a casa.\",\"en\":\"Palms, olive trees, fig trees and other ornamentals up to 4 m for garden centres, landscapers and contractors. Some species are also sold as single plants and delivered to your door.\"},\"familiasTitulo\":{\"es\":\"Qué cultivamos\",\"en\":\"What we grow\"},\"familiasTexto\":{\"es\":\"Cuatro familias de planta mediterránea, de hasta 4 m de altura.\",\"en\":\"Four families of Mediterranean plants, up to 4 m tall.\"},\"comprarTitulo\":{\"es\":\"Dos formas de comprar\",\"en\":\"Two ways to buy\"},\"mayorTitulo\":{\"es\":\"Al por mayor\",\"en\":\"Wholesale\"},\"mayorTexto\":{\"es\":\"Para jardinerías, paisajistas, constructoras y ayuntamientos. Haz tu lista y te enviamos el presupuesto.\",\"en\":\"For garden centres, landscapers, contractors and councils. Send us your list and we will quote you.\"},\"unidadTitulo\":{\"es\":\"Por unidad\",\"en\":\"Single plants\"},\"unidadTexto\":{\"es\":\"Para tu casa o tu jardín. En las especies marcadas puedes pedir una sola planta y te la enviamos.\",\"en\":\"For your home or garden. For the species marked, order just one plant and we will ship it to you.\"},\"pasosTitulo\":{\"es\":\"Así de fácil\",\"en\":\"As easy as this\"},\"pasos\":[{\"titulo\":{\"es\":\"Elige tus plantas\",\"en\":\"Choose your plants\"},\"texto\":{\"es\":\"Mira el catálogo y añade a tu lista las que necesitas.\",\"en\":\"Browse the catalogue and add what you need to your list.\"}},{\"titulo\":{\"es\":\"Pide presupuesto\",\"en\":\"Ask for a quote\"},\"texto\":{\"es\":\"Envía la lista en un minuto o escríbenos por WhatsApp.\",\"en\":\"Send the list in a minute or message us on WhatsApp.\"}},{\"titulo\":{\"es\":\"Te lo llevamos\",\"en\":\"We deliver\"},\"texto\":{\"es\":\"A tu obra, tu tienda o tu casa, en toda España. [PLACEHOLDER: plazos de entrega]\",\"en\":\"To your site, shop or home, anywhere in Spain. [PLACEHOLDER: delivery times]\"}}],\"confianzaTitulo\":{\"es\":\"Por qué Viveros Baltaretu\",\"en\":\"Why Viveros Baltaretu\"},\"confianza\":[{\"icono\":\"origen\",\"titulo\":{\"es\":\"Origen de la planta\",\"en\":\"Where our plants come from\"},\"texto\":{\"es\":\"[PLACEHOLDER: procedencia de las plantas y cómo se cultivan]\",\"en\":\"[PLACEHOLDER: where the plants come from and how they are grown]\"}},{\"icono\":\"documentacion\",\"titulo\":{\"es\":\"Con su documentación\",\"en\":\"Paperwork included\"},\"texto\":{\"es\":\"[PLACEHOLDER: pasaporte fitosanitario y documentación que acompaña a cada envío]\",\"en\":\"[PLACEHOLDER: plant passport and paperwork shipped with each order]\"}},{\"icono\":\"reparto\",\"titulo\":{\"es\":\"Reparto a toda España\",\"en\":\"Delivery across Spain\"},\"texto\":{\"es\":\"Desde la provincia de Valencia. [PLACEHOLDER: plazos y condiciones de reparto]\",\"en\":\"From the province of Valencia. [PLACEHOLDER: delivery times and conditions]\"}}],\"mision\":{\"es\":\"[PLACEHOLDER: misión de la empresa]\",\"en\":\"[PLACEHOLDER: company mission]\"},\"vision\":{\"es\":\"[PLACEHOLDER: visión de la empresa]\",\"en\":\"[PLACEHOLDER: company vision]\"},\"llamadaTitulo\":{\"es\":\"¿Qué plantas necesitas?\",\"en\":\"Which plants do you need?\"},\"llamadaTexto\":{\"es\":\"Cuéntanos especies y cantidades, aunque sea una sola planta. Te respondemos con el presupuesto.\",\"en\":\"Tell us the species and quantities, even if it is just one plant. We will get back to you with a quote.\"}},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"titular\":{\"es\":\"Planta ornamental al por mayor,\",\"en\":\"Wholesale ornamental plants,\"},\"titularDestacado\":{\"es\":\"desde Valencia a toda España.\",\"en\":\"from Valencia to all of Spain.\"},\"entradilla\":{\"es\":\"Palmeras, olivos, higueras y otras ornamentales de hasta 4 m para jardinerías, paisajistas y obra. Algunas especies también se venden por unidad y te las enviamos a casa.\",\"en\":\"Palms, olive trees, fig trees and other ornamentals up to 4 m for garden centres, landscapers and contractors. Some species are also sold as single plants and delivered to your door.\"},\"familiasTitulo\":{\"es\":\"Qué cultivamos\",\"en\":\"What we grow\"},\"familiasTexto\":{\"es\":\"Cuatro familias de planta mediterránea, de hasta 4 m de altura.\",\"en\":\"Four families of Mediterranean plants, up to 4 m tall.\"},\"comprarTitulo\":{\"es\":\"Dos formas de comprar\",\"en\":\"Two ways to buy\"},\"mayorTitulo\":{\"es\":\"Al por mayor\",\"en\":\"Wholesale\"},\"mayorTexto\":{\"es\":\"Para jardinerías, paisajistas, constructoras y ayuntamientos. Haz tu lista y te enviamos el presupuesto.\",\"en\":\"For garden centres, landscapers, contractors and councils. Send us your list and we will quote you.\"},\"unidadTitulo\":{\"es\":\"Por unidad\",\"en\":\"Single plants\"},\"unidadTexto\":{\"es\":\"Para tu casa o tu jardín. En las especies marcadas puedes pedir una sola planta y te la enviamos.\",\"en\":\"For your home or garden. For the species marked, order just one plant and we will ship it to you.\"},\"pasosTitulo\":{\"es\":\"Así de fácil\",\"en\":\"As easy as this\"},\"pasos\":[{\"titulo\":{\"es\":\"Elige tus plantas\",\"en\":\"Choose your plants\"},\"texto\":{\"es\":\"Mira el catálogo y añade a tu lista las que necesitas.\",\"en\":\"Browse the catalogue and add what you need to your list.\"}},{\"titulo\":{\"es\":\"Pide presupuesto\",\"en\":\"Ask for a quote\"},\"texto\":{\"es\":\"Envía la lista en un minuto o escríbenos por WhatsApp.\",\"en\":\"Send the list in a minute or message us on WhatsApp.\"}},{\"titulo\":{\"es\":\"Te lo llevamos\",\"en\":\"We deliver\"},\"texto\":{\"es\":\"A tu obra, tu tienda o tu casa, en toda España. [PLACEHOLDER: plazos de entrega]\",\"en\":\"To your site, shop or home, anywhere in Spain. [PLACEHOLDER: delivery times]\"}}],\"confianzaTitulo\":{\"es\":\"Por qué Viveros Baltaretu\",\"en\":\"Why Viveros Baltaretu\"},\"confianza\":[{\"icono\":\"origen\",\"titulo\":{\"es\":\"Origen de la planta\",\"en\":\"Where our plants come from\"},\"texto\":{\"es\":\"[PLACEHOLDER: procedencia de las plantas y cómo se cultivan]\",\"en\":\"[PLACEHOLDER: where the plants come from and how they are grown]\"}},{\"icono\":\"documentacion\",\"titulo\":{\"es\":\"Con su documentación\",\"en\":\"Paperwork included\"},\"texto\":{\"es\":\"[PLACEHOLDER: pasaporte fitosanitario y documentación que acompaña a cada envío]\",\"en\":\"[PLACEHOLDER: plant passport and paperwork shipped with each order]\"}},{\"icono\":\"reparto\",\"titulo\":{\"es\":\"Reparto a toda España\",\"en\":\"Delivery across Spain\"},\"texto\":{\"es\":\"Desde la provincia de Valencia. [PLACEHOLDER: plazos y condiciones de reparto]\",\"en\":\"From the province of Valencia. [PLACEHOLDER: delivery times and conditions]\"}}],\"mision\":{\"es\":\"[PLACEHOLDER: misión de la empresa]\",\"en\":\"[PLACEHOLDER: company mission]\"},\"vision\":{\"es\":\"[PLACEHOLDER: visión de la empresa]\",\"en\":\"[PLACEHOLDER: company vision]\"},\"llamadaTitulo\":{\"es\":\"¿Qué plantas necesitas?\",\"en\":\"Which plants do you need?\"},\"llamadaTexto\":{\"es\":\"Cuéntanos especies y cantidades, aunque sea una sola planta. Te respondemos con el presupuesto.\",\"en\":\"Tell us the species and quantities, even if it is just one plant. We will get back to you with a quote.\"}},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.429Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "paginas",
+    "id": "aviso-legal",
+    "borrador": "{\"datos\":{\"titulo\":{\"es\":\"Aviso legal\",\"en\":\"Legal notice\"},\"entradilla\":{\"es\":\"Texto pendiente de redacción y revisión por un asesor legal. No es un texto definitivo.\",\"en\":\"Text pending drafting and review by a legal adviser. This is not a final text.\"},\"secciones\":[{\"titulo\":{\"es\":\"Titular del sitio web\",\"en\":\"Website owner\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}},{\"titulo\":{\"es\":\"Condiciones de uso\",\"en\":\"Terms of use\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}},{\"titulo\":{\"es\":\"Propiedad intelectual\",\"en\":\"Intellectual property\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}}],\"seoDescripcion\":{\"es\":\"Aviso legal del sitio web.\",\"en\":\"Legal notice for this website.\"},\"pendienteRevision\":true},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"titulo\":{\"es\":\"Aviso legal\",\"en\":\"Legal notice\"},\"entradilla\":{\"es\":\"Texto pendiente de redacción y revisión por un asesor legal. No es un texto definitivo.\",\"en\":\"Text pending drafting and review by a legal adviser. This is not a final text.\"},\"secciones\":[{\"titulo\":{\"es\":\"Titular del sitio web\",\"en\":\"Website owner\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}},{\"titulo\":{\"es\":\"Condiciones de uso\",\"en\":\"Terms of use\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}},{\"titulo\":{\"es\":\"Propiedad intelectual\",\"en\":\"Intellectual property\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}}],\"seoDescripcion\":{\"es\":\"Aviso legal del sitio web.\",\"en\":\"Legal notice for this website.\"},\"pendienteRevision\":true},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.435Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "paginas",
+    "id": "cookies",
+    "borrador": "{\"datos\":{\"titulo\":{\"es\":\"Política de cookies\",\"en\":\"Cookie policy\"},\"entradilla\":{\"es\":\"Texto pendiente de redacción y revisión por un asesor legal. No es un texto definitivo.\",\"en\":\"Text pending drafting and review by a legal adviser. This is not a final text.\"},\"secciones\":[{\"titulo\":{\"es\":\"Qué son las cookies\",\"en\":\"What cookies are\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}},{\"titulo\":{\"es\":\"Cookies que usa esta web\",\"en\":\"Cookies used on this website\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}},{\"titulo\":{\"es\":\"Cómo gestionarlas\",\"en\":\"How to manage them\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}}],\"seoDescripcion\":{\"es\":\"Política de cookies del sitio web.\",\"en\":\"Cookie policy for this website.\"},\"pendienteRevision\":true},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"titulo\":{\"es\":\"Política de cookies\",\"en\":\"Cookie policy\"},\"entradilla\":{\"es\":\"Texto pendiente de redacción y revisión por un asesor legal. No es un texto definitivo.\",\"en\":\"Text pending drafting and review by a legal adviser. This is not a final text.\"},\"secciones\":[{\"titulo\":{\"es\":\"Qué son las cookies\",\"en\":\"What cookies are\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}},{\"titulo\":{\"es\":\"Cookies que usa esta web\",\"en\":\"Cookies used on this website\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}},{\"titulo\":{\"es\":\"Cómo gestionarlas\",\"en\":\"How to manage them\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}}],\"seoDescripcion\":{\"es\":\"Política de cookies del sitio web.\",\"en\":\"Cookie policy for this website.\"},\"pendienteRevision\":true},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.442Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "paginas",
+    "id": "nosotros",
+    "borrador": "{\"datos\":{\"titulo\":{\"es\":\"Nosotros\",\"en\":\"About us\"},\"entradilla\":{\"es\":\"[PLACEHOLDER: presentación breve de la empresa]\",\"en\":\"[PLACEHOLDER: short company introduction]\"},\"secciones\":[{\"titulo\":{\"es\":\"Quiénes somos\",\"en\":\"Who we are\"},\"texto\":{\"es\":\"[PLACEHOLDER: historia de la empresa, equipo y años de experiencia]\",\"en\":\"[PLACEHOLDER: company history, team and years of experience]\"}},{\"titulo\":{\"es\":\"El vivero\",\"en\":\"The nursery\"},\"texto\":{\"es\":\"[PLACEHOLDER: ubicación en la provincia de Valencia, superficie y cómo se cultivan los ejemplares]\",\"en\":\"[PLACEHOLDER: location in the province of Valencia, size and how the specimens are grown]\"}}],\"seoDescripcion\":{\"es\":\"Vivero mayorista de plantas ornamentales en la provincia de Valencia, con reparto a toda España.\",\"en\":\"Wholesale nursery of ornamental plants in the province of Valencia, delivering across Spain.\"},\"pendienteRevision\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"titulo\":{\"es\":\"Nosotros\",\"en\":\"About us\"},\"entradilla\":{\"es\":\"[PLACEHOLDER: presentación breve de la empresa]\",\"en\":\"[PLACEHOLDER: short company introduction]\"},\"secciones\":[{\"titulo\":{\"es\":\"Quiénes somos\",\"en\":\"Who we are\"},\"texto\":{\"es\":\"[PLACEHOLDER: historia de la empresa, equipo y años de experiencia]\",\"en\":\"[PLACEHOLDER: company history, team and years of experience]\"}},{\"titulo\":{\"es\":\"El vivero\",\"en\":\"The nursery\"},\"texto\":{\"es\":\"[PLACEHOLDER: ubicación en la provincia de Valencia, superficie y cómo se cultivan los ejemplares]\",\"en\":\"[PLACEHOLDER: location in the province of Valencia, size and how the specimens are grown]\"}}],\"seoDescripcion\":{\"es\":\"Vivero mayorista de plantas ornamentales en la provincia de Valencia, con reparto a toda España.\",\"en\":\"Wholesale nursery of ornamental plants in the province of Valencia, delivering across Spain.\"},\"pendienteRevision\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.450Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "paginas",
+    "id": "privacidad",
+    "borrador": "{\"datos\":{\"titulo\":{\"es\":\"Política de privacidad\",\"en\":\"Privacy policy\"},\"entradilla\":{\"es\":\"Texto pendiente de redacción y revisión por un asesor legal. No es un texto definitivo.\",\"en\":\"Text pending drafting and review by a legal adviser. This is not a final text.\"},\"secciones\":[{\"titulo\":{\"es\":\"Responsable del tratamiento\",\"en\":\"Data controller\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}},{\"titulo\":{\"es\":\"Datos que recogemos y para qué\",\"en\":\"What data we collect and why\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}},{\"titulo\":{\"es\":\"Tus derechos\",\"en\":\"Your rights\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}}],\"seoDescripcion\":{\"es\":\"Política de privacidad del sitio web.\",\"en\":\"Privacy policy for this website.\"},\"pendienteRevision\":true},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"titulo\":{\"es\":\"Política de privacidad\",\"en\":\"Privacy policy\"},\"entradilla\":{\"es\":\"Texto pendiente de redacción y revisión por un asesor legal. No es un texto definitivo.\",\"en\":\"Text pending drafting and review by a legal adviser. This is not a final text.\"},\"secciones\":[{\"titulo\":{\"es\":\"Responsable del tratamiento\",\"en\":\"Data controller\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}},{\"titulo\":{\"es\":\"Datos que recogemos y para qué\",\"en\":\"What data we collect and why\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}},{\"titulo\":{\"es\":\"Tus derechos\",\"en\":\"Your rights\"},\"texto\":{\"es\":\"[PLACEHOLDER: texto legal pendiente]\",\"en\":\"[PLACEHOLDER: legal text pending]\"}}],\"seoDescripcion\":{\"es\":\"Política de privacidad del sitio web.\",\"en\":\"Privacy policy for this website.\"},\"pendienteRevision\":true},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.458Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "paginas",
+    "id": "reparto",
+    "borrador": "{\"datos\":{\"titulo\":{\"es\":\"Reparto a toda España\",\"en\":\"Delivery across Spain\"},\"entradilla\":{\"es\":\"Servimos desde la provincia de Valencia a toda España, en pedidos al por mayor y, en algunas especies, por unidad.\",\"en\":\"We ship from the province of Valencia all over Spain, wholesale and, for some species, by the single plant.\"},\"secciones\":[{\"titulo\":{\"es\":\"Zonas y plazos\",\"en\":\"Areas and lead times\"},\"texto\":{\"es\":\"[PLACEHOLDER: zonas de reparto y plazos habituales]\",\"en\":\"[PLACEHOLDER: delivery areas and usual lead times]\"}},{\"titulo\":{\"es\":\"Pedidos al por mayor\",\"en\":\"Wholesale orders\"},\"texto\":{\"es\":\"[PLACEHOLDER: pedido mínimo, transporte y preparación de la planta (contenedor o cepellón)]\",\"en\":\"[PLACEHOLDER: minimum order, transport and how plants are prepared (container or root ball)]\"}},{\"titulo\":{\"es\":\"Envíos por unidad\",\"en\":\"Single-plant shipping\"},\"texto\":{\"es\":\"[PLACEHOLDER: qué especies se envían por unidad, embalaje, gastos y plazos de envío]\",\"en\":\"[PLACEHOLDER: which species ship as single plants, packaging, shipping costs and times]\"}},{\"titulo\":{\"es\":\"Entrega y descarga\",\"en\":\"Delivery and unloading\"},\"texto\":{\"es\":\"[PLACEHOLDER: qué hace falta para la descarga en obra, tienda o domicilio]\",\"en\":\"[PLACEHOLDER: what is needed to unload at a site, shop or home]\"}},{\"titulo\":{\"es\":\"Documentación\",\"en\":\"Paperwork\"},\"texto\":{\"es\":\"[PLACEHOLDER: pasaporte fitosanitario y documentación que acompaña a cada envío]\",\"en\":\"[PLACEHOLDER: plant passport and paperwork shipped with each order]\"}}],\"seoDescripcion\":{\"es\":\"Reparto de palmeras, olivos y plantas ornamentales a toda España desde la provincia de Valencia.\",\"en\":\"Delivery of palms, olive trees and ornamental plants across Spain from the province of Valencia.\"},\"pendienteRevision\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"titulo\":{\"es\":\"Reparto a toda España\",\"en\":\"Delivery across Spain\"},\"entradilla\":{\"es\":\"Servimos desde la provincia de Valencia a toda España, en pedidos al por mayor y, en algunas especies, por unidad.\",\"en\":\"We ship from the province of Valencia all over Spain, wholesale and, for some species, by the single plant.\"},\"secciones\":[{\"titulo\":{\"es\":\"Zonas y plazos\",\"en\":\"Areas and lead times\"},\"texto\":{\"es\":\"[PLACEHOLDER: zonas de reparto y plazos habituales]\",\"en\":\"[PLACEHOLDER: delivery areas and usual lead times]\"}},{\"titulo\":{\"es\":\"Pedidos al por mayor\",\"en\":\"Wholesale orders\"},\"texto\":{\"es\":\"[PLACEHOLDER: pedido mínimo, transporte y preparación de la planta (contenedor o cepellón)]\",\"en\":\"[PLACEHOLDER: minimum order, transport and how plants are prepared (container or root ball)]\"}},{\"titulo\":{\"es\":\"Envíos por unidad\",\"en\":\"Single-plant shipping\"},\"texto\":{\"es\":\"[PLACEHOLDER: qué especies se envían por unidad, embalaje, gastos y plazos de envío]\",\"en\":\"[PLACEHOLDER: which species ship as single plants, packaging, shipping costs and times]\"}},{\"titulo\":{\"es\":\"Entrega y descarga\",\"en\":\"Delivery and unloading\"},\"texto\":{\"es\":\"[PLACEHOLDER: qué hace falta para la descarga en obra, tienda o domicilio]\",\"en\":\"[PLACEHOLDER: what is needed to unload at a site, shop or home]\"}},{\"titulo\":{\"es\":\"Documentación\",\"en\":\"Paperwork\"},\"texto\":{\"es\":\"[PLACEHOLDER: pasaporte fitosanitario y documentación que acompaña a cada envío]\",\"en\":\"[PLACEHOLDER: plant passport and paperwork shipped with each order]\"}}],\"seoDescripcion\":{\"es\":\"Reparto de palmeras, olivos y plantas ornamentales a toda España desde la provincia de Valencia.\",\"en\":\"Delivery of palms, olive trees and ornamental plants across Spain from the province of Valencia.\"},\"pendienteRevision\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.466Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "proyectos",
+    "id": "proyecto-de-ejemplo",
+    "borrador": "{\"datos\":{\"slug\":\"proyecto-de-ejemplo\",\"titulo\":{\"es\":\"Jardín de una urbanización en la costa (proyecto de prueba)\",\"en\":\"Coastal housing estate garden (test project)\"},\"resumen\":{\"es\":\"Palmeras y olivos para las zonas comunes de una urbanización, entregados en un solo viaje.\",\"en\":\"Palms and olive trees for the shared gardens of a housing estate, delivered in a single trip.\"},\"ubicacion\":\"Municipio de prueba (Valencia)\",\"especies\":[\"phoenix-canariensis\",\"olivo-gran-perimetro\"],\"fotos\":[],\"secciones\":[{\"titulo\":{\"es\":\"El encargo\",\"en\":\"The brief\"},\"texto\":{\"es\":\"La constructora necesitaba que las zonas verdes estuvieran terminadas para la entrega de las viviendas.\",\"en\":\"The contractor needed the green areas finished in time for handing over the homes.\"}},{\"titulo\":{\"es\":\"Lo que suministramos\",\"en\":\"What we supplied\"},\"texto\":{\"es\":\"12 palmeras canarias de 3 a 4 m y 6 olivos de 2,5 a 3 m, con cepellón, en un camión con plataforma.\",\"en\":\"12 Canary Island date palms of 3 to 4 m and 6 olive trees of 2.5 to 3 m, root-balled, on one flatbed lorry.\"}}],\"seoDescripcion\":{\"es\":\"Proyecto de prueba con palmeras y olivos para una urbanización.\",\"en\":\"Test project with palms and olive trees for a housing estate.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"slug\":\"proyecto-de-ejemplo\",\"titulo\":{\"es\":\"Jardín de una urbanización en la costa (proyecto de prueba)\",\"en\":\"Coastal housing estate garden (test project)\"},\"resumen\":{\"es\":\"Palmeras y olivos para las zonas comunes de una urbanización, entregados en un solo viaje.\",\"en\":\"Palms and olive trees for the shared gardens of a housing estate, delivered in a single trip.\"},\"ubicacion\":\"Municipio de prueba (Valencia)\",\"especies\":[\"phoenix-canariensis\",\"olivo-gran-perimetro\"],\"fotos\":[],\"secciones\":[{\"titulo\":{\"es\":\"El encargo\",\"en\":\"The brief\"},\"texto\":{\"es\":\"La constructora necesitaba que las zonas verdes estuvieran terminadas para la entrega de las viviendas.\",\"en\":\"The contractor needed the green areas finished in time for handing over the homes.\"}},{\"titulo\":{\"es\":\"Lo que suministramos\",\"en\":\"What we supplied\"},\"texto\":{\"es\":\"12 palmeras canarias de 3 a 4 m y 6 olivos de 2,5 a 3 m, con cepellón, en un camión con plataforma.\",\"en\":\"12 Canary Island date palms of 3 to 4 m and 6 olive trees of 2.5 to 3 m, root-balled, on one flatbed lorry.\"}}],\"seoDescripcion\":{\"es\":\"Proyecto de prueba con palmeras y olivos para una urbanización.\",\"en\":\"Test project with palms and olive trees for a housing estate.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.474Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "guias",
+    "id": "como-elegir-la-altura",
+    "borrador": "{\"datos\":{\"slug\":\"como-elegir-la-altura\",\"titulo\":{\"es\":\"Cómo elegir la altura de una planta\",\"en\":\"How to choose the right plant height\"},\"resumen\":{\"es\":\"Qué medir antes de pedir presupuesto para que la planta encaje en el espacio y llegue sin problemas.\",\"en\":\"What to measure before asking for a quote, so the plant fits the space and arrives without trouble.\"},\"secciones\":[{\"titulo\":{\"es\":\"Mide el espacio, no solo el hueco\",\"en\":\"Measure the space, not just the planting hole\"},\"texto\":{\"es\":\"Ten en cuenta la altura libre (balcones, cables, aleros) y el ancho que ocupará la copa o las hojas cuando la planta crezca.\\n\\nEn la ficha de cada especie puedes ver su silueta junto a una persona de 1,80 m para hacerte una idea de la escala.\",\"en\":\"Check the clear height (balconies, cables, eaves) and how wide the crown or fronds will be as the plant grows.\\n\\nEach species page shows its silhouette next to a 1.80 m person so you can get a feel for the scale.\"}},{\"titulo\":{\"es\":\"Piensa en la entrega\",\"en\":\"Think about delivery\"},\"texto\":{\"es\":\"Indica en tu petición dónde se entrega (obra, tienda o domicilio) y si hay accesos estrechos, escaleras o pendientes.\",\"en\":\"Tell us in your request where it is going (site, shop or home) and whether there are narrow access points, stairs or slopes.\"}},{\"titulo\":{\"es\":\"Cuéntanos el uso\",\"en\":\"Tell us what it is for\"},\"texto\":{\"es\":\"Una tienda, una rotonda o un jardín privado piden tamaños distintos. Con esa información te podemos proponer alternativas dentro del rango de alturas de cada especie.\",\"en\":\"A shop, a roundabout or a private garden each call for different sizes. With that information we can suggest options within each species' height range.\"}}],\"seoDescripcion\":{\"es\":\"Qué medir antes de pedir una planta, para tu jardín, tu tienda o tu obra.\",\"en\":\"What to measure before ordering a plant for your garden, shop or project.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": "{\"datos\":{\"slug\":\"como-elegir-la-altura\",\"titulo\":{\"es\":\"Cómo elegir la altura de una planta\",\"en\":\"How to choose the right plant height\"},\"resumen\":{\"es\":\"Qué medir antes de pedir presupuesto para que la planta encaje en el espacio y llegue sin problemas.\",\"en\":\"What to measure before asking for a quote, so the plant fits the space and arrives without trouble.\"},\"secciones\":[{\"titulo\":{\"es\":\"Mide el espacio, no solo el hueco\",\"en\":\"Measure the space, not just the planting hole\"},\"texto\":{\"es\":\"Ten en cuenta la altura libre (balcones, cables, aleros) y el ancho que ocupará la copa o las hojas cuando la planta crezca.\\n\\nEn la ficha de cada especie puedes ver su silueta junto a una persona de 1,80 m para hacerte una idea de la escala.\",\"en\":\"Check the clear height (balconies, cables, eaves) and how wide the crown or fronds will be as the plant grows.\\n\\nEach species page shows its silhouette next to a 1.80 m person so you can get a feel for the scale.\"}},{\"titulo\":{\"es\":\"Piensa en la entrega\",\"en\":\"Think about delivery\"},\"texto\":{\"es\":\"Indica en tu petición dónde se entrega (obra, tienda o domicilio) y si hay accesos estrechos, escaleras o pendientes.\",\"en\":\"Tell us in your request where it is going (site, shop or home) and whether there are narrow access points, stairs or slopes.\"}},{\"titulo\":{\"es\":\"Cuéntanos el uso\",\"en\":\"Tell us what it is for\"},\"texto\":{\"es\":\"Una tienda, una rotonda o un jardín privado piden tamaños distintos. Con esa información te podemos proponer alternativas dentro del rango de alturas de cada especie.\",\"en\":\"A shop, a roundabout or a private garden each call for different sizes. With that information we can suggest options within each species' height range.\"}}],\"seoDescripcion\":{\"es\":\"Qué medir antes de pedir una planta, para tu jardín, tu tienda o tu obra.\",\"en\":\"What to measure before ordering a plant for your garden, shop or project.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:53.481Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "proyectos",
+    "id": "prueba-rotonda-de-acceso",
+    "borrador": "{\"datos\":{\"slug\":\"prueba-rotonda-de-acceso\",\"titulo\":{\"es\":\"Rotonda de acceso a un polígono (prueba)\",\"en\":\"Industrial estate roundabout (test)\"},\"resumen\":{\"es\":\"Palmeras y planta tapizante para una rotonda municipal.\",\"en\":\"Palms and ground cover for a municipal roundabout.\"},\"ubicacion\":\"Municipio de prueba\",\"especies\":[\"phoenix-canariensis\",\"yucca-elephantipes\"],\"fotos\":[],\"secciones\":[{\"titulo\":{\"es\":\"El encargo\",\"en\":\"The brief\"},\"texto\":{\"es\":\"Palmeras y planta tapizante para una rotonda municipal. Datos inventados para probar el panel.\",\"en\":\"Palms and ground cover for a municipal roundabout. Made-up data to try the panel.\"}}],\"seoDescripcion\":{\"es\":\"Proyecto de prueba: Palmeras y planta tapizante para una rotonda municipal.\",\"en\":\"Test project: Palms and ground cover for a municipal roundabout.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": null,
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:54.323Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "proyectos",
+    "id": "prueba-patio-de-un-hotel",
+    "borrador": "{\"datos\":{\"slug\":\"prueba-patio-de-un-hotel\",\"titulo\":{\"es\":\"Patio de un hotel en la costa (prueba)\",\"en\":\"Seaside hotel courtyard (test)\"},\"resumen\":{\"es\":\"Olivos y cicas en contenedor para el patio central de un hotel.\",\"en\":\"Container olive trees and cycads for a hotel courtyard.\"},\"ubicacion\":\"Municipio de prueba\",\"especies\":[\"olivo-ornamental-copa\",\"cycas-revoluta\"],\"fotos\":[],\"secciones\":[{\"titulo\":{\"es\":\"El encargo\",\"en\":\"The brief\"},\"texto\":{\"es\":\"Olivos y cicas en contenedor para el patio central de un hotel. Datos inventados para probar el panel.\",\"en\":\"Container olive trees and cycads for a hotel courtyard. Made-up data to try the panel.\"}}],\"seoDescripcion\":{\"es\":\"Proyecto de prueba: Olivos y cicas en contenedor para el patio central de un hotel.\",\"en\":\"Test project: Container olive trees and cycads for a hotel courtyard.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": null,
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:54.367Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "proyectos",
+    "id": "prueba-parque-infantil",
+    "borrador": "{\"datos\":{\"slug\":\"prueba-parque-infantil\",\"titulo\":{\"es\":\"Zona verde de un parque infantil (prueba)\",\"en\":\"Playground green area (test)\"},\"resumen\":{\"es\":\"Planta resistente y sin espinas para un parque de barrio.\",\"en\":\"Hardy, thornless plants for a neighbourhood park.\"},\"ubicacion\":\"Municipio de prueba\",\"especies\":[\"chamaerops-humilis\",\"higuera-comun\"],\"fotos\":[],\"secciones\":[{\"titulo\":{\"es\":\"El encargo\",\"en\":\"The brief\"},\"texto\":{\"es\":\"Planta resistente y sin espinas para un parque de barrio. Datos inventados para probar el panel.\",\"en\":\"Hardy, thornless plants for a neighbourhood park. Made-up data to try the panel.\"}}],\"seoDescripcion\":{\"es\":\"Proyecto de prueba: Planta resistente y sin espinas para un parque de barrio.\",\"en\":\"Test project: Hardy, thornless plants for a neighbourhood park.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": null,
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:54.414Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "proyectos",
+    "id": "prueba-tienda-de-jardineria",
+    "borrador": "{\"datos\":{\"slug\":\"prueba-tienda-de-jardineria\",\"titulo\":{\"es\":\"Reposición de temporada de una jardinería (prueba)\",\"en\":\"Seasonal restock for a garden centre (test)\"},\"resumen\":{\"es\":\"Surtido variado para la temporada de primavera de una tienda.\",\"en\":\"Mixed range for a garden centre spring season.\"},\"ubicacion\":\"Municipio de prueba\",\"especies\":[\"naranjo-amargo\",\"washingtonia-robusta\"],\"fotos\":[],\"secciones\":[{\"titulo\":{\"es\":\"El encargo\",\"en\":\"The brief\"},\"texto\":{\"es\":\"Surtido variado para la temporada de primavera de una tienda. Datos inventados para probar el panel.\",\"en\":\"Mixed range for a garden centre spring season. Made-up data to try the panel.\"}}],\"seoDescripcion\":{\"es\":\"Proyecto de prueba: Surtido variado para la temporada de primavera de una tienda.\",\"en\":\"Test project: Mixed range for a garden centre spring season.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": null,
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:54.471Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "guias",
+    "id": "prueba-como-regar-palmeras",
+    "borrador": "{\"datos\":{\"slug\":\"prueba-como-regar-palmeras\",\"titulo\":{\"es\":\"Cómo regar las palmeras recién plantadas (prueba)\",\"en\":\"How to water newly planted palms (test)\"},\"resumen\":{\"es\":\"Riegos de las primeras semanas para que la palmera arraigue bien.\",\"en\":\"How to water newly planted palms. Test guide.\"},\"secciones\":[{\"titulo\":{\"es\":\"Lo básico\",\"en\":\"The basics\"},\"texto\":{\"es\":\"Riegos de las primeras semanas para que la palmera arraigue bien. Texto de prueba para ver cómo queda.\",\"en\":\"Test text to see how it looks.\"}}],\"seoDescripcion\":{\"es\":\"Guía de prueba: Riegos de las primeras semanas para que la palmera arraigue bien.\",\"en\":\"Test guide: How to water newly planted palms.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": null,
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:54.505Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "guias",
+    "id": "prueba-transporte-de-planta-grande",
+    "borrador": "{\"datos\":{\"slug\":\"prueba-transporte-de-planta-grande\",\"titulo\":{\"es\":\"Qué tener en cuenta al recibir el camión (prueba)\",\"en\":\"What to check when the lorry arrives (test)\"},\"resumen\":{\"es\":\"Accesos, descarga y comprobaciones al recibir un pedido.\",\"en\":\"What to check when the lorry arrives. Test guide.\"},\"secciones\":[{\"titulo\":{\"es\":\"Lo básico\",\"en\":\"The basics\"},\"texto\":{\"es\":\"Accesos, descarga y comprobaciones al recibir un pedido. Texto de prueba para ver cómo queda.\",\"en\":\"Test text to see how it looks.\"}}],\"seoDescripcion\":{\"es\":\"Guía de prueba: Accesos, descarga y comprobaciones al recibir un pedido.\",\"en\":\"Test guide: What to check when the lorry arrives.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": null,
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:54.542Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "guias",
+    "id": "prueba-olivos-en-maceta",
+    "borrador": "{\"datos\":{\"slug\":\"prueba-olivos-en-maceta\",\"titulo\":{\"es\":\"Olivos en maceta: tamaño y cuidados (prueba)\",\"en\":\"Potted olive trees: size and care (test)\"},\"resumen\":{\"es\":\"Qué contenedor elegir y cómo mantener un olivo en maceta.\",\"en\":\"Potted olive trees: size and care. Test guide.\"},\"secciones\":[{\"titulo\":{\"es\":\"Lo básico\",\"en\":\"The basics\"},\"texto\":{\"es\":\"Qué contenedor elegir y cómo mantener un olivo en maceta. Texto de prueba para ver cómo queda.\",\"en\":\"Test text to see how it looks.\"}}],\"seoDescripcion\":{\"es\":\"Guía de prueba: Qué contenedor elegir y cómo mantener un olivo en maceta.\",\"en\":\"Test guide: Potted olive trees: size and care.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": null,
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:54.578Z",
+    "actualizado_por": "propietario@example.com"
+   },
+   {
+    "coleccion": "guias",
+    "id": "prueba-mejor-epoca-para-plantar",
+    "borrador": "{\"datos\":{\"slug\":\"prueba-mejor-epoca-para-plantar\",\"titulo\":{\"es\":\"La mejor época para plantar (prueba)\",\"en\":\"The best time to plant (test)\"},\"resumen\":{\"es\":\"Cuándo conviene plantar cada familia en la zona mediterránea.\",\"en\":\"The best time to plant. Test guide.\"},\"secciones\":[{\"titulo\":{\"es\":\"Lo básico\",\"en\":\"The basics\"},\"texto\":{\"es\":\"Cuándo conviene plantar cada familia en la zona mediterránea. Texto de prueba para ver cómo queda.\",\"en\":\"Test text to see how it looks.\"}}],\"seoDescripcion\":{\"es\":\"Guía de prueba: Cuándo conviene plantar cada familia en la zona mediterránea.\",\"en\":\"Test guide: The best time to plant.\"},\"datosDeEjemplo\":true,\"revisado\":false},\"cuerpo\":\"\"}",
+    "publicado": null,
+    "archivada": 0,
+    "actualizado": "2026-10-29T11:29:54.610Z",
+    "actualizado_por": "propietario@example.com"
+   }
+  ],
+  "esquema_version": [
+   {
+    "version": 1,
+    "aplicada": "2026-10-29T11:29:52.825Z"
+   },
+   {
+    "version": 2,
+    "aplicada": "2026-10-29T11:29:52.844Z"
+   },
+   {
+    "version": 3,
+    "aplicada": "2026-10-29T11:29:52.867Z"
+   },
+   {
+    "version": 4,
+    "aplicada": "2026-10-29T11:29:52.890Z"
+   },
+   {
+    "version": 5,
+    "aplicada": "2026-10-29T11:29:52.915Z"
+   },
+   {
+    "version": 6,
+    "aplicada": "2026-10-29T11:29:52.944Z"
+   },
+   {
+    "version": 7,
+    "aplicada": "2026-10-29T11:29:52.967Z"
+   },
+   {
+    "version": 8,
+    "aplicada": "2026-10-29T11:29:52.995Z"
+   },
+   {
+    "version": 9,
+    "aplicada": "2026-10-29T11:29:53.027Z"
+   }
+  ],
+  "facturas": [
+   {
+    "id": "prueba-factura-1",
+    "tipo": "ordinaria",
+    "estado": "cobrada",
+    "serie": "PRUEBA-F2026",
+    "numero": 1,
+    "codigo": "PRUEBA-F2026-0001",
+    "fecha": "2026-08-15",
+    "cliente_id": "prueba-cliente-1",
+    "total": 990,
+    "datos": "{\"id\":\"prueba-factura-1\",\"tipo\":\"ordinaria\",\"estado\":\"emitida\",\"serie\":\"PRUEBA-F2026\",\"numero\":1,\"codigo\":\"PRUEBA-F2026-0001\",\"fecha\":\"2026-08-15\",\"vencimiento\":\"2026-09-14\",\"clienteId\":\"prueba-cliente-1\",\"cliente\":{\"id\":\"prueba-cliente-1\",\"nombre\":\"Jardinería Turia SL (prueba)\",\"nif\":\"B46123451\",\"direccion\":\"Calle de Prueba 1\",\"codigoPostal\":\"46001\",\"poblacion\":\"Valencia\",\"provincia\":\"Valencia\",\"pais\":\"España\",\"email\":\"prueba1@example.com\",\"telefono\":\"+34 600 000 001\",\"recargo\":false,\"notas\":\"Cliente de prueba\",\"archivado\":false},\"emisor\":{\"nombre\":\"EMPRESA DE PRUEBA (sin validez)\",\"nif\":\"B00000000\",\"direccion\":\"Calle de Prueba 1\",\"codigoPostal\":\"46000\",\"poblacion\":\"Valencia\",\"provincia\":\"Valencia\",\"email\":\"pruebas@example.com\",\"telefono\":\"\",\"iban\":\"\",\"pie\":\"Factura de prueba generada en el modo de pruebas del panel. Sin validez fiscal.\"},\"lineas\":[{\"concepto\":\"Olivo ornamental de copa\",\"cantidad\":20,\"precio\":45,\"descuento\":0,\"iva\":10}],\"totales\":{\"base\":900,\"cuotaIva\":90,\"cuotaRecargo\":0,\"total\":990,\"desglose\":[{\"iva\":10,\"base\":900,\"cuota\":90,\"recargo\":0,\"cuotaRecargo\":0}]},\"formaPago\":\"Transferencia bancaria\",\"notas\":\"\",\"exencion\":\"\",\"rectificaId\":null,\"rectificaCodigo\":null,\"motivoRectificacion\":\"\",\"presupuestoId\":null,\"cobradaEl\":null,\"huella\":\"1114fa3de31dd7d9f1c67cb5f2567e8f4989c96ee6f0f72e41fbf54d91ecf7e3\",\"huellaAnterior\":null,\"creada\":\"2026-10-29T11:29:53.823Z\",\"creadaPor\":\"propietario@example.com\",\"actualizada\":\"2026-10-29T11:29:53.898Z\",\"prueba\":true,\"emitidaEl\":\"2026-10-29T11:29:53.898Z\"}",
+    "huella": "1114fa3de31dd7d9f1c67cb5f2567e8f4989c96ee6f0f72e41fbf54d91ecf7e3",
+    "cobrada_el": "2026-09-04",
+    "creada": "2026-10-29T11:29:53.823Z",
+    "creada_por": "propietario@example.com",
+    "actualizada": "2026-10-29T11:29:53.916Z"
+   },
+   {
+    "id": "prueba-factura-2",
+    "tipo": "ordinaria",
+    "estado": "cobrada",
+    "serie": "PRUEBA-F2026",
+    "numero": 2,
+    "codigo": "PRUEBA-F2026-0002",
+    "fecha": "2026-09-14",
+    "cliente_id": "prueba-cliente-2",
+    "total": 1622.5,
+    "datos": "{\"id\":\"prueba-factura-2\",\"tipo\":\"ordinaria\",\"estado\":\"emitida\",\"serie\":\"PRUEBA-F2026\",\"numero\":2,\"codigo\":\"PRUEBA-F2026-0002\",\"fecha\":\"2026-09-14\",\"vencimiento\":\"2026-10-14\",\"clienteId\":\"prueba-cliente-2\",\"cliente\":{\"id\":\"prueba-cliente-2\",\"nombre\":\"Paisajes del Sur SL (prueba)\",\"nif\":\"B41234568\",\"direccion\":\"Avenida de Prueba 22\",\"codigoPostal\":\"41001\",\"poblacion\":\"Sevilla\",\"provincia\":\"Sevilla\",\"pais\":\"España\",\"email\":\"prueba2@example.com\",\"telefono\":\"+34 600 000 002\",\"recargo\":false,\"notas\":\"Cliente de prueba\",\"archivado\":false},\"emisor\":{\"nombre\":\"EMPRESA DE PRUEBA (sin validez)\",\"nif\":\"B00000000\",\"direccion\":\"Calle de Prueba 1\",\"codigoPostal\":\"46000\",\"poblacion\":\"Valencia\",\"provincia\":\"Valencia\",\"email\":\"pruebas@example.com\",\"telefono\":\"\",\"iban\":\"\",\"pie\":\"Factura de prueba generada en el modo de pruebas del panel. Sin validez fiscal.\"},\"lineas\":[{\"concepto\":\"Palmera canaria\",\"cantidad\":10,\"precio\":120,\"descuento\":0,\"iva\":10},{\"concepto\":\"Transporte a Sevilla\",\"cantidad\":1,\"precio\":250,\"descuento\":0,\"iva\":21}],\"totales\":{\"base\":1450,\"cuotaIva\":172.5,\"cuotaRecargo\":0,\"total\":1622.5,\"desglose\":[{\"iva\":21,\"base\":250,\"cuota\":52.5,\"recargo\":0,\"cuotaRecargo\":0},{\"iva\":10,\"base\":1200,\"cuota\":120,\"recargo\":0,\"cuotaRecargo\":0}]},\"formaPago\":\"Transferencia bancaria\",\"notas\":\"\",\"exencion\":\"\",\"rectificaId\":null,\"rectificaCodigo\":null,\"motivoRectificacion\":\"\",\"presupuestoId\":null,\"cobradaEl\":null,\"huella\":\"d514b400f8442593a61129d17bc074426008187d76ed7bf34b8db0bdecc8481b\",\"huellaAnterior\":null,\"creada\":\"2026-10-29T11:29:53.925Z\",\"creadaPor\":\"propietario@example.com\",\"actualizada\":\"2026-10-29T11:29:53.977Z\",\"prueba\":true,\"emitidaEl\":\"2026-10-29T11:29:53.977Z\"}",
+    "huella": "d514b400f8442593a61129d17bc074426008187d76ed7bf34b8db0bdecc8481b",
+    "cobrada_el": "2026-10-09",
+    "creada": "2026-10-29T11:29:53.925Z",
+    "creada_por": "propietario@example.com",
+    "actualizada": "2026-10-29T11:29:54.005Z"
+   },
+   {
+    "id": "prueba-factura-3",
+    "tipo": "ordinaria",
+    "estado": "emitida",
+    "serie": "PRUEBA-F2026",
+    "numero": 3,
+    "codigo": "PRUEBA-F2026-0003",
+    "fecha": "2026-10-09",
+    "cliente_id": "prueba-cliente-3",
+    "total": 1287,
+    "datos": "{\"id\":\"prueba-factura-3\",\"tipo\":\"ordinaria\",\"estado\":\"emitida\",\"serie\":\"PRUEBA-F2026\",\"numero\":3,\"codigo\":\"PRUEBA-F2026-0003\",\"fecha\":\"2026-10-09\",\"vencimiento\":\"2026-10-24\",\"clienteId\":\"prueba-cliente-3\",\"cliente\":{\"id\":\"prueba-cliente-3\",\"nombre\":\"Construcciones Levante SA (prueba)\",\"nif\":\"A36543213\",\"direccion\":\"Polígono de Prueba, nave 3\",\"codigoPostal\":\"03001\",\"poblacion\":\"Alicante\",\"provincia\":\"Alicante\",\"pais\":\"España\",\"email\":\"prueba3@example.com\",\"telefono\":\"+34 600 000 003\",\"recargo\":false,\"notas\":\"Cliente de prueba\",\"archivado\":false},\"emisor\":{\"nombre\":\"EMPRESA DE PRUEBA (sin validez)\",\"nif\":\"B00000000\",\"direccion\":\"Calle de Prueba 1\",\"codigoPostal\":\"46000\",\"poblacion\":\"Valencia\",\"provincia\":\"Valencia\",\"email\":\"pruebas@example.com\",\"telefono\":\"\",\"iban\":\"\",\"pie\":\"Factura de prueba generada en el modo de pruebas del panel. Sin validez fiscal.\"},\"lineas\":[{\"concepto\":\"Washingtonia robusta\",\"cantidad\":15,\"precio\":60,\"descuento\":0,\"iva\":10},{\"concepto\":\"Yuca\",\"cantidad\":15,\"precio\":18,\"descuento\":0,\"iva\":10}],\"totales\":{\"base\":1170,\"cuotaIva\":117,\"cuotaRecargo\":0,\"total\":1287,\"desglose\":[{\"iva\":10,\"base\":1170,\"cuota\":117,\"recargo\":0,\"cuotaRecargo\":0}]},\"formaPago\":\"Transferencia bancaria\",\"notas\":\"\",\"exencion\":\"\",\"rectificaId\":null,\"rectificaCodigo\":null,\"motivoRectificacion\":\"\",\"presupuestoId\":null,\"cobradaEl\":null,\"huella\":\"34d4c8b9a323d858ad2e32b067077fd5d600c530ae9de72419d9019cde515957\",\"huellaAnterior\":null,\"creada\":\"2026-10-29T11:29:54.022Z\",\"creadaPor\":\"propietario@example.com\",\"actualizada\":\"2026-10-29T11:29:54.091Z\",\"prueba\":true,\"emitidaEl\":\"2026-10-29T11:29:54.091Z\"}",
+    "huella": "34d4c8b9a323d858ad2e32b067077fd5d600c530ae9de72419d9019cde515957",
+    "cobrada_el": null,
+    "creada": "2026-10-29T11:29:54.022Z",
+    "creada_por": "propietario@example.com",
+    "actualizada": "2026-10-29T11:29:54.091Z"
+   },
+   {
+    "id": "prueba-factura-4",
+    "tipo": "ordinaria",
+    "estado": "emitida",
+    "serie": "PRUEBA-F2026",
+    "numero": 4,
+    "codigo": "PRUEBA-F2026-0004",
+    "fecha": "2026-10-24",
+    "cliente_id": "prueba-cliente-4",
+    "total": 280.73,
+    "datos": "{\"id\":\"prueba-factura-4\",\"tipo\":\"ordinaria\",\"estado\":\"emitida\",\"serie\":\"PRUEBA-F2026\",\"numero\":4,\"codigo\":\"PRUEBA-F2026-0004\",\"fecha\":\"2026-10-24\",\"vencimiento\":\"2026-11-23\",\"clienteId\":\"prueba-cliente-4\",\"cliente\":{\"id\":\"prueba-cliente-4\",\"nombre\":\"Floristería La Rosa (prueba)\",\"nif\":\"12345678Z\",\"direccion\":\"Plaza de Prueba 4\",\"codigoPostal\":\"12001\",\"poblacion\":\"Castellón de la Plana\",\"provincia\":\"Castellón\",\"pais\":\"España\",\"email\":\"prueba4@example.com\",\"telefono\":\"+34 600 000 004\",\"recargo\":true,\"notas\":\"Cliente de prueba\",\"archivado\":false},\"emisor\":{\"nombre\":\"EMPRESA DE PRUEBA (sin validez)\",\"nif\":\"B00000000\",\"direccion\":\"Calle de Prueba 1\",\"codigoPostal\":\"46000\",\"poblacion\":\"Valencia\",\"provincia\":\"Valencia\",\"email\":\"pruebas@example.com\",\"telefono\":\"\",\"iban\":\"\",\"pie\":\"Factura de prueba generada en el modo de pruebas del panel. Sin validez fiscal.\"},\"lineas\":[{\"concepto\":\"Cica\",\"cantidad\":6,\"precio\":22,\"descuento\":0,\"iva\":10},{\"concepto\":\"Palmito\",\"cantidad\":10,\"precio\":12,\"descuento\":0,\"iva\":10}],\"totales\":{\"base\":252,\"cuotaIva\":25.2,\"cuotaRecargo\":3.53,\"total\":280.73,\"desglose\":[{\"iva\":10,\"base\":252,\"cuota\":25.2,\"recargo\":1.4,\"cuotaRecargo\":3.53}]},\"formaPago\":\"Transferencia bancaria\",\"notas\":\"\",\"exencion\":\"\",\"rectificaId\":null,\"rectificaCodigo\":null,\"motivoRectificacion\":\"\",\"presupuestoId\":null,\"cobradaEl\":null,\"huella\":\"7b6e6f7d77e3b922b8545483eb7d74a04db61d7d9296d110bbee7c13b1fc21df\",\"huellaAnterior\":null,\"creada\":\"2026-10-29T11:29:54.105Z\",\"creadaPor\":\"propietario@example.com\",\"actualizada\":\"2026-10-29T11:29:54.172Z\",\"prueba\":true,\"emitidaEl\":\"2026-10-29T11:29:54.172Z\"}",
+    "huella": "7b6e6f7d77e3b922b8545483eb7d74a04db61d7d9296d110bbee7c13b1fc21df",
+    "cobrada_el": null,
+    "creada": "2026-10-29T11:29:54.105Z",
+    "creada_por": "propietario@example.com",
+    "actualizada": "2026-10-29T11:29:54.172Z"
+   },
+   {
+    "id": "prueba-factura-5",
+    "tipo": "ordinaria",
+    "estado": "borrador",
+    "serie": null,
+    "numero": null,
+    "codigo": null,
+    "fecha": "2026-10-29",
+    "cliente_id": "prueba-cliente-5",
+    "total": 440,
+    "datos": "{\"id\":\"prueba-factura-5\",\"tipo\":\"ordinaria\",\"estado\":\"borrador\",\"serie\":null,\"numero\":null,\"codigo\":null,\"fecha\":\"2026-10-29\",\"vencimiento\":\"2026-11-28\",\"clienteId\":\"prueba-cliente-5\",\"cliente\":{\"id\":\"prueba-cliente-5\",\"nombre\":\"Garden Center Mediterráneo SL (prueba)\",\"nif\":\"B30765432\",\"direccion\":\"Carretera de Prueba km 5\",\"codigoPostal\":\"30001\",\"poblacion\":\"Murcia\",\"provincia\":\"Murcia\",\"pais\":\"España\",\"email\":\"prueba5@example.com\",\"telefono\":\"+34 600 000 005\",\"recargo\":false,\"notas\":\"Cliente de prueba\",\"archivado\":false},\"emisor\":null,\"lineas\":[{\"concepto\":\"Naranjo amargo\",\"cantidad\":10,\"precio\":40,\"descuento\":0,\"iva\":10}],\"totales\":{\"base\":400,\"cuotaIva\":40,\"cuotaRecargo\":0,\"total\":440,\"desglose\":[{\"iva\":10,\"base\":400,\"cuota\":40,\"recargo\":0,\"cuotaRecargo\":0}]},\"formaPago\":\"Transferencia bancaria\",\"notas\":\"\",\"exencion\":\"\",\"rectificaId\":null,\"rectificaCodigo\":null,\"motivoRectificacion\":\"\",\"presupuestoId\":null,\"cobradaEl\":null,\"huella\":null,\"huellaAnterior\":null,\"creada\":\"2026-10-29T11:29:54.187Z\",\"creadaPor\":\"propietario@example.com\",\"actualizada\":\"2026-10-29T11:29:54.206Z\",\"prueba\":true}",
+    "huella": null,
+    "cobrada_el": null,
+    "creada": "2026-10-29T11:29:54.187Z",
+    "creada_por": "propietario@example.com",
+    "actualizada": "2026-10-29T11:29:54.206Z"
+   }
+  ],
+  "fotos": [
+   {
+    "ruta": "catalogo/cycas-revoluta/foto-prueba-1.jpg",
+    "tipo": "image/jpeg",
+    "bytes": {
+     "$blob": "/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4A=="
+    },
+    "tamano": 64,
+    "subida": "2026-10-29T11:29:53.136Z",
+    "subida_por": "propietario@example.com"
+   },
+   {
+    "ruta": "catalogo/olivo-ornamental-copa/foto-prueba-1.jpg",
+    "tipo": "image/jpeg",
+    "bytes": {
+     "$blob": "/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4A=="
+    },
+    "tamano": 64,
+    "subida": "2026-10-29T11:29:53.173Z",
+    "subida_por": "propietario@example.com"
+   },
+   {
+    "ruta": "catalogo/phoenix-canariensis/foto-prueba-1.jpg",
+    "tipo": "image/jpeg",
+    "bytes": {
+     "$blob": "/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4A=="
+    },
+    "tamano": 64,
+    "subida": "2026-10-29T11:29:53.199Z",
+    "subida_por": "propietario@example.com"
+   },
+   {
+    "ruta": "catalogo/phoenix-canariensis/foto-prueba-2.jpg",
+    "tipo": "image/jpeg",
+    "bytes": {
+     "$blob": "/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4A=="
+    },
+    "tamano": 64,
+    "subida": "2026-10-29T11:29:53.214Z",
+    "subida_por": "propietario@example.com"
+   }
+  ],
+  "gastos": [
+   {
+    "id": "prueba-gasto-1",
+    "estado": "confirmado",
+    "fecha": "2026-08-30",
+    "proveedor": "Sustratos del Turia (prueba)",
+    "categoria": "sustratos",
+    "total": 363,
+    "ticket_id": null,
+    "datos": "{\"id\":\"prueba-gasto-1\",\"estado\":\"confirmado\",\"fecha\":\"2026-08-30\",\"proveedor\":\"Sustratos del Turia (prueba)\",\"nifProveedor\":\"\",\"categoria\":\"sustratos\",\"lineas\":[{\"concepto\":\"Sustrato universal 70 l (50 sacos)\",\"cantidad\":1,\"importe\":363}],\"base\":300,\"iva\":63,\"total\":363,\"formaPago\":\"Transferencia\",\"notas\":\"Gasto de prueba\",\"ticketId\":null,\"leidoAutomaticamente\":false,\"avisos\":[],\"creado\":\"2026-10-29T11:29:54.225Z\",\"creadoPor\":\"propietario@example.com\",\"actualizado\":\"2026-10-29T11:29:54.226Z\"}",
+    "creado": "2026-10-29T11:29:54.225Z",
+    "creado_por": "propietario@example.com",
+    "actualizado": "2026-10-29T11:29:54.226Z"
+   },
+   {
+    "id": "prueba-gasto-2",
+    "estado": "confirmado",
+    "fecha": "2026-09-29",
+    "proveedor": "Estación de servicio (prueba)",
+    "categoria": "combustible",
+    "total": 85.4,
+    "ticket_id": null,
+    "datos": "{\"id\":\"prueba-gasto-2\",\"estado\":\"confirmado\",\"fecha\":\"2026-09-29\",\"proveedor\":\"Estación de servicio (prueba)\",\"nifProveedor\":\"\",\"categoria\":\"combustible\",\"lineas\":[{\"concepto\":\"Gasóleo furgoneta\",\"cantidad\":1,\"importe\":85.4}],\"base\":70.58,\"iva\":14.82,\"total\":85.4,\"formaPago\":\"Tarjeta\",\"notas\":\"Gasto de prueba\",\"ticketId\":null,\"leidoAutomaticamente\":false,\"avisos\":[],\"creado\":\"2026-10-29T11:29:54.240Z\",\"creadoPor\":\"propietario@example.com\",\"actualizado\":\"2026-10-29T11:29:54.240Z\"}",
+    "creado": "2026-10-29T11:29:54.240Z",
+    "creado_por": "propietario@example.com",
+    "actualizado": "2026-10-29T11:29:54.240Z"
+   },
+   {
+    "id": "prueba-gasto-3",
+    "estado": "confirmado",
+    "fecha": "2026-10-14",
+    "proveedor": "Envases Agrícolas (prueba)",
+    "categoria": "macetas",
+    "total": 242,
+    "ticket_id": null,
+    "datos": "{\"id\":\"prueba-gasto-3\",\"estado\":\"confirmado\",\"fecha\":\"2026-10-14\",\"proveedor\":\"Envases Agrícolas (prueba)\",\"nifProveedor\":\"\",\"categoria\":\"macetas\",\"lineas\":[{\"concepto\":\"Contenedores 50 l\",\"cantidad\":1,\"importe\":242}],\"base\":200,\"iva\":42,\"total\":242,\"formaPago\":\"Transferencia\",\"notas\":\"Gasto de prueba\",\"ticketId\":null,\"leidoAutomaticamente\":false,\"avisos\":[],\"creado\":\"2026-10-29T11:29:54.257Z\",\"creadoPor\":\"propietario@example.com\",\"actualizado\":\"2026-10-29T11:29:54.257Z\"}",
+    "creado": "2026-10-29T11:29:54.257Z",
+    "creado_por": "propietario@example.com",
+    "actualizado": "2026-10-29T11:29:54.257Z"
+   },
+   {
+    "id": "prueba-gasto-4",
+    "estado": "confirmado",
+    "fecha": "2026-10-26",
+    "proveedor": "Vivero Productor del Sur (prueba)",
+    "categoria": "planta",
+    "total": 1210,
+    "ticket_id": null,
+    "datos": "{\"id\":\"prueba-gasto-4\",\"estado\":\"confirmado\",\"fecha\":\"2026-10-26\",\"proveedor\":\"Vivero Productor del Sur (prueba)\",\"nifProveedor\":\"\",\"categoria\":\"planta\",\"lineas\":[{\"concepto\":\"Palmeras jóvenes para cultivo\",\"cantidad\":1,\"importe\":1210}],\"base\":1100,\"iva\":110,\"total\":1210,\"formaPago\":\"Transferencia\",\"notas\":\"Gasto de prueba\",\"ticketId\":null,\"leidoAutomaticamente\":false,\"avisos\":[],\"creado\":\"2026-10-29T11:29:54.271Z\",\"creadoPor\":\"propietario@example.com\",\"actualizado\":\"2026-10-29T11:29:54.272Z\"}",
+    "creado": "2026-10-29T11:29:54.271Z",
+    "creado_por": "propietario@example.com",
+    "actualizado": "2026-10-29T11:29:54.272Z"
+   },
+   {
+    "id": "prueba-gasto-5",
+    "estado": "revisar",
+    "fecha": "2026-10-29",
+    "proveedor": "Ferretería Ruzafa (prueba)",
+    "categoria": "herramientas",
+    "total": 34.9,
+    "ticket_id": null,
+    "datos": "{\"id\":\"prueba-gasto-5\",\"estado\":\"revisar\",\"fecha\":\"2026-10-29\",\"proveedor\":\"Ferretería Ruzafa (prueba)\",\"nifProveedor\":\"\",\"categoria\":\"herramientas\",\"lineas\":[{\"concepto\":\"Tijeras de podar\",\"cantidad\":1,\"importe\":34.9}],\"base\":null,\"iva\":null,\"total\":34.9,\"formaPago\":\"Efectivo\",\"notas\":\"Gasto de prueba\",\"ticketId\":null,\"leidoAutomaticamente\":false,\"avisos\":[],\"creado\":\"2026-10-29T11:29:54.285Z\",\"creadoPor\":\"propietario@example.com\",\"actualizado\":\"2026-10-29T11:29:54.285Z\"}",
+    "creado": "2026-10-29T11:29:54.285Z",
+    "creado_por": "propietario@example.com",
+    "actualizado": "2026-10-29T11:29:54.285Z"
+   }
+  ],
+  "inventario_movimientos": [
+   {
+    "id": 1,
+    "planta": "chamaerops-humilis",
+    "tipo": "entrada",
+    "cantidad": 20,
+    "motivo": "Producción propia",
+    "nota": "Prueba",
+    "referencia": "prueba:entrada:chamaerops-humilis",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 2,
+    "planta": "chamaerops-humilis",
+    "tipo": "salida",
+    "cantidad": -5,
+    "motivo": "Venta sin factura",
+    "nota": "Prueba",
+    "referencia": "prueba:salida:chamaerops-humilis",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 3,
+    "planta": "cycas-revoluta",
+    "tipo": "entrada",
+    "cantidad": 57,
+    "motivo": "Producción propia",
+    "nota": "Prueba",
+    "referencia": "prueba:entrada:cycas-revoluta",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 4,
+    "planta": "cycas-revoluta",
+    "tipo": "baja",
+    "cantidad": -3,
+    "motivo": "Se ha muerto",
+    "nota": "Prueba",
+    "referencia": "prueba:baja:cycas-revoluta",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 5,
+    "planta": "higuera-comun",
+    "tipo": "entrada",
+    "cantidad": 94,
+    "motivo": "Producción propia",
+    "nota": "Prueba",
+    "referencia": "prueba:entrada:higuera-comun",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 6,
+    "planta": "naranjo-amargo",
+    "tipo": "entrada",
+    "cantidad": 131,
+    "motivo": "Producción propia",
+    "nota": "Prueba",
+    "referencia": "prueba:entrada:naranjo-amargo",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 7,
+    "planta": "naranjo-amargo",
+    "tipo": "salida",
+    "cantidad": -8,
+    "motivo": "Venta sin factura",
+    "nota": "Prueba",
+    "referencia": "prueba:salida:naranjo-amargo",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 8,
+    "planta": "olivo-gran-perimetro",
+    "tipo": "entrada",
+    "cantidad": 168,
+    "motivo": "Producción propia",
+    "nota": "Prueba",
+    "referencia": "prueba:entrada:olivo-gran-perimetro",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 9,
+    "planta": "olivo-ornamental-copa",
+    "tipo": "entrada",
+    "cantidad": 25,
+    "motivo": "Producción propia",
+    "nota": "Prueba",
+    "referencia": "prueba:entrada:olivo-ornamental-copa",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 10,
+    "planta": "olivo-ornamental-copa",
+    "tipo": "baja",
+    "cantidad": -2,
+    "motivo": "Se ha muerto",
+    "nota": "Prueba",
+    "referencia": "prueba:baja:olivo-ornamental-copa",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 11,
+    "planta": "phoenix-canariensis",
+    "tipo": "entrada",
+    "cantidad": 62,
+    "motivo": "Producción propia",
+    "nota": "Prueba",
+    "referencia": "prueba:entrada:phoenix-canariensis",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 12,
+    "planta": "phoenix-canariensis",
+    "tipo": "salida",
+    "cantidad": -11,
+    "motivo": "Venta sin factura",
+    "nota": "Prueba",
+    "referencia": "prueba:salida:phoenix-canariensis",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 13,
+    "planta": "phoenix-dactylifera",
+    "tipo": "entrada",
+    "cantidad": 99,
+    "motivo": "Producción propia",
+    "nota": "Prueba",
+    "referencia": "prueba:entrada:phoenix-dactylifera",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 14,
+    "planta": "washingtonia-robusta",
+    "tipo": "entrada",
+    "cantidad": 136,
+    "motivo": "Producción propia",
+    "nota": "Prueba",
+    "referencia": "prueba:entrada:washingtonia-robusta",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 15,
+    "planta": "yucca-elephantipes",
+    "tipo": "entrada",
+    "cantidad": 173,
+    "motivo": "Producción propia",
+    "nota": "Prueba",
+    "referencia": "prueba:entrada:yucca-elephantipes",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 16,
+    "planta": "yucca-elephantipes",
+    "tipo": "salida",
+    "cantidad": -14,
+    "motivo": "Venta sin factura",
+    "nota": "Prueba",
+    "referencia": "prueba:salida:yucca-elephantipes",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 17,
+    "planta": "yucca-elephantipes",
+    "tipo": "baja",
+    "cantidad": -6,
+    "motivo": "Se ha muerto",
+    "nota": "Prueba",
+    "referencia": "prueba:baja:yucca-elephantipes",
+    "fecha": "2026-10-29T11:29:54.665Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 18,
+    "planta": "yucca-elephantipes",
+    "tipo": "entrada",
+    "cantidad": 40,
+    "motivo": "Producción propia",
+    "nota": "",
+    "referencia": null,
+    "fecha": "2026-10-29T11:29:54.871Z",
+    "email": "propietario@example.com"
+   },
+   {
+    "id": 19,
+    "planta": "yucca-elephantipes",
+    "tipo": "baja",
+    "cantidad": -2,
+    "motivo": "Otro motivo",
+    "nota": "Rota al cargar",
+    "referencia": null,
+    "fecha": "2026-10-29T11:29:54.935Z",
+    "email": "propietario@example.com"
+   }
+  ],
+  "presupuestos": [
+   {
+    "id": "prueba-presupuesto-1",
+    "fecha": "2026-10-29T09:10:00.000Z",
+    "estado": "nuevo",
+    "idioma": "es",
+    "tipo_pedido": "mayor",
+    "nombre": "Laura Prueba",
+    "email": "presupuesto1@example.com",
+    "telefono": "+34 600 000 10",
+    "empresa": "Jardinería Turia SL (prueba)",
+    "mensaje": "Necesitamos las palmeras antes de fin de mes para una rotonda. ¿Hacéis la descarga?",
+    "lineas": "[{\"especie\":\"phoenix-canariensis\",\"nombre\":\"Palmera canaria\",\"cantidad\":12},{\"especie\":\"chamaerops-humilis\",\"nombre\":\"Palmito\",\"cantidad\":30}]",
+    "provincia": "Valencia"
+   },
+   {
+    "id": "prueba-presupuesto-2",
+    "fecha": "2026-10-28T09:11:00.000Z",
+    "estado": "nuevo",
+    "idioma": "es",
+    "tipo_pedido": "unidad",
+    "nombre": "Carlos Prueba",
+    "email": "presupuesto2@example.com",
+    "telefono": "+34 600 000 11",
+    "empresa": "",
+    "mensaje": "Es para la terraza de casa, un olivo de unos 2 m.",
+    "lineas": "[{\"especie\":\"olivo-ornamental-copa\",\"nombre\":\"Olivo ornamental de copa\",\"cantidad\":1}]",
+    "provincia": "Madrid"
+   },
+   {
+    "id": "prueba-presupuesto-3",
+    "fecha": "2026-10-23T09:12:00.000Z",
+    "estado": "respondido",
+    "idioma": "es",
+    "tipo_pedido": "mayor",
+    "nombre": "Marta Prueba",
+    "email": "presupuesto3@example.com",
+    "telefono": "+34 600 000 12",
+    "empresa": "Paisajes del Sur SL (prueba)",
+    "mensaje": "Proyecto de urbanización, entrega en dos fases.",
+    "lineas": "[{\"especie\":\"washingtonia-robusta\",\"nombre\":\"Washingtonia robusta\",\"cantidad\":20},{\"especie\":\"yucca-elephantipes\",\"nombre\":\"Yuca\",\"cantidad\":15}]",
+    "provincia": "Sevilla"
+   },
+   {
+    "id": "prueba-presupuesto-4",
+    "fecha": "2026-10-15T09:13:00.000Z",
+    "estado": "respondido",
+    "idioma": "es",
+    "tipo_pedido": "mayor",
+    "nombre": "Andrés Prueba",
+    "email": "presupuesto4@example.com",
+    "telefono": "+34 600 000 13",
+    "empresa": "Garden Center Mediterráneo SL (prueba)",
+    "mensaje": "Pedido habitual de temporada para la tienda.",
+    "lineas": "[{\"especie\":\"cycas-revoluta\",\"nombre\":\"Cica\",\"cantidad\":25},{\"especie\":\"naranjo-amargo\",\"nombre\":\"Naranjo amargo\",\"cantidad\":10}]",
+    "provincia": "Murcia"
+   },
+   {
+    "id": "prueba-presupuesto-5",
+    "fecha": "2026-09-19T09:14:00.000Z",
+    "estado": "archivado",
+    "idioma": "es",
+    "tipo_pedido": "mayor",
+    "nombre": "Elena Prueba",
+    "email": "presupuesto5@example.com",
+    "telefono": "+34 600 000 14",
+    "empresa": "Construcciones Levante SA (prueba)",
+    "mensaje": "Al final lo dejamos para el año que viene.",
+    "lineas": "[{\"especie\":\"higuera-comun\",\"nombre\":\"Higuera común\",\"cantidad\":8}]",
+    "provincia": "Alicante"
+   }
+  ],
+  "publicaciones": [
+   {
+    "id": 1,
+    "fecha": "2026-10-29T11:29:54.970Z",
+    "email": "propietario@example.com",
+    "estado": "lanzada",
+    "detalle": "prueba",
+    "en_web": null
+   }
+  ],
+  "tickets": [
+   {
+    "id": "ticket-base",
+    "tipo": "image/jpeg",
+    "bytes": {
+     "$blob": "/9j/4AECAw=="
+    },
+    "tamano": 7,
+    "subido": "2026-10-29T11:29:55.004Z",
+    "subido_por": "propietario@example.com"
+   }
+  ],
+  "usuarios": [
+   {
+    "email": "propietario@example.com",
+    "nombre": "Propietario de prueba",
+    "rol": "propietario",
+    "activo": 1,
+    "creado": "2026-10-29T11:29:53.521Z"
+   },
+   {
+    "email": "gerente@example.com",
+    "nombre": "Gerente de prueba",
+    "rol": "gerente",
+    "activo": 1,
+    "creado": "2026-10-29T11:29:53.536Z"
+   },
+   {
+    "email": "editor@example.com",
+    "nombre": "",
+    "rol": "editor",
+    "activo": 0,
+    "creado": "2026-10-29T11:29:53.552Z"
+   }
+  ]
+ }
+}

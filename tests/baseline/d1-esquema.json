@@ -1,0 +1,1024 @@
+{
+  "version": 9,
+  "tablas": {
+    "ajustes_privados": {
+      "columnas": [
+        {
+          "nombre": "clave",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "valor",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE ajustes_privados ( clave TEXT PRIMARY KEY, valor TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL )"
+    },
+    "asistente_conversaciones": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "email",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creada",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "usada",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE asistente_conversaciones ( id TEXT PRIMARY KEY, email TEXT NOT NULL, creada TEXT NOT NULL , usada TEXT)"
+    },
+    "asistente_mensajes": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "INTEGER",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "conversacion",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "rol",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "texto",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "propuestas",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "'[]'",
+          "clave": 0
+        },
+        {
+          "nombre": "fecha",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE asistente_mensajes ( id INTEGER PRIMARY KEY AUTOINCREMENT, conversacion TEXT NOT NULL, rol TEXT NOT NULL CHECK (rol IN ('usuario', 'asistente')), texto TEXT NOT NULL, propuestas TEXT NOT NULL DEFAULT '[]', fecha TEXT NOT NULL )"
+    },
+    "asistente_propuestas": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "conversacion",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "email",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "herramienta",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "argumentos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "resumen",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "estado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "resultado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "creada",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE asistente_propuestas ( id TEXT PRIMARY KEY, conversacion TEXT NOT NULL, email TEXT NOT NULL, herramienta TEXT NOT NULL, argumentos TEXT NOT NULL, resumen TEXT NOT NULL, estado TEXT NOT NULL CHECK (estado IN ('pendiente', 'aplicada', 'rechazada', 'fallida')), resultado TEXT NOT NULL DEFAULT '', creada TEXT NOT NULL )"
+    },
+    "asistente_uso": {
+      "columnas": [
+        {
+          "nombre": "email",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "dia",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 2
+        },
+        {
+          "nombre": "usos",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE asistente_uso ( email TEXT NOT NULL, dia TEXT NOT NULL, usos INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (email, dia) )"
+    },
+    "auditoria": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "INTEGER",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "fecha",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "email",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "accion",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "detalle",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE auditoria ( id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT NOT NULL, email TEXT NOT NULL, accion TEXT NOT NULL, detalle TEXT NOT NULL DEFAULT '' )"
+    },
+    "cambios": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "INTEGER",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "fecha",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "email",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "coleccion",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "entrada_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "antes",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "despues",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "origen",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "'panel'",
+          "clave": 0
+        },
+        {
+          "nombre": "deshecho",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE cambios ( id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT NOT NULL, email TEXT NOT NULL, coleccion TEXT NOT NULL, entrada_id TEXT NOT NULL, antes TEXT, despues TEXT, origen TEXT NOT NULL DEFAULT 'panel' CHECK (origen IN ('panel', 'asistente', 'importacion', 'deshacer')) , deshecho INTEGER NOT NULL DEFAULT 0)"
+    },
+    "clientes": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "nombre",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "nif",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "archivado",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE clientes ( id TEXT PRIMARY KEY, nombre TEXT NOT NULL, nif TEXT NOT NULL DEFAULT '', datos TEXT NOT NULL, archivado INTEGER NOT NULL DEFAULT 0, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL )"
+    },
+    "entradas": {
+      "columnas": [
+        {
+          "nombre": "coleccion",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 2
+        },
+        {
+          "nombre": "borrador",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "publicado",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "archivada",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE entradas ( coleccion TEXT NOT NULL CHECK (coleccion IN ('catalogo', 'ajustes', 'paginas', 'proyectos', 'guias')), id TEXT NOT NULL, borrador TEXT NOT NULL, publicado TEXT, archivada INTEGER NOT NULL DEFAULT 0, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL, PRIMARY KEY (coleccion, id) )"
+    },
+    "esquema_version": {
+      "columnas": [
+        {
+          "nombre": "version",
+          "tipo": "INTEGER",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "aplicada",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE esquema_version (version INTEGER PRIMARY KEY, aplicada TEXT NOT NULL)"
+    },
+    "facturas": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "tipo",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "estado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "serie",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "numero",
+          "tipo": "INTEGER",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "codigo",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "fecha",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "cliente_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "total",
+          "tipo": "REAL",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "huella",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "cobrada_el",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creada",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creada_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizada",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE facturas ( id TEXT PRIMARY KEY, tipo TEXT NOT NULL CHECK (tipo IN ('ordinaria', 'rectificativa')), estado TEXT NOT NULL CHECK (estado IN ('borrador', 'emitida', 'cobrada')), serie TEXT, numero INTEGER, codigo TEXT UNIQUE, fecha TEXT NOT NULL, cliente_id TEXT NOT NULL, total REAL NOT NULL DEFAULT 0, datos TEXT NOT NULL, huella TEXT, cobrada_el TEXT, creada TEXT NOT NULL, creada_por TEXT NOT NULL, actualizada TEXT NOT NULL, UNIQUE (serie, numero) )"
+    },
+    "fotos": {
+      "columnas": [
+        {
+          "nombre": "ruta",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "tipo",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "bytes",
+          "tipo": "BLOB",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "tamano",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "subida",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "subida_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE fotos ( ruta TEXT PRIMARY KEY, tipo TEXT NOT NULL, bytes BLOB NOT NULL, tamano INTEGER NOT NULL, subida TEXT NOT NULL, subida_por TEXT NOT NULL )"
+    },
+    "gastos": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "estado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "fecha",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "proveedor",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "categoria",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "total",
+          "tipo": "REAL",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "ticket_id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE gastos ( id TEXT PRIMARY KEY, estado TEXT NOT NULL CHECK (estado IN ('revisar', 'confirmado')), fecha TEXT NOT NULL, proveedor TEXT NOT NULL DEFAULT '', categoria TEXT NOT NULL DEFAULT '', total REAL NOT NULL DEFAULT 0, ticket_id TEXT, datos TEXT NOT NULL, creado TEXT NOT NULL, creado_por TEXT NOT NULL, actualizado TEXT NOT NULL )"
+    },
+    "inventario_movimientos": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "INTEGER",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "planta",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "tipo",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "cantidad",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "motivo",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "nota",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "referencia",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "fecha",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "email",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE inventario_movimientos ( id INTEGER PRIMARY KEY AUTOINCREMENT, planta TEXT NOT NULL, tipo TEXT NOT NULL CHECK (tipo IN ('entrada', 'salida', 'baja')), cantidad INTEGER NOT NULL, motivo TEXT NOT NULL, nota TEXT NOT NULL DEFAULT '', referencia TEXT, fecha TEXT NOT NULL, email TEXT NOT NULL )"
+    },
+    "presupuestos": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "fecha",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "estado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "'nuevo'",
+          "clave": 0
+        },
+        {
+          "nombre": "idioma",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "tipo_pedido",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "nombre",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "email",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "telefono",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "empresa",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "mensaje",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "lineas",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "'[]'",
+          "clave": 0
+        },
+        {
+          "nombre": "provincia",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE presupuestos ( id TEXT PRIMARY KEY, fecha TEXT NOT NULL, estado TEXT NOT NULL DEFAULT 'nuevo' CHECK (estado IN ('nuevo', 'respondido', 'archivado')), idioma TEXT NOT NULL, tipo_pedido TEXT NOT NULL, nombre TEXT NOT NULL, email TEXT NOT NULL, telefono TEXT NOT NULL DEFAULT '', empresa TEXT NOT NULL DEFAULT '', mensaje TEXT NOT NULL DEFAULT '', lineas TEXT NOT NULL DEFAULT '[]' , provincia TEXT NOT NULL DEFAULT '')"
+    },
+    "publicaciones": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "INTEGER",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "fecha",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "email",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "estado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "detalle",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "en_web",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE publicaciones ( id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT NOT NULL, email TEXT NOT NULL, estado TEXT NOT NULL CHECK (estado IN ('lanzada', 'sin-cambios', 'error')), detalle TEXT NOT NULL DEFAULT '' , en_web TEXT)"
+    },
+    "tickets": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "tipo",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "bytes",
+          "tipo": "BLOB",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "tamano",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "subido",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "subido_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE tickets ( id TEXT PRIMARY KEY, tipo TEXT NOT NULL, bytes BLOB NOT NULL, tamano INTEGER NOT NULL, subido TEXT NOT NULL, subido_por TEXT NOT NULL )"
+    },
+    "usuarios": {
+      "columnas": [
+        {
+          "nombre": "email",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "nombre",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "rol",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "activo",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "1",
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE usuarios ( email TEXT PRIMARY KEY, nombre TEXT NOT NULL DEFAULT '', rol TEXT NOT NULL CHECK (rol IN ('propietario', 'gerente', 'editor')), activo INTEGER NOT NULL DEFAULT 1, creado TEXT NOT NULL )"
+    }
+  },
+  "indices": [
+    {
+      "nombre": "asistente_conversaciones_email",
+      "tabla": "asistente_conversaciones",
+      "sql": "CREATE INDEX asistente_conversaciones_email ON asistente_conversaciones (email, creada)"
+    },
+    {
+      "nombre": "asistente_mensajes_conversacion",
+      "tabla": "asistente_mensajes",
+      "sql": "CREATE INDEX asistente_mensajes_conversacion ON asistente_mensajes (conversacion, id)"
+    },
+    {
+      "nombre": "cambios_entrada",
+      "tabla": "cambios",
+      "sql": "CREATE INDEX cambios_entrada ON cambios (coleccion, entrada_id, id)"
+    },
+    {
+      "nombre": "facturas_cliente",
+      "tabla": "facturas",
+      "sql": "CREATE INDEX facturas_cliente ON facturas (cliente_id, fecha)"
+    },
+    {
+      "nombre": "facturas_fecha",
+      "tabla": "facturas",
+      "sql": "CREATE INDEX facturas_fecha ON facturas (estado, fecha)"
+    },
+    {
+      "nombre": "gastos_fecha",
+      "tabla": "gastos",
+      "sql": "CREATE INDEX gastos_fecha ON gastos (estado, fecha)"
+    },
+    {
+      "nombre": "inventario_planta",
+      "tabla": "inventario_movimientos",
+      "sql": "CREATE INDEX inventario_planta ON inventario_movimientos (planta, id)"
+    },
+    {
+      "nombre": "inventario_referencia",
+      "tabla": "inventario_movimientos",
+      "sql": "CREATE UNIQUE INDEX inventario_referencia ON inventario_movimientos (referencia) WHERE referencia IS NOT NULL"
+    },
+    {
+      "nombre": "presupuestos_estado",
+      "tabla": "presupuestos",
+      "sql": "CREATE INDEX presupuestos_estado ON presupuestos (estado, fecha)"
+    }
+  ]
+}

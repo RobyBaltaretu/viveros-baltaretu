@@ -82,3 +82,4 @@ Peticiones del propietario: publicación automática, facturas, control de gasto
 ## Plataforma multicliente (desde el 29 de octubre de 2026)
 
 - Objetivo: una web y un panel por cliente (Viveros Baltaretu, Creaciones Turia…) desde este repositorio, sin cambiar nada de Baltaretu. Plan, hoja de ruta, estado, acoplamientos, discrepancias y preguntas en `docs/plataforma/`; cada sesión retoma desde `docs/plataforma/estado-plan.md`.
+- Red de seguridad de Baltaretu (`tests/baseline/`, PR 0.2): la CI compara la web en producción y en pruebas (rutas, HTML, CSS y JS, JSON-LD, sitemap y robots) con la línea base guardada, comprueba que una base con los datos de hoy migra sin pérdidas y que no cambian la navegación del panel ni las herramientas del asistente por rol. Solo se regenera con `npm run baseline:actualizar` tras un cambio aprobado.

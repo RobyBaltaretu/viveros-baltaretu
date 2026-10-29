@@ -19,6 +19,7 @@
     "test:e2e": "playwright test",
     "contenido:importar": "tsx scripts/contenido/importar.ts",
     "contenido:equivalencia": "tsx scripts/contenido/equivalencia.ts && WORKERS_CI_BRANCH=pruebas tsx scripts/contenido/equivalencia.ts",
+    "baseline:actualizar": "BASELINE_ACTUALIZAR=1 npm run contenido:equivalencia && vitest run tests/baseline -u",
     "contenido:copia": "tsx scripts/contenido/copia.ts",
     "contenido:restaurar": "tsx scripts/contenido/restaurar.ts",
     "asistente:banco": "tsx scripts/asistente-banco.ts",
