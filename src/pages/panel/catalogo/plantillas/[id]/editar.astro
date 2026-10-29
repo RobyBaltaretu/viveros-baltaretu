@@ -1,0 +1,305 @@
+---
+/**
+ * Crear (`/panel/catalogo/plantillas/nueva/editar`), cambiar, duplicar o
+ * archivar la plantilla de un trabajo: las medidas que se piden, los
+ * materiales que se eligen y cada parte con su fórmula. Se valida todo
+ * (fórmulas incluidas) antes de guardar; después se prueba en la calculadora.
+ */
+import Mensajes from '../../../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../../../components/panel/PaginaPanel.astro';
+import { CATEGORIAS, guardarPlantilla, type EntradaPlantilla } from '../../../../../server/catalogo/catalogo.ts';
+import { copiaDe, leerFormularioPlantilla, type FilasPlantilla } from '../../../../../server/catalogo/formulario-plantilla.ts';
+import type { PlantillaCatalogo } from '../../../../../server/data/tipos.ts';
+import { sesionCon } from '../../../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+const id = Astro.params.id ?? '';
+const nueva = id === 'nueva';
+const guardada: PlantillaCatalogo | null = s && !nueva ? await s.repos.catalogo.plantilla(id) : null;
+if (s && !nueva && !guardada) return new Response('No existe', { status: 404 });
+
+let v: EntradaPlantilla = guardada ?? { nombre: '', tipoTrabajo: '', descripcion: '', parametros: [], opciones: [], componentes: [] };
+const conHueco = (n: number, hueco: number) => n + hueco;
+let filas: FilasPlantilla = { medidas: conHueco(v.parametros.length, 2), opciones: conHueco(v.opciones.length, 1), partes: conHueco(v.componentes.length, 3) };
+let error = '';
+if (s && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const accion = String(form.get('accion') ?? '');
+  if (accion === 'archivar' && guardada) {
+    await s.repos.catalogo.archivarPlantilla(guardada.id, true, s.usuario.email);
+    return Astro.redirect('/panel/catalogo', 303);
+  }
+  if (accion === 'duplicar' && guardada) {
+    const r = await guardarPlantilla(s.repos, copiaDe(guardada), s.usuario.email);
+    if (r.ok) return Astro.redirect(`/panel/catalogo/plantillas/${r.valor.id}/editar`, 303);
+    error = r.error;
+  } else {
+    const leido = leerFormularioPlantilla(form);
+    v = { ...leido.entrada, id: guardada?.id };
+    filas = leido.filas;
+    if (accion === 'mas') filas = { medidas: filas.medidas + 2, opciones: filas.opciones + 1, partes: filas.partes + 5 };
+    else {
+      const r = await guardarPlantilla(s.repos, v, s.usuario.email);
+      if (r.ok) return Astro.redirect(`/panel/catalogo/plantillas/${r.valor.id}?hecho=guardada`, 303);
+      error = r.error;
+      Astro.response.status = 400;
+    }
+  }
+}
+const [articulos, plantillas] = s ? await Promise.all([s.repos.catalogo.articulos(), s.repos.catalogo.plantillas()]) : [[], []];
+const tipos = [...new Set(plantillas.map((p) => p.tipoTrabajo).filter(Boolean))];
+const titulo = guardada ? `Editar «${guardada.nombre}»` : 'Nuevo trabajo';
+const coma = (n: unknown) => (n === undefined || n === null ? '' : String(n).replace('.', ','));
+const claves = v.parametros.map((x) => x.id);
+// «Entre»: una categoría o las de siempre juntas.
+const GRUPOS_ELEGIR: [string, string][] = [['tableros,chapas,macizos', 'Tableros, chapas o maciza'], ...CATEGORIAS.map((c) => [c.id, c.nombre] as [string, string])];
+const origenDe = (c: EntradaPlantilla['componentes'][number] | undefined) => (!c ? '' : 'opcion' in c.articulo ? `opcion:${c.articulo.opcion}` : `id:${c.articulo.id}`);
+---
+
+<PaginaPanel titulo={titulo} permiso="facturas" volver={guardada ? `/panel/catalogo/plantillas/${guardada.id}` : '/panel/catalogo'} ancho="amplio">
+  <div class="nv-titulo">
+    <div>
+      <h1>{titulo}</h1>
+      <p>Qué medidas se piden, qué materiales se eligen y cuánto lleva de cada cosa. Después lo pruebas en la calculadora.</p>
+    </div>
+  </div>
+  <Mensajes errores={error ? [{ campo: 'plantilla', mensaje: error }] : []} />
+
+  <form method="post" novalidate>
+    <input type="hidden" name="filasMedidas" value={filas.medidas} />
+    <input type="hidden" name="filasOpciones" value={filas.opciones} />
+    <input type="hidden" name="filasPartes" value={filas.partes} />
+    <input type="hidden" name="orden" value={String(v.orden ?? plantillas.length)} />
+
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="datos">
+      <h2 id="datos">El trabajo</h2>
+      <div class="nv-rejilla nv-rejilla-2">
+        <label class="nv-campo">
+          Nombre
+          <input name="nombre" value={v.nombre} class="campo-panel" maxlength="120" required placeholder="Por ejemplo: Zapatero a medida" />
+        </label>
+        <label class="nv-campo">
+          Tipo de trabajo
+          <input name="tipoTrabajo" value={v.tipoTrabajo} class="campo-panel" maxlength="60" list="tipos-trabajo" placeholder="Armarios, Cocinas, Puertas…" />
+          <datalist id="tipos-trabajo">
+            {tipos.map((t) => <option value={t} />)}
+          </datalist>
+        </label>
+        <label class="nv-campo nv-ancho-todo">
+          Descripción <small>(opcional)</small>
+          <input name="descripcion" value={v.descripcion} class="campo-panel" maxlength="500" />
+        </label>
+      </div>
+    </section>
+
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="medidas">
+      <h2 id="medidas">Medidas que se piden</h2>
+      <p class="nv-gris">Las de tipo «cm» se escriben en centímetros y en las fórmulas valen en metros: con un ancho de 200 cm, «ancho» vale 2.</p>
+      <div class="nv-tabla-caja" tabindex="0" role="region" aria-label="Medidas">
+        <table class="nv-tabla nv-tabla-editable">
+          <thead>
+            <tr>
+              <th scope="col">Nombre</th>
+              <th scope="col">Clave en las fórmulas</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Propuesto</th>
+              <th scope="col">Mínimo</th>
+              <th scope="col">Máximo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              Array.from({ length: filas.medidas }, (_, i) => {
+                const x = v.parametros[i];
+                const n = i + 1;
+                return (
+                  <tr>
+                    <td>
+                      <input name={`m${i}.nombre`} value={x?.nombre ?? ''} class="campo-panel" aria-label={`Nombre de la medida ${n}`} />
+                    </td>
+                    <td>
+                      <input name={`m${i}.id`} value={x?.id ?? ''} class="campo-panel nv-codigo" aria-label={`Clave de la medida ${n} (si la dejas vacía, sale del nombre)`} placeholder="sale del nombre" />
+                    </td>
+                    <td>
+                      <select name={`m${i}.tipo`} class="campo-panel" aria-label={`Tipo de la medida ${n}`}>
+                        <option value="medida" selected={x?.tipo !== 'numero'}>
+                          cm
+                        </option>
+                        <option value="numero" selected={x?.tipo === 'numero'}>
+                          unidades
+                        </option>
+                      </select>
+                    </td>
+                    <td>
+                      <input name={`m${i}.defecto`} value={coma(x?.defecto)} class="campo-panel nv-corto" inputmode="decimal" aria-label={`Valor propuesto de la medida ${n}`} />
+                    </td>
+                    <td>
+                      <input name={`m${i}.min`} value={coma(x?.min)} class="campo-panel nv-corto" inputmode="decimal" aria-label={`Mínimo de la medida ${n}`} />
+                    </td>
+                    <td>
+                      <input name={`m${i}.max`} value={coma(x?.max)} class="campo-panel nv-corto" inputmode="decimal" aria-label={`Máximo de la medida ${n}`} />
+                    </td>
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="materiales">
+      <h2 id="materiales">Materiales que se eligen</h2>
+      <p class="nv-gris">Por ejemplo, el tablero del cuerpo o el de las puertas. En la calculadora salen como desplegables.</p>
+      <div class="nv-tabla-caja" tabindex="0" role="region" aria-label="Materiales que se eligen">
+        <table class="nv-tabla nv-tabla-editable">
+          <thead>
+            <tr>
+              <th scope="col">Nombre</th>
+              <th scope="col">Clave</th>
+              <th scope="col">Se elige entre</th>
+              <th scope="col">Propuesto</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              Array.from({ length: filas.opciones }, (_, i) => {
+                const o = v.opciones[i];
+                const n = i + 1;
+                const cats = o?.categorias.join(',') ?? '';
+                return (
+                  <tr>
+                    <td>
+                      <input name={`o${i}.nombre`} value={o?.nombre ?? ''} class="campo-panel" aria-label={`Nombre del material ${n}`} />
+                    </td>
+                    <td>
+                      <input name={`o${i}.id`} value={o?.id ?? ''} class="campo-panel nv-codigo" aria-label={`Clave del material ${n}`} placeholder="sale del nombre" />
+                    </td>
+                    <td>
+                      <select name={`o${i}.categorias`} class="campo-panel" aria-label={`Entre qué se elige el material ${n}`}>
+                        {GRUPOS_ELEGIR.map(([valor, texto]) => (
+                          <option value={valor} selected={valor === cats}>
+                            {texto}
+                          </option>
+                        ))}
+                        {cats && !GRUPOS_ELEGIR.some(([valor]) => valor === cats) && (
+                          <option value={cats} selected>
+                            {cats}
+                          </option>
+                        )}
+                      </select>
+                    </td>
+                    <td>
+                      <select name={`o${i}.defecto`} class="campo-panel" aria-label={`Material propuesto ${n}`}>
+                        <option value="">Ninguno</option>
+                        {CATEGORIAS.map((c) => (
+                          <optgroup label={c.nombre}>
+                            {articulos
+                              .filter((a) => a.categoria === c.id)
+                              .map((a) => (
+                                <option value={a.id} selected={a.id === o?.defecto}>
+                                  {a.nombre}
+                                </option>
+                              ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="partes">
+      <h2 id="partes">Todo lo que lleva</h2>
+      <div class="nv-caja-aviso nv-caja-info">
+        <span>
+          En la cantidad puedes usar
+          {claves.length ? claves.map((c) => <code class="nv-codigo-chip">{c}</code>) : <span>las claves de las medidas</span>}, números con coma, <code class="nv-codigo-chip">+ - * / ( )</code> y
+          <code class="nv-codigo-chip">arriba()</code>, <code class="nv-codigo-chip">abajo()</code>, <code class="nv-codigo-chip">redondear()</code>, <code class="nv-codigo-chip">max(a; b)</code> y
+          <code class="nv-codigo-chip">min(a; b)</code>. Por ejemplo, costados: <code class="nv-codigo-chip">2 * alto * fondo</code> (m²). La cantidad va en la unidad del artículo; la merma se suma sola.
+        </span>
+      </div>
+      <div class="nv-tabla-caja" tabindex="0" role="region" aria-label="Partes del trabajo">
+        <table class="nv-tabla nv-tabla-editable">
+          <thead>
+            <tr>
+              <th scope="col">Parte</th>
+              <th scope="col">Artículo</th>
+              <th scope="col">Cantidad (fórmula)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              Array.from({ length: filas.partes }, (_, i) => {
+                const c = v.componentes[i];
+                const n = i + 1;
+                const origen = origenDe(c);
+                return (
+                  <tr>
+                    <td>
+                      <input name={`c${i}.concepto`} value={c?.concepto ?? ''} class="campo-panel" aria-label={`Parte ${n}`} placeholder="Costados, bisagras, horas de taller…" />
+                    </td>
+                    <td>
+                      <select name={`c${i}.articulo`} class="campo-panel" aria-label={`Artículo de la parte ${n}`}>
+                        <option value="">Elige…</option>
+                        {v.opciones.length > 0 && (
+                          <optgroup label="Material que se elige">
+                            {v.opciones.map((o) => (
+                              <option value={`opcion:${o.id}`} selected={origen === `opcion:${o.id}`}>
+                                {o.nombre}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {CATEGORIAS.map((cat) => (
+                          <optgroup label={cat.nombre}>
+                            {articulos
+                              .filter((a) => a.categoria === cat.id)
+                              .map((a) => (
+                                <option value={`id:${a.id}`} selected={origen === `id:${a.id}`}>
+                                  {a.nombre} ({a.unidad})
+                                </option>
+                              ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <input name={`c${i}.cantidad`} value={c?.cantidad ?? ''} class="campo-panel nv-codigo" aria-label={`Cantidad de la parte ${n} (fórmula)`} spellcheck="false" autocomplete="off" />
+                    </td>
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="nv-acciones">
+      <button class="nv-boton" name="accion" value="guardar">Guardar y probar</button>
+      <button class="nv-boton nv-boton-secundario" name="accion" value="mas">Añadir más filas</button>
+      <a href={guardada ? `/panel/catalogo/plantillas/${guardada.id}` : '/panel/catalogo'} class="nv-boton nv-boton-secundario">Cancelar</a>
+    </div>
+  </form>
+
+  {
+    guardada && (
+      <form method="post" class="nv-acciones">
+        <button class="nv-boton nv-boton-secundario" name="accion" value="duplicar">
+          Duplicar para hacer otro parecido
+        </button>
+        <button class="enlace-panel nv-enlace-boton" name="accion" value="archivar">
+          Archivar este trabajo
+        </button>
+      </form>
+    )
+  }
+</PaginaPanel>

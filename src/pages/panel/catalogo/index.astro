@@ -52,10 +52,16 @@ const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
     </div>
     {
       articulos.length > 0 && (
-        <a href="/panel/catalogo/articulos/nuevo" class="nv-boton nv-boton-secundario">
-          <Icono nombre="nuevo" />
-          Nuevo artículo
-        </a>
+        <div class="nv-cabeza-acciones">
+          <a href="/panel/catalogo/plantillas/nueva/editar" class="nv-boton nv-boton-secundario">
+            <Icono nombre="nuevo" />
+            Nuevo trabajo
+          </a>
+          <a href="/panel/catalogo/articulos/nuevo" class="nv-boton nv-boton-secundario">
+            <Icono nombre="nuevo" />
+            Nuevo artículo
+          </a>
+        </div>
       )
     }
   </div>
