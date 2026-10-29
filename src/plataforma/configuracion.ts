@@ -44,6 +44,8 @@ export const esquemaCliente = z
     id: z.string().regex(/^[a-z0-9][a-z0-9-]{1,40}$/),
     nombre: z.string().min(1),
     sector: z.enum(SECTORES),
+    /** Marca del panel: nombre corto y monograma (en public/), o null para usar las iniciales. */
+    marca: z.object({ nombreCorto: z.string().min(1), monograma: z.string().regex(/^\/[\w.-]+\.(png|svg|webp)$/).nullable() }).strict(),
     /** Plan de suscripción: se guarda, pero todavía no decide nada (preguntas P-10). */
     plan: z.string().min(1),
     /** Dominio público sin https://, o null mientras se use el de SITE_URL. */

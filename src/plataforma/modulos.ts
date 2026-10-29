@@ -1,12 +1,16 @@
-import type { Modulo } from './configuracion.ts';
+import type { Modulo, SECTORES } from './configuracion.ts';
+
+type Sector = (typeof SECTORES)[number];
 
 /**
  * A qué módulo pertenece cada parte de la plataforma. Un módulo apagado en la
  * configuración del cliente se oculta en el menú (navegacion.ts), da 404 en el
  * servidor (middleware.ts) y desaparece de las herramientas del asistente.
  * Lo que no está aquí (inicio, textos, publicar, personas, ayuda…) es del núcleo.
+ * Las pantallas propias de un sector (las plantas del vivero) solo existen en
+ * los clientes de ese sector.
  */
-const RUTAS: [prefijo: string, modulo: Modulo][] = [
+const RUTAS: [prefijo: string, modulo: Modulo, sector?: Sector][] = [
   ['/panel/presupuestos', 'presupuestosWeb'],
   ['/api/panel/presupuestos.csv', 'presupuestosWeb'],
   ['/api/presupuesto', 'presupuestosWeb'],
@@ -14,10 +18,10 @@ const RUTAS: [prefijo: string, modulo: Modulo][] = [
   ['/api/panel/factura-pdf', 'facturas'],
   ['/api/panel/facturas-copia', 'facturas'],
   ['/api/panel/facturas.csv', 'facturas'],
-  ['/panel/plantas', 'catalogo'],
-  ['/panel/inventario', 'catalogo'],
-  ['/panel/fotos', 'catalogo'],
-  ['/api/panel/foto', 'catalogo'],
+  ['/panel/plantas', 'catalogo', 'vivero'],
+  ['/panel/inventario', 'catalogo', 'vivero'],
+  ['/panel/fotos', 'catalogo', 'vivero'],
+  ['/api/panel/foto', 'catalogo', 'vivero'],
   ['/panel/gastos', 'gastos'],
   ['/api/panel/gastos.csv', 'gastos'],
   ['/api/panel/ticket', 'gastos'],
@@ -25,14 +29,17 @@ const RUTAS: [prefijo: string, modulo: Modulo][] = [
   ['/panel/asistente', 'asistente'],
 ];
 
-/** Módulo de una ruta (el del prefijo más largo), o null si es del núcleo. */
+/** Módulo y sector de una ruta (los del prefijo más largo); módulo null = núcleo. */
 export function moduloDeRuta(ruta: string): Modulo | null {
+  return parteDeRuta(ruta).modulo;
+}
+export function parteDeRuta(ruta: string): { modulo: Modulo | null; sector: Sector | null } {
   const limpia = ruta.replace(/\/+$/, '') || '/';
-  let mejor: [string, Modulo] | null = null;
+  let mejor: (typeof RUTAS)[number] | null = null;
   for (const r of RUTAS) {
     if ((limpia === r[0] || limpia.startsWith(`${r[0]}/`)) && (!mejor || r[0].length > mejor[0].length)) mejor = r;
   }
-  return mejor?.[1] ?? null;
+  return { modulo: mejor?.[1] ?? null, sector: mejor?.[2] ?? null };
 }
 
 /** Herramientas del asistente: por su permiso y, las de plantas (permiso «editar» o «asistente»), por su nombre. */
@@ -47,3 +54,6 @@ const DEL_CATALOGO = new Set(['buscar_plantas', 'cambiar_planta', 'crear_planta'
 
 /** Módulo de una herramienta (además, todas dependen del módulo `asistente`). */
 export const moduloDeHerramienta = (h: { nombre: string; permiso: string }): Modulo | null => (DEL_CATALOGO.has(h.nombre) ? 'catalogo' : (POR_PERMISO[h.permiso] ?? null));
+
+/** Las herramientas de plantas e inventario son del vivero. */
+export const sectorDeHerramienta = (h: { nombre: string; permiso: string }): Sector | null => (DEL_CATALOGO.has(h.nombre) || h.permiso === 'inventario' ? 'vivero' : null);

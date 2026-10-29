@@ -2,6 +2,7 @@
   "id": "turia",
   "nombre": "Creaciones Turia",
   "sector": "carpinteria",
+  "marca": { "nombreCorto": "Creaciones Turia", "monograma": null },
   "plan": "completo",
   "dominio": null,
   "webPublica": false,

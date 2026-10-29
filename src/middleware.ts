@@ -1,14 +1,13 @@
 import { defineMiddleware } from 'astro:middleware';
 import { env } from 'cloudflare:workers';
-import { permitido } from './plataforma/actual.ts';
-import { moduloDeRuta } from './plataforma/modulos.ts';
+import { rutaDisponible } from './plataforma/actual.ts';
 import { mismoOrigen, sesionPanel, type EntornoPanel } from './server/panel/acceso.ts';
 
 /**
  * Protege el panel (`/panel` y `/api/panel/*`): Cloudflare Access delante y,
  * además, validación del token y del rol en cada petición. El resto de la web
  * es estática y no pasa por aquí. Las rutas de un módulo apagado en la
- * configuración del cliente no existen (404).
+ * configuración del cliente, o de otro sector, no existen (404).
  */
 const CABECERAS = {
   'Cache-Control': 'no-store',
@@ -20,7 +19,7 @@ const CABECERAS = {
 
 export const onRequest = defineMiddleware(async (contexto, siguiente) => {
   const ruta = contexto.url.pathname;
-  if (!permitido(moduloDeRuta(ruta))) return new Response('No encontrado', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8', ...CABECERAS } });
+  if (!rutaDisponible(ruta)) return new Response('No encontrado', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8', ...CABECERAS } });
   const esApi = ruta.startsWith('/api/panel');
   if (!esApi && !(ruta === '/panel' || ruta.startsWith('/panel/'))) return siguiente();
 

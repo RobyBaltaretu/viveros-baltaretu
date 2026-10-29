@@ -1,7 +1,7 @@
 import type { Rol } from "../data/tipos.ts";
 import type { NombreIcono } from "./iconos.ts";
-import { permitido } from "../../plataforma/actual.ts";
-import { moduloDeRuta } from "../../plataforma/modulos.ts";
+import { rutaDisponible } from "../../plataforma/actual.ts";
+import { vocabularioPanel } from "../../plataforma/vocabulario.ts";
 import { puede, type Accion } from "./permisos.ts";
 
 /**
@@ -249,12 +249,22 @@ export const MENU: SeccionMenu[] = [
 ];
 
 export const menuDe = (rol: Rol) =>
-  MENU.filter((s) => (!s.permiso || puede(rol, s.permiso)) && permitido(moduloDeRuta(s.href)));
+  MENU.filter((s) => (!s.permiso || puede(rol, s.permiso)) && rutaDisponible(s.href)).map((s) =>
+    s.zona === "asistente" ? { ...s, texto: vocabularioPanel().nombreAsistente } : s,
+  );
+
+/** Nombre y descripción de cada zona con el vocabulario del sector del cliente. */
+function conVocabulario(z: (typeof ZONAS)[number]): (typeof ZONAS)[number] {
+  const v = vocabularioPanel();
+  if (z.zona === "asistente") return { ...z, texto: v.nombreAsistente };
+  if (z.zona === "plantas") return { ...z, ...v.zonas.plantas };
+  return z;
+}
 
 /** Zonas del rol con sus secciones visibles (las vacías no salen). */
 export function zonasDe(rol: Rol): ZonaMenu[] {
   const visibles = menuDe(rol);
-  return ZONAS.map((z) => {
+  return ZONAS.map(conVocabulario).map((z) => {
     const secciones = visibles.filter((s) => s.zona === z.zona);
     return { ...z, secciones, href: secciones[0]?.href ?? "" };
   }).filter((z) => z.secciones.length);

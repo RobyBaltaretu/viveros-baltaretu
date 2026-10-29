@@ -1,6 +1,5 @@
 import { z } from 'astro/zod';
-import { moduloActivoAhora, permitido } from '../../plataforma/actual.ts';
-import { moduloDeHerramienta } from '../../plataforma/modulos.ts';
+import { herramientaDisponible } from '../../plataforma/actual.ts';
 import { FAMILIAS, FORMATOS, DISPONIBILIDADES } from '../../lib/catalogo/schema';
 import type { Coleccion, EstadoPresupuesto, Factura, Repositorios, Usuario } from '../data/tipos.ts';
 import { clienteVacio, faltaCliente, leerCliente, lineaVacia, nuevaFactura, rectificativaDe, NOMBRE_ESTADO, vencida } from '../facturas/facturas.ts';
@@ -1151,10 +1150,9 @@ HERRAMIENTAS.push(
   }),
 );
 
-/** Las del rol y de los módulos activos del cliente (sin el módulo «asistente», ninguna). */
-const disponible = (h: Herramienta) => moduloActivoAhora('asistente') && permitido(moduloDeHerramienta(h));
-export const herramientasDe = (rol: Usuario['rol']) => HERRAMIENTAS.filter((h) => puede(rol, h.permiso) && disponible(h));
-export const herramienta = (nombre: string) => HERRAMIENTAS.find((h) => h.nombre === nombre && disponible(h));
+/** Las del rol, de los módulos activos y del sector del cliente (sin el módulo «asistente», ninguna). */
+export const herramientasDe = (rol: Usuario['rol']) => HERRAMIENTAS.filter((h) => puede(rol, h.permiso) && herramientaDisponible(h));
+export const herramienta = (nombre: string) => HERRAMIENTAS.find((h) => h.nombre === nombre && herramientaDisponible(h));
 
 /**
  * Grupos de herramientas por tema. En cada mensaje solo se mandan al modelo las

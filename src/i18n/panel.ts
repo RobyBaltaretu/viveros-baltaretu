@@ -3,7 +3,6 @@
  * propietario y el gerente. Español llano, sin términos técnicos.
  */
 export const tp = {
-  tituloPanel: 'Panel del vivero',
   saltar: 'Saltar al contenido',
   salir: 'Salir',
   inicio: 'Inicio',

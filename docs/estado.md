@@ -87,3 +87,4 @@ Peticiones del propietario: publicación automática, facturas, control de gasto
 - Módulos por cliente (PR 1.2): un módulo apagado en `cliente.config.json` se oculta del menú, da 404 y desaparece del asistente. En Baltaretu están todos los suyos activos (sin cambios).
 - Tema por cliente (PR 1.3): colores en `cliente.config.json`; Baltaretu sigue con los de `global.css` (no se añade nada a sus páginas). Turia, colores provisionales en tonos madera hasta tener su identidad.
 - Clientes sin web pública (PR 1.4): con `webPublica: false` (Turia) el build solo deja el panel.
+- Vocabulario y marca por sector (PR 1.5): el panel de Turia dice «Creaciones Turia» y «Panel de la carpintería», y no tiene las pantallas de plantas; el de Baltaretu no cambia.
