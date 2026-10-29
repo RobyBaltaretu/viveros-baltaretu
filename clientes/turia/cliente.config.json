@@ -23,5 +23,15 @@
     "simulador": true,
     "whatsapp": true
   },
-  "iva": { "general": 21, "fijo": true }
+  "iva": { "general": 21, "fijo": true },
+  "tema": {
+    "crema": "#f6f1ea",
+    "papel": "#fdfbf7",
+    "verdor": "#ebe3d6",
+    "oliva": "#4a3424",
+    "tinta": "#2b2119",
+    "gris": "#5f5246",
+    "terracota": "#8a4b2c",
+    "linea": "#d9cbb8"
+  }
 }

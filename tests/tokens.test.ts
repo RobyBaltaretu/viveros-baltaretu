@@ -1,5 +1,8 @@
 import { readFileSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { cargarCliente } from '../src/plataforma/cargar.ts';
+import { COLORES_NUCLEO, cssDelTema } from '../src/plataforma/tema.ts';
 
 // Lee los colores del bloque @theme de global.css: el test falla si alguien cambia un
 // color y rompe el contraste mínimo WCAG 2.1 AA.
@@ -42,5 +45,30 @@ const combinaciones: [string, string, number][] = [
 describe('contraste de los tokens de color (WCAG 2.1 AA)', () => {
   it.each(combinaciones)('%s sobre %s ≥ %d:1', (texto, fondo, minimo) => {
     expect(contraste(color(texto), color(fondo))).toBeGreaterThanOrEqual(minimo);
+  });
+});
+
+// Cada cliente de la plataforma, con sus colores (o los del núcleo si no tiene tema).
+const clientes = readdirSync(new URL('../clientes/', import.meta.url), { withFileTypes: true })
+  .filter((e) => e.isDirectory())
+  .map((e) => cargarCliente(e.name));
+
+describe.each(clientes.map((c) => [c.id, c] as const))('contraste del tema de %s (WCAG 2.1 AA)', (_id, c) => {
+  const colorDe = (nombre: string) => (nombre === 'blanco' ? '#ffffff' : ((c.tema ?? COLORES_NUCLEO) as Record<string, string>)[nombre]!);
+  it.each(combinaciones)('%s sobre %s ≥ %d:1', (texto, fondo, minimo) => {
+    expect(contraste(colorDe(texto), colorDe(fondo))).toBeGreaterThanOrEqual(minimo);
+  });
+});
+
+describe('tema por cliente', () => {
+  it('los colores del núcleo son los de global.css, y con ellos no se añade nada a la página', () => {
+    for (const [t, v] of Object.entries(COLORES_NUCLEO)) expect(color(t), t).toBe(v);
+    expect(cssDelTema(cargarCliente('baltaretu'))).toBe('');
+    expect(cssDelTema({ tema: undefined })).toBe('');
+  });
+
+  it('un cliente con otros colores los sobrescribe todos', () => {
+    const css = cssDelTema(cargarCliente('turia'));
+    expect(css).toMatch(/^html:root\{--color-crema:#f6f1ea;.*--color-linea:#d9cbb8\}$/);
   });
 });
