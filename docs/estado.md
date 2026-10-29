@@ -78,3 +78,7 @@ Peticiones del propietario: publicación automática, facturas, control de gasto
 - Cambios recientes: cada cambio se deshace una sola vez y después desaparece del listado (migración 7).
 - Formulario de presupuesto: con la base del panel, la petición se guarda siempre y vale aunque falten el correo o Turnstile en Cloudflare (se avisa en los registros); sin panel ni correo, error de configuración. Ya no se enseña al visitante el aviso técnico de Turnstile.
 - Web pública, más movimiento (solo con «movimiento permitido»): titular de la portada por líneas, cinta de ventajas bajo el héroe, bloques que suben al entrar en pantalla (sin tocar la opacidad), barra de lectura y tarjetas que se elevan. Identidad visual aplicada: logo horizontal en la cabecera, versión clara en el pie, monograma en el panel y el favicon, y paleta de la marca en los tokens (botones en cobre oscurecido para el contraste).
+
+## Plataforma multicliente (desde el 29 de octubre de 2026)
+
+- Objetivo: una web y un panel por cliente (Viveros Baltaretu, Creaciones Turia…) desde este repositorio, sin cambiar nada de Baltaretu. Plan, hoja de ruta, estado, acoplamientos, discrepancias y preguntas en `docs/plataforma/`; cada sesión retoma desde `docs/plataforma/estado-plan.md`.

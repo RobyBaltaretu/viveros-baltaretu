@@ -73,6 +73,8 @@ Hoja de ruta, definición funcional y técnica, y estrategia SEO con el mapa de 
 
 Estado actual, preferencias del propietario y pendientes: `docs/estado.md`. Leerlo al empezar una sesión y actualizarlo al cerrar cada PR.
 
+Plataforma multicliente (en curso): `docs/plataforma/` (plan, hoja de ruta, acoplamientos, discrepancias, preguntas y dominio de la carpintería). Retomar desde `docs/plataforma/estado-plan.md`.
+
 ## Panel propio
 - La web pública sigue estática y el diseño aceptado no se cambia por el panel.
 - Nada fuera de `src/server/data/` consulta la base (lo comprueba un test). Se reutilizan los esquemas de `src/lib/*/schema.ts`.
