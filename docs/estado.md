@@ -92,3 +92,4 @@ Peticiones del propietario: publicación automática, facturas, control de gasto
 - Portafolio privado, datos (PR 2.1): migración 10 (`adjuntos` y `portafolio`). Las fotos de antes y después son privadas y nunca se publican.
 - Portafolio privado de Turia (PR 2.2): `/panel/portafolio` con lista, ficha y comparador antes/después; e2e propios (`npm run test:e2e:turia`).
 - Presupuestos a cliente, datos (PR 3.1a): migración 11, cálculo con anticipo y restante, numeración y estados. Las pantallas llegan en la 3.1b.
+- Presupuestos a cliente, pantallas (PR 3.1b): alta, ficha, imprimir o guardar en PDF, envío por correo y WhatsApp, estados y paso a factura (de anticipo y final).

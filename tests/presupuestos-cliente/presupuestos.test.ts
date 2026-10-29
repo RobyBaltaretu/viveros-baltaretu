@@ -107,3 +107,19 @@ describe('presupuestos a cliente', () => {
     expect(lista.length).toBeGreaterThan(5);
   });
 });
+
+describe('números escritos en el formulario', async () => {
+  const { numero } = await import('../../src/server/presupuestos-cliente/formulario.ts');
+  it('a la española', () => {
+    expect(numero('1.250')).toBe(1250);
+    expect(numero('1.250,50')).toBe(1250.5);
+    expect(numero('12.000.000')).toBe(12000000);
+    expect(numero('12,5')).toBe(12.5);
+    expect(numero('12.5')).toBe(12.5);
+    expect(numero('1.25')).toBe(1.25);
+    expect(numero(' 95 € ')).toBe(95);
+    expect(numero('40 %')).toBe(40);
+    expect(numero('')).toBeNull();
+    expect(Number.isNaN(numero('abc'))).toBe(true);
+  });
+});

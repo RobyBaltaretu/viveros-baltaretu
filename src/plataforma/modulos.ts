@@ -14,6 +14,7 @@ const RUTAS: [prefijo: string, modulo: Modulo, sector?: Sector][] = [
   ['/panel/presupuestos', 'presupuestosWeb'],
   ['/api/panel/presupuestos.csv', 'presupuestosWeb'],
   ['/api/presupuesto', 'presupuestosWeb'],
+  ['/panel/presupuestos-cliente', 'presupuestosCliente'],
   ['/panel/facturas', 'facturas'],
   ['/api/panel/factura-pdf', 'facturas'],
   ['/api/panel/facturas-copia', 'facturas'],

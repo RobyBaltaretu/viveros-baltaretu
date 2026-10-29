@@ -1,0 +1,249 @@
+---
+/**
+ * Presupuesto listo para imprimir o guardar en PDF desde el navegador (sin
+ * generar el PDF en el servidor: no gasta CPU del Worker). Sin el armazón del
+ * panel. Nunca lleva costes internos.
+ */
+import { clienteActual } from '../../../../plataforma/actual.ts';
+import { dinero } from '../../../../server/facturas/importes.ts';
+import { ajustesFacturacion } from '../../../../server/panel/facturacion.ts';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+if (!s) return Astro.redirect('/panel', 303);
+const p = await s.repos.presupuestosCliente.obtener(Astro.params.id ?? '');
+if (!p) return new Response(null, { status: 404 });
+const e = await ajustesFacturacion(s.repos);
+const tema = clienteActual().tema;
+const fecha = (iso: string | null) => (iso ? iso.split('-').reverse().join('/') : '');
+const direccion = (d: { direccion: string; codigoPostal: string; poblacion: string; provincia: string }) => [d.direccion, [d.codigoPostal, d.poblacion].filter(Boolean).join(' '), d.provincia].filter(Boolean).join(', ');
+const lineas = p.lineas.filter((l) => !l.extra);
+const extras = p.lineas.filter((l) => l.extra);
+const importe = (l: { cantidad: number; precio: number }) => dinero(Math.round(l.cantidad * l.precio * 100) / 100);
+const marca = tema?.oliva ?? '#3a4632';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Presupuesto {p.codigo} · {e.nombre || clienteActual().nombre}</title>
+    <style is:inline set:html={`:root{--marca:${marca}}`} />
+    <style is:inline>
+      body {
+        font: 15px/1.5 system-ui, sans-serif;
+        color: #222;
+        background: #fff;
+        margin: 0;
+      }
+      main {
+        max-width: 48rem;
+        margin: 0 auto;
+        padding: 2rem 1.25rem;
+      }
+      h1 {
+        color: var(--marca);
+        font-size: 1.75rem;
+        margin: 0 0 0.25rem;
+      }
+      .cabecera {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 1.5rem;
+        border-bottom: 3px solid var(--marca);
+        padding-bottom: 1rem;
+      }
+      .bloques {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin: 1.5rem 0;
+      }
+      .etiqueta {
+        color: #555;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+      th,
+      td {
+        padding: 0.5rem;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+        vertical-align: top;
+      }
+      td.n,
+      th.n {
+        text-align: right;
+        white-space: nowrap;
+      }
+      tfoot th {
+        text-align: right;
+        font-weight: 600;
+      }
+      .total td,
+      .total th {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--marca);
+      }
+      .nota {
+        color: #444;
+        margin-top: 1.25rem;
+      }
+      .acciones {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+      }
+      .acciones button,
+      .acciones a {
+        min-height: 48px;
+        padding: 0 1.25rem;
+        border-radius: 999px;
+        border: 2px solid var(--marca);
+        background: var(--marca);
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+      }
+      .acciones a {
+        background: #fff;
+        color: var(--marca);
+      }
+      @media print {
+        .acciones {
+          display: none;
+        }
+        main {
+          padding: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="acciones">
+        <button type="button" onclick="window.print()">Imprimir o guardar en PDF</button>
+        <a href={`/panel/presupuestos-cliente/${p.id}`}>Volver</a>
+      </div>
+      <div class="cabecera">
+        <div>
+          <h1>Presupuesto</h1>
+          <div>
+            <strong>{p.codigo}</strong> · {fecha(p.fecha)}{p.validez && ` · válido hasta el ${fecha(p.validez)}`}
+          </div>
+        </div>
+        <div>
+          <strong>{e.nombre || '[PLACEHOLDER: datos de la empresa]'}</strong>
+          {e.nif && <div>NIF {e.nif}</div>}
+          {direccion(e) && <div>{direccion(e)}</div>}
+          {(e.telefono || e.email) && <div>{[e.telefono, e.email].filter(Boolean).join(' · ')}</div>}
+        </div>
+      </div>
+      <div class="bloques">
+        <div>
+          <div class="etiqueta">Cliente</div>
+          <strong>{p.cliente.nombre}</strong>
+          {p.cliente.nif && <div>NIF {p.cliente.nif}</div>}
+          {direccion(p.cliente) && <div>{direccion(p.cliente)}</div>}
+        </div>
+        <div>
+          <div class="etiqueta">Trabajo</div>
+          <strong>{p.concepto}</strong>
+        </div>
+      </div>
+      <table>
+        <caption style="text-align:left;font-weight:600">Precios sin IVA</caption>
+        <thead>
+          <tr>
+            <th scope="col">Concepto</th>
+            <th scope="col" class="n">Cantidad</th>
+            <th scope="col" class="n">Precio</th>
+            <th scope="col" class="n">Importe</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            lineas.map((l) => (
+              <tr>
+                <td>
+                  {l.concepto}
+                  {l.material && <div style="color:#555">{l.material}</div>}
+                </td>
+                <td class="n">{String(l.cantidad).replace('.', ',')}</td>
+                <td class="n">{dinero(l.precio)}</td>
+                <td class="n">{importe(l)}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row" colspan="3">Base imponible</th>
+            <td class="n">{dinero(p.totales.base)}</td>
+          </tr>
+          <tr>
+            <th scope="row" colspan="3">IVA {p.iva} %</th>
+            <td class="n">{dinero(p.totales.cuotaIva)}</td>
+          </tr>
+          <tr class="total">
+            <th scope="row" colspan="3">Total</th>
+            <td class="n">{dinero(p.totales.total)}</td>
+          </tr>
+          {
+            p.anticipoPct > 0 && (
+              <>
+                <tr>
+                  <th scope="row" colspan="3">
+                    Anticipo al aceptar ({String(p.anticipoPct).replace('.', ',')} %)
+                  </th>
+                  <td class="n">{dinero(p.totales.anticipo)}</td>
+                </tr>
+                <tr>
+                  <th scope="row" colspan="3">Resto a la entrega</th>
+                  <td class="n">{dinero(p.totales.restante)}</td>
+                </tr>
+              </>
+            )
+          }
+        </tfoot>
+      </table>
+      {
+        extras.length > 0 && (
+          <table>
+            <caption style="text-align:left;font-weight:600">Extras opcionales (no incluidos en el total; precios sin IVA)</caption>
+            <tbody>
+              {extras.map((l) => (
+                <tr>
+                  <td>
+                    {l.concepto}
+                    {l.material && <div style="color:#555">{l.material}</div>}
+                  </td>
+                  <td class="n">{importe(l)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )
+      }
+      {p.formaPago && <p class="nota">Forma de pago: {p.formaPago}</p>}
+      {p.notas && <p class="nota">{p.notas}</p>}
+      {e.pie && <p class="nota" style="font-size:0.85rem">{e.pie}</p>}
+    </main>
+  </body>
+</html>

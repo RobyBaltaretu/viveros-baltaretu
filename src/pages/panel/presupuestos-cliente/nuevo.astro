@@ -1,0 +1,42 @@
+---
+import Mensajes from '../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import FormPresupuesto from '../../../components/panel/presupuestos-cliente/FormPresupuesto.astro';
+import { clienteActual } from '../../../plataforma/actual.ts';
+import { sumarDias } from '../../../server/facturas/facturas.ts';
+import { hoy } from '../../../server/gastos/gastos.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+import { leerFormularioPresupuesto, type ValoresFormPresupuesto } from '../../../server/presupuestos-cliente/formulario.ts';
+import { crearPresupuesto } from '../../../server/presupuestos-cliente/presupuestos.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+const { iva } = clienteActual();
+const ivaFijo = iva.fijo ? iva.general : null;
+const dia = hoy();
+let valores: ValoresFormPresupuesto = { fecha: dia, validez: sumarDias(dia, 30), anticipoPct: 40, iva: iva.general, clienteId: Astro.url.searchParams.get('cliente') ?? '' };
+let filas = 3;
+let error = '';
+if (s && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const datos = leerFormularioPresupuesto(form, ivaFijo);
+  if (form.get('accion') === 'mas') {
+    filas = datos.filas + 3;
+  } else {
+    const r = await crearPresupuesto(s.repos, datos, s.usuario.email, ivaFijo);
+    if (r.ok) return Astro.redirect(`/panel/presupuestos-cliente/${r.presupuesto.id}?hecho=creado`, 303);
+    error = r.error;
+    filas = datos.filas;
+    Astro.response.status = 400;
+  }
+  valores = datos;
+}
+const clientes = s ? await s.repos.clientes.listar() : [];
+---
+
+<PaginaPanel titulo="Nuevo presupuesto" permiso="facturas" volver="/panel/presupuestos-cliente">
+  <h1 class="titular-grande">Nuevo presupuesto</h1>
+  <Mensajes errores={error ? [{ campo: 'presupuesto', mensaje: error }] : []} />
+  <FormPresupuesto valores={valores} clientes={clientes} ivaFijo={ivaFijo} filas={filas} boton="Guardar el presupuesto" />
+</PaginaPanel>

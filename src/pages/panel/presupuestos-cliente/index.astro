@@ -1,0 +1,63 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import Icono from '../../../components/panel/ui/Icono.astro';
+import type { EstadoPresupuestoCliente } from '../../../server/data/tipos.ts';
+import { dinero } from '../../../server/facturas/importes.ts';
+import { hoy } from '../../../server/gastos/gastos.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+import { estadoEfectivo, NOMBRE_ESTADO } from '../../../server/presupuestos-cliente/presupuestos.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+const dia = hoy();
+const todos = s ? (await s.repos.presupuestosCliente.listar()).map((p) => ({ ...p, efectivo: estadoEfectivo(p, dia) })) : [];
+const ver = Astro.url.searchParams.get('ver') ?? 'abiertos';
+const FILTROS: Record<string, { texto: string; vale: (e: EstadoPresupuestoCliente) => boolean }> = {
+  abiertos: { texto: 'Pendientes', vale: (e) => e === 'borrador' || e === 'enviado' },
+  aceptados: { texto: 'Aceptados', vale: (e) => e === 'aceptado' },
+  cerrados: { texto: 'Rechazados o caducados', vale: (e) => e === 'rechazado' || e === 'caducado' },
+  todos: { texto: 'Todos', vale: () => true },
+};
+const filtro = FILTROS[ver] ?? FILTROS.abiertos;
+const lista = todos.filter((p) => filtro.vale(p.efectivo));
+const fecha = (iso: string) => iso.split('-').reverse().join('/');
+---
+
+<PaginaPanel titulo="Presupuestos" permiso="facturas">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="titular-grande">Presupuestos</h1>
+    <a href="/panel/presupuestos-cliente/nuevo" class="boton-panel"><Icono nombre="nuevo" clase="size-5" />Nuevo presupuesto</a>
+  </div>
+  <p class="mt-2 text-gris">Lo que presupuestas a tus clientes, con el anticipo y el paso a factura.</p>
+  <nav class="mt-6 flex flex-wrap gap-2" aria-label="Ver presupuestos">
+    {
+      Object.entries(FILTROS).map(([k, f]) => (
+        <a href={`/panel/presupuestos-cliente?ver=${k}`} class:list={['boton-panel', k !== ver && 'boton-panel-secundario']} aria-current={k === ver ? 'page' : undefined}>
+          {f.texto} <span class="tabular">({todos.filter((p) => f.vale(p.efectivo)).length})</span>
+        </a>
+      ))
+    }
+  </nav>
+  {lista.length === 0 && <p class="mt-6">{todos.length ? 'No hay presupuestos aquí.' : 'Todavía no hay presupuestos. Empieza por hacer uno.'}</p>}
+  <ul class="mt-6 grid gap-3" role="list">
+    {
+      lista.map((p) => (
+        <li class="caja-panel">
+          <a href={`/panel/presupuestos-cliente/${p.id}`} class="group flex min-h-12 flex-wrap items-center justify-between gap-3 p-4 no-underline">
+            <span class="min-w-0">
+              <span class="block font-titular text-xl font-bold text-tinta group-hover:underline">{p.concepto}</span>
+              <span class="text-gris">
+                {p.codigo} · {p.cliente.nombre} · {fecha(p.fecha)}
+              </span>
+            </span>
+            <span class="text-right">
+              <span class="block font-titular text-xl font-bold tabular">{dinero(p.totales.total)}</span>
+              <span class:list={['font-semibold', p.efectivo === 'caducado' || p.efectivo === 'rechazado' ? 'text-terracota' : 'text-oliva']}>{NOMBRE_ESTADO[p.efectivo]}</span>
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</PaginaPanel>

@@ -1,0 +1,121 @@
+---
+/** Datos y líneas de un presupuesto a cliente (alta y edición). Lo procesa la página con crearPresupuesto o cambiarPresupuesto. */
+import type { Cliente } from '../../../server/data/tipos.ts';
+import type { ValoresFormPresupuesto } from '../../../server/presupuestos-cliente/formulario.ts';
+import { TIPOS_IVA } from '../../../server/facturas/importes.ts';
+
+interface Props {
+  valores: ValoresFormPresupuesto;
+
+  clientes: Cliente[];
+  /** IVA que fija la configuración del cliente (no se elige), o null. */
+  ivaFijo: number | null;
+  filas: number;
+  boton: string;
+}
+const { valores: v, clientes, ivaFijo, filas, boton } = Astro.props;
+const lineas = v.lineas ?? [];
+const num = (n: number | undefined) => (n === undefined || Number.isNaN(n) ? '' : String(n).replace('.', ','));
+---
+
+<form method="post" class="mt-6 grid gap-6">
+  <input type="hidden" name="filas" value={filas} />
+  <fieldset class="grid gap-4 caja-panel p-5">
+    <legend class="font-titular text-xl font-bold">Para quién y qué</legend>
+    <label class="grid gap-1 font-semibold">
+      Cliente
+      <select name="clienteId" class="campo-panel font-normal" required>
+        <option value="">Elige un cliente</option>
+        {clientes.map((c) => <option value={c.id} selected={c.id === v.clienteId}>{c.nombre}</option>)}
+      </select>
+    </label>
+    <p class="flex flex-wrap items-center gap-3 text-gris">
+      ¿No está?
+      <a href="/panel/facturas/clientes/nuevo" class="boton-panel boton-panel-secundario">Añadir un cliente</a>
+    </p>
+    <label class="grid gap-1 font-semibold">
+      Qué se presupuesta
+      <input class="campo-panel font-normal" name="concepto" value={v.concepto ?? ''} maxlength="200" required placeholder="Por ejemplo: Armario empotrado del dormitorio" autocomplete="off" />
+    </label>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="grid gap-1 font-semibold">
+        Fecha
+        <input class="campo-panel font-normal" name="fecha" type="date" value={v.fecha ?? ''} required />
+      </label>
+      <label class="grid gap-1 font-semibold">
+        Vale hasta
+        <input class="campo-panel font-normal" name="validez" type="date" value={v.validez ?? ''} />
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset class="grid gap-4 caja-panel p-5">
+    <legend class="font-titular text-xl font-bold">Líneas</legend>
+    <p class="text-gris">Precios sin IVA. Marca «Extra» lo que ofreces aparte: sale en el presupuesto, pero no suma al total.</p>
+    {
+      Array.from({ length: filas }, (_, i) => {
+        const l = lineas[i];
+        return (
+          <div class="grid gap-3 border-b border-linea pb-4">
+            <p class="font-semibold">Línea {i + 1}</p>
+            <label class="grid gap-1">
+              Concepto
+              <input class="campo-panel" name={`l${i}.concepto`} value={l?.concepto ?? ''} maxlength="200" autocomplete="off" />
+            </label>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <label class="grid gap-1">
+                Cantidad
+                <input class="campo-panel" name={`l${i}.cantidad`} value={l ? num(l.cantidad) : '1'} inputmode="decimal" autocomplete="off" />
+              </label>
+              <label class="grid gap-1">
+                Precio por unidad (€, sin IVA)
+                <input class="campo-panel" name={`l${i}.precio`} value={num(l?.precio)} inputmode="decimal" autocomplete="off" />
+              </label>
+            </div>
+            <label class="grid gap-1">
+              Material o acabado (opcional)
+              <input class="campo-panel" name={`l${i}.material`} value={l?.material ?? ''} maxlength="120" autocomplete="off" />
+            </label>
+            <label class="flex items-center gap-3">
+              <input type="checkbox" name={`l${i}.extra`} class="size-6" checked={l?.extra ?? false} />
+              Extra opcional (no suma)
+            </label>
+          </div>
+        );
+      })
+    }
+    <p>
+      <button name="accion" value="mas" class="boton-panel boton-panel-secundario" formnovalidate>Añadir más líneas</button>
+    </p>
+  </fieldset>
+
+  <fieldset class="grid gap-4 caja-panel p-5">
+    <legend class="font-titular text-xl font-bold">Pago</legend>
+    {
+      ivaFijo === null ? (
+        <label class="grid gap-1 font-semibold">
+          IVA
+          <select name="iva" class="campo-panel font-normal">
+            {TIPOS_IVA.map((t) => <option value={t} selected={t === (v.iva ?? 21)}>{t} %</option>)}
+          </select>
+        </label>
+      ) : (
+        <p>IVA: <strong>{ivaFijo} %</strong></p>
+      )
+    }
+    <label class="grid gap-1 font-semibold">
+      Anticipo (% del total con IVA)
+      <input class="campo-panel font-normal" name="anticipoPct" value={num(v.anticipoPct ?? 40)} inputmode="decimal" autocomplete="off" />
+    </label>
+    <label class="grid gap-1 font-semibold">
+      Forma de pago
+      <input class="campo-panel font-normal" name="formaPago" value={v.formaPago ?? ''} maxlength="80" placeholder="Por ejemplo: Transferencia" autocomplete="off" />
+    </label>
+    <label class="grid gap-1 font-semibold">
+      Notas en el presupuesto
+      <textarea class="campo-panel font-normal" name="notas" rows="3" maxlength="1000">{v.notas ?? ''}</textarea>
+    </label>
+  </fieldset>
+
+  <p><button name="accion" value="guardar" class="boton-panel">{boton}</button></p>
+</form>
