@@ -15,6 +15,7 @@ Cada pregunta trae una **recomendación por defecto**. Mientras no haya respuest
 | P-07 | ¿Se puede permitir `developers.cloudflare.com` en la red de las sesiones, para citar las cifras desde la fuente? | Sí. Mientras tanto, las cifras van «por confirmar». | Decisiones de escala |
 | P-08 | ¿Quién tiene acceso a Cloudflare Access para el panel de Turia? ¿El mismo equipo de Access con otra aplicación? | Una aplicación de Access por cliente dentro del mismo equipo. | 3.1 en producción |
 | P-09 | El nombre del asistente: Baltaretu tiene «AgricolAI». ¿Y Turia? | `[PLACEHOLDER]`; mientras tanto, «Asistente». | 3.11 |
+| P-11 | La PR 61 (borrador de Jules) añade otro plan en `docs/plataforma/` (`00-resumen.md`…`05-riesgos.md`) que contradice decisiones firmes: base compartida con `tenant_id`, acceso propio, VeriFactu con un tercero, R2 y Stripe ya. También quita `idb-keyval` de `package-lock.json`. ¿La cerramos o la dejamos solo como referencia? | Cerrarla sin fusionar, o moverla a `docs/plataforma/referencias/` marcada como «no vigente». No fusionarla tal cual. | Nada (se evita mezclar dos planes) |
 | P-10 | ¿Planes de suscripción (qué módulos entran en cada uno)? | Un solo plan con módulos por cliente; el campo `plan` se guarda, pero no decide nada todavía. | 5.x |
 
 ## B · Para validar con Creaciones Turia
