@@ -58,6 +58,7 @@ if (s && plantilla && e && Astro.request.method === 'POST') {
   Astro.response.status = 400;
 }
 const borradores = s ? await s.repos.presupuestosCliente.listar({ estado: 'borrador', limite: 30 }) : [];
+const destinoPedido = leido('destino') ?? '';
 const conIva = e ? Math.round(e.precio * (100 + iva.general)) / 100 : 0;
 const pct = (n: number | null) => (n === null || !Number.isFinite(n) ? '—' : `${String(n).replace('.', ',')}\u00a0%`);
 const cantidad = (n: number) => n.toLocaleString('es-ES', { maximumFractionDigits: 3 });
@@ -176,7 +177,7 @@ const deCategoria = (cats: string[]) => articulos.filter((a) => cats.includes(a.
                 <select name="destino" class="campo-panel">
                   <option value="nuevo">Uno nuevo</option>
                   {borradores.map((b) => (
-                    <option value={b.id}>
+                    <option value={b.id} selected={b.id === destinoPedido}>
                       Añadir a {b.codigo}: {b.concepto}
                     </option>
                   ))}

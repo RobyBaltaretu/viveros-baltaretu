@@ -18,15 +18,23 @@ test('presupuestos: alta con extra, anticipo, envío, aceptación y factura de a
   await controlesGrandes(page);
   await page.getByRole('combobox', { name: /^Cliente/ }).selectOption({ label: `Cliente ${p}` });
   await page.getByLabel('Qué se presupuesta').fill(`Armario ${p}`);
-  const lineas = page.locator('fieldset', { has: page.getByText('Líneas', { exact: true }) });
-  await lineas.getByLabel('Concepto').nth(0).fill('Armario de dos puertas');
-  await lineas.getByLabel('Precio por unidad (€, sin IVA)').nth(0).fill('1.250');
-  await lineas.getByLabel('Concepto').nth(1).fill('Montaje');
-  await lineas.getByLabel('Precio por unidad (€, sin IVA)').nth(1).fill('180');
-  await lineas.getByLabel('Concepto').nth(2).fill('Iluminación LED');
-  await lineas.getByLabel('Precio por unidad (€, sin IVA)').nth(2).fill('95');
-  await lineas.getByLabel('Extra opcional (no suma)').nth(2).check();
-  await page.getByLabel('Anticipo (% del total con IVA)').fill('40');
+  await page.getByLabel('Concepto de la línea 1').fill('Armario de dos puertas');
+  await page.getByLabel('Precio por unidad de la línea 1, en euros sin IVA').fill('1.250');
+  await page.getByLabel('Concepto de la línea 2').fill('Montaje');
+  await page.getByLabel('Precio por unidad de la línea 2, en euros sin IVA').fill('180');
+  await page.getByLabel('Concepto de la línea 3').fill('Iluminación LED');
+  await page.getByLabel('Precio por unidad de la línea 3, en euros sin IVA').fill('95');
+  await page.getByLabel('La línea 3 es un extra opcional (no suma)').check();
+  // El total se ve al escribir, antes de guardar; el anticipo, con un toque.
+  await expect(page.locator('[data-total]')).toHaveText(/^1\.730,30/);
+  await page.getByRole('button', { name: '30 %' }).click();
+  await expect(page.getByLabel('Anticipo (% del total con IVA)')).toHaveValue('30');
+  await page.getByRole('button', { name: '40 %' }).click();
+  await expect(page.locator('[data-pago-anticipo]')).toHaveText(/^692,12/);
+  // Una línea más sin recargar, y quitarla.
+  await page.getByRole('button', { name: 'Añadir una línea' }).click();
+  await expect(page.getByLabel('Concepto de la línea 4')).toBeFocused();
+  await page.getByRole('button', { name: 'Quitar la línea 4' }).click();
   await page.getByRole('button', { name: 'Guardar el presupuesto' }).click();
 
   await expect(page.getByRole('status').first()).toContainText('Presupuesto guardado');
@@ -45,7 +53,7 @@ test('presupuestos: alta con extra, anticipo, envío, aceptación y factura de a
   await page.getByRole('link', { name: 'Volver' }).click();
 
   await page.getByRole('button', { name: 'Marcar como enviado' }).click();
-  await expect(page.getByText('Enviado', { exact: true })).toBeVisible();
+  await expect(page.locator('.nv-titulo .nv-chip')).toHaveText('Enviado');
   await page.getByRole('button', { name: 'El cliente lo acepta' }).click();
   await page.getByRole('button', { name: 'Hacer la factura de anticipo' }).click();
   await expect(page).toHaveURL(/\/panel\/facturas\/[^/]+$/);

@@ -1,0 +1,122 @@
+---
+/**
+ * Lista de presupuestos a cliente con el diseño nuevo: una tabla con el estado,
+ * el siguiente paso y el total; filtros con su número y búsqueda por cliente
+ * o trabajo. En el móvil, cada presupuesto es una fila de dos líneas.
+ */
+import Icono from '../../components/panel/ui/Icono.astro';
+import type { EstadoPresupuestoCliente, PresupuestoCliente } from '../../server/data/tipos.ts';
+import { dinero } from '../../server/facturas/importes.ts';
+import { NOMBRE_ESTADO } from '../../server/presupuestos-cliente/presupuestos.ts';
+import { siguientePaso, TONO_ESTADO } from './pasos.ts';
+
+interface Props {
+  todos: (PresupuestoCliente & { efectivo: EstadoPresupuestoCliente })[];
+  filtros: Record<string, { texto: string; vale: (e: EstadoPresupuestoCliente) => boolean }>;
+  ver: string;
+  q: string;
+  hoy: string;
+}
+const { todos, filtros, ver, q, hoy } = Astro.props;
+const normal = (t: string) =>
+  t
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+const coincide = (p: PresupuestoCliente) => !q || normal(`${p.concepto} ${p.cliente.nombre} ${p.codigo}`).includes(normal(q));
+const filtro = filtros[ver] ?? Object.values(filtros)[0]!;
+const lista = todos.filter((p) => filtro.vale(p.efectivo) && coincide(p));
+const fecha = (iso: string) => iso.split('-').reverse().join('/');
+const enlace = (k: string) => `/panel/presupuestos-cliente?ver=${k}${q ? `&q=${encodeURIComponent(q)}` : ''}`;
+const enJuego = todos.filter((p) => p.efectivo === 'enviado').reduce((t, p) => t + p.totales.total, 0);
+---
+
+<div class="nv-titulo">
+  <div>
+    <h1>Presupuestos</h1>
+    <p>Lo que ofreces a tus clientes. Cuando lo aceptan, pasa a factura con un clic.{enJuego > 0 && ` En juego ahora: ${dinero(enJuego)}.`}</p>
+  </div>
+  <a href="/panel/presupuestos-cliente/nuevo" class="nv-boton">
+    <Icono nombre="nuevo" />
+    Nuevo presupuesto
+  </a>
+</div>
+
+<nav class="nv-pestanas" aria-label="Ver presupuestos">
+  {
+    Object.entries(filtros).map(([k, f]) => (
+      <a href={enlace(k)} aria-current={k === ver ? 'page' : undefined}>
+        {f.texto} <span class="nv-chip">{todos.filter((p) => f.vale(p.efectivo) && coincide(p)).length}</span>
+      </a>
+    ))
+  }
+</nav>
+<form method="get" class="nv-filtros" role="search">
+  <input type="hidden" name="ver" value={ver} />
+  <label class="nv-campo">
+    Buscar
+    <input type="search" name="q" value={q} class="campo-panel" placeholder="Cliente, trabajo o número" />
+  </label>
+  <button class="nv-boton nv-boton-secundario">Buscar</button>
+</form>
+
+{
+  lista.length === 0 ? (
+    <div class="nv-tarjeta nv-vacio">
+      <span class="nv-vacio-icono" aria-hidden="true">
+        <Icono nombre="presupuestos" />
+      </span>
+      <p>
+        {todos.length === 0 ? (
+          <>
+            <strong>Todavía no hay presupuestos.</strong>
+            <br />
+            Haz el primero: elige el cliente, escribe los trabajos o tráelos del catálogo, y el total sale solo.
+          </>
+        ) : q ? (
+          <>Nada con «{q}». Prueba con otra palabra.</>
+        ) : (
+          <>No hay presupuestos aquí.</>
+        )}
+      </p>
+    </div>
+  ) : (
+    <div class="nv-tarjeta nv-tabla-caja" tabindex="0" role="region" aria-label="Presupuestos">
+      <table class="nv-tabla nv-tabla-lista">
+        <caption class="sr-only">Presupuestos: {filtro.texto.toLowerCase()}</caption>
+        <thead>
+          <tr>
+            <th scope="col">Trabajo y cliente</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Siguiente paso</th>
+            <th scope="col" class="nv-num">
+              Total
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {lista.map((p) => {
+            const paso = siguientePaso(p, hoy);
+            return (
+              <tr>
+                <td>
+                  <a href={`/panel/presupuestos-cliente/${p.id}`}>{p.concepto}</a>
+                  <small>
+                    {p.cliente.nombre} · {p.codigo} · {fecha(p.fecha)}
+                  </small>
+                </td>
+                <td>
+                  <span class={`nv-chip nv-chip-${TONO_ESTADO[p.efectivo]}`}>{NOMBRE_ESTADO[p.efectivo]}</span>
+                </td>
+                <td class:list={[paso.urgente && 'nv-paso-urgente']}>{paso.texto}</td>
+                <td class="nv-num">
+                  <strong>{dinero(p.totales.total)}</strong>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}

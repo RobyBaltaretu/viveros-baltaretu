@@ -1,0 +1,243 @@
+---
+/**
+ * Ficha de un presupuesto a cliente con el diseño nuevo: dónde está (recorrido
+ * de pasos), qué toca ahora con su botón, las líneas, el resumen con el
+ * anticipo, el envío al cliente y los cobros. Las acciones las procesa la
+ * página (mismos nombres que en el diseño de siempre).
+ */
+import Mensajes from '../../components/panel/Mensajes.astro';
+import Icono from '../../components/panel/ui/Icono.astro';
+import type { EstadoPresupuestoCliente, PresupuestoCliente } from '../../server/data/tipos.ts';
+import { dinero } from '../../server/facturas/importes.ts';
+import { NOMBRE_ESTADO, pasosDesde } from '../../server/presupuestos-cliente/presupuestos.ts';
+import { recorrido, siguientePaso, TONO_ESTADO } from './pasos.ts';
+
+interface Props {
+  p: PresupuestoCliente;
+  efectivo: EstadoPresupuestoCliente;
+  hoy: string;
+  hecho?: string | undefined;
+  error: string;
+  correo: string | null;
+  whatsapp: string;
+}
+const { p, efectivo, hoy, hecho, error, correo, whatsapp } = Astro.props;
+const fecha = (iso: string | null) => (iso ? iso.split('-').reverse().join('/') : '');
+const BOTON_ESTADO: Partial<Record<EstadoPresupuestoCliente, string>> = { enviado: 'Marcar como enviado', aceptado: 'El cliente lo acepta', rechazado: 'El cliente lo rechaza', borrador: 'Volver a borrador para cambiarlo' };
+const lineas = p.lineas.filter((l) => !l.extra);
+const extras = p.lineas.filter((l) => l.extra);
+const pasos = recorrido(p, hoy);
+const paso = siguientePaso(p, hoy);
+const pct = String(p.anticipoPct).replace('.', ',');
+const principalEstado = (e: EstadoPresupuestoCliente) => e === 'enviado' || e === 'aceptado';
+---
+
+<div class="nv-titulo">
+  <div>
+    <p class="nv-fecha">
+      <span class={`nv-chip nv-chip-${TONO_ESTADO[efectivo]}`}>{NOMBRE_ESTADO[efectivo]}</span>
+      {p.codigo} · {p.cliente.nombre}
+    </p>
+    <h1>{p.concepto}</h1>
+    <p>Del {fecha(p.fecha)}{p.validez && ` · vale hasta el ${fecha(p.validez)}`}</p>
+  </div>
+  {
+    p.estado === 'borrador' && (
+      <a href={`/panel/presupuestos-cliente/${p.id}/editar`} class="nv-boton nv-boton-secundario">
+        Cambiar el presupuesto
+      </a>
+    )
+  }
+</div>
+<Mensajes hecho={hecho} errores={error ? [{ campo: 'presupuesto', mensaje: error }] : []} />
+
+<ol class="nv-recorrido" aria-label="Recorrido del presupuesto">
+  {
+    pasos.map((h) => (
+      <li class:list={[h.hecho && 'nv-hecho', h.actual && 'nv-actual']} aria-current={h.actual ? 'step' : undefined}>
+        <span aria-hidden="true">{h.hecho ? <Icono nombre="hecho" clase="size-4" /> : null}</span>
+        {h.texto}
+        {h.hecho && <span class="sr-only"> (hecho)</span>}
+      </li>
+    ))
+  }
+</ol>
+
+<section class:list={['nv-siguiente', paso.urgente && 'nv-siguiente-urgente']} aria-labelledby="siguiente">
+  <div>
+    <h2 id="siguiente">Ahora</h2>
+    <p>{paso.texto === '—' ? 'Rechazado por el cliente. Puedes volver a borrador para rehacerlo.' : paso.texto}</p>
+  </div>
+  <div class="nv-acciones-siguiente">
+    {
+      p.estado === 'aceptado' && p.totales.anticipo > 0 && !p.facturaAnticipoId && (
+        <form method="post">
+          <button name="accion" value="facturar:anticipo" class="nv-boton">
+            Hacer la factura de anticipo
+          </button>
+        </form>
+      )
+    }
+    {
+      p.estado === 'aceptado' && (p.facturaAnticipoId || p.totales.anticipo <= 0) && !p.facturaId && (
+        <form method="post">
+          <button name="accion" value="facturar:final" class="nv-boton">
+            {p.facturaAnticipoId ? 'Hacer la factura final (descuenta el anticipo)' : 'Hacer la factura'}
+          </button>
+        </form>
+      )
+    }
+    {
+      pasosDesde(efectivo).map((e) => (
+        <form method="post">
+          <button name="accion" value={`estado:${e}`} class:list={['nv-boton', !principalEstado(e) && 'nv-boton-secundario']}>
+            {BOTON_ESTADO[e]}
+          </button>
+        </form>
+      ))
+    }
+  </div>
+</section>
+
+<div class="nv-ficha">
+  <section class="nv-tarjeta" aria-labelledby="lineas">
+    <div class="nv-cabeza-tarjeta">
+      <h2 id="lineas">Trabajos y materiales</h2>
+      <span class="nv-gris">Precios sin IVA</span>
+    </div>
+    <div class="nv-tabla-caja" tabindex="0" role="region" aria-label="Líneas del presupuesto">
+      <table class="nv-tabla">
+        <caption class="sr-only">Líneas del presupuesto (precios sin IVA)</caption>
+        <thead>
+          <tr>
+            <th scope="col">Concepto</th>
+            <th scope="col" class="nv-num">Cantidad</th>
+            <th scope="col" class="nv-num">Precio</th>
+            <th scope="col" class="nv-num">Importe</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            lineas.map((l) => (
+              <tr>
+                <td>
+                  {l.concepto}
+                  {l.material && <small>{l.material}</small>}
+                </td>
+                <td class="nv-num">{String(l.cantidad).replace('.', ',')}</td>
+                <td class="nv-num">{dinero(l.precio)}</td>
+                <td class="nv-num">{dinero(Math.round(l.cantidad * l.precio * 100) / 100)}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    {
+      extras.length > 0 && (
+        <p class="nv-nota nv-nota-arriba">
+          Extras opcionales (no suman): {extras.map((l) => `${l.concepto} (${dinero(l.precio * l.cantidad)} sin IVA)`).join(' · ')}
+        </p>
+      )
+    }
+  </section>
+
+  <div class="nv-ficha-lado">
+    <section class="nv-tarjeta nv-resumen" aria-labelledby="importes">
+      <h2 id="importes">Importes</h2>
+      <dl class="nv-filas-resumen nv-sin-raya">
+        <div>
+          <dt>Base imponible</dt>
+          <dd>{dinero(p.totales.base)}</dd>
+        </div>
+        <div>
+          <dt>IVA {p.iva} %</dt>
+          <dd>{dinero(p.totales.cuotaIva)}</dd>
+        </div>
+      </dl>
+      <div class="nv-total">
+        <span>Total con IVA</span>
+        <strong>{dinero(p.totales.total)}</strong>
+      </div>
+      {
+        p.anticipoPct > 0 && (
+          <dl class="nv-filas-resumen">
+            <div>
+              <dt>Anticipo al aceptar ({pct} %)</dt>
+              <dd>
+                {dinero(p.totales.anticipo)}
+                {p.cobroAnticipo && <span class="nv-chip nv-chip-verde">cobrado</span>}
+              </dd>
+            </div>
+            <div>
+              <dt>Al terminar</dt>
+              <dd>
+                {dinero(p.totales.restante)}
+                {p.cobroResto && <span class="nv-chip nv-chip-verde">cobrado</span>}
+              </dd>
+            </div>
+          </dl>
+        )
+      }
+      <p class="sr-only">
+        Anticipo y restante: {dinero(p.totales.anticipo)} + {dinero(p.totales.restante)}
+      </p>
+    </section>
+
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="enviar">
+      <h2 id="enviar">Enviar al cliente</h2>
+      <p class="nv-gris">Guárdalo en PDF (en la pantalla para imprimir, «Guardar como PDF») y envíalo con el PDF adjunto.</p>
+      <div class="nv-botones-columna">
+        <a href={`/panel/presupuestos-cliente/${p.id}/imprimir`} class="nv-boton nv-boton-secundario">
+          <Icono nombre="descargar" />
+          Imprimir o guardar en PDF
+        </a>
+        {
+          correo && (
+            <a href={correo} class="nv-boton nv-boton-secundario">
+              <Icono nombre="enviar" />
+              Enviar por correo
+            </a>
+          )
+        }
+        <a href={whatsapp} class="nv-boton nv-boton-secundario" target="_blank" rel="noopener">
+          <Icono nombre="conversacion" />
+          Enviar por WhatsApp
+        </a>
+      </div>
+    </section>
+
+    {
+      p.estado === 'aceptado' && (
+        <section class="nv-tarjeta nv-seccion" aria-labelledby="cobros">
+          <h2 id="cobros">Facturas y cobros</h2>
+          <div class="nv-botones-columna">
+            {p.facturaAnticipoId && (
+              <a href={`/panel/facturas/${p.facturaAnticipoId}`} class="enlace-panel">
+                Ver la factura de anticipo
+              </a>
+            )}
+            {p.facturaId && (
+              <a href={`/panel/facturas/${p.facturaId}`} class="enlace-panel">
+                Ver la factura final
+              </a>
+            )}
+          </div>
+          {(['anticipo', 'resto'] as const)
+            .filter((parte) => parte === 'resto' || p.totales.anticipo > 0)
+            .map((parte) => (
+              <form method="post" class="nv-cobro">
+                <label class="nv-campo">
+                  {parte === 'anticipo' ? `Anticipo cobrado el (${dinero(p.totales.anticipo)})` : `Resto cobrado el (${dinero(p.totales.restante)})`}
+                  <input type="date" name="fecha" class="campo-panel" value={(parte === 'anticipo' ? p.cobroAnticipo : p.cobroResto) ?? hoy} />
+                </label>
+                <button name="accion" value={`cobro:${parte}`} class="nv-boton nv-boton-secundario">
+                  Guardar la fecha
+                </button>
+              </form>
+            ))}
+        </section>
+      )
+    }
+  </div>
+</div>
