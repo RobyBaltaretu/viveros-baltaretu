@@ -48,9 +48,18 @@ export async function emailDeAccess(request: Request, env: EntornoPanel): Promis
 /** El panel solo existe si hay base de datos y (fuera de pruebas locales) Access configurado. */
 export const panelActivado = (env: EntornoPanel) => Boolean(env.DB && ((env.ACCESS_EQUIPO && env.ACCESS_AUD) || env.PANEL_PRUEBA_EMAIL));
 
-export async function sesionPanel(request: Request, env: EntornoPanel): Promise<SesionPanel> {
+/**
+ * Quién es la persona que entra. Hoy solo existe Cloudflare Access; otro
+ * proveedor (acceso propio, más adelante) solo tendría que cumplir esta interfaz.
+ */
+export interface ProveedorDeAcceso {
+  email(request: Request, env: EntornoPanel): Promise<string | null>;
+}
+export const accesoCloudflare: ProveedorDeAcceso = { email: emailDeAccess };
+
+export async function sesionPanel(request: Request, env: EntornoPanel, acceso: ProveedorDeAcceso = accesoCloudflare): Promise<SesionPanel> {
   if (!panelActivado(env)) return { estado: 'sin-activar' };
-  const email = await emailDeAccess(request, env);
+  const email = await acceso.email(request, env);
   if (!email) return { estado: 'sin-acceso', email: null };
   const repos = await repositorios(env);
   if (!repos) return { estado: 'sin-activar' };
