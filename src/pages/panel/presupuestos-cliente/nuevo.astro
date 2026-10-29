@@ -43,7 +43,7 @@ if (s && Astro.request.method === 'POST') {
 const clientes = s ? await s.repos.clientes.listar() : [];
 // Diseño nuevo: editor en tabla con el total al escribir y los artículos del catálogo a un clic.
 const nuevo = clienteActual().panel?.diseno === 'nuevo';
-const articulos = s && nuevo && rutaDisponible('/panel/catalogo') ? await s.repos.catalogo.articulos() : [];
+const [articulos, plantillas] = s && nuevo && rutaDisponible('/panel/catalogo') ? await Promise.all([s.repos.catalogo.articulos(), s.repos.catalogo.plantillas()]) : [[], []];
 ---
 
 <PaginaPanel titulo="Nuevo presupuesto" permiso="facturas" volver="/panel/presupuestos-cliente" ancho={nuevo ? 'amplio' : 'normal'}>
@@ -57,7 +57,7 @@ const articulos = s && nuevo && rutaDisponible('/panel/catalogo') ? await s.repo
           </div>
         </div>
         <Mensajes errores={error ? [{ campo: 'presupuesto', mensaje: error }] : []} />
-        <FormPresupuestoNuevo valores={valores} clientes={clientes} ivaFijo={ivaFijo} filas={filas} boton="Guardar el presupuesto" articulos={articulos} />
+        <FormPresupuestoNuevo valores={valores} clientes={clientes} ivaFijo={ivaFijo} filas={filas} boton="Guardar el presupuesto" articulos={articulos} plantillas={plantillas} />
       </>
     ) : (
       <>

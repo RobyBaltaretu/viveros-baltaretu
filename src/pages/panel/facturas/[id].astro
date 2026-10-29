@@ -9,7 +9,15 @@ import { hoy, leerBorrador, nuevaFactura, rectificativaDe, serieDe, type Error }
 import { ajustesFacturacion, borradorAlDia, comprobarEmision, emitirFactura, plantasParaFacturar } from '../../../server/panel/facturacion.ts';
 import { campo, sesionCon } from '../../../server/panel/pagina.ts';
 
+import EditorFacturaNuevo from '../../../panel-nuevo/facturas/EditorFacturaNuevo.astro';
+import { clienteActual, rutaDisponible } from '../../../plataforma/actual.ts';
+
 export const prerender = false;
+
+// Diseño nuevo (Turia): editor con el catálogo y el total al escribir (src/panel-nuevo/facturas/).
+const cliente = clienteActual();
+const nuevo = cliente.panel?.diseno === 'nuevo';
+const ivaFijo = cliente.iva.fijo ? cliente.iva.general : null;
 
 const s = sesionCon(Astro.locals, 'facturas');
 const id = Astro.params.id ?? '';
@@ -73,11 +81,12 @@ const MENSAJES: Record<string, string> = {
   cobrada: 'Marcada como cobrada.',
   pendiente: 'Vuelve a estar pendiente de cobro.',
 };
+const [articulos, plantillas] = s && nuevo && f?.estado === 'borrador' && rutaDisponible('/panel/catalogo') ? await Promise.all([s.repos.catalogo.articulos(), s.repos.catalogo.plantillas()]) : [[], []];
 const confirmar = f?.estado === 'borrador' && Astro.url.searchParams.has('confirmar') && !errores.length;
 const titulo = !f ? 'Factura' : f.estado === 'borrador' ? (f.tipo === 'rectificativa' ? 'Rectificativa (borrador)' : 'Factura (borrador)') : `Factura ${f.codigo}`;
 ---
 
-<PaginaPanel titulo={titulo} permiso="facturas" volver="/panel/facturas">
+<PaginaPanel titulo={titulo} permiso="facturas" volver="/panel/facturas" ancho={nuevo && f?.estado === 'borrador' ? 'amplio' : 'normal'}>
   {
     f && (
       <>
@@ -99,7 +108,11 @@ const titulo = !f ? 'Factura' : f.estado === 'borrador' ? (f.tipo === 'rectifica
             </div>
           </section>
         ) : f.estado === 'borrador' ? (
-          <EditorFactura factura={f} plantas={plantas} errores={errores} crudo={crudo} />
+          nuevo ? (
+            <EditorFacturaNuevo factura={f} errores={errores} crudo={crudo} ivaFijo={ivaFijo} articulos={articulos} plantillas={plantillas} />
+          ) : (
+            <EditorFactura factura={f} plantas={plantas} errores={errores} crudo={crudo} />
+          )
         ) : (
           <VistaFactura factura={f} />
         )}

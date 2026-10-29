@@ -35,7 +35,7 @@ if (s && p && Astro.request.method === 'POST') {
 }
 const clientes = s ? await s.repos.clientes.listar() : [];
 const nuevo = clienteActual().panel?.diseno === 'nuevo';
-const articulos = s && nuevo && rutaDisponible('/panel/catalogo') ? await s.repos.catalogo.articulos() : [];
+const [articulos, plantillas] = s && nuevo && rutaDisponible('/panel/catalogo') ? await Promise.all([s.repos.catalogo.articulos(), s.repos.catalogo.plantillas()]) : [[], []];
 ---
 
 <PaginaPanel titulo="Cambiar el presupuesto" permiso="facturas" volver={`/panel/presupuestos-cliente/${id}`} ancho={nuevo ? 'amplio' : 'normal'}>
@@ -49,7 +49,7 @@ const articulos = s && nuevo && rutaDisponible('/panel/catalogo') ? await s.repo
           </div>
         </div>
         <Mensajes errores={error ? [{ campo: 'presupuesto', mensaje: error }] : []} />
-        <FormPresupuestoNuevo valores={valores} clientes={clientes} ivaFijo={ivaFijo} filas={filas} boton="Guardar los cambios" articulos={articulos} presupuestoId={id} />
+        <FormPresupuestoNuevo valores={valores} clientes={clientes} ivaFijo={ivaFijo} filas={filas} boton="Guardar los cambios" articulos={articulos} plantillas={plantillas} presupuestoId={id} />
       </>
     ) : (
       <>

@@ -27,6 +27,7 @@ const RUTAS: [prefijo: string, modulo: Modulo, sector?: Sector][] = [
   ['/api/panel/adjunto', 'catalogo', 'carpinteria'],
   // Catálogo de la carpintería: artículos, precios y plantillas con su escandallo.
   ['/panel/catalogo', 'materiales', 'carpinteria'],
+  ['/api/panel/catalogo-trabajo', 'materiales', 'carpinteria'],
   ['/panel/gastos', 'gastos'],
   ['/api/panel/gastos.csv', 'gastos'],
   ['/api/panel/ticket', 'gastos'],

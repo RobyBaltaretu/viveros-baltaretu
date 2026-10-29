@@ -10,8 +10,8 @@
  * Sin JavaScript funciona igual, con «Añadir más líneas» y el total al guardar.
  */
 import Icono from '../../components/panel/ui/Icono.astro';
-import { CATEGORIAS, precioVenta, sinPrecio } from '../../server/catalogo/catalogo.ts';
-import type { ArticuloCatalogo, Cliente } from '../../server/data/tipos.ts';
+import SelectorCatalogo from '../SelectorCatalogo.astro';
+import type { ArticuloCatalogo, Cliente, PlantillaCatalogo } from '../../server/data/tipos.ts';
 import { TIPOS_IVA } from '../../server/facturas/importes.ts';
 import type { ValoresFormPresupuesto } from '../../server/presupuestos-cliente/formulario.ts';
 
@@ -21,15 +21,15 @@ interface Props {
   ivaFijo: number | null;
   filas: number;
   boton: string;
-  /** Artículos del catálogo para añadir a un clic (vacío si el cliente no tiene catálogo). */
+  /** Catálogo para añadir artículos y trabajos (vacío si el cliente no tiene catálogo). */
   articulos: ArticuloCatalogo[];
-  /** Para «Calcular un trabajo del catálogo» (en un borrador ya guardado lo añade a él). */
+  plantillas: PlantillaCatalogo[];
+  /** El presupuesto que se cambia (en el alta, ninguno). */
   presupuestoId?: string;
 }
-const { valores: v, clientes, ivaFijo, filas, boton, articulos, presupuestoId } = Astro.props;
+const { valores: v, clientes, ivaFijo, filas, boton, articulos, plantillas } = Astro.props;
 const lineas = v.lineas ?? [];
 const num = (n: number | undefined) => (n === undefined || Number.isNaN(n) ? '' : String(n).replace('.', ','));
-const conPrecio = articulos.filter((a) => !sinPrecio(a));
 const FORMAS_PAGO = ['Transferencia', 'Bizum', 'Efectivo', 'Tarjeta'];
 const fila = (i: number) => {
   const l = lineas[i];
@@ -138,31 +138,11 @@ const fila = (i: number) => {
           Añadir una línea
         </button>
         {
-          conPrecio.length > 0 && (
-            <label class="nv-campo nv-desde-catalogo" data-solo-js hidden>
-              <span class="sr-only">Añadir un artículo del catálogo</span>
-              <select class="campo-panel" data-catalogo>
-                <option value="">Añadir del catálogo…</option>
-                {CATEGORIAS.map((c) => (
-                  <optgroup label={c.nombre}>
-                    {conPrecio
-                      .filter((a) => a.categoria === c.id)
-                      .map((a) => (
-                        <option value={a.id} data-nombre={a.nombre} data-acabado={a.acabado} data-precio={precioVenta(a)}>
-                          {a.nombre} · {String(precioVenta(a)).replace('.', ',')} €/{a.unidad}
-                        </option>
-                      ))}
-                  </optgroup>
-                ))}
-              </select>
-            </label>
-          )
-        }
-        {
-          articulos.length > 0 && (
-            <a href={presupuestoId ? `/panel/catalogo?para=${presupuestoId}` : '/panel/catalogo'} class="enlace-panel">
-              Calcular un trabajo del catálogo
-            </a>
+          (articulos.length > 0 || plantillas.length > 0) && (
+            <button type="button" class="nv-boton nv-boton-secundario" data-abrir-catalogo hidden>
+              <Icono nombre="catalogo" />
+              Añadir del catálogo
+            </button>
           )
         }
       </div>
@@ -255,6 +235,7 @@ const fila = (i: number) => {
     <button name="accion" value="guardar" class="nv-boton nv-boton-ancho">{boton}</button>
   </aside>
 </form>
+<SelectorCatalogo articulos={articulos} plantillas={plantillas} destino="presupuesto" />
 
 <script is:inline>
   (() => {
@@ -335,17 +316,16 @@ const fila = (i: number) => {
       recalcular();
       pon('[data-anuncio]', 'Línea quitada.');
     });
-    f.querySelector('[data-catalogo]')?.addEventListener('change', (e) => {
-      const o = e.target.selectedOptions[0];
-      if (!o?.value) return;
-      const tr = libre() ?? nuevaFila();
-      tr.querySelector('[name$=".concepto"]').value = o.dataset.nombre;
-      tr.querySelector('[name$=".material"]').value = o.dataset.acabado || '';
-      tr.querySelector('[name$=".precio"]').value = String(o.dataset.precio).replace('.', ',');
-      e.target.value = '';
+    // Del selector del catálogo (SelectorCatalogo.astro): cada línea, en una fila libre o nueva.
+    document.addEventListener('catalogo:anadir', (e) => {
+      for (const l of e.detail.lineas) {
+        const tr = libre() ?? nuevaFila();
+        tr.querySelector('[name$=".concepto"]').value = l.concepto;
+        tr.querySelector('[name$=".material"]').value = l.material || '';
+        tr.querySelector('[name$=".cantidad"]').value = String(l.cantidad).replace('.', ',');
+        tr.querySelector('[name$=".precio"]').value = String(l.precio).replace('.', ',');
+      }
       recalcular();
-      pon('[data-anuncio]', `${o.dataset.nombre} añadido.`);
-      tr.querySelector('[name$=".cantidad"]').focus();
     });
     f.querySelectorAll('[data-dias]').forEach((b) =>
       b.addEventListener('click', () => {
