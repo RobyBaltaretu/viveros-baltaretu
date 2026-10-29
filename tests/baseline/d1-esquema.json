@@ -1,5 +1,5 @@
 {
-  "version": 11,
+  "version": 12,
   "tablas": {
     "adjuntos": {
       "columnas": [
@@ -376,6 +376,149 @@
         }
       ],
       "sql": "CREATE TABLE cambios ( id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT NOT NULL, email TEXT NOT NULL, coleccion TEXT NOT NULL, entrada_id TEXT NOT NULL, antes TEXT, despues TEXT, origen TEXT NOT NULL DEFAULT 'panel' CHECK (origen IN ('panel', 'asistente', 'importacion', 'deshacer')) , deshecho INTEGER NOT NULL DEFAULT 0)"
+    },
+    "catalogo_articulos": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "categoria",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "nombre",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "unidad",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "coste",
+          "tipo": "REAL",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "archivado",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE catalogo_articulos ( id TEXT PRIMARY KEY, categoria TEXT NOT NULL, nombre TEXT NOT NULL, unidad TEXT NOT NULL, coste REAL NOT NULL DEFAULT 0, datos TEXT NOT NULL, archivado INTEGER NOT NULL DEFAULT 0, creado TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL )"
+    },
+    "catalogo_plantillas": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "nombre",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "tipo_trabajo",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "orden",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "archivado",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE catalogo_plantillas ( id TEXT PRIMARY KEY, nombre TEXT NOT NULL, tipo_trabajo TEXT NOT NULL DEFAULT '', datos TEXT NOT NULL, orden INTEGER NOT NULL DEFAULT 0, archivado INTEGER NOT NULL DEFAULT 0, creado TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL )"
     },
     "clientes": {
       "columnas": [
@@ -1233,6 +1376,11 @@
       "nombre": "cambios_entrada",
       "tabla": "cambios",
       "sql": "CREATE INDEX cambios_entrada ON cambios (coleccion, entrada_id, id)"
+    },
+    {
+      "nombre": "catalogo_articulos_categoria",
+      "tabla": "catalogo_articulos",
+      "sql": "CREATE INDEX catalogo_articulos_categoria ON catalogo_articulos (categoria, nombre)"
     },
     {
       "nombre": "facturas_cliente",

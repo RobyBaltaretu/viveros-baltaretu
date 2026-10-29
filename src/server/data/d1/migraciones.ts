@@ -279,6 +279,38 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       `CREATE INDEX presupuestos_cliente_cliente ON presupuestos_cliente (cliente_id, fecha)`,
     ],
   },
+  {
+    version: 12,
+    nombre: 'catálogo de la carpintería',
+    sql: [
+      // Artículos (materiales, herrajes, acabados, mano de obra y servicios) con su coste y margen. Privado.
+      `CREATE TABLE catalogo_articulos (
+        id TEXT PRIMARY KEY,
+        categoria TEXT NOT NULL,
+        nombre TEXT NOT NULL,
+        unidad TEXT NOT NULL,
+        coste REAL NOT NULL DEFAULT 0,
+        datos TEXT NOT NULL,
+        archivado INTEGER NOT NULL DEFAULT 0,
+        creado TEXT NOT NULL,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL
+      )`,
+      `CREATE INDEX catalogo_articulos_categoria ON catalogo_articulos (categoria, nombre)`,
+      // Plantillas de trabajos con su escandallo (medidas, materiales a elegir y fórmulas).
+      `CREATE TABLE catalogo_plantillas (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        tipo_trabajo TEXT NOT NULL DEFAULT '',
+        datos TEXT NOT NULL,
+        orden INTEGER NOT NULL DEFAULT 0,
+        archivado INTEGER NOT NULL DEFAULT 0,
+        creado TEXT NOT NULL,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL
+      )`,
+    ],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

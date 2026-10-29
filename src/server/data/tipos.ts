@@ -564,6 +564,92 @@ export interface RepositorioPresupuestosCliente {
   borrarPruebas(): Promise<number>;
 }
 
+/** Artículo del catálogo de la carpintería: un material, herraje, acabado, hora de trabajo o servicio. */
+export interface ArticuloCatalogo {
+  id: string;
+  /** Categoría (src/server/catalogo/catalogo.ts): tableros, cantos, herrajes, mano-obra… */
+  categoria: string;
+  nombre: string;
+  /** Unidad en que se compra y se cobra: ud, m², ml, m³, h, kg, l. */
+  unidad: string;
+  /** Coste sin IVA por unidad (lo que le cuesta al negocio). 0 = por rellenar. */
+  coste: number;
+  /** Lo que se pierde al cortar (%): se compra más de lo que queda en el mueble. */
+  merma: number;
+  /** Margen sobre el coste (%). */
+  margen: number;
+  /** Precio de venta sin IVA por unidad si se fija a mano; si no, coste + margen. */
+  precioFijo: number | null;
+  referencia: string;
+  proveedor: string;
+  /** Espesor en mm (tableros, cantos…), si lo tiene. */
+  espesor: number | null;
+  /** Color, textura o acabado (por ejemplo, «Blanco», «Roble natural»). */
+  acabado: string;
+  notas: string;
+  archivado: boolean;
+  actualizado: string;
+}
+
+/** Medida que se pide al usar una plantilla (en cm, o un número de unidades). */
+export interface ParametroPlantilla {
+  /** Nombre en las fórmulas: ancho, alto, fondo, puertas… */
+  id: string;
+  nombre: string;
+  /** medida: se escribe en cm y en las fórmulas vale en metros. numero: unidades (puertas, baldas…). */
+  tipo: 'medida' | 'numero';
+  defecto: number;
+  min: number;
+  max: number;
+}
+
+/** Material que se elige al usar la plantilla (por ejemplo, el tablero del cuerpo). */
+export interface OpcionPlantilla {
+  id: string;
+  nombre: string;
+  /** Categorías de artículos entre las que se elige. */
+  categorias: string[];
+  /** Artículo propuesto. */
+  defecto: string | null;
+}
+
+/** Una parte del escandallo: qué artículo y cuánto, con una fórmula de las medidas. */
+export interface ComponentePlantilla {
+  concepto: string;
+  /** Artículo fijo o el que se elija en una opción. */
+  articulo: { id: string } | { opcion: string };
+  /** Cantidad (en la unidad del artículo), por ejemplo «2 * alto * fondo». */
+  cantidad: string;
+}
+
+/** Plantilla de un trabajo (armario empotrado, cocina, puerta…): su escandallo paramétrico. */
+export interface PlantillaCatalogo {
+  id: string;
+  nombre: string;
+  /** Tipo de trabajo (Armarios, Cocinas, Puertas…). */
+  tipoTrabajo: string;
+  descripcion: string;
+  parametros: ParametroPlantilla[];
+  opciones: OpcionPlantilla[];
+  componentes: ComponentePlantilla[];
+  orden: number;
+  archivado: boolean;
+  actualizado: string;
+}
+
+export interface RepositorioCatalogo {
+  articulos(opciones?: { incluirArchivados?: boolean }): Promise<ArticuloCatalogo[]>;
+  articulo(id: string): Promise<ArticuloCatalogo | null>;
+  guardarArticulo(a: Omit<ArticuloCatalogo, 'actualizado' | 'archivado'>, email: string): Promise<void>;
+  archivarArticulo(id: string, archivado: boolean, email: string): Promise<boolean>;
+  plantillas(opciones?: { incluirArchivadas?: boolean }): Promise<PlantillaCatalogo[]>;
+  plantilla(id: string): Promise<PlantillaCatalogo | null>;
+  guardarPlantilla(p: Omit<PlantillaCatalogo, 'actualizado' | 'archivado'>, email: string): Promise<void>;
+  archivarPlantilla(id: string, archivado: boolean, email: string): Promise<boolean>;
+  /** Quita los artículos y plantillas de prueba (id `prueba-…`). Devuelve cuántos. */
+  borrarPruebas(): Promise<number>;
+}
+
 export interface Repositorios {
   contenido: RepositorioContenido;
   fotos: RepositorioFotos;
@@ -582,4 +668,5 @@ export interface Repositorios {
   portafolio: RepositorioPortafolio;
   adjuntos: RepositorioAdjuntos;
   presupuestosCliente: RepositorioPresupuestosCliente;
+  catalogo: RepositorioCatalogo;
 }
