@@ -68,6 +68,8 @@ export const esquemaCliente = z
       .strict(),
     /** Colores del tema, todos. Si falta, se usan los del núcleo (los de Baltaretu). */
     tema: z.record(z.enum(TOKENS_COLOR), color).optional(),
+    /** Diseño del panel: «clasico» (el de siempre, por defecto) o «nuevo» (src/panel-nuevo/). */
+    panel: z.object({ diseno: z.enum(['clasico', 'nuevo']) }).strict().optional(),
   })
   .strict()
   .refine((c) => c.idiomas.includes(c.idiomaPorDefecto), { message: 'El idioma por defecto tiene que estar en «idiomas»', path: ['idiomaPorDefecto'] });

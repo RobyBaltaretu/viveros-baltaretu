@@ -1,0 +1,677 @@
+/*
+ * Diseño nuevo del panel (clientes con `panel.diseno: "nuevo"`). Se sirve en
+ * línea desde el armazón (PanelNuevo.astro): no entra en el CSS de la web ni en
+ * el de Viveros Baltaretu. Tailwind no mira esta carpeta (`@source not` en
+ * src/styles/global.css). Colores: los tokens del tema del cliente.
+ *
+ * Principios: superficies blancas sobre un fondo neutro, una sola tinta de
+ * acento para lo que se pulsa, números alineados, controles de 48 px y nada
+ * de animaciones de entrada (el panel es una herramienta: tiene que ir rápido).
+ */
+.nv {
+  --nv-fondo: var(--color-crema);
+  --nv-superficie: var(--color-papel);
+  --nv-borde: var(--color-linea);
+  --nv-borde-fuerte: color-mix(in oklab, var(--color-linea) 55%, var(--color-gris));
+  --nv-tinta: var(--color-tinta);
+  --nv-gris: var(--color-gris);
+  --nv-acento: var(--color-terracota);
+  --nv-acento-suave: var(--color-verdor);
+  --nv-acento-oscuro: var(--color-oliva);
+  --nv-hover: color-mix(in oklab, var(--color-crema) 70%, var(--color-linea));
+  --nv-radio: 14px;
+  --nv-radio-control: 10px;
+  --nv-sombra: 0 1px 2px rgb(16 24 32 / 0.05);
+  --nv-sombra-alta: 0 12px 32px -12px rgb(16 24 32 / 0.25), 0 2px 6px rgb(16 24 32 / 0.06);
+  --nv-rojo: #b42318;
+  --nv-rojo-suave: #fdecea;
+  --nv-naranja: #8a4b00;
+  --nv-naranja-suave: #fff1e0;
+  --nv-verde: #1e6b3a;
+  --nv-verde-suave: #e8f5ec;
+  background: var(--nv-fondo);
+  color: var(--nv-tinta);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.nv :focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--nv-acento) 55%, white);
+  outline-offset: 2px;
+}
+
+/* ---------- Armazón ---------- */
+.nv-armazon {
+  min-height: 100dvh;
+}
+@media (min-width: 64rem) {
+  .nv-armazon {
+    display: grid;
+    grid-template-columns: 16rem minmax(0, 1fr);
+  }
+}
+.nv-lateral {
+  display: none;
+}
+@media (min-width: 64rem) {
+  .nv-lateral {
+    position: sticky;
+    top: 0;
+    display: flex;
+    height: 100dvh;
+    flex-direction: column;
+    gap: 0.25rem;
+    overflow-y: auto;
+    border-right: 1px solid var(--nv-borde);
+    background: var(--nv-superficie);
+    padding: 1rem 0.75rem;
+  }
+}
+.nv-marca {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: var(--nv-radio-control);
+  padding: 0 0.5rem;
+  color: var(--nv-tinta);
+  text-decoration: none;
+}
+.nv-monograma {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--nv-acento);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+.nv-monograma img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+.nv-marca-texto {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.nv-marca-texto strong {
+  font-weight: 700;
+}
+.nv-marca-texto span {
+  font-size: 0.8125rem;
+  color: var(--nv-gris);
+}
+.nv-grupo {
+  margin: 1rem 0 0.25rem;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--nv-gris);
+}
+.nv-lista {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nv-enlace {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--nv-radio-control);
+  padding: 0 0.75rem;
+  font-weight: 500;
+  color: var(--nv-tinta);
+  text-decoration: none;
+}
+.nv-enlace .icono {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--nv-gris);
+}
+@media (hover: hover) and (pointer: fine) {
+  .nv-enlace:hover {
+    background: var(--nv-hover);
+  }
+}
+.nv-enlace[aria-current='page'] {
+  background: var(--nv-acento-suave);
+  color: var(--nv-acento-oscuro);
+  font-weight: 600;
+}
+.nv-enlace[aria-current='page'] .icono {
+  color: var(--nv-acento-oscuro);
+}
+.nv-cuenta {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: auto;
+  border-top: 1px solid var(--nv-borde);
+  padding: 0.75rem 0.25rem 0 0.5rem;
+}
+.nv-avatar {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--nv-hover);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.nv-cuenta-texto {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.nv-cuenta-texto span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.nv-cuenta-texto span:last-child {
+  font-size: 0.8125rem;
+  color: var(--nv-gris);
+}
+
+.nv-cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  min-height: 4rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--nv-borde);
+  background: color-mix(in oklab, var(--nv-superficie) 92%, transparent);
+  backdrop-filter: blur(10px);
+  padding: max(0.5rem, env(safe-area-inset-top)) 1rem 0.5rem;
+}
+@media (min-width: 64rem) {
+  .nv-cabecera {
+    padding: 0.5rem 2rem;
+  }
+  .nv-cabecera .nv-marca {
+    display: none;
+  }
+}
+.nv-cabecera .nv-marca-texto span {
+  display: none;
+}
+.nv-migas {
+  display: none;
+  min-width: 0;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.9375rem;
+  color: var(--nv-gris);
+}
+@media (min-width: 64rem) {
+  .nv-migas {
+    display: flex;
+  }
+}
+.nv-migas a {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  color: var(--nv-gris);
+  text-decoration: none;
+}
+.nv-migas a:hover {
+  color: var(--nv-tinta);
+  text-decoration: underline;
+}
+.nv-migas [aria-current='page'] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--nv-tinta);
+}
+.nv-hueco {
+  flex: 1;
+}
+.nv-etiqueta-pruebas {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 999px;
+  background: var(--nv-naranja-suave);
+  padding: 0 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--nv-naranja);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nv-etiqueta-pruebas:hover {
+  text-decoration: underline;
+}
+
+.nv-contenido {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 7rem;
+}
+@media (min-width: 40rem) {
+  .nv-contenido {
+    padding: 1.5rem 1.5rem 7rem;
+  }
+}
+@media (min-width: 64rem) {
+  .nv-contenido {
+    padding: 2rem 2rem 4rem;
+  }
+}
+.nv-contenido-normal {
+  max-width: 56rem;
+}
+
+/* ---------- Crear (menú nativo con popover) ---------- */
+.nv-crear {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: var(--nv-radio-control);
+  background: var(--nv-acento);
+  padding: 0 1.125rem;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+.nv-crear .icono {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+@media (hover: hover) and (pointer: fine) {
+  .nv-crear:hover {
+    background: color-mix(in oklab, var(--nv-acento) 86%, black);
+  }
+}
+.nv-crear:active {
+  transform: scale(0.97);
+}
+@media (max-width: 63.99rem) {
+  .nv-cabecera .nv-crear {
+    display: none;
+  }
+}
+.nv-menu {
+  margin: 0;
+  border: 1px solid var(--nv-borde);
+  border-radius: var(--nv-radio);
+  background: var(--nv-superficie);
+  box-shadow: var(--nv-sombra-alta);
+  padding: 0.5rem;
+  color: var(--nv-tinta);
+}
+.nv-menu::backdrop {
+  background: rgb(16 24 32 / 0.35);
+}
+.nv-menu h2 {
+  margin: 0.25rem 0.5rem 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.nv-menu ul {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nv-menu a {
+  display: flex;
+  min-height: 3.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--nv-radio-control);
+  padding: 0.375rem 0.75rem;
+  color: var(--nv-tinta);
+  text-decoration: none;
+}
+.nv-menu a:hover {
+  background: var(--nv-hover);
+}
+.nv-menu a > span:first-child {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  place-items: center;
+  border-radius: var(--nv-radio-control);
+  background: var(--nv-acento-suave);
+  color: var(--nv-acento-oscuro);
+}
+.nv-menu a strong {
+  display: block;
+  font-weight: 600;
+}
+.nv-menu a small {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--nv-gris);
+}
+/* En el ordenador, debajo del botón; en el móvil, una hoja desde abajo. */
+@media (min-width: 64rem) {
+  .nv-menu {
+    position: fixed;
+    inset: 4.25rem 2rem auto auto;
+    width: 20rem;
+  }
+  .nv-menu::backdrop {
+    background: transparent;
+  }
+}
+@media (max-width: 63.99rem) {
+  .nv-menu {
+    position: fixed;
+    inset: auto 0 0 0;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    border-radius: 20px 20px 0 0;
+    padding: 0.75rem 1rem max(1.25rem, env(safe-area-inset-bottom));
+  }
+}
+.nv-cerrar-menu {
+  display: none;
+}
+@media (max-width: 63.99rem) {
+  .nv-cerrar-menu {
+    display: flex;
+    width: 100%;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.5rem;
+    border: 1px solid var(--nv-borde);
+    border-radius: var(--nv-radio-control);
+    background: var(--nv-superficie);
+    font: inherit;
+    font-weight: 600;
+    color: var(--nv-tinta);
+  }
+}
+
+/* ---------- Barra de abajo (móvil) ---------- */
+.nv-inferior {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 30;
+  border-top: 1px solid var(--nv-borde);
+  background: color-mix(in oklab, var(--nv-superficie) 94%, transparent);
+  backdrop-filter: blur(12px);
+  padding: 0.25rem 0.25rem max(0.375rem, env(safe-area-inset-bottom));
+}
+@media (min-width: 64rem) {
+  .nv-inferior {
+    display: none;
+  }
+}
+.nv-inferior ul {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+.nv-pestana {
+  display: flex;
+  min-height: 3.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--nv-gris);
+  text-decoration: none;
+  width: 100%;
+  cursor: pointer;
+}
+.nv-pestana .icono {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.nv-pestana[aria-current='page'] {
+  color: var(--nv-acento-oscuro);
+}
+.nv-pestana-crear {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 16px;
+  background: var(--nv-acento);
+  color: #fff;
+  box-shadow: 0 6px 16px -6px color-mix(in oklab, var(--nv-acento) 70%, transparent);
+  cursor: pointer;
+}
+.nv-pestana-crear .icono {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+.nv-pestana-crear:active {
+  transform: scale(0.94);
+}
+
+/* ---------- Piezas para las pantallas ---------- */
+.nv-titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.nv-titulo h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.nv-titulo p {
+  margin: 0.25rem 0 0;
+  color: var(--nv-gris);
+}
+.nv-tarjeta {
+  border: 1px solid var(--nv-borde);
+  border-radius: var(--nv-radio);
+  background: var(--nv-superficie);
+  box-shadow: var(--nv-sombra);
+}
+.nv-boton {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--nv-radio-control);
+  background: var(--nv-acento);
+  padding: 0 1.125rem;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.nv-boton .icono {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.nv-boton-secundario {
+  border-color: var(--nv-borde-fuerte);
+  background: var(--nv-superficie);
+  color: var(--nv-tinta);
+}
+@media (hover: hover) and (pointer: fine) {
+  .nv-boton:hover {
+    background: color-mix(in oklab, var(--nv-acento) 86%, black);
+  }
+  .nv-boton-secundario:hover {
+    background: var(--nv-hover);
+  }
+}
+.nv-boton:active {
+  transform: scale(0.97);
+}
+.nv-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--nv-hover);
+  color: var(--nv-tinta);
+}
+.nv-chip-azul {
+  background: var(--nv-acento-suave);
+  color: var(--nv-acento-oscuro);
+}
+.nv-chip-verde {
+  background: var(--nv-verde-suave);
+  color: var(--nv-verde);
+}
+.nv-chip-naranja {
+  background: var(--nv-naranja-suave);
+  color: var(--nv-naranja);
+}
+.nv-chip-rojo {
+  background: var(--nv-rojo-suave);
+  color: var(--nv-rojo);
+}
+.nv-cifra {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Pantallas de siempre con el diseño nuevo ---------- */
+/* Sin animaciones de entrada: la pantalla tiene que estar lista al llegar. */
+.nv .contenido-panel,
+.nv .escalonado > * {
+  animation: none;
+}
+.nv-solo-ancho {
+  display: none;
+}
+@media (min-width: 64rem) {
+  .nv-solo-ancho {
+    display: inline;
+  }
+}
+.nv .caja-panel {
+  border: 1px solid var(--nv-borde);
+  border-radius: var(--nv-radio);
+  background: var(--nv-superficie);
+  box-shadow: var(--nv-sombra);
+}
+.nv .titular-grande {
+  font-family: var(--font-sans);
+  font-size: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.nv .titular-medio {
+  font-family: var(--font-sans);
+  font-size: 1.25rem;
+  font-weight: 650;
+  line-height: 1.3;
+}
+.nv .font-titular {
+  font-family: var(--font-sans);
+}
+.nv .boton-panel {
+  border-radius: var(--nv-radio-control);
+  background: var(--nv-acento);
+  box-shadow: none;
+  font-size: 1rem;
+}
+@media (hover: hover) and (pointer: fine) {
+  .nv .boton-panel:hover {
+    background: color-mix(in oklab, var(--nv-acento) 86%, black);
+  }
+  .nv .boton-panel-secundario:hover {
+    background: var(--nv-hover);
+  }
+}
+.nv .boton-panel-secundario {
+  border: 1px solid var(--nv-borde-fuerte);
+  background: var(--nv-superficie);
+  color: var(--nv-tinta);
+}
+.nv .boton-icono {
+  border-radius: var(--nv-radio-control);
+}
+.nv .enlace-panel {
+  color: var(--nv-acento);
+}
+.nv .campo-panel {
+  border: 1px solid var(--nv-borde-fuerte);
+  border-radius: var(--nv-radio-control);
+  background: var(--nv-superficie);
+  font-size: 1rem;
+}
+.nv .campo-panel:focus-visible {
+  border-color: var(--nv-acento);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--nv-acento) 25%, transparent);
+}
+.nv .campo-panel[aria-invalid='true'] {
+  border-color: var(--nv-rojo);
+}
+.nv .tarjeta-accion:hover {
+  transform: none;
+}
+.nv .text-lg {
+  font-size: 1rem;
+}
+/* Las pestañas de zona sobran: cada sección ya está en la barra lateral. */
+@media (min-width: 64rem) {
+  .nv .pestanas-zona {
+    display: none;
+  }
+}
+.nv .pestana-zona {
+  border-radius: var(--nv-radio-control);
+  font-size: 0.9375rem;
+}
+.nv .pestana-zona[aria-current='page'] {
+  border-color: var(--nv-acento-suave);
+  background: var(--nv-acento-suave);
+  color: var(--nv-acento-oscuro);
+}
