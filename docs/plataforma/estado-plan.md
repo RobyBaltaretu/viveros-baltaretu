@@ -18,13 +18,14 @@ Cada sesión **empieza por aquí** y lo actualiza al cerrar cada PR. El plan est
 | 2.1 Portafolio privado: datos | Fusionada (#72) | **Migración 10** (`adjuntos` y `portafolio`, solo aditiva: la base de la versión 9 migra sin pérdidas). Repositorios en `src/server/data/d1/portafolio.ts`; reglas en `src/server/portafolio/portafolio.ts` (validación; fotos de antes y después comprobadas por sus bytes, como mucho 1,9 MB y 8 por lado; nunca en `fotos`). |
 | 2.2 Portafolio privado: pantallas | Fusionada (#73) | `/panel/portafolio`: lista con filtro por tipo de trabajo, alta, ficha con **comparador antes/después** (control deslizante nativo, con teclado y `aria-valuetext`), datos y fotos (se reducen en el móvil antes de subir). API privada `/api/panel/adjunto`. Datos de ejemplo de Turia en «Datos de prueba». e2e propios: `npm run test:e2e:turia` (también en la CI). Mismo permiso que el inventario (propietario y gerente, P-13). **F2 terminada.** |
 | Turia desplegable | Fusionada (#74) | `wrangler.creacionesturia.jsonc` (Worker y D1 `creacionesturia`) y `cloudflare.wrangler` en la configuración: el adaptador lo usa con `CLIENTE_ID=turia` (Baltaretu sigue con `wrangler.jsonc`). Pasos en `docs/panel-propio/pasos-manuales.md` («Creaciones Turia»). Falta el id real de la D1 (lo crea el propietario). |
-| 3.1a Presupuestos a cliente: datos | En revisión | **Migración 11** (`presupuestos_cliente`, solo aditiva). Cálculo en céntimos (`calcularPresupuesto`: total con IVA, anticipo = total × %, restante; los extras no suman), numeración correlativa `P2026-0001` por serie y año (sin repetidos, también con altas a la vez), estados (borrador → enviado → aceptado/rechazado; caduca al pasar la validez), cobros del anticipo y del resto, IVA fijo del cliente. |
+| 3.1a Presupuestos a cliente: datos | Fusionada (#76) | **Migración 11** (`presupuestos_cliente`, solo aditiva). Cálculo en céntimos (`calcularPresupuesto`: total con IVA, anticipo = total × %, restante; los extras no suman), numeración correlativa `P2026-0001` por serie y año (sin repetidos, también con altas a la vez), estados (borrador → enviado → aceptado/rechazado; caduca al pasar la validez), cobros del anticipo y del resto, IVA fijo del cliente. |
+| 3.1b Presupuestos a cliente: pantallas | En revisión | `/panel/presupuestos-cliente`: lista por estado, alta y edición (líneas, extras, material, anticipo; IVA fijo del 21 % en Turia), ficha con resumen, **versión para imprimir o guardar en PDF** desde el navegador (sin coste de CPU en el Worker), envío por correo (mailto) y WhatsApp con el texto preparado, estados y **paso a factura**: de anticipo (suma exactamente el anticipo) y final (descuenta el anticipo con una línea de cantidad −1). Números a la española («1.250,50»). e2e de Turia. |
 
 ## Siguiente
 
-1. **3.1b** Presupuestos a cliente: pantallas, versión para imprimir o guardar en PDF, envío (correo y WhatsApp) y paso a factura (de anticipo o completa).
-2. **3.2** Clientes y facturas con IVA fijo (y colores del PDF por cliente).
-3. **3.3** Inicio con resumen, alertas y accesos.
+1. **3.2** Clientes (dirección de obra, contacto, forma de pago habitual) y facturas con IVA fijo (el editor no deja elegir en Turia) y colores del PDF por cliente.
+2. **3.3** Inicio con resumen del mes, alertas (presupuestos sin respuesta, anticipos pendientes…) y accesos.
+3. **3.4** Proveedores.
 
 ## Avisos para la próxima sesión
 

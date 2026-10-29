@@ -112,6 +112,16 @@ export const MENU: SeccionMenu[] = [
     descripcion: "Lo que piden los clientes desde la web",
   },
   {
+    // Presupuestos que el negocio hace a sus clientes (módulo presupuestosCliente; en Baltaretu, apagado).
+    href: "/panel/presupuestos-cliente",
+    texto: "Presupuestos",
+    permiso: "facturas",
+    zona: "ventas",
+    icono: "presupuestos",
+    escena: "presupuestos",
+    descripcion: "Presupuestos para tus clientes, con su anticipo",
+  },
+  {
     href: "/panel/facturas",
     texto: "Facturas",
     permiso: "facturas",

@@ -120,3 +120,9 @@ Cada punto dice qué se pidió, qué se encontró al comprobarlo y la alternativ
   - `tests-e2e/panel.spec.ts` y `tests/panel/inventario.test.ts`.
 - **Impacto:** es solo de estilo; el comportamiento no cambió (CI en verde).
 - **Alternativa:** una PR pequeña de estilo que los devuelva al formato del resto del repositorio, sin cambiar nada más. El repositorio no tiene configuración de Prettier: se propone no añadirla para no reformatear todo.
+
+## D-16 · PDF de los presupuestos
+
+- **Encargo:** un PDF profesional del presupuesto.
+- **Código:** las facturas generan el PDF en el navegador con un script empaquetado (pdf-lib). Si se añade otro script empaquetado, cambian los archivos JavaScript del build de Baltaretu, que vigila la línea base. Generarlo en el Worker gasta CPU, con un límite de 10 ms por petición en el plan gratuito.
+- **Alternativa aplicada (3.1b):** una página para imprimir (`/panel/presupuestos-cliente/[id]/imprimir`), con estilos de impresión. Se guarda como PDF desde el diálogo del navegador, en el ordenador y en el móvil. El PDF sale nítido y el Worker no gasta CPU. Si se quiere un archivo PDF generado directamente, se puede reutilizar pdf-lib cuando se ajuste la línea base para los scripts que solo usa el panel. Esa decisión la toma el propietario.

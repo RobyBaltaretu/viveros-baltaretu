@@ -1,0 +1,214 @@
+---
+import Mensajes from '../../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { ESTADOS_PRESUPUESTO_CLIENTE, type EstadoPresupuestoCliente } from '../../../../server/data/tipos.ts';
+import { dinero } from '../../../../server/facturas/importes.ts';
+import { hoy } from '../../../../server/gastos/gastos.ts';
+import { ajustesFacturacion } from '../../../../server/panel/facturacion.ts';
+import { campo, sesionCon } from '../../../../server/panel/pagina.ts';
+import { facturarPresupuesto } from '../../../../server/presupuestos-cliente/facturar.ts';
+import { enlaceCorreo, enlaceWhatsapp } from '../../../../server/presupuestos-cliente/formulario.ts';
+import { apuntarCobro, cambiarEstado, estadoEfectivo, NOMBRE_ESTADO, pasosDesde } from '../../../../server/presupuestos-cliente/presupuestos.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+const id = Astro.params.id ?? '';
+const dia = hoy();
+let error = '';
+if (s && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const accion = campo(form, 'accion');
+  const [que, valor] = accion.split(':');
+  let r: { ok: boolean; error?: string } = { ok: false, error: 'No se ha entendido la acción.' };
+  if (que === 'estado' && (ESTADOS_PRESUPUESTO_CLIENTE as readonly string[]).includes(valor)) r = await cambiarEstado(s.repos, id, valor as EstadoPresupuestoCliente, s.usuario.email, dia);
+  if (que === 'cobro' && (valor === 'anticipo' || valor === 'resto')) r = await apuntarCobro(s.repos, id, valor, campo(form, 'fecha') || null, s.usuario.email);
+  if (que === 'facturar' && (valor === 'anticipo' || valor === 'final')) {
+    const f = await facturarPresupuesto(s.repos, id, valor, s.usuario.email, await ajustesFacturacion(s.repos));
+    if (f.ok) return Astro.redirect(`/panel/facturas/${f.factura.id}`, 303);
+    r = f;
+  }
+  if (r.ok) return Astro.redirect(`/panel/presupuestos-cliente/${id}?hecho=${que}`, 303);
+  error = r.error ?? 'No se ha podido hacer.';
+  Astro.response.status = 400;
+}
+const p = s ? await s.repos.presupuestosCliente.obtener(id) : null;
+if (s && !p) return new Response(null, { status: 404 });
+const empresa = s ? (await ajustesFacturacion(s.repos)).nombre : '';
+const efectivo = p ? estadoEfectivo(p, dia) : 'borrador';
+const fecha = (iso: string | null) => (iso ? iso.split('-').reverse().join('/') : '');
+const hecho = { creado: 'Presupuesto guardado.', cambiado: 'Cambios guardados.', estado: 'Estado cambiado.', cobro: 'Cobro apuntado.' }[Astro.url.searchParams.get('hecho') ?? ''];
+const BOTON_ESTADO: Partial<Record<EstadoPresupuestoCliente, string>> = { enviado: 'Marcar como enviado', aceptado: 'El cliente lo acepta', rechazado: 'El cliente lo rechaza', borrador: 'Volver a borrador para cambiarlo' };
+const lineas = p?.lineas.filter((l) => !l.extra) ?? [];
+const extras = p?.lineas.filter((l) => l.extra) ?? [];
+---
+
+<PaginaPanel titulo={p ? `Presupuesto ${p.codigo}` : 'Presupuesto'} permiso="facturas" volver="/panel/presupuestos-cliente">
+  {
+    p && (
+      <>
+        <p class="text-gris">
+          {p.codigo} · <strong class:list={[efectivo === 'caducado' || efectivo === 'rechazado' ? 'text-terracota' : 'text-oliva']}>{NOMBRE_ESTADO[efectivo]}</strong>
+        </p>
+        <h1 class="titular-grande">{p.concepto}</h1>
+        <Mensajes hecho={hecho} errores={error ? [{ campo: 'presupuesto', mensaje: error }] : []} />
+
+        <section class="mt-6 grid gap-4 caja-panel p-5" aria-labelledby="resumen">
+          <h2 id="resumen" class="titular-medio">Resumen</h2>
+          <dl class="grid gap-3 sm:grid-cols-2">
+            <div>
+              <dt class="text-gris">Cliente</dt>
+              <dd class="font-semibold">{p.cliente.nombre}</dd>
+            </div>
+            <div>
+              <dt class="text-gris">Fecha y validez</dt>
+              <dd class="font-semibold">
+                {fecha(p.fecha)}
+                {p.validez && ` · vale hasta el ${fecha(p.validez)}`}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-gris">Total con IVA ({p.iva} %)</dt>
+              <dd class="font-titular text-2xl font-bold tabular">{dinero(p.totales.total)}</dd>
+            </div>
+            <div>
+              <dt class="text-gris">Anticipo ({String(p.anticipoPct).replace('.', ',')} %) y restante</dt>
+              <dd class="font-semibold tabular">
+                {dinero(p.totales.anticipo)} + {dinero(p.totales.restante)}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="mt-6" aria-labelledby="lineas">
+          <h2 id="lineas" class="titular-medio">Líneas</h2>
+          <div class="mt-3 overflow-x-auto caja-panel" tabindex="0" role="region" aria-label="Líneas del presupuesto">
+            <table class="tabla-presupuesto w-full">
+              <caption class="sr-only">Líneas del presupuesto (precios sin IVA)</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Concepto</th>
+                  <th scope="col">Cantidad</th>
+                  <th scope="col">Precio</th>
+                  <th scope="col">Importe</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lineas.map((l) => (
+                  <tr>
+                    <td>
+                      {l.concepto}
+                      {l.material && <span class="block text-gris">{l.material}</span>}
+                    </td>
+                    <td class="tabular">{String(l.cantidad).replace('.', ',')}</td>
+                    <td class="tabular">{dinero(l.precio)}</td>
+                    <td class="tabular">{dinero(Math.round(l.cantidad * l.precio * 100) / 100)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row" colspan="3">Base sin IVA</th>
+                  <td class="tabular">{dinero(p.totales.base)}</td>
+                </tr>
+                <tr>
+                  <th scope="row" colspan="3">IVA {p.iva} %</th>
+                  <td class="tabular">{dinero(p.totales.cuotaIva)}</td>
+                </tr>
+                <tr>
+                  <th scope="row" colspan="3">Total con IVA</th>
+                  <td class="tabular font-bold">{dinero(p.totales.total)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          {extras.length > 0 && (
+            <p class="mt-3 text-gris">
+              Extras opcionales (no suman): {extras.map((l) => `${l.concepto} (${dinero(l.precio * l.cantidad)} sin IVA)`).join(' · ')}
+            </p>
+          )}
+        </section>
+
+        <section class="mt-8" aria-labelledby="enviar">
+          <h2 id="enviar" class="titular-medio">Enviar al cliente</h2>
+          <p class="mt-2 text-gris">Primero guárdalo en PDF (en la pantalla para imprimir, elige «Guardar como PDF»). Después envíalo y adjunta el PDF.</p>
+          <div class="mt-3 flex flex-wrap gap-3">
+            <a href={`/panel/presupuestos-cliente/${p.id}/imprimir`} class="boton-panel">Imprimir o guardar en PDF</a>
+            {p.cliente.email && (
+              <a href={enlaceCorreo(p, empresa)} class="boton-panel boton-panel-secundario">
+                Enviar por correo
+              </a>
+            )}
+            <a href={enlaceWhatsapp(p, empresa)} class="boton-panel boton-panel-secundario" target="_blank" rel="noopener">
+              Enviar por WhatsApp
+            </a>
+          </div>
+        </section>
+
+        <section class="mt-8" aria-labelledby="estado">
+          <h2 id="estado" class="titular-medio">Estado</h2>
+          <div class="mt-3 flex flex-wrap gap-3">
+            {p.estado === 'borrador' && (
+              <a href={`/panel/presupuestos-cliente/${p.id}/editar`} class="boton-panel boton-panel-secundario">
+                Cambiar el presupuesto
+              </a>
+            )}
+            {pasosDesde(efectivo).map((e) => (
+              <form method="post">
+                <button name="accion" value={`estado:${e}`} class:list={['boton-panel', e !== 'aceptado' && e !== 'enviado' && 'boton-panel-secundario']}>
+                  {BOTON_ESTADO[e]}
+                </button>
+              </form>
+            ))}
+          </div>
+        </section>
+
+        {p.estado === 'aceptado' && (
+          <section class="mt-8" aria-labelledby="cobro">
+            <h2 id="cobro" class="titular-medio">Facturas y cobros</h2>
+            <div class="mt-3 flex flex-wrap gap-3">
+              {p.totales.anticipo > 0 && (
+                <form method="post">
+                  <button name="accion" value="facturar:anticipo" class="boton-panel">
+                    {p.facturaAnticipoId ? 'Ver la factura de anticipo' : 'Hacer la factura de anticipo'}
+                  </button>
+                </form>
+              )}
+              <form method="post">
+                <button name="accion" value="facturar:final" class:list={['boton-panel', p.totales.anticipo > 0 && !p.facturaAnticipoId && 'boton-panel-secundario']}>
+                  {p.facturaId ? 'Ver la factura final' : p.facturaAnticipoId ? 'Hacer la factura final (descuenta el anticipo)' : 'Hacer la factura'}
+                </button>
+              </form>
+            </div>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              {(['anticipo', 'resto'] as const).map((parte) => (
+                <form method="post" class="grid gap-2 caja-panel p-4">
+                  <label class="grid gap-1 font-semibold">
+                    {parte === 'anticipo' ? `Anticipo cobrado el (${dinero(p.totales.anticipo)})` : `Resto cobrado el (${dinero(p.totales.restante)})`}
+                    <input type="date" name="fecha" class="campo-panel font-normal" value={(parte === 'anticipo' ? p.cobroAnticipo : p.cobroResto) ?? ''} />
+                  </label>
+                  <button name="accion" value={`cobro:${parte}`} class="boton-panel boton-panel-secundario">
+                    Guardar la fecha
+                  </button>
+                </form>
+              ))}
+            </div>
+          </section>
+        )}
+      </>
+    )
+  }
+</PaginaPanel>
+
+<style is:inline>
+  .tabla-presupuesto th,
+  .tabla-presupuesto td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-linea);
+  }
+  .tabla-presupuesto td:not(:first-child),
+  .tabla-presupuesto tfoot th {
+    text-align: right;
+  }
+</style>

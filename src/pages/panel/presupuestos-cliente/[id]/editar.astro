@@ -1,0 +1,43 @@
+---
+import Mensajes from '../../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import FormPresupuesto from '../../../../components/panel/presupuestos-cliente/FormPresupuesto.astro';
+import { clienteActual } from '../../../../plataforma/actual.ts';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+import { leerFormularioPresupuesto, type ValoresFormPresupuesto } from '../../../../server/presupuestos-cliente/formulario.ts';
+import { cambiarPresupuesto } from '../../../../server/presupuestos-cliente/presupuestos.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+const id = Astro.params.id ?? '';
+const p = s ? await s.repos.presupuestosCliente.obtener(id) : null;
+if (s && !p) return new Response(null, { status: 404 });
+if (p && p.estado !== 'borrador') return Astro.redirect(`/panel/presupuestos-cliente/${id}`, 303);
+const { iva } = clienteActual();
+const ivaFijo = iva.fijo ? iva.general : null;
+let valores: ValoresFormPresupuesto = p ? { ...p } : {};
+let filas = (p?.lineas.length ?? 0) + 1;
+let error = '';
+if (s && p && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const datos = leerFormularioPresupuesto(form, ivaFijo);
+  if (form.get('accion') === 'mas') filas = datos.filas + 3;
+  else {
+    const r = await cambiarPresupuesto(s.repos, id, datos, s.usuario.email, ivaFijo);
+    if (r.ok) return Astro.redirect(`/panel/presupuestos-cliente/${id}?hecho=cambiado`, 303);
+    error = r.error;
+    filas = datos.filas;
+    Astro.response.status = 400;
+  }
+  valores = datos;
+}
+const clientes = s ? await s.repos.clientes.listar() : [];
+---
+
+<PaginaPanel titulo="Cambiar el presupuesto" permiso="facturas" volver={`/panel/presupuestos-cliente/${id}`}>
+  <h1 class="titular-grande">Cambiar el presupuesto</h1>
+  <p class="mt-2 text-gris">{p?.codigo}</p>
+  <Mensajes errores={error ? [{ campo: 'presupuesto', mensaje: error }] : []} />
+  <FormPresupuesto valores={valores} clientes={clientes} ivaFijo={ivaFijo} filas={filas} boton="Guardar los cambios" />
+</PaginaPanel>
