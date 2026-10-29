@@ -6,7 +6,7 @@
   "dominio": null,
   "idiomas": ["es"],
   "idiomaPorDefecto": "es",
-  "cloudflare": { "worker": "creaciones-turia", "d1": "creaciones-turia" },
+  "cloudflare": { "worker": "creacionesturia", "d1": "creacionesturia" },
   "modulos": {
     "catalogo": true,
     "presupuestosWeb": true,

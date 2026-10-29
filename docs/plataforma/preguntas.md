@@ -1,6 +1,6 @@
 # Preguntas abiertas
 
-Cada pregunta trae una **recomendación por defecto**. Mientras no haya respuesta se trabaja con ella, y la respuesta se anota aquí con su fecha. Las preguntas a Creaciones Turia están en la sección B, para la reunión de validación.
+Cada pregunta trae una **recomendación por defecto**. Las respondidas están en «Respuestas» al final. Mientras no haya respuesta se trabaja con ella, y la respuesta se anota aquí con su fecha. Las preguntas a Creaciones Turia están en la sección B, para la reunión de validación.
 
 ## A · Para el propietario de la plataforma
 
@@ -43,3 +43,13 @@ Salen de [dominio-carpinteria.md](dominio-carpinteria.md). Son hipótesis del se
 | T-17 | Simulador: ¿qué muebles primero (armario empotrado, vestidor, cocina)? ¿Qué opciones (material, color, acabado, tirador, distribución)? | Armario empotrado, con material, color, acabado y tirador. |
 | T-18 | Textos legales, datos fiscales, logotipo, colores y tipografías. | `[PLACEHOLDER]` hasta recibirlos. Los legales los revisa un asesor. |
 | T-19 | ¿Margen por obra con coste de materiales, gastos y horas? ¿Apuntáis horas? | Materiales (pedidos) + gastos de la obra; sin horas en la primera versión. |
+
+## Respuestas del propietario
+
+| # | Fecha | Respuesta | Consecuencia |
+| --- | --- | --- | --- |
+| P-01 | 29-10-2026 | De momento, una cuenta gratuita; **se pasará a Workers Paid**. | El código no cambia: cada cliente ya tiene su configuración. Al pasar a Paid desaparece el tope de 10 D1 (por confirmar en la documentación). |
+| P-02 | 29-10-2026 | Hace falta una buena solución, y **sobre todo para Turia**, que necesita la IA más que Baltaretu. | Propuesta en [D-12](discrepancias.md): tope diario y mensual por cliente en `cliente.config.json` (`ia`), contado en la D1 de cada cliente, con un modo básico sin IA al agotarse. Con Workers Paid, el exceso cuesta 0,011 $ por cada 1.000 neuronas (por confirmar). El reparto concreto se fija antes de activar la IA en Turia (3.11 y 4.x). Mientras tanto, Baltaretu conserva su tope de hoy (regla suprema). |
+| P-03 | 29-10-2026 | Los datos de Baltaretu en D1 **no se usan**: se puede borrar todo y empezar de cero. | No hace falta la copia previa a la migración 10. Las migraciones siguen siendo solo aditivas y se prueban igual (`tests/baseline/`). Borrar la base real es un paso manual del propietario, si lo quiere: desde el repositorio no se toca ningún recurso real. |
+| P-05 | 29-10-2026 | Sin dominio pagado de momento. Nombre: `creacionesturia`. | Worker y D1 `creacionesturia` en `clientes/turia/cliente.config.json`, con la URL de `*.workers.dev`. |
+| P-11 | 29-10-2026 | **No fusionar** la PR 61. | Se deja abierta sin fusionar. Su plan no es el vigente. |

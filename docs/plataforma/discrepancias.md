@@ -40,6 +40,8 @@ Cada punto dice qué se pidió, qué se encontró al comprobarlo y la alternativ
 
 ## D-04 · `npm run contenido:copia` no copia los datos de gestión
 
+> **Resuelta (P-03):** los datos de Baltaretu en D1 no se usan, así que no hace falta copia previa. Para cuando haya datos reales, la copia diaria multicliente (5.2) incluirá la exportación completa.
+
 - **Encargo:** antes del primer cambio de base de datos, el propietario hace una copia con `npm run contenido:copia`.
 - **Código:** esa copia descarga por HTTP el **contenido publicado y sus fotos** (`src/server/contenido/copia.ts:3-5`). **No incluye** usuarios, clientes, facturas, gastos, tickets, inventario, presupuestos ni conversaciones, que son justo las tablas que tocan las migraciones.
 - **Alternativa (sin coste):** antes de desplegar la primera migración nueva (la 10), el propietario hace **además**:
