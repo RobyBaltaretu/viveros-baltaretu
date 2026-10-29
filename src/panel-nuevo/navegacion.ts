@@ -40,6 +40,7 @@ const CREAR: (AccionCrear & { seccion: string })[] = [
   { seccion: '/panel/facturas', href: '/panel/facturas/nueva', texto: 'Factura', descripcion: 'Para un cliente o desde un presupuesto', icono: 'facturas' },
   { seccion: '/panel/gastos', href: '/panel/gastos/nuevo', texto: 'Gasto o ticket', descripcion: 'Hazle una foto y se apunta solo', icono: 'ticket' },
   { seccion: '/panel/facturas/clientes', href: '/panel/facturas/clientes/nuevo', texto: 'Cliente', descripcion: 'Nombre, contacto y datos para facturar', icono: 'clientes' },
+  { seccion: '/panel/catalogo', href: '/panel/catalogo/articulos/nuevo', texto: 'Artículo del catálogo', descripcion: 'Material, herraje u hora de trabajo con su precio', icono: 'catalogo' },
   { seccion: '/panel/portafolio', href: '/panel/portafolio/nuevo', texto: 'Proyecto del portafolio', descripcion: 'Fotos de antes y después', icono: 'fotos' },
 ];
 

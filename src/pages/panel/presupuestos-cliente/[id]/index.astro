@@ -37,7 +37,7 @@ if (s && !p) return new Response(null, { status: 404 });
 const empresa = s ? (await ajustesFacturacion(s.repos)).nombre : '';
 const efectivo = p ? estadoEfectivo(p, dia) : 'borrador';
 const fecha = (iso: string | null) => (iso ? iso.split('-').reverse().join('/') : '');
-const hecho = { creado: 'Presupuesto guardado.', cambiado: 'Cambios guardados.', estado: 'Estado cambiado.', cobro: 'Cobro apuntado.' }[Astro.url.searchParams.get('hecho') ?? ''];
+const hecho = { creado: 'Presupuesto guardado.', cambiado: 'Cambios guardados.', estado: 'Estado cambiado.', cobro: 'Cobro apuntado.', anadido: 'Trabajo añadido desde el catálogo.' }[Astro.url.searchParams.get('hecho') ?? ''];
 const BOTON_ESTADO: Partial<Record<EstadoPresupuestoCliente, string>> = { enviado: 'Marcar como enviado', aceptado: 'El cliente lo acepta', rechazado: 'El cliente lo rechaza', borrador: 'Volver a borrador para cambiarlo' };
 const lineas = p?.lineas.filter((l) => !l.extra) ?? [];
 const extras = p?.lineas.filter((l) => l.extra) ?? [];

@@ -1,0 +1,138 @@
+---
+/**
+ * Poner los precios de muchos artículos de una vez (por ejemplo, después de
+ * cargar el catálogo de partida): coste y margen de cada uno en una tabla.
+ * Solo se guardan los que cambian.
+ */
+import Mensajes from '../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import { CATEGORIAS, guardarArticulo, sinPrecio, type EntradaArticulo } from '../../../server/catalogo/catalogo.ts';
+import { dinero } from '../../../server/facturas/importes.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+import { numero } from '../../../server/presupuestos-cliente/formulario.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+const todos = Astro.url.searchParams.get('todos') === '1';
+const articulos = s ? await s.repos.catalogo.articulos() : [];
+const errores: { campo: string; mensaje: string }[] = [];
+if (s && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  let n = 0;
+  for (const a of articulos) {
+    if (!form.has(`coste.${a.id}`)) continue;
+    const coste = numero(String(form.get(`coste.${a.id}`)));
+    const margen = numero(String(form.get(`margen.${a.id}`)));
+    if ((coste ?? 0) === a.coste && (margen ?? a.margen) === a.margen) continue;
+    const r = await guardarArticulo(s.repos, { ...a, unidad: a.unidad as EntradaArticulo['unidad'], coste: coste ?? 0, margen: margen ?? a.margen }, s.usuario.email);
+    if (r.ok) n++;
+    else errores.push({ campo: a.id, mensaje: `${a.nombre}: ${r.error}` });
+  }
+  if (!errores.length) return Astro.redirect(`/panel/catalogo?hecho=precios&n=${n}`, 303);
+  Astro.response.status = 400;
+}
+const lista = todos ? articulos : articulos.filter(sinPrecio);
+const grupos = CATEGORIAS.map((c) => ({ c, articulos: lista.filter((a) => a.categoria === c.id) })).filter((g) => g.articulos.length);
+const coma = (n: number) => (n ? String(n).replace('.', ',') : '');
+---
+
+<PaginaPanel titulo="Poner los precios" permiso="facturas" volver="/panel/catalogo" ancho="amplio">
+  <div class="nv-titulo">
+    <div>
+      <h1>Poner los precios</h1>
+      <p>Escribe lo que te cuesta cada cosa, sin IVA. El margen propuesto es del 30 %: cámbialo donde quieras. El precio de venta sale solo.</p>
+    </div>
+    <a href={todos ? '/panel/catalogo/precios' : '/panel/catalogo/precios?todos=1'} class="nv-boton nv-boton-secundario">
+      {todos ? 'Solo los que no tienen precio' : 'Ver todos los artículos'}
+    </a>
+  </div>
+  <Mensajes errores={errores} />
+  {
+    lista.length === 0 ? (
+      <p class="nv-caja-aviso nv-caja-bien">
+        <span>Todos los artículos tienen precio.</span>
+        <a href="/panel/catalogo" class="nv-boton nv-boton-secundario">
+          Volver al catálogo
+        </a>
+      </p>
+    ) : (
+      <form method="post" id="form-precios">
+        <div class="nv-tarjeta nv-tabla-caja" tabindex="0" role="region" aria-label="Precios de los artículos">
+          <table class="nv-tabla">
+            <caption class="sr-only">Coste y margen de cada artículo</caption>
+            <thead>
+              <tr>
+                <th scope="col">Artículo</th>
+                <th scope="col">Coste sin IVA</th>
+                <th scope="col">Margen</th>
+                <th scope="col" class="nv-num">
+                  Precio de venta
+                </th>
+              </tr>
+            </thead>
+            {grupos.map((g) => (
+              <tbody>
+                <tr class="nv-grupo-fila">
+                  <th scope="colgroup" colspan="4">
+                    {g.c.nombre}
+                  </th>
+                </tr>
+                {g.articulos.map((a) => (
+                  <tr data-fila>
+                    <th scope="row" id={`n-${a.id}`}>
+                      {a.nombre}
+                      <small>por {a.unidad}</small>
+                    </th>
+                    <td>
+                      <span class="nv-con-unidad">
+                        <input name={`coste.${a.id}`} value={coma(a.coste)} class="campo-panel" inputmode="decimal" placeholder="0,00" aria-label={`Coste de ${a.nombre}, en euros por ${a.unidad}`} />
+                        <span aria-hidden="true">€</span>
+                      </span>
+                    </td>
+                    <td>
+                      <span class="nv-con-unidad">
+                        <input name={`margen.${a.id}`} value={coma(a.margen)} class="campo-panel" inputmode="decimal" aria-label={`Margen de ${a.nombre}, en %`} />
+                        <span aria-hidden="true">%</span>
+                      </span>
+                    </td>
+                    <td class="nv-num" data-precio>
+                      {a.precioFijo !== null ? dinero(a.precioFijo) : a.coste ? dinero(Math.round(a.coste * (1 + a.margen / 100) * 100) / 100) : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            ))}
+          </table>
+        </div>
+        <div class="nv-acciones">
+          <button class="nv-boton">Guardar los precios</button>
+          <a href="/panel/catalogo" class="nv-boton nv-boton-secundario">
+            Cancelar
+          </a>
+        </div>
+      </form>
+    )
+  }
+</PaginaPanel>
+
+<script is:inline>
+  (() => {
+    const f = document.getElementById('form-precios');
+    if (!f) return;
+    const num = (t) => {
+      const l = String(t).trim().replace(/\s|€|%/g, '');
+      if (!l) return null;
+      if (l.includes(',')) return Number(l.replace(/\./g, '').replace(',', '.'));
+      return Number(/^-?\d{1,3}(\.\d{3})+$/.test(l) ? l.replace(/\./g, '') : l);
+    };
+    f.addEventListener('input', (e) => {
+      const fila = e.target.closest('[data-fila]');
+      if (!fila) return;
+      const [coste, margen] = fila.querySelectorAll('input');
+      const c = num(coste.value);
+      const m = num(margen.value) ?? 0;
+      fila.querySelector('[data-precio]').textContent = c && Number.isFinite(c) && Number.isFinite(m) ? (Math.round(c * (1 + m / 100) * 100) / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true }) + ' €' : '—';
+    });
+  })();
+</script>

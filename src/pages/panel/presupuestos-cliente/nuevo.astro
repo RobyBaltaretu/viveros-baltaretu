@@ -18,6 +18,13 @@ const dia = hoy();
 let valores: ValoresFormPresupuesto = { fecha: dia, validez: sumarDias(dia, 30), anticipoPct: 40, iva: iva.general, clienteId: Astro.url.searchParams.get('cliente') ?? '' };
 let filas = 3;
 let error = '';
+// Desde la calculadora del catálogo: líneas ya escritas en la dirección (src/server/catalogo/al-presupuesto.ts).
+const q = Astro.url.searchParams;
+if (Astro.request.method === 'GET' && q.has('filas')) {
+  const desde = leerFormularioPresupuesto(q as unknown as FormData, ivaFijo);
+  valores = { ...valores, concepto: desde.concepto, lineas: desde.lineas };
+  filas = Math.max(desde.lineas.length + 1, 3);
+}
 if (s && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const datos = leerFormularioPresupuesto(form, ivaFijo);

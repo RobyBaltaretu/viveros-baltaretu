@@ -1,0 +1,295 @@
+---
+/**
+ * Calculadora de un trabajo: se escriben las medidas y se eligen los
+ * materiales, y sale el precio con todo lo que lleva (escandallo), el coste y
+ * el margen. Se recalcula al escribir (sin JavaScript, con «Calcular»). Desde
+ * aquí se añade a un presupuesto, en una línea o por partes.
+ */
+import Mensajes from '../../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import Icono from '../../../../components/panel/ui/Icono.astro';
+import { clienteActual } from '../../../../plataforma/actual.ts';
+import { anadirAPresupuesto, enlaceNuevoPresupuesto, lineasDelTrabajo, type ModoPresupuesto } from '../../../../server/catalogo/al-presupuesto.ts';
+import { precioVenta, sinPrecio } from '../../../../server/catalogo/catalogo.ts';
+import { calcularEscandallo } from '../../../../server/catalogo/escandallo.ts';
+import { dinero } from '../../../../server/facturas/importes.ts';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+import { numero } from '../../../../server/presupuestos-cliente/formulario.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+const plantilla = s ? await s.repos.catalogo.plantilla(Astro.params.id ?? '') : null;
+if (s && (!plantilla || plantilla.archivado)) return new Response('No existe', { status: 404 });
+const articulos = s ? await s.repos.catalogo.articulos() : [];
+const { iva } = clienteActual();
+const ivaFijo = iva.fijo ? iva.general : null;
+
+// Medidas (m.<id>) y materiales (o.<id>): de la dirección o del formulario enviado.
+const datos: URLSearchParams | FormData = s && Astro.request.method === 'POST' ? await Astro.request.formData() : Astro.url.searchParams;
+const leido = (k: string) => {
+  const v = datos.get(k);
+  return v === null ? null : String(v);
+};
+const valores: Record<string, number> = {};
+const escrito: Record<string, string> = {};
+for (const x of plantilla?.parametros ?? []) {
+  const t = leido(`m.${x.id}`);
+  escrito[x.id] = t ?? String(x.defecto).replace('.', ',');
+  const n = t === null || t.trim() === '' ? x.defecto : numero(t);
+  valores[x.id] = n ?? x.defecto;
+}
+const elegidos: Record<string, string> = {};
+for (const o of plantilla?.opciones ?? []) elegidos[o.id] = leido(`o.${o.id}`) || o.defecto || '';
+
+const e = plantilla ? calcularEscandallo(plantilla, articulos, valores, elegidos) : null;
+let error = '';
+if (s && plantilla && e && Astro.request.method === 'POST') {
+  const modo: ModoPresupuesto = leido('modo') === 'partes' ? 'partes' : 'una';
+  const destino = leido('destino') ?? 'nuevo';
+  const lineas = lineasDelTrabajo(plantilla, e, modo);
+  if (e.precio <= 0) error = 'Este trabajo aún no tiene precio: pon los precios de sus artículos en el catálogo.';
+  else if (destino === 'nuevo') return Astro.redirect(enlaceNuevoPresupuesto(lineas, plantilla.nombre), 303);
+  else {
+    const r = await anadirAPresupuesto(s.repos, destino, lineas, s.usuario.email, ivaFijo);
+    if (r.ok) return Astro.redirect(`/panel/presupuestos-cliente/${destino}?hecho=anadido`, 303);
+    error = r.error;
+  }
+  Astro.response.status = 400;
+}
+const borradores = s ? await s.repos.presupuestosCliente.listar({ estado: 'borrador', limite: 30 }) : [];
+const conIva = e ? Math.round(e.precio * (100 + iva.general)) / 100 : 0;
+const pct = (n: number | null) => (n === null || !Number.isFinite(n) ? '—' : `${String(n).replace('.', ',')}\u00a0%`);
+const cantidad = (n: number) => n.toLocaleString('es-ES', { maximumFractionDigits: 3 });
+const deCategoria = (cats: string[]) => articulos.filter((a) => cats.includes(a.categoria));
+---
+
+<PaginaPanel titulo={plantilla?.nombre ?? 'Trabajo'} permiso="facturas" volver="/panel/catalogo" ancho="amplio">
+  {
+    plantilla && e && (
+      <>
+        <div class="nv-titulo">
+          <div>
+            <h1>{plantilla.nombre}</h1>
+            <p>{plantilla.descripcion}</p>
+          </div>
+        </div>
+        <Mensajes errores={error ? [{ campo: 'presupuesto', mensaje: error }] : []} />
+
+        <p class="sr-only" aria-live="polite" id="anuncio-precio" />
+        <div class="nv-calculadora" id="calculadora">
+          <form method="get" id="form-calculo" class="nv-tarjeta nv-seccion" aria-labelledby="medidas">
+            <h2 id="medidas">Medidas</h2>
+            <div class="nv-rejilla nv-rejilla-3">
+              {plantilla.parametros.map((x) => (
+                <label class="nv-campo">
+                  {x.nombre}
+                  <span class="nv-con-unidad">
+                    <input name={`m.${x.id}`} value={escrito[x.id]} class="campo-panel" inputmode="decimal" autocomplete="off" />
+                    <span aria-hidden="true">{x.tipo === 'medida' ? 'cm' : 'ud'}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            {plantilla.opciones.length > 0 && (
+              <>
+                <h2 class="nv-subtitulo">Materiales</h2>
+                <div class="nv-rejilla nv-rejilla-2">
+                  {plantilla.opciones.map((o) => (
+                    <label class="nv-campo">
+                      {o.nombre}
+                      <select name={`o.${o.id}`} class="campo-panel">
+                        {!elegidos[o.id] && <option value="">Elige…</option>}
+                        {deCategoria(o.categorias).map((a) => (
+                          <option value={a.id} selected={a.id === elegidos[o.id]}>
+                            {a.nombre} · {sinPrecio(a) ? 'sin precio' : `${dinero(precioVenta(a))}/${a.unidad}`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
+            <div class="nv-acciones">
+              <button class="nv-boton nv-boton-secundario">
+                <Icono nombre="calcular" />
+                Calcular
+              </button>
+              <span class="nv-gris" data-solo-js hidden>
+                El precio se recalcula solo al escribir.
+              </span>
+            </div>
+          </form>
+          <aside class="nv-tarjeta nv-resumen" aria-labelledby="resumen" data-resultado="resumen">
+            <h2 id="resumen">Precio del trabajo</h2>
+            <p class="nv-precio-grande" data-precio>{dinero(e.precio)}</p>
+            <p class="nv-gris">sin IVA · {dinero(conIva)} con el {iva.general} % de IVA</p>
+            <a href="#resumen" class="nv-precio-flotante" aria-hidden="true" tabindex="-1">
+              <span>Precio sin IVA</span>
+              <strong>{dinero(e.precio)}</strong>
+            </a>
+            <dl class="nv-filas-resumen">
+              <div>
+                <dt>Te cuesta</dt>
+                <dd>{dinero(e.coste)}</dd>
+              </div>
+              <div>
+                <dt>Ganas</dt>
+                <dd>{dinero(e.margen)}</dd>
+              </div>
+              <div>
+                <dt>Margen sobre el coste</dt>
+                <dd>{e.coste > 0 ? pct(Math.round((e.margen / e.coste) * 1000) / 10) : '—'}</dd>
+              </div>
+            </dl>
+            {e.avisos.length > 0 && (
+              <ul class="nv-avisos" role="list">
+                {e.avisos.map((a) => (
+                  <li>{a}</li>
+                ))}
+              </ul>
+            )}
+            <form method="post" class="nv-elegir">
+              {plantilla.parametros.map((x) => (
+                <input type="hidden" name={`m.${x.id}`} value={escrito[x.id]} />
+              ))}
+              {plantilla.opciones.map((o) => (
+                <input type="hidden" name={`o.${o.id}`} value={elegidos[o.id]} />
+              ))}
+              <fieldset>
+                <legend>Llevarlo a un presupuesto</legend>
+                <label class="nv-opcion">
+                  <input type="radio" name="modo" value="una" checked />
+                  En una línea, con sus medidas
+                </label>
+                <label class="nv-opcion">
+                  <input type="radio" name="modo" value="partes" />
+                  Por partes (materiales, mano de obra…)
+                </label>
+              </fieldset>
+              <label class="nv-campo">
+                Presupuesto
+                <select name="destino" class="campo-panel">
+                  <option value="nuevo">Uno nuevo</option>
+                  {borradores.map((b) => (
+                    <option value={b.id}>
+                      Añadir a {b.codigo}: {b.concepto}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button class="nv-boton" disabled={e.precio <= 0}>
+                <Icono nombre="presupuestos" />
+                Llevar al presupuesto
+              </button>
+            </form>
+          </aside>
+          <section class="nv-tarjeta nv-desglose" aria-labelledby="desglose" data-resultado="desglose">
+            <div class="nv-cabeza-tarjeta">
+              <h2 id="desglose">Todo lo que lleva</h2>
+              <span class="nv-gris">Solo lo ves tú</span>
+            </div>
+            <div class="nv-tabla-caja" tabindex="0" role="region" aria-label="Escandallo">
+              <table class="nv-tabla">
+                <caption class="sr-only">Escandallo: cantidad, coste y precio de cada parte</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Parte</th>
+                    <th scope="col" class="nv-num">
+                      Cantidad
+                    </th>
+                    <th scope="col" class="nv-num">
+                      Coste
+                    </th>
+                    <th scope="col" class="nv-num">
+                      Precio
+                    </th>
+                  </tr>
+                </thead>
+                {e.grupos.map((g) => (
+                  <tbody>
+                    <tr class="nv-grupo-fila">
+                      <th scope="colgroup">{g.grupo}</th>
+                      <th class="nv-num" />
+                      <th class="nv-num">{dinero(g.coste)}</th>
+                      <th class="nv-num">{dinero(g.precio)}</th>
+                    </tr>
+                    {e.lineas
+                      .filter((l) => l.grupo === g.grupo)
+                      .map((l) => (
+                        <tr>
+                          <th scope="row">
+                            {l.concepto}
+                            <small>
+                              {l.articulo}
+                              {l.merma > 0 && ` · ${cantidad(l.cantidadNeta)} ${l.unidad} + ${String(l.merma).replace('.', ',')} % de merma`}
+                            </small>
+                          </th>
+                          <td class="nv-num">
+                            {cantidad(l.cantidad)} {l.unidad}
+                          </td>
+                          <td class="nv-num">{dinero(l.coste)}</td>
+                          <td class="nv-num">{dinero(l.precio)}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                ))}
+              </table>
+            </div>
+          </section>
+        </div>
+      </>
+    )
+  }
+</PaginaPanel>
+
+<script is:inline>
+  (() => {
+    // Recalcula al escribir: pide la misma página con las medidas nuevas y cambia el resultado.
+    const f = document.getElementById('form-calculo');
+    const caja = document.getElementById('calculadora');
+    if (!f || !caja || !window.fetch) return;
+    document.querySelectorAll('[data-solo-js]').forEach((e) => (e.hidden = false));
+    let reloj = 0;
+    let pedido = 0;
+    const calcular = async () => {
+      const n = ++pedido;
+      const q = new URLSearchParams(new FormData(f));
+      caja.classList.add('nv-calculando');
+      try {
+        const r = await fetch(`${location.pathname}?${q}`, { headers: { accept: 'text/html' } });
+        if (!r.ok || n !== pedido) return;
+        const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+        for (const zona of ['resumen', 'desglose']) {
+          const nuevo = doc.querySelector(`[data-resultado="${zona}"]`);
+          const viejo = document.querySelector(`[data-resultado="${zona}"]`);
+          if (nuevo && viejo) {
+            // Lo que se haya elegido para llevar al presupuesto se mantiene.
+            const modo = viejo.querySelector('input[name="modo"]:checked')?.value;
+            const destino = viejo.querySelector('select[name="destino"]')?.value;
+            viejo.innerHTML = nuevo.innerHTML;
+            if (modo) viejo.querySelector(`input[name="modo"][value="${modo}"]`)?.click();
+            const sel = viejo.querySelector('select[name="destino"]');
+            if (sel && destino) sel.value = destino;
+          }
+        }
+        const precio = document.querySelector('[data-precio]');
+        const anuncio = document.getElementById('anuncio-precio');
+        if (precio && anuncio) anuncio.textContent = `Precio del trabajo: ${precio.textContent} sin IVA`;
+        history.replaceState(null, '', `${location.pathname}?${q}`);
+      } catch {
+        // Sin conexión: queda el botón «Calcular».
+      } finally {
+        if (n === pedido) caja.classList.remove('nv-calculando');
+      }
+    };
+    f.addEventListener('input', () => {
+      clearTimeout(reloj);
+      reloj = setTimeout(calcular, 250);
+    });
+    f.addEventListener('change', (ev) => {
+      if (ev.target.tagName === 'SELECT') calcular();
+    });
+  })();
+</script>

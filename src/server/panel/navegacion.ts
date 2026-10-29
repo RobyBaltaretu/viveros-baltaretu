@@ -177,6 +177,16 @@ export const MENU: SeccionMenu[] = [
     descripcion: "Las fotos de cada planta",
   },
   {
+    // Carpintería: catálogo con costes, márgenes y escandallos (privado: solo propietario y gerente).
+    href: "/panel/catalogo",
+    texto: "Catálogo",
+    permiso: "facturas",
+    zona: "plantas",
+    icono: "catalogo",
+    escena: "presupuestos",
+    descripcion: "Materiales, herrajes, horas y trabajos con su precio",
+  },
+  {
     // Carpintería: portafolio privado (solo en ese sector, ver src/plataforma/modulos.ts).
     href: "/panel/portafolio",
     texto: "Portafolio",
