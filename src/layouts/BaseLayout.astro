@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import TemaCliente from '../components/plataforma/TemaCliente.astro';
 import { Font } from 'astro:assets';
 import Cabecera from '../components/Cabecera.astro';
 import Pie from '../components/Pie.astro';
@@ -54,6 +55,7 @@ const absoluta = (ruta: string) => new URL(ruta, Astro.site).href;
     <!-- Antes de pintar: si hay JavaScript se muestran los controles interactivos (sin saltos de maquetación). -->
     <script is:inline>document.documentElement.classList.remove('sin-js');</script>
     <meta name="theme-color" content="#0e2519" />
+    <TemaCliente />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>{titulo}</title>

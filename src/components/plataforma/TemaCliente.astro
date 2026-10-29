@@ -1,0 +1,9 @@
+---
+/** Colores del cliente del build, si no son los del núcleo (src/plataforma/tema.ts). */
+import { clienteActual } from '../../plataforma/actual.ts';
+import { cssDelTema } from '../../plataforma/tema.ts';
+
+const css = cssDelTema(clienteActual());
+---
+
+{css && <style is:inline set:html={css} />}
