@@ -6,6 +6,9 @@ interface ImportMetaEnv {
   /** Inyectadas en astro.config.mjs (ver src/lib/catalogo/index.ts). */
   readonly WORKERS_CI_BRANCH: string;
   readonly PRODUCTION_BRANCH: string;
+  /** Cliente de la plataforma y su configuración en JSON (src/plataforma/actual.ts). */
+  readonly CLIENTE_ID: string;
+  readonly CLIENTE_CONFIG: string;
 }
 
 interface ImportMeta {
