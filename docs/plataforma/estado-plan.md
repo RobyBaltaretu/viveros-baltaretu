@@ -17,11 +17,12 @@ Cada sesión **empieza por aquí** y lo actualiza al cerrar cada PR. El plan est
 | 1.6 (rehecha) Sin web pública, sin zona «Web» | Fusionada (#71) | En clientes sin `webPublica`: no hay textos, publicar ni cambios, ni sus herramientas, ni `/api/contenido/*`. Los tipos de contenido declarativos quedan aplazados hasta que un cliente con web pública los necesite. **F1 terminada.** |
 | 2.1 Portafolio privado: datos | Fusionada (#72) | **Migración 10** (`adjuntos` y `portafolio`, solo aditiva: la base de la versión 9 migra sin pérdidas). Repositorios en `src/server/data/d1/portafolio.ts`; reglas en `src/server/portafolio/portafolio.ts` (validación; fotos de antes y después comprobadas por sus bytes, como mucho 1,9 MB y 8 por lado; nunca en `fotos`). |
 | 2.2 Portafolio privado: pantallas | Fusionada (#73) | `/panel/portafolio`: lista con filtro por tipo de trabajo, alta, ficha con **comparador antes/después** (control deslizante nativo, con teclado y `aria-valuetext`), datos y fotos (se reducen en el móvil antes de subir). API privada `/api/panel/adjunto`. Datos de ejemplo de Turia en «Datos de prueba». e2e propios: `npm run test:e2e:turia` (también en la CI). Mismo permiso que el inventario (propietario y gerente, P-13). **F2 terminada.** |
-| Turia desplegable | En revisión | `wrangler.creacionesturia.jsonc` (Worker y D1 `creacionesturia`) y `cloudflare.wrangler` en la configuración: el adaptador lo usa con `CLIENTE_ID=turia` (Baltaretu sigue con `wrangler.jsonc`). Pasos en `docs/panel-propio/pasos-manuales.md` («Creaciones Turia»). Falta el id real de la D1 (lo crea el propietario). |
+| Turia desplegable | Fusionada (#74) | `wrangler.creacionesturia.jsonc` (Worker y D1 `creacionesturia`) y `cloudflare.wrangler` en la configuración: el adaptador lo usa con `CLIENTE_ID=turia` (Baltaretu sigue con `wrangler.jsonc`). Pasos en `docs/panel-propio/pasos-manuales.md` («Creaciones Turia»). Falta el id real de la D1 (lo crea el propietario). |
+| 3.1a Presupuestos a cliente: datos | En revisión | **Migración 11** (`presupuestos_cliente`, solo aditiva). Cálculo en céntimos (`calcularPresupuesto`: total con IVA, anticipo = total × %, restante; los extras no suman), numeración correlativa `P2026-0001` por serie y año (sin repetidos, también con altas a la vez), estados (borrador → enviado → aceptado/rechazado; caduca al pasar la validez), cobros del anticipo y del resto, IVA fijo del cliente. |
 
 ## Siguiente
 
-1. **3.1** Presupuestos a cliente con PDF y paso a factura (migración 11).
+1. **3.1b** Presupuestos a cliente: pantallas, versión para imprimir o guardar en PDF, envío (correo y WhatsApp) y paso a factura (de anticipo o completa).
 2. **3.2** Clientes y facturas con IVA fijo (y colores del PDF por cliente).
 3. **3.3** Inicio con resumen, alertas y accesos.
 
@@ -38,7 +39,7 @@ Cada sesión **empieza por aquí** y lo actualiza al cerrar cada PR. El plan est
 
 - Si una comprobación de `tests/baseline/` falla, **se para**: o es un error o es un cambio que tiene que aprobar el propietario (`npm run baseline:actualizar` solo entonces).
 
-- La próxima migración es la **11** (la 10 es la del portafolio).
+- La próxima migración es la **12** (10: portafolio; 11: presupuestos a cliente).
 - Decisiones del propietario del 29-10-2026 en `preguntas.md` («Respuestas»): pasar a Workers Paid más adelante, cupo de IA pensado sobre todo para Turia, datos de Baltaretu en D1 desechables, Turia = `creacionesturia` y no fusionar la PR 61.
 - `developers.cloudflare.com` no se puede abrir desde la sesión. Las cifras van «por confirmar» ([P-07](preguntas.md)).
 - Prettier no tiene configuración en el repositorio. **No se pasa a archivos existentes**: reformatea todo ([D-15](discrepancias.md)).
