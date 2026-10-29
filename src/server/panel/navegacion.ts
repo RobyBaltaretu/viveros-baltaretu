@@ -167,6 +167,16 @@ export const MENU: SeccionMenu[] = [
     descripcion: "Las fotos de cada planta",
   },
   {
+    // Carpintería: portafolio privado (solo en ese sector, ver src/plataforma/modulos.ts).
+    href: "/panel/portafolio",
+    texto: "Portafolio",
+    permiso: "inventario",
+    zona: "plantas",
+    icono: "fotos",
+    escena: "fotos",
+    descripcion: "Proyectos con su antes y después",
+  },
+  {
     href: "/panel/gastos",
     texto: "Gastos",
     permiso: "gastos",

@@ -15,15 +15,19 @@ Cada sesión **empieza por aquí** y lo actualiza al cerrar cada PR. El plan est
 | 1.4 Web pública por cliente | Fusionada (#69) | `webPublica: false` (Turia): del build solo queda el panel, la portada lleva a `/panel` y robots bloquea todo. El idioma único con web pública queda aplazado hasta que haga falta. |
 | 1.5 Vocabulario por sector | Fusionada (#70) | `paquetes-sector/<sector>/vocabulario.ts` (título del panel, nombre del asistente y zona del catálogo) y `marca` en la configuración (nombre corto y monograma, o iniciales). Las pantallas y herramientas de plantas, inventario y fotos son del sector vivero: en Turia no existen. Turia: «Creaciones Turia», «Panel de la carpintería», «Asistente». Pendiente para 3.11: el nombre dentro del chat del asistente (está en su script del navegador). |
 | 1.6 (rehecha) Sin web pública, sin zona «Web» | Fusionada (#71) | En clientes sin `webPublica`: no hay textos, publicar ni cambios, ni sus herramientas, ni `/api/contenido/*`. Los tipos de contenido declarativos quedan aplazados hasta que un cliente con web pública los necesite. **F1 terminada.** |
-| 2.1 Portafolio privado: datos | En revisión | **Migración 10** (`adjuntos` y `portafolio`, solo aditiva: la base de la versión 9 migra sin pérdidas). Repositorios en `src/server/data/d1/portafolio.ts`; reglas en `src/server/portafolio/portafolio.ts` (validación; fotos de antes y después comprobadas por sus bytes, como mucho 1,9 MB y 8 por lado; nunca en `fotos`). |
+| 2.1 Portafolio privado: datos | Fusionada (#72) | **Migración 10** (`adjuntos` y `portafolio`, solo aditiva: la base de la versión 9 migra sin pérdidas). Repositorios en `src/server/data/d1/portafolio.ts`; reglas en `src/server/portafolio/portafolio.ts` (validación; fotos de antes y después comprobadas por sus bytes, como mucho 1,9 MB y 8 por lado; nunca en `fotos`). |
+| 2.2 Portafolio privado: pantallas | En revisión | `/panel/portafolio`: lista con filtro por tipo de trabajo, alta, ficha con **comparador antes/después** (control deslizante nativo, con teclado y `aria-valuetext`), datos y fotos (se reducen en el móvil antes de subir). API privada `/api/panel/adjunto`. Datos de ejemplo de Turia en «Datos de prueba». e2e propios: `npm run test:e2e:turia` (también en la CI). Mismo permiso que el inventario (propietario y gerente, P-13). **F2 terminada.** |
 
 ## Siguiente
 
-1. **2.2** Pantallas del portafolio con el comparador antes/después (y datos de ejemplo para Turia).
-2. **3.1** Presupuestos a cliente con PDF y paso a factura (migración 11).
-3. **3.2** Clientes y facturas con IVA fijo.
+1. **3.1** Presupuestos a cliente con PDF y paso a factura (migración 11).
+2. **3.2** Clientes y facturas con IVA fijo (y colores del PDF por cliente).
+3. **3.3** Inicio con resumen, alertas y accesos.
 
 ## Avisos para la próxima sesión
+
+- Las pantallas nuevas del panel usan **solo clases de Tailwind que ya existen** y `<style is:inline>` / `<script is:inline>`: así no cambian el CSS ni el JS públicos de Baltaretu (la línea base lo vigila).
+- Para ver Turia en local: `CLIENTE_ID=turia CLOUDFLARE_ENV=desarrollo npm run build && npx astro preview`, y en «Ajustes › Datos de prueba» cargar los ejemplos.
 
 - El JS del navegador (`_astro/*.js`) cuenta en la línea base: un cambio en un script del cliente cambia la web de Baltaretu. Lo que dependa del cliente en el navegador debe llegar como datos desde la página, sin tocar el script común.
 

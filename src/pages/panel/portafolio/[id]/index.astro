@@ -1,0 +1,145 @@
+---
+import Mensajes from '../../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { campo, sesionCon } from '../../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'inventario');
+const id = Astro.params.id ?? '';
+if (s && Astro.request.method === 'POST') {
+  const accion = campo(await Astro.request.formData(), 'accion');
+  if (accion === 'archivar' || accion === 'recuperar') await s.repos.portafolio.archivar(id, accion === 'archivar', s.usuario.email);
+  return Astro.redirect(accion === 'archivar' ? '/panel/portafolio' : `/panel/portafolio/${id}?hecho=recuperado`, 303);
+}
+const p = s ? await s.repos.portafolio.obtener(id) : null;
+if (s && !p) return new Response(null, { status: 404 });
+const foto = (adjunto: string) => `/api/panel/adjunto?id=${encodeURIComponent(adjunto)}`;
+const hecho = { creado: 'Proyecto guardado.', datos: 'Datos guardados.', recuperado: 'El proyecto vuelve a estar en el portafolio.' }[Astro.url.searchParams.get('hecho') ?? ''];
+const DATOS = p
+  ? [
+      ['Tipo de trabajo', p.categoria],
+      ['Año', p.anio ? String(p.anio) : ''],
+      ['Localidad', p.localidad],
+      ['Materiales y acabados', p.materiales],
+    ].filter(([, v]) => v)
+  : [];
+---
+
+<PaginaPanel titulo={p?.titulo ?? 'Proyecto'} permiso="inventario" volver="/panel/portafolio">
+  {
+    p && (
+      <>
+        <h1 class="titular-grande">{p.titulo}</h1>
+        {p.archivado && <p class="mt-2 font-semibold text-terracota">Archivado: no sale en el portafolio.</p>}
+        <Mensajes hecho={hecho} />
+
+        {p.antes[0] && p.despues[0] ? (
+          <figure class="comparador mt-6 caja-panel p-4" style="--corte: 50%">
+            <div class="comparador-marco rounded-tarjeta">
+              <img src={foto(p.antes[0])} alt={`Antes de la reforma: ${p.titulo}`} class="w-full" />
+              <img src={foto(p.despues[0])} alt={`Después de la reforma: ${p.titulo}`} class="comparador-despues w-full" />
+              <span class="comparador-etiqueta comparador-antes" aria-hidden="true">Antes</span>
+              <span class="comparador-etiqueta comparador-ahora" aria-hidden="true">Después</span>
+            </div>
+            <label for="comparar" class="mt-3 block font-semibold">Desliza para comparar el antes y el después</label>
+            <input
+              id="comparar"
+              type="range"
+              min="0"
+              max="100"
+              value="50"
+              class="comparador-control w-full"
+              aria-valuetext="Mitad y mitad"
+              oninput="const f=this.closest('figure');f.style.setProperty('--corte',this.value+'%');this.setAttribute('aria-valuetext',this.value==0?'Todo antes':this.value==100?'Todo después':this.value+' % después')"
+            />
+          </figure>
+        ) : (
+          <p class="mt-6 caja-panel p-4">
+            Para ver el antes y el después juntos, añade al menos una foto de cada. <a href={`/panel/portafolio/${p.id}/fotos`}>Añadir fotos</a>
+          </p>
+        )}
+
+        {p.descripcion && <p class="mt-6 max-w-2xl">{p.descripcion}</p>}
+        {DATOS.length > 0 && (
+          <dl class="mt-6 grid gap-3 sm:grid-cols-2">
+            {DATOS.map(([k, v]) => (
+              <div class="caja-panel p-4">
+                <dt class="text-gris">{k}</dt>
+                <dd class="font-semibold">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+
+        {(['antes', 'despues'] as const).map((lado) =>
+          p[lado].length > 1 ? (
+            <section class="mt-8" aria-labelledby={`fotos-${lado}`}>
+              <h2 id={`fotos-${lado}`} class="titular-medio">
+                {lado === 'antes' ? 'Todas las fotos de antes' : 'Todas las fotos de después'}
+              </h2>
+              <ul class="portafolio-galeria mt-3 grid gap-3" role="list">
+                {p[lado].map((a, i) => (
+                  <li>
+                    <a href={foto(a)} class="block rounded-tarjeta">
+                      <img src={foto(a)} alt={`${lado === 'antes' ? 'Antes' : 'Después'}, foto ${i + 1} de ${p[lado].length}`} class="aspect-[4/3] w-full rounded-tarjeta object-cover" loading="lazy" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null,
+        )}
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={`/panel/portafolio/${p.id}/fotos`} class="boton-panel">Fotos de antes y después</a>
+          <a href={`/panel/portafolio/${p.id}/datos`} class="boton-panel boton-panel-secundario">Cambiar los datos</a>
+          <form method="post">
+            <input type="hidden" name="accion" value={p.archivado ? 'recuperar' : 'archivar'} />
+            <button class="boton-panel boton-panel-secundario">{p.archivado ? 'Volver a ponerlo en el portafolio' : 'Archivar'}</button>
+          </form>
+        </div>
+      </>
+    )
+  }
+</PaginaPanel>
+
+<style is:inline>
+  .comparador-marco {
+    position: relative;
+    overflow: hidden;
+  }
+  .comparador-marco img {
+    display: block;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+  .comparador-despues {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    clip-path: inset(0 0 0 var(--corte));
+  }
+  .comparador-etiqueta {
+    position: absolute;
+    top: 0.75rem;
+    border-radius: 999px;
+    background: var(--color-papel);
+    padding: 0.25rem 0.75rem;
+    font-weight: 600;
+    color: var(--color-tinta);
+  }
+  .comparador-antes {
+    left: 0.75rem;
+  }
+  .comparador-ahora {
+    right: 0.75rem;
+  }
+  .comparador-control {
+    height: 3rem;
+    accent-color: var(--color-oliva);
+  }
+  .portafolio-galeria {
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  }
+</style>

@@ -1,0 +1,46 @@
+---
+/** Datos de un proyecto del portafolio (alta y edición). Lo procesa la página con guardarProyecto. */
+import type { ProyectoPortafolio } from '../../../server/data/tipos.ts';
+
+interface Props {
+  proyecto?: Partial<ProyectoPortafolio>;
+  categorias: string[];
+  boton: string;
+}
+const { proyecto = {}, categorias, boton } = Astro.props;
+---
+
+<form method="post" class="mt-6 grid gap-4 caja-panel p-5">
+  <label class="grid gap-1 font-semibold">
+    Título
+    <input class="campo-panel font-normal" name="titulo" value={proyecto.titulo ?? ''} maxlength="120" required autocomplete="off" />
+  </label>
+  <label class="grid gap-1 font-semibold">
+    Tipo de trabajo
+    <input class="campo-panel font-normal" name="categoria" value={proyecto.categoria ?? ''} maxlength="60" list="categorias-portafolio" placeholder="Por ejemplo: Armarios" autocomplete="off" />
+    <datalist id="categorias-portafolio">{categorias.map((c) => <option value={c} />)}</datalist>
+  </label>
+  <label class="grid gap-1 font-semibold">
+    Qué se hizo
+    <textarea class="campo-panel font-normal" name="descripcion" rows="4" maxlength="2000">{proyecto.descripcion ?? ''}</textarea>
+  </label>
+  <label class="grid gap-1 font-semibold">
+    Materiales y acabados
+    <input class="campo-panel font-normal" name="materiales" value={proyecto.materiales ?? ''} maxlength="500" autocomplete="off" />
+  </label>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <label class="grid gap-1 font-semibold">
+      Año
+      <input class="campo-panel font-normal" name="anio" value={proyecto.anio ?? ''} inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" />
+    </label>
+    <label class="grid gap-1 font-semibold">
+      Localidad
+      <input class="campo-panel font-normal" name="localidad" value={proyecto.localidad ?? ''} maxlength="80" autocomplete="off" />
+    </label>
+  </div>
+  <label class="flex items-center gap-3 font-semibold">
+    <input type="checkbox" name="destacado" class="size-6" checked={proyecto.destacado ?? false} />
+    Destacado (sale el primero)
+  </label>
+  <p><button class="boton-panel">{boton}</button></p>
+</form>

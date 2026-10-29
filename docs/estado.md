@@ -90,3 +90,4 @@ Peticiones del propietario: publicación automática, facturas, control de gasto
 - Vocabulario y marca por sector (PR 1.5): el panel de Turia dice «Creaciones Turia» y «Panel de la carpintería», y no tiene las pantallas de plantas; el de Baltaretu no cambia.
 - Sin web pública, sin zona «Web» en el panel (PR 1.6): Turia no ve textos, publicar ni cambios. Con esto acaban los cimientos multicliente (F1).
 - Portafolio privado, datos (PR 2.1): migración 10 (`adjuntos` y `portafolio`). Las fotos de antes y después son privadas y nunca se publican.
+- Portafolio privado de Turia (PR 2.2): `/panel/portafolio` con lista, ficha y comparador antes/después; e2e propios (`npm run test:e2e:turia`).

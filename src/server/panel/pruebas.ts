@@ -3,6 +3,9 @@ import { AJUSTES_VACIOS, clienteVacio, huellaDe, lineaVacia, nuevaFactura, serie
 import { calcularTotales } from '../facturas/importes.ts';
 import { gastoVacio } from '../gastos/gastos.ts';
 import { CLAVE_MODO_PRUEBAS, EMISOR_PRUEBA } from './facturacion.ts';
+import { clienteActual } from '../../plataforma/actual.ts';
+import { AMBITO as AMBITO_PORTAFOLIO, anadirFoto } from '../portafolio/portafolio.ts';
+import { FOTO_ANTES, FOTO_DESPUES, PROYECTOS_EJEMPLO } from '../portafolio/ejemplos.ts';
 import { guardarTextos } from './textos.ts';
 
 /**
@@ -131,8 +134,10 @@ export async function cargarDatosPrueba(repos: Repositorios, email: string, hoy:
     await repos.gastos.guardar(gasto);
   }
 
+  const cliente = clienteActual();
   let proyectos = 0;
-  for (const [id, es, en, resumen, resumenEn, especies] of PROYECTOS) {
+  // Proyectos y guías de la web: solo si el cliente tiene web pública.
+  for (const [id, es, en, resumen, resumenEn, especies] of cliente.webPublica ? PROYECTOS : []) {
     const r = await guardarTextos(
       repos,
       'proyectos',
@@ -155,7 +160,7 @@ export async function cargarDatosPrueba(repos: Repositorios, email: string, hoy:
     if (r.ok) proyectos++;
   }
   let guias = 0;
-  for (const [id, es, en, resumen] of GUIAS) {
+  for (const [id, es, en, resumen] of cliente.webPublica ? GUIAS : []) {
     const r = await guardarTextos(
       repos,
       'guias',
@@ -175,6 +180,17 @@ export async function cargarDatosPrueba(repos: Repositorios, email: string, hoy:
     if (r.ok) guias++;
   }
 
+  // Portafolio privado (carpintería): tres proyectos con su antes y después.
+  if (cliente.sector === 'carpinteria') {
+    for (const [i, p] of PROYECTOS_EJEMPLO.entries()) {
+      await quitarProyectoPrueba(repos, p.id);
+      await repos.portafolio.guardar({ ...p, antes: [], despues: [], orden: i }, email);
+      await anadirFoto(repos, p.id, 'antes', FOTO_ANTES, email);
+      await anadirFoto(repos, p.id, 'despues', FOTO_DESPUES, email);
+      proyectos++;
+    }
+  }
+
   // Inventario de ejemplo: entradas para cada planta, alguna venta y alguna baja (se quitan con el resto).
   await repos.inventario.borrarPruebas();
   const plantas = await repos.contenido.listar('catalogo');
@@ -190,6 +206,11 @@ export async function cargarDatosPrueba(repos: Repositorios, email: string, hoy:
   await repos.ajustesPrivados.guardar(CLAVE_MODO_PRUEBAS, { activo: true, desde: new Date().toISOString() }, email);
   await repos.auditoria.registrar(email, 'datos de prueba', 'cargados');
   return { clientes: clientes.length, presupuestos: PRESUPUESTOS.length, facturas, gastos: GASTOS.length, proyectos, guias };
+}
+
+async function quitarProyectoPrueba(repos: Repositorios, id: string) {
+  await repos.adjuntos.borrarDe(AMBITO_PORTAFOLIO, id);
+  return repos.portafolio.borrar(id);
 }
 
 /** Quita todo lo de prueba (incluidas las facturas emitidas en modo de pruebas) y apaga el modo. */
@@ -209,6 +230,7 @@ export async function quitarDatosPrueba(repos: Repositorios, email: string): Pro
       await repos.contenido.archivar('proyectos', e.id, true, autor);
       proyectos++;
     }
+  for (const p of await repos.portafolio.listar({ incluirArchivados: true })) if (p.id.startsWith(PREFIJO) && (await quitarProyectoPrueba(repos, p.id))) proyectos++;
   let guias = 0;
   for (const e of await repos.contenido.listar('guias'))
     if (e.id.startsWith(PREFIJO)) {

@@ -477,6 +477,8 @@ export interface RepositorioPortafolio {
   obtener(id: string): Promise<ProyectoPortafolio | null>;
   guardar(p: Omit<ProyectoPortafolio, 'actualizado' | 'archivado'>, email: string): Promise<void>;
   archivar(id: string, archivado: boolean, email: string): Promise<boolean>;
+  /** Solo para los datos de prueba: el portafolio real se archiva, no se borra. */
+  borrar(id: string): Promise<boolean>;
 }
 
 /** Archivo privado (foto del portafolio…): nunca se publica ni pasa por el build. */
@@ -494,6 +496,8 @@ export interface RepositorioAdjuntos {
   obtener(id: string): Promise<(Adjunto & { bytes: Uint8Array }) | null>;
   listar(ambito: string, ref: string): Promise<Adjunto[]>;
   borrar(id: string): Promise<boolean>;
+  /** Todos los de una ficha (por ejemplo, al quitar un proyecto de prueba). */
+  borrarDe(ambito: string, ref: string): Promise<number>;
 }
 
 export interface Repositorios {

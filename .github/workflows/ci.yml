@@ -63,6 +63,12 @@ jobs:
         env:
           ASTRO_TELEMETRY_DISABLED: '1'
 
+      # Creaciones Turia (CLIENTE_ID=turia): solo panel, con su portafolio privado.
+      - name: Pruebas en navegador de Creaciones Turia
+        run: npm run test:e2e:turia
+        env:
+          ASTRO_TELEMETRY_DISABLED: '1'
+
   equivalencia:
     name: Build desde D1 igual al actual
     runs-on: ubuntu-latest

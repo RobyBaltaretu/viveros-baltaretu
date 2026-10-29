@@ -4,5 +4,6 @@ import type { VocabularioPanel } from '../../src/plataforma/vocabulario.ts';
 export const vocabularioVivero: VocabularioPanel = {
   tituloPanel: 'Panel del vivero',
   nombreAsistente: 'AgricolAI',
-  zonas: { plantas: { texto: 'Plantas', descripcion: 'Catálogo, inventario y fotos' } },
+  zonas: { plantas: { texto: 'Plantas', descripcion: 'Catálogo, inventario y fotos', icono: 'plantas' } },
+  escenaInicio: 'plantas',
 };

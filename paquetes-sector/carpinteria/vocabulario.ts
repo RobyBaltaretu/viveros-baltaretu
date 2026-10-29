@@ -4,5 +4,6 @@ import type { VocabularioPanel } from '../../src/plataforma/vocabulario.ts';
 export const vocabularioCarpinteria: VocabularioPanel = {
   tituloPanel: 'Panel de la carpintería',
   nombreAsistente: 'Asistente',
-  zonas: { plantas: { texto: 'Portafolio', descripcion: 'Proyectos con su antes y después' } },
+  zonas: { plantas: { texto: 'Portafolio', descripcion: 'Proyectos con su antes y después', icono: 'fotos' } },
+  escenaInicio: 'fotos',
 };

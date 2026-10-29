@@ -14,6 +14,7 @@ describe('vocabulario y marca por sector', () => {
     expect(clienteActual().marca).toEqual({ nombreCorto: 'Baltaretu', monograma: '/monograma.png' });
     expect(zonasDe('propietario').find((z) => z.zona === 'plantas')).toMatchObject({ texto: 'Plantas', descripcion: 'Catálogo, inventario y fotos' });
     for (const r of ['/panel/plantas', '/panel/plantas/olivo', '/panel/inventario', '/panel/fotos', '/api/panel/foto']) expect(rutaDisponible(r), r).toBe(true);
+    for (const r of ['/panel/portafolio', '/api/panel/adjunto']) expect(rutaDisponible(r), r).toBe(false);
   });
 
   it('Turia (carpintería): su nombre, sin las pantallas ni las herramientas de plantas', () => {
@@ -22,8 +23,10 @@ describe('vocabulario y marca por sector', () => {
     expect(clienteActual().marca).toEqual({ nombreCorto: 'Creaciones Turia', monograma: null });
     for (const r of ['/panel/plantas', '/panel/inventario', '/panel/fotos', '/api/panel/foto']) expect(rutaDisponible(r), r).toBe(false);
     expect(rutaDisponible('/panel/facturas')).toBe(true);
-    // La zona del catálogo se queda sin pantallas hasta que llegue el portafolio (2.2): no sale.
-    expect(zonasDe('propietario').map((z) => z.zona)).not.toContain('plantas');
+    // La zona del catálogo es el portafolio privado, con su única pantalla.
+    expect(zonasDe('propietario').find((z) => z.zona === 'plantas')).toMatchObject({ texto: 'Portafolio', href: '/panel/portafolio', secciones: [expect.objectContaining({ href: '/panel/portafolio' })] });
+    expect(rutaDisponible('/panel/portafolio/abc/fotos')).toBe(true);
+    expect(zonasDe('editor').map((z) => z.zona)).not.toContain('plantas');
     expect(zonasDe('propietario').find((z) => z.zona === 'asistente')?.texto).toBe('Asistente');
     expect(menuDe('propietario').find((s) => s.href === '/panel/asistente')?.texto).toBe('Asistente');
     const nombres = herramientasDe('propietario').map((h) => h.nombre);
