@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Creaciones Turia (CLIENTE_ID=turia). Generado a partir de wrangler.jsonc (Baltaretu);
+  // tiene que coincidir con clientes/turia/cliente.config.json (lo comprueba un test).
+  "name": "creacionesturia",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "compatibility_date": "2026-10-07",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist",
+    "not_found_handling": "404-page",
+    // Rutas que siempre ejecutan el Worker. Sin esto, las navegaciones del navegador
+    // (incluido enviar un formulario sin JavaScript) reciben la 404 estática.
+    "run_worker_first": ["/api/*", "/panel", "/panel/*"]
+  },
+  // Envío de avisos de presupuesto con Cloudflare Email Service. Sin restricciones
+  // en el binding: el plan gratuito solo permite enviar a direcciones de destino
+  // verificadas en Email Routing (EMAIL_DESTINO).
+  "send_email": [{ "name": "EMAIL" }],
+  // Workers AI para el asistente del panel (cupo gratuito diario). En local y en el
+  // build no se conecta (remoteBindings: false en astro.config.mjs).
+  "ai": { "binding": "AI" },
+  // Base de datos del panel. Las tablas las crea el Worker. El id lo da Cloudflare al crear la
+  // base (docs/panel-propio/pasos-manuales.md): sustituir los ceros por ese id.
+  "d1_databases": [{ "binding": "DB", "database_name": "creacionesturia", "database_id": "00000000-0000-0000-0000-000000000001" }],
+  // Conserva las variables y secretos definidos en el panel de Cloudflare
+  // (EMAIL_DESTINO, EMAIL_REMITENTE, TURNSTILE_SECRET_KEY) al desplegar.
+  "keep_vars": true,
+  "observability": {
+    "enabled": true
+  },
+  // Entorno local (CLOUDFLARE_ENV=desarrollo): `npm run dev`, tests y e2e con D1 en
+  // modo local de wrangler, sin tocar recursos reales.
+  "env": {
+    "desarrollo": {
+      "send_email": [{ "name": "EMAIL" }],
+      // Entrar al panel sin Access, solo desde localhost (ver src/server/panel/acceso.ts).
+      "vars": { "PANEL_PRUEBA_EMAIL": "propietario@example.com", "PROPIETARIO_EMAIL": "propietario@example.com" },
+      "d1_databases": [{ "binding": "DB", "database_name": "creacionesturia-local", "database_id": "00000000-0000-0000-0000-000000000000" }]
+    }
+  }
+}

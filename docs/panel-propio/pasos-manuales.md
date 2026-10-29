@@ -69,3 +69,19 @@ El asistente usa Workers AI (`glm-4.7-flash`, unas 90 conversaciones al día den
 3. Pregunta al asesor por **VeriFactu** (el sistema de la AEAT para los programas de facturación): el panel numera, guarda copia inalterable y encadena huellas, pero no envía los registros a Hacienda ni pone el código QR. Si os afecta, habrá que añadirlo o facturar con un programa certificado.
 4. De vez en cuando, en **Facturas**, pulsa «Descargar la copia» y guárdala fuera del panel.
 
+
+## Creaciones Turia (segundo cliente, solo panel)
+El mismo repositorio construye el panel de Turia con la variable `CLIENTE_ID=turia`. Usa su propio Worker y su propia D1 (`wrangler.creacionesturia.jsonc`), y nada de Baltaretu cambia. Todo es gratuito. Mientras no haya dominio propio, la dirección será `https://creacionesturia.<tu-subdominio>.workers.dev`.
+
+1. **Base de datos.** Ve a *Workers & Pages → D1 → Create database* y créala con el nombre `creacionesturia`. Copia su **Database ID** y pásamelo (no es un secreto). Hay que ponerlo en `wrangler.creacionesturia.jsonc`, en lugar de `00000000-0000-0000-0000-000000000001`, con un PR. Las tablas las crea el Worker la primera vez que se usa.
+2. **Worker con Workers Builds.** Ve a *Workers & Pages → Create → Import a repository* y elige este repositorio:
+   - Nombre del proyecto: `creacionesturia`. Rama de producción: `main`.
+   - *Build command*: `npm run build`.
+   - *Deploy command*: `npx wrangler deploy` la primera vez. Después, cámbialo a `npx wrangler versions upload` para aprobar tú cada cambio de código en *Deployments*, igual que en Baltaretu.
+   - *Build variables*: `CLIENTE_ID` = `turia` y `SITE_URL` = la dirección `https://creacionesturia.<tu-subdominio>.workers.dev`.
+   - El build deja en `dist/` la configuración de Turia (Worker `creacionesturia` con la D1 `creacionesturia`), y es la que usa `wrangler`. Si Workers Builds se queja de que el nombre del Worker no coincide con `wrangler.jsonc`, avísame. Esto no se ha podido comprobar sin la cuenta.
+3. **Acceso (Cloudflare Access, gratis hasta 50 usuarios).** Turia no tiene web pública, así que Access puede proteger la dirección **entera**:
+   - En *Zero Trust → Access → Applications → Add an application → Self-hosted*, el destino es `creacionesturia.<tu-subdominio>.workers.dev`, con política *Allow* y *Emails* para las personas de Turia. Usa el mismo equipo y el mismo One-time PIN del paso 4.
+   - En el Worker `creacionesturia`, en *Settings → Variables and Secrets*, añade `ACCESS_EQUIPO`, `ACCESS_AUD` (el AUD de esta aplicación) y `PROPIETARIO_EMAIL` (el correo de quien será el propietario del panel de Turia).
+4. **Probarlo.** Entra en la dirección: lleva a `/panel`. En *Ajustes → Datos de prueba* puedes cargar 3 proyectos de ejemplo en *Portafolio*, y quitarlos después.
+5. **Asistente.** Usa Workers AI de la misma cuenta, cuyo cupo diario comparte con Baltaretu (preguntas P-02). El reparto se decide antes de activarlo en serio.

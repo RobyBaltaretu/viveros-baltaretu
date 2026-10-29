@@ -54,7 +54,8 @@ export const esquemaCliente = z
     webPublica: z.boolean(),
     idiomas: z.array(z.enum(IDIOMAS_POSIBLES)).min(1),
     idiomaPorDefecto: z.enum(IDIOMAS_POSIBLES),
-    cloudflare: z.object({ worker: recurso, d1: recurso }).strict(),
+    /** Worker y D1 en Cloudflare; `wrangler`: su archivo de configuración si no es `wrangler.jsonc` (el de Baltaretu). */
+    cloudflare: z.object({ worker: recurso, d1: recurso, wrangler: z.string().regex(/^wrangler\.[a-z0-9-]+\.jsonc$/).optional() }).strict(),
     /** Cada módulo, true o false (los tiene que decir todos). */
     modulos: z.record(z.enum(MODULOS), z.boolean()),
     iva: z

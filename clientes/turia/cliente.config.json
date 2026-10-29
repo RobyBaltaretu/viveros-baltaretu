@@ -8,7 +8,7 @@
   "webPublica": false,
   "idiomas": ["es"],
   "idiomaPorDefecto": "es",
-  "cloudflare": { "worker": "creacionesturia", "d1": "creacionesturia" },
+  "cloudflare": { "worker": "creacionesturia", "d1": "creacionesturia", "wrangler": "wrangler.creacionesturia.jsonc" },
   "modulos": {
     "catalogo": true,
     "presupuestosWeb": false,
