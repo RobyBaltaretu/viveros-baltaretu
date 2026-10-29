@@ -73,7 +73,7 @@ El asistente usa Workers AI (`glm-4.7-flash`, unas 90 conversaciones al día den
 ## Creaciones Turia (segundo cliente, solo panel)
 El mismo repositorio construye el panel de Turia con la variable `CLIENTE_ID=turia`. Usa su propio Worker y su propia D1 (`wrangler.creacionesturia.jsonc`), y nada de Baltaretu cambia. Todo es gratuito. Mientras no haya dominio propio, la dirección será `https://creacionesturia.<tu-subdominio>.workers.dev`.
 
-1. **Base de datos.** Ve a *Workers & Pages → D1 → Create database* y créala con el nombre `creacionesturia`. Copia su **Database ID** y pásamelo (no es un secreto). Hay que ponerlo en `wrangler.creacionesturia.jsonc`, en lugar de `00000000-0000-0000-0000-000000000001`, con un PR. Las tablas las crea el Worker la primera vez que se usa.
+1. **Base de datos (hecho).** La D1 `creacionesturia` está creada y su Database ID está en `wrangler.creacionesturia.jsonc`. Las tablas las crea el Worker la primera vez que se usa.
 2. **Worker con Workers Builds.** Ve a *Workers & Pages → Create → Import a repository* y elige este repositorio:
    - Nombre del proyecto: `creacionesturia`. Rama de producción: `main`.
    - *Build command*: `npm run build`.
