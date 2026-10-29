@@ -40,6 +40,27 @@ describe('configuración de clientes', () => {
     expect(MODULOS.filter((m) => c.modulos[m])).toEqual(['catalogo', 'presupuestosWeb', 'facturas', 'gastos', 'informes', 'asistente', 'whatsapp']);
   });
 
+  it('cada cliente con su archivo de Wrangler despliega su propio Worker y su D1, con las mismas rutas de Worker que Baltaretu', () => {
+    const jsonc = (ruta: string) =>
+      JSON.parse(
+        leer(ruta)
+          .split('\n')
+          .filter((l) => !/^\s*\/\//.test(l))
+          .join('\n'),
+      );
+    for (const id of ['turia']) {
+      const c = cargarCliente(id);
+      expect(c.cloudflare.wrangler, id).toBeDefined();
+      const w = jsonc(c.cloudflare.wrangler!);
+      expect(w.name).toBe(c.cloudflare.worker);
+      expect(w.d1_databases[0]).toMatchObject({ binding: 'DB', database_name: c.cloudflare.d1 });
+      expect(w.d1_databases[0].database_id).not.toBe(wrangler.d1_databases[0].database_id);
+      expect(w.assets).toEqual(wrangler.assets);
+      expect(w.env.desarrollo.vars).toEqual(wrangler.env.desarrollo.vars);
+    }
+    expect(cargarCliente('baltaretu').cloudflare.wrangler).toBeUndefined();
+  });
+
   it('Creaciones Turia: solo español e IVA del 21 % sin elegir', () => {
     const c = cargarCliente('turia');
     expect(c).toMatchObject({ sector: 'carpinteria', idiomas: ['es'], idiomaPorDefecto: 'es', iva: { general: 21, fijo: true } });

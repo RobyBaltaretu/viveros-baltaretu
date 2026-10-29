@@ -33,6 +33,8 @@ export default defineConfig({
         // Sin conexiones a Cloudflare en local, en la CI ni al construir: Workers AI solo
         // existe en producción y el asistente usa su intérprete local mientras tanto.
         remoteBindings: false,
+        // Cada cliente despliega su propio Worker y su D1 (Baltaretu: wrangler.jsonc, sin cambios).
+        ...(cliente.cloudflare.wrangler ? { configPath: cliente.cloudflare.wrangler } : {}),
       }),
   // Fuentes servidas desde el propio dominio (subconjunto latino de Fontsource,
   // instalado con npm): sin peticiones a terceros y con fallbacks ajustados.
