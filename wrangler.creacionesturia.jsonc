@@ -23,7 +23,7 @@
   "ai": { "binding": "AI" },
   // Base de datos del panel. Las tablas las crea el Worker. El id lo da Cloudflare al crear la
   // base (docs/panel-propio/pasos-manuales.md): sustituir los ceros por ese id.
-  "d1_databases": [{ "binding": "DB", "database_name": "creacionesturia", "database_id": "00000000-0000-0000-0000-000000000001" }],
+  "d1_databases": [{ "binding": "DB", "database_name": "creacionesturia", "database_id": "e880608e-83b7-427a-a57f-088f1f061fa8" }],
   // Conserva las variables y secretos definidos en el panel de Cloudflare
   // (EMAIL_DESTINO, EMAIL_REMITENTE, TURNSTILE_SECRET_KEY) al desplegar.
   "keep_vars": true,
