@@ -46,6 +46,7 @@ Salen de [dominio-carpinteria.md](dominio-carpinteria.md). Son hipótesis del se
 | T-18 | Textos legales, datos fiscales, logotipo, colores y tipografías. | `[PLACEHOLDER]` hasta recibirlos. Los legales los revisa un asesor. |
 | T-19 | ¿Margen por obra con coste de materiales, gastos y horas? ¿Apuntáis horas? | Materiales (pedidos) + gastos de la obra; sin horas en la primera versión. |
 | T-20 | Categorías de gasto de la carpintería (tableros, herrajes, acabados, maquinaria…). Hoy son las del vivero y los gastos de taller van a «Otros». | Categorías por sector en el paquete de la carpintería, junto con el catálogo. |
+| T-21 | Catálogo: margen habitual sobre el coste, merma por material y horas de taller y montaje de cada trabajo. | Se proponen un 30 % de margen, mermas por categoría (tableros 15 %, maciza 20 %, cantos 10 %…) y las horas de las plantillas de partida; cada artículo y plantilla se cambia en el catálogo. |
 
 ## Respuestas del propietario
 

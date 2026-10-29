@@ -77,6 +77,15 @@ Por eso el modelo de material tiene unos campos comunes y unos **atributos adici
 - Comunes: nombre, textura, color, espesor, unidad, proveedor habitual, coste interno, referencia, visible en la web y en el simulador, e imagen de la muestra.
 - Por categoría: los atributos adicionales de la tabla de arriba.
 
+## Catálogo y escandallo
+
+El catálogo (`src/server/catalogo/`) tiene dos piezas:
+
+- **Artículos.** Lo que se compra o se cobra: tableros, maciza, chapas, cantos, encimeras, cristal, herrajes, tiradores, accesorios, iluminación, consumibles, acabados, **horas de taller y de montaje** y servicios (transporte, desplazamiento, retirada, toma de medidas). Cada uno lleva unidad (ud, m², ml, m³, h…), coste, **merma** (lo que se pierde al cortar) y margen, o un precio fijo.
+- **Plantillas.** El escandallo de cada trabajo: las medidas que se piden (ancho, alto, fondo, puertas, baldas…), los materiales que se eligen (cuerpo, frentes, encimera…) y cada parte con su fórmula de cantidad. Por ejemplo, en un armario de correderas: costados `2 * alto * fondo`, kit de correderas `puertas`, horas de taller `2 + 1,2 * ancho * alto`.
+
+Del escandallo sale el coste, el precio y el margen, y la descripción para el presupuesto. El cliente nunca ve costes ni márgenes. El catálogo de partida (9 plantillas y 48 artículos) llega sin precios: los pone cada negocio (T-21).
+
 ## Documentos
 
 | Documento | Contiene | Para terceros |
