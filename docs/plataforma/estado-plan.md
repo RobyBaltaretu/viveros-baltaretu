@@ -19,17 +19,24 @@ Cada sesión **empieza por aquí** y lo actualiza al cerrar cada PR. El plan est
 | 2.2 Portafolio privado: pantallas | Fusionada (#73) | `/panel/portafolio`: lista con filtro por tipo de trabajo, alta, ficha con **comparador antes/después** (control deslizante nativo, con teclado y `aria-valuetext`), datos y fotos (se reducen en el móvil antes de subir). API privada `/api/panel/adjunto`. Datos de ejemplo de Turia en «Datos de prueba». e2e propios: `npm run test:e2e:turia` (también en la CI). Mismo permiso que el inventario (propietario y gerente, P-13). **F2 terminada.** |
 | Turia desplegable | Fusionada (#74) | `wrangler.creacionesturia.jsonc` (Worker y D1 `creacionesturia`) y `cloudflare.wrangler` en la configuración: el adaptador lo usa con `CLIENTE_ID=turia` (Baltaretu sigue con `wrangler.jsonc`). Pasos en `docs/panel-propio/pasos-manuales.md` («Creaciones Turia»). Falta el id real de la D1 (lo crea el propietario). |
 | 3.1a Presupuestos a cliente: datos | Fusionada (#76) | **Migración 11** (`presupuestos_cliente`, solo aditiva). Cálculo en céntimos (`calcularPresupuesto`: total con IVA, anticipo = total × %, restante; los extras no suman), numeración correlativa `P2026-0001` por serie y año (sin repetidos, también con altas a la vez), estados (borrador → enviado → aceptado/rechazado; caduca al pasar la validez), cobros del anticipo y del resto, IVA fijo del cliente. |
-| 3.1b Presupuestos a cliente: pantallas | En revisión | `/panel/presupuestos-cliente`: lista por estado, alta y edición (líneas, extras, material, anticipo; IVA fijo del 21 % en Turia), ficha con resumen, **versión para imprimir o guardar en PDF** desde el navegador (sin coste de CPU en el Worker), envío por correo (mailto) y WhatsApp con el texto preparado, estados y **paso a factura**: de anticipo (suma exactamente el anticipo) y final (descuenta el anticipo con una línea de cantidad −1). Números a la española («1.250,50»). e2e de Turia. |
+| 3.1b Presupuestos a cliente: pantallas | Fusionada (#78) | `/panel/presupuestos-cliente`: lista por estado, alta y edición (líneas, extras, material, anticipo; IVA fijo del 21 % en Turia), ficha con resumen, **versión para imprimir o guardar en PDF** desde el navegador (sin coste de CPU en el Worker), envío por correo (mailto) y WhatsApp con el texto preparado, estados y **paso a factura**: de anticipo (suma exactamente el anticipo) y final (descuenta el anticipo con una línea de cantidad −1). Números a la española («1.250,50»). e2e de Turia. |
+
+| Diseño 1: armazón nuevo del panel | En revisión | Petición del propietario (29-10-2026): mejorar mucho la usabilidad. Solo Turia (`panel.diseno: "nuevo"`). `src/panel-nuevo/`: armazón, navegación (barra lateral por grupos, «Crear» con popover nativo, barra del móvil) y estilos en línea; Tailwind no mira la carpeta (`@source not`), así el CSS de Baltaretu no cambia. Tema de Turia neutro con acento `#0e6b87`. Las pantallas de siempre se ven con el estilo nuevo (clases `.nv .boton-panel`, etc.). |
 
 ## Siguiente
 
-1. **3.2** Clientes (dirección de obra, contacto, forma de pago habitual) y facturas con IVA fijo (el editor no deja elegir en Turia) y colores del PDF por cliente.
-2. **3.3** Inicio con resumen del mes, alertas (presupuestos sin respuesta, anticipos pendientes…) y accesos.
-3. **3.4** Proveedores.
+Prioridad del propietario para Turia: **KPIs, catálogo, presupuestos y facturas**, con una experiencia de uso cuidada.
+
+1. **Diseño 2** Inicio de Turia: KPIs del mes y «Por hacer» con su acción (sustituye a la 3.3).
+2. **Catálogo A** (migración 12): artículos (tableros, maderas, cantos, herrajes, acabados, mano de obra, servicios) con unidad, coste, merma y margen, y **plantillas paramétricas** (escandallo: medidas → piezas, cantos, herrajes, horas y precio). Absorbe «materiales» de la 3.4.
+3. **Catálogo B** Pantallas del catálogo y calculadora de plantillas.
+4. **Presupuestos v2**: editor en tabla con totales en vivo y «Añadir del catálogo».
+5. **Facturas v2** en Turia; después 3.2 (clientes con dirección de obra) y 3.4 (proveedores).
 
 ## Avisos para la próxima sesión
 
-- Las pantallas nuevas del panel usan **solo clases de Tailwind que ya existen** y `<style is:inline>` / `<script is:inline>`: así no cambian el CSS ni el JS públicos de Baltaretu (la línea base lo vigila).
+- Las pantallas con el diseño nuevo van en `src/panel-nuevo/` (Tailwind no la mira) con clases `nv-*` y CSS en línea.
+- Las pantallas nuevas del panel fuera de esa carpeta usan **solo clases de Tailwind que ya existen** y `<style is:inline>` / `<script is:inline>`: así no cambian el CSS ni el JS públicos de Baltaretu (la línea base lo vigila).
 - Para ver Turia en local: `CLIENTE_ID=turia CLOUDFLARE_ENV=desarrollo npm run build && npx astro preview`, y en «Ajustes › Datos de prueba» cargar los ejemplos.
 
 - El JS del navegador (`_astro/*.js`) cuenta en la línea base: un cambio en un script del cliente cambia la web de Baltaretu. Lo que dependa del cliente en el navegador debe llegar como datos desde la página, sin tocar el script común.

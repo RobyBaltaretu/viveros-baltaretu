@@ -27,13 +27,14 @@
   },
   "iva": { "general": 21, "fijo": true },
   "tema": {
-    "crema": "#f6f1ea",
-    "papel": "#fdfbf7",
-    "verdor": "#ebe3d6",
-    "oliva": "#4a3424",
-    "tinta": "#2b2119",
-    "gris": "#5f5246",
-    "terracota": "#8a4b2c",
-    "linea": "#d9cbb8"
-  }
+    "crema": "#f6f6f4",
+    "papel": "#ffffff",
+    "verdor": "#e4f0f3",
+    "oliva": "#0b5063",
+    "tinta": "#1a1a19",
+    "gris": "#5f5e5a",
+    "terracota": "#0e6b87",
+    "linea": "#e6e4df"
+  },
+  "panel": { "diseno": "nuevo" }
 }

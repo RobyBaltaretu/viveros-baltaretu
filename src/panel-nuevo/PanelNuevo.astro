@@ -1,0 +1,242 @@
+---
+/**
+ * Armazón del panel con el diseño nuevo (clientes con `panel.diseno: "nuevo"`;
+ * Viveros Baltaretu sigue con src/layouts/PanelLayout.astro). En el ordenador,
+ * barra lateral blanca con todas las secciones a la vista y cabecera con las
+ * migas y «Crear»; en el móvil, cabecera con la marca y barra de abajo con
+ * «Crear» en el centro. «Crear» es un menú nativo (popover): sin JavaScript.
+ * Los estilos van en línea (estilos.css): no tocan el CSS de la web.
+ */
+import TemaCliente from '../components/plataforma/TemaCliente.astro';
+import Icono from '../components/panel/ui/Icono.astro';
+import { Font } from 'astro:assets';
+import { clienteActual } from '../plataforma/actual.ts';
+import { vocabularioPanel } from '../plataforma/vocabulario.ts';
+import { tp } from '../i18n/panel';
+import { modoPruebas } from '../server/panel/facturacion.ts';
+import { MAS, menuDe, seccionActual, zonaActual, zonasDe } from '../server/panel/navegacion.ts';
+import { accionesCrear, gruposLateral, pestanasMovil } from './navegacion.ts';
+import estilos from './estilos.css?raw';
+
+interface Props {
+  titulo: string;
+  volver?: string | false;
+  ancho?: 'normal' | 'amplio';
+}
+
+const { titulo, volver = '/panel', ancho = 'normal' } = Astro.props;
+const sesion = Astro.locals.panel;
+const usuario = sesion?.estado === 'ok' ? sesion.usuario : null;
+const menu = usuario ? menuDe(usuario.rol) : [];
+const ruta = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const enMas = ruta === MAS;
+const actual = enMas ? MAS : seccionActual(ruta, menu);
+const zona = enMas ? null : zonaActual(ruta, menu);
+const grupos = usuario ? gruposLateral(zonasDe(usuario.rol)) : [];
+const crear = accionesCrear(menu);
+const pestanas = usuario ? pestanasMovil(zonasDe(usuario.rol), zona, enMas, crear.length > 0) : [];
+const seccion = menu.find((s) => s.href === actual);
+// Migas: Inicio › sección › pantalla (la pantalla solo si no es la portada de la sección).
+const enPortada = !!seccion && seccion.href === ruta;
+// En el móvil, flecha para volver desde las pantallas de dentro de una sección.
+const atras = !enPortada && ruta !== '/panel' && volver ? (volver === '/panel' && seccion && seccion.href !== '/panel' ? seccion.href : volver) : null;
+const enPruebas = sesion?.estado === 'ok' ? await modoPruebas(sesion.repos) : false;
+const { marca } = clienteActual();
+const iniciales = marca.nombreCorto
+  .split(/\s+/)
+  .map((p) => p[0])
+  .join('')
+  .slice(0, 2)
+  .toUpperCase();
+const inicialUsuario = (usuario?.nombre || usuario?.email || '?').trim().slice(0, 1).toUpperCase();
+---
+
+<html lang="es" class="sin-js">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#ffffff" />
+    <TemaCliente />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <title>{titulo} · {vocabularioPanel().tituloPanel}</title>
+    <script is:inline>
+      document.documentElement.classList.remove('sin-js');
+      // Tras guardar, la página llega con un aviso de un solo uso (?hecho, ?resultado):
+      // se quita de la URL para que recargar no lo repita y, al ir atrás, se salta el
+      // formulario ya enviado en lugar de volver a mostrarlo.
+      (() => {
+        const CLAVE = 'panel:enviado';
+        const UNA_VEZ = ['hecho', 'resultado', 'n'];
+        try {
+          const u = new URL(location.href);
+          const nav = performance.getEntriesByType('navigation')[0];
+          if (nav && nav.type === 'back_forward' && sessionStorage.getItem(CLAVE) === location.pathname) {
+            sessionStorage.removeItem(CLAVE);
+            history.back();
+            return;
+          }
+          if (sessionStorage.getItem(CLAVE) === location.pathname) sessionStorage.removeItem(CLAVE);
+          if (UNA_VEZ.some((p) => u.searchParams.has(p))) {
+            const r = document.referrer ? new URL(document.referrer) : null;
+            if (r && r.origin === location.origin) sessionStorage.setItem(CLAVE, r.pathname);
+            UNA_VEZ.forEach((p) => u.searchParams.delete(p));
+            history.replaceState(history.state, '', u.pathname + u.search + u.hash);
+          }
+        } catch {
+          // Sin sessionStorage o historial, el panel funciona igual.
+        }
+      })();
+    </script>
+    <Font cssVariable="--font-dm-sans" preload />
+    <style is:inline set:html={estilos}></style>
+  </head>
+  <body class="panel nv">
+    <a href="#principal" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-tarjeta focus:bg-papel focus:p-3">{tp.saltar}</a>
+    <div class="nv-armazon">
+      {
+        usuario && (
+          <aside class="nv-lateral">
+            <a href="/panel" class="nv-marca" aria-label="Inicio del panel">
+              <span class="nv-monograma" aria-hidden="true">
+                {marca.monograma ? <img src={marca.monograma} alt="" width="36" height="36" /> : iniciales}
+              </span>
+              <span class="nv-marca-texto">
+                <strong>{marca.nombreCorto}</strong>
+                <span>{vocabularioPanel().tituloPanel}</span>
+              </span>
+            </a>
+            <nav aria-label={tp.menu}>
+              {grupos.map((g) => (
+                <>
+                  {g.texto && <p class="nv-grupo">{g.texto}</p>}
+                  <ul class="nv-lista" role="list">
+                    {g.secciones.map((s) => (
+                      <li>
+                        <a href={s.href} class="nv-enlace" aria-current={s.href === actual ? 'page' : undefined}>
+                          <Icono nombre={s.icono} />
+                          {s.texto}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ))}
+            </nav>
+            <div class="nv-cuenta">
+              <span class="nv-avatar" aria-hidden="true">
+                {inicialUsuario}
+              </span>
+              <span class="nv-cuenta-texto">
+                <span>{usuario.nombre || usuario.email}</span>
+                <span>{tp.roles[usuario.rol]}</span>
+              </span>
+              <a href="/cdn-cgi/access/logout" class="boton-icono" aria-label={tp.salir} title={tp.salir}>
+                <Icono nombre="salir" clase="size-5" />
+              </a>
+            </div>
+          </aside>
+        )
+      }
+      <div class="min-w-0">
+        <header class="nv-cabecera">
+          {
+            atras ? (
+              <a href={atras} class="boton-icono lg:hidden" aria-label={tp.volver}>
+                <Icono nombre="volver" clase="size-5" />
+              </a>
+            ) : null
+          }
+          <a href="/panel" class="nv-marca" aria-label="Inicio del panel">
+            <span class="nv-monograma" aria-hidden="true">
+              {marca.monograma ? <img src={marca.monograma} alt="" width="36" height="36" /> : iniciales}
+            </span>
+            <span class="nv-marca-texto">
+              <strong>{marca.nombreCorto}</strong>
+            </span>
+          </a>
+          <nav class="nv-migas" aria-label="Estás en">
+            {ruta !== '/panel' && <a href="/panel">Inicio</a>}
+            {ruta !== '/panel' && <Icono nombre="siguiente" clase="size-4" />}
+            {seccion && !enPortada && seccion.href !== '/panel' && <a href={seccion.href}>{seccion.texto}</a>}
+            {seccion && !enPortada && seccion.href !== '/panel' && <Icono nombre="siguiente" clase="size-4" />}
+            <span aria-current="page">{titulo}</span>
+          </nav>
+          <span class="nv-hueco"></span>
+          {
+            enPruebas && (
+              <a href="/panel/pruebas" class="nv-etiqueta-pruebas" title="Hay datos inventados y las facturas que emitas son de prueba.">
+                <Icono nombre="aviso" clase="size-4" />
+                <span>Prueba</span>
+                <span class="nv-solo-ancho">: datos inventados</span>
+              </a>
+            )
+          }
+          {
+            crear.length > 0 && (
+              <button type="button" class="nv-crear" popovertarget="nv-menu-crear">
+                <Icono nombre="nuevo" />
+                Crear
+              </button>
+            )
+          }
+        </header>
+        <main id="principal" class:list={['nv-contenido', ancho === 'normal' && 'nv-contenido-normal']}>
+          <slot />
+        </main>
+      </div>
+    </div>
+    {
+      crear.length > 0 && (
+        <div id="nv-menu-crear" popover class="nv-menu" role="dialog" aria-labelledby="nv-menu-crear-titulo">
+          <h2 id="nv-menu-crear-titulo">¿Qué quieres crear?</h2>
+          <ul role="list">
+            {crear.map((c) => (
+              <li>
+                <a href={c.href}>
+                  <span aria-hidden="true">
+                    <Icono nombre={c.icono} clase="size-5" />
+                  </span>
+                  <span>
+                    <strong>{c.texto}</strong>
+                    <small>{c.descripcion}</small>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          <button type="button" class="nv-cerrar-menu" popovertarget="nv-menu-crear" popovertargetaction="hide">
+            Cerrar
+          </button>
+        </div>
+      )
+    }
+    {
+      pestanas.length > 0 && (
+        <nav aria-label={tp.menu} class="nv-inferior">
+          <ul role="list">
+            {pestanas.map((p) =>
+              p.tipo === 'crear' ? (
+                <li>
+                  <button type="button" class="nv-pestana" popovertarget="nv-menu-crear">
+                    <span class="nv-pestana-crear">
+                      <Icono nombre="nuevo" />
+                    </span>
+                    <span class="sr-only">Crear</span>
+                  </button>
+                </li>
+              ) : (
+                <li>
+                  <a href={p.href} class="nv-pestana" aria-current={p.activa ? 'page' : undefined}>
+                    <Icono nombre={p.icono} />
+                    <span>{p.texto}</span>
+                  </a>
+                </li>
+              ),
+            )}
+          </ul>
+        </nav>
+      )
+    }
+  </body>
+</html>

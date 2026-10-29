@@ -4,6 +4,8 @@
  * el aviso en lugar del contenido.
  */
 import PanelLayout from '../../layouts/PanelLayout.astro';
+import PanelNuevo from '../../panel-nuevo/PanelNuevo.astro';
+import { clienteActual } from '../../plataforma/actual.ts';
 import Aviso from './Aviso.astro';
 import { tp } from '../../i18n/panel';
 import { puede, type Accion } from '../../server/panel/permisos.ts';
@@ -19,11 +21,13 @@ const { titulo, permiso, volver, ancho } = Astro.props;
 const s = Astro.locals.panel;
 const estado = !s || s.estado === 'sin-activar' ? 'sin-activar' : s.estado === 'sin-acceso' ? 'sin-acceso' : permiso && !puede(s.usuario.rol, permiso) ? 'sin-permiso' : 'ok';
 if (estado !== 'ok') Astro.response.status = estado === 'sin-activar' ? 503 : 403;
+// Diseño del panel del cliente (el de siempre, salvo que su configuración pida el nuevo).
+const Armazon = clienteActual().panel?.diseno === 'nuevo' ? PanelNuevo : PanelLayout;
 ---
 
-<PanelLayout titulo={titulo} volver={volver} ancho={ancho}>
+<Armazon titulo={titulo} volver={volver} ancho={ancho}>
   {estado === 'sin-activar' && <Aviso titulo={tp.sinActivarTitulo} texto={tp.sinActivarTexto} />}
   {estado === 'sin-acceso' && <Aviso titulo={tp.sinAccesoTitulo} texto={tp.sinAccesoTexto} />}
   {estado === 'sin-permiso' && <Aviso titulo={tp.sinPermisoTitulo} texto={tp.sinPermisoTexto} />}
   {estado === 'ok' && <slot />}
-</PanelLayout>
+</Armazon>
