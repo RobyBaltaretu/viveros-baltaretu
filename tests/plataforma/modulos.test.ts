@@ -1,8 +1,8 @@
 import { readdirSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HERRAMIENTAS, herramienta, herramientasDe } from '../../src/server/asistente/herramientas.ts';
-import { menuDe } from '../../src/server/panel/navegacion.ts';
-import { permitido } from '../../src/plataforma/actual.ts';
+import { menuDe, zonasDe } from '../../src/server/panel/navegacion.ts';
+import { permitido, rutaDisponible } from '../../src/plataforma/actual.ts';
 import { cargarCliente } from '../../src/plataforma/cargar.ts';
 import type { Modulo } from '../../src/plataforma/configuracion.ts';
 import { moduloDeHerramienta, moduloDeRuta } from '../../src/plataforma/modulos.ts';
@@ -71,5 +71,17 @@ describe('módulos', () => {
   it('todas las herramientas tienen módulo salvo las del núcleo', () => {
     const nucleo = HERRAMIENTAS.filter((h) => moduloDeHerramienta(h) === null).map((h) => h.nombre);
     expect(nucleo.sort()).toEqual(['cambiar_texto_web', 'cambiar_textos_web', 'cambios_recientes', 'deshacer_cambio', 'publicar_cambios', 'resumen_vivero', 'ver_textos_web']);
+  });
+
+  it('la zona «Web» (textos, publicar, cambios) y la API de contenido solo existen con web pública', () => {
+    for (const r of ['/panel/textos', '/panel/textos/ajustes/empresa', '/panel/publicar', '/panel/cambios', '/api/contenido/exportacion']) expect(rutaDisponible(r), r).toBe(true);
+    expect(zonasDe('propietario').map((z) => z.zona)).toContain('web');
+    cliente('turia');
+    for (const r of ['/panel/textos', '/panel/textos/ajustes/empresa', '/panel/publicar', '/panel/cambios', '/api/contenido/exportacion', '/api/contenido/importacion']) expect(rutaDisponible(r), r).toBe(false);
+    expect(rutaDisponible('/panel/personas')).toBe(true);
+    expect(zonasDe('propietario').map((z) => z.zona)).not.toContain('web');
+    const nombres = herramientasDe('propietario').map((h) => h.nombre);
+    for (const n of ['ver_textos_web', 'cambiar_textos_web', 'publicar_cambios', 'deshacer_cambio']) expect(nombres, n).not.toContain(n);
+    expect(herramienta('publicar_cambios')).toBeUndefined();
   });
 });

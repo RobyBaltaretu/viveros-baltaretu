@@ -13,13 +13,14 @@ Cada sesión **empieza por aquí** y lo actualiza al cerrar cada PR. El plan est
 | 1.2 Módulos | Fusionada (#67) | `src/plataforma/modulos.ts`: rutas y herramientas por módulo. Un módulo apagado no sale en el menú, da 404 en el middleware (también `/api/presupuesto`) y el asistente no lo ve ni puede aplicarlo. `ProveedorDeAcceso` en `acceso.ts` (Cloudflare Access por defecto). |
 | 1.3 Tema por cliente | Fusionada (#68) | `src/plataforma/tema.ts` y `TemaCliente.astro`: si los colores del cliente no son los del núcleo, un `<style>` con `html:root` en la cabecera (gana a `@theme`). Turia con colores provisionales en tonos madera (T-18). `tests/tokens.test.ts` recorre todos los clientes. Pendiente: colores del PDF por cliente, en 3.2 (tocarlos ahora cambiaría el JS de Baltaretu). |
 | 1.4 Web pública por cliente | Fusionada (#69) | `webPublica: false` (Turia): del build solo queda el panel, la portada lleva a `/panel` y robots bloquea todo. El idioma único con web pública queda aplazado hasta que haga falta. |
-| 1.5 Vocabulario por sector | En revisión | `paquetes-sector/<sector>/vocabulario.ts` (título del panel, nombre del asistente y zona del catálogo) y `marca` en la configuración (nombre corto y monograma, o iniciales). Las pantallas y herramientas de plantas, inventario y fotos son del sector vivero: en Turia no existen. Turia: «Creaciones Turia», «Panel de la carpintería», «Asistente». Pendiente para 3.11: el nombre dentro del chat del asistente (está en su script del navegador). |
+| 1.5 Vocabulario por sector | Fusionada (#70) | `paquetes-sector/<sector>/vocabulario.ts` (título del panel, nombre del asistente y zona del catálogo) y `marca` en la configuración (nombre corto y monograma, o iniciales). Las pantallas y herramientas de plantas, inventario y fotos son del sector vivero: en Turia no existen. Turia: «Creaciones Turia», «Panel de la carpintería», «Asistente». Pendiente para 3.11: el nombre dentro del chat del asistente (está en su script del navegador). |
+| 1.6 (rehecha) Sin web pública, sin zona «Web» | En revisión | En clientes sin `webPublica`: no hay textos, publicar ni cambios, ni sus herramientas, ni `/api/contenido/*`. Los tipos de contenido declarativos quedan aplazados hasta que un cliente con web pública los necesite. **F1 terminada.** |
 
 ## Siguiente
 
-1. **1.6** Tipos de contenido declarativos (para Turia, al no tener web pública, se reduce a declarar que no usa las colecciones públicas del vivero).
-2. **2.1** Portafolio privado: proyectos y fotos (migración 10).
-3. **2.2** Pantallas del portafolio con el comparador antes/después.
+1. **2.1** Portafolio privado: proyectos y fotos (migración 10).
+2. **2.2** Pantallas del portafolio con el comparador antes/después.
+3. **3.1** Presupuestos a cliente con PDF y paso a factura.
 
 ## Avisos para la próxima sesión
 
