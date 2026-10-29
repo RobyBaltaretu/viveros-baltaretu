@@ -24,6 +24,8 @@ const [articulos, plantillas] = s ? await Promise.all([s.repos.catalogo.articulo
 const faltan = articulos.filter(sinPrecio);
 const ver = url.get('ver') === 'articulos' || url.get('ver') === 'sin-precio' ? url.get('ver')! : 'trabajos';
 const q = (url.get('q') ?? '').trim();
+// Desde un presupuesto en borrador: la calculadora lo propone como destino.
+const para = /^[a-z0-9-]+$/.test(url.get('para') ?? '') ? url.get('para')! : '';
 const cat = url.get('categoria') ?? '';
 const normal = (t: string) =>
   t
@@ -86,6 +88,14 @@ const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
       </section>
     ) : (
       <>
+        {para && (
+          <p class="nv-caja-aviso nv-caja-info">
+            <span>Elige un trabajo, pon sus medidas y llévalo a tu presupuesto.</span>
+            <a href={`/panel/presupuestos-cliente/${para}`} class="nv-boton nv-boton-secundario">
+              Volver al presupuesto
+            </a>
+          </p>
+        )}
         {faltan.length > 0 && (
           <p class="nv-caja-aviso">
             <span>
@@ -127,7 +137,7 @@ const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
                       <span class="nv-chip">{p.parametros.length} medidas</span>
                       {faltanEn(p) && <span class="nv-chip nv-chip-naranja">Faltan precios</span>}
                     </div>
-                    <a href={`/panel/catalogo/plantillas/${p.id}`} class="nv-boton">
+                    <a href={`/panel/catalogo/plantillas/${p.id}${para ? `?destino=${para}` : ''}`} class="nv-boton">
                       <Icono nombre="calcular" />
                       Calcular el precio
                       <span class="sr-only">: {p.nombre}</span>

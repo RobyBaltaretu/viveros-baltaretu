@@ -1,0 +1,367 @@
+---
+/**
+ * Editor de un presupuesto a cliente con el diseño nuevo (alta y cambio). Los
+ * campos se llaman igual que en el de siempre (leerFormularioPresupuesto):
+ * - Líneas en una tabla; «Añadir una línea» sin recargar y «Quitar».
+ * - Artículos del catálogo a un clic (concepto, material y precio de venta).
+ * - Resumen al lado, recalculado al escribir como lo hará el servidor
+ *   (céntimos por línea, IVA sobre la base, anticipo sobre el total).
+ * - Validez y anticipo con un toque (15, 30 o 60 días; 0, 30, 40 o 50 %).
+ * Sin JavaScript funciona igual, con «Añadir más líneas» y el total al guardar.
+ */
+import Icono from '../../components/panel/ui/Icono.astro';
+import { CATEGORIAS, precioVenta, sinPrecio } from '../../server/catalogo/catalogo.ts';
+import type { ArticuloCatalogo, Cliente } from '../../server/data/tipos.ts';
+import { TIPOS_IVA } from '../../server/facturas/importes.ts';
+import type { ValoresFormPresupuesto } from '../../server/presupuestos-cliente/formulario.ts';
+
+interface Props {
+  valores: ValoresFormPresupuesto;
+  clientes: Cliente[];
+  ivaFijo: number | null;
+  filas: number;
+  boton: string;
+  /** Artículos del catálogo para añadir a un clic (vacío si el cliente no tiene catálogo). */
+  articulos: ArticuloCatalogo[];
+  /** Para «Calcular un trabajo del catálogo» (en un borrador ya guardado lo añade a él). */
+  presupuestoId?: string;
+}
+const { valores: v, clientes, ivaFijo, filas, boton, articulos, presupuestoId } = Astro.props;
+const lineas = v.lineas ?? [];
+const num = (n: number | undefined) => (n === undefined || Number.isNaN(n) ? '' : String(n).replace('.', ','));
+const conPrecio = articulos.filter((a) => !sinPrecio(a));
+const FORMAS_PAGO = ['Transferencia', 'Bizum', 'Efectivo', 'Tarjeta'];
+const fila = (i: number) => {
+  const l = lineas[i];
+  return { i, n: i + 1, concepto: l?.concepto ?? '', material: l?.material ?? '', cantidad: l ? num(l.cantidad) : '1', precio: num(l?.precio), extra: l?.extra ?? false };
+};
+---
+
+<form method="post" id="form-presupuesto" class="nv-editor" novalidate data-iva={ivaFijo ?? v.iva ?? 21}>
+  <input type="hidden" name="filas" value={filas} data-filas />
+  <div class="nv-editor-principal">
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="para-quien">
+      <h2 id="para-quien">Para quién y qué</h2>
+      <div class="nv-rejilla nv-rejilla-2">
+        <div class="nv-campo">
+          <label for="p-cliente">Cliente</label>
+          <select id="p-cliente" name="clienteId" class="campo-panel" required>
+            <option value="">Elige un cliente</option>
+            {
+              clientes.map((c) => (
+                <option value={c.id} selected={c.id === v.clienteId}>
+                  {c.nombre}
+                </option>
+              ))
+            }
+          </select>
+          <a href="/panel/facturas/clientes/nuevo" class="enlace-panel">¿No está? Añadir un cliente</a>
+        </div>
+        <label class="nv-campo">
+          Qué se presupuesta
+          <input class="campo-panel" name="concepto" value={v.concepto ?? ''} maxlength="200" required placeholder="Por ejemplo: Armario empotrado del dormitorio" autocomplete="off" />
+        </label>
+        <label class="nv-campo">
+          Fecha
+          <input class="campo-panel" name="fecha" type="date" value={v.fecha ?? ''} required />
+        </label>
+        <div class="nv-campo">
+          <label for="p-validez">Vale hasta</label>
+          <input id="p-validez" class="campo-panel" name="validez" type="date" value={v.validez ?? ''} />
+          <span class="nv-toques" data-solo-js hidden>
+            {
+              [15, 30, 60].map((d) => (
+                <button type="button" class="nv-toque" data-dias={d}>
+                  {d} días
+                </button>
+              ))
+            }
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="nv-tarjeta" aria-labelledby="trabajos">
+      <div class="nv-cabeza-tarjeta">
+        <h2 id="trabajos">Trabajos y materiales</h2>
+        <span class="nv-gris">Precios sin IVA</span>
+      </div>
+      <div class="nv-tabla-caja" tabindex="0" role="region" aria-label="Líneas del presupuesto">
+        <table class="nv-tabla nv-tabla-lineas">
+          <thead>
+            <tr>
+              <th scope="col">Concepto</th>
+              <th scope="col">Cantidad</th>
+              <th scope="col">Precio</th>
+              <th scope="col" class="nv-num">Importe</th>
+              <th scope="col">Extra <span class="sr-only">(se ofrece aparte y no suma)</span></th>
+              <th scope="col"><span class="sr-only">Quitar</span></th>
+            </tr>
+          </thead>
+          <tbody data-lineas>
+            {
+              Array.from({ length: filas }, (_, i) => fila(i)).map((l) => (
+                <tr data-linea>
+                  <td>
+                    <input class="campo-panel" name={`l${l.i}.concepto`} value={l.concepto} maxlength="200" autocomplete="off" aria-label={`Concepto de la línea ${l.n}`} placeholder="Qué haces o pones" />
+                    <input class="campo-panel nv-secundario" name={`l${l.i}.material`} value={l.material} maxlength="120" autocomplete="off" aria-label={`Material o acabado de la línea ${l.n} (opcional)`} placeholder="Material o acabado (opcional)" />
+                  </td>
+                  <td data-titulo="Cantidad">
+                    <input class="campo-panel nv-corto nv-derecha" name={`l${l.i}.cantidad`} value={l.cantidad} inputmode="decimal" autocomplete="off" aria-label={`Cantidad de la línea ${l.n}`} />
+                  </td>
+                  <td data-titulo="Precio">
+                    <input class="campo-panel nv-corto nv-derecha" name={`l${l.i}.precio`} value={l.precio} inputmode="decimal" autocomplete="off" aria-label={`Precio por unidad de la línea ${l.n}, en euros sin IVA`} placeholder="0,00" />
+                  </td>
+                  <td class="nv-num" data-importe data-titulo="Importe">
+                    —
+                  </td>
+                  <td data-titulo="Extra">
+                    <label class="nv-marca-extra">
+                      <input type="checkbox" name={`l${l.i}.extra`} checked={l.extra} />
+                      <span class="sr-only">La línea {l.n} es un extra opcional (no suma)</span>
+                    </label>
+                  </td>
+                  <td>
+                    <button type="button" class="boton-icono" data-quitar data-solo-js hidden aria-label={`Quitar la línea ${l.n}`}>
+                      <Icono nombre="borrar" clase="size-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="nv-pie-tarjeta">
+        <button name="accion" value="mas" class="nv-boton nv-boton-secundario" formnovalidate data-anadir>
+          <Icono nombre="nuevo" />
+          Añadir una línea
+        </button>
+        {
+          conPrecio.length > 0 && (
+            <label class="nv-campo nv-desde-catalogo" data-solo-js hidden>
+              <span class="sr-only">Añadir un artículo del catálogo</span>
+              <select class="campo-panel" data-catalogo>
+                <option value="">Añadir del catálogo…</option>
+                {CATEGORIAS.map((c) => (
+                  <optgroup label={c.nombre}>
+                    {conPrecio
+                      .filter((a) => a.categoria === c.id)
+                      .map((a) => (
+                        <option value={a.id} data-nombre={a.nombre} data-acabado={a.acabado} data-precio={precioVenta(a)}>
+                          {a.nombre} · {String(precioVenta(a)).replace('.', ',')} €/{a.unidad}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+          )
+        }
+        {
+          articulos.length > 0 && (
+            <a href={presupuestoId ? `/panel/catalogo?para=${presupuestoId}` : '/panel/catalogo'} class="enlace-panel">
+              Calcular un trabajo del catálogo
+            </a>
+          )
+        }
+      </div>
+      <p class="nv-nota">Marca «Extra» lo que ofreces aparte: sale en el presupuesto, pero no suma al total.</p>
+    </section>
+  </div>
+
+  <aside class="nv-tarjeta nv-resumen" aria-labelledby="resumen-presupuesto">
+    <h2 id="resumen-presupuesto">Resumen</h2>
+    <dl class="nv-filas-resumen nv-sin-raya">
+      <div>
+        <dt>Base imponible</dt>
+        <dd data-base>—</dd>
+      </div>
+      <div>
+        {
+          ivaFijo === null ? (
+            <dt>
+              <label for="p-iva">IVA</label>
+            </dt>
+          ) : (
+            <dt>IVA: {ivaFijo} %</dt>
+          )
+        }
+        <dd data-cuota>—</dd>
+      </div>
+    </dl>
+    {
+      ivaFijo === null && (
+        <select id="p-iva" name="iva" class="campo-panel">
+          {TIPOS_IVA.map((t) => (
+            <option value={t} selected={t === (v.iva ?? 21)}>
+              {t} %
+            </option>
+          ))}
+        </select>
+      )
+    }
+    <div class="nv-total">
+      <span>Total con IVA</span>
+      <strong data-total>—</strong>
+    </div>
+    <a href="#resumen-presupuesto" class="nv-precio-flotante" aria-hidden="true" tabindex="-1">
+      <span>Total con IVA</span>
+      <strong data-total-flotante>—</strong>
+    </a>
+
+    <div class="nv-anticipo">
+      <label class="nv-campo">
+        Anticipo (% del total con IVA)
+        <span class="nv-con-unidad">
+          <input class="campo-panel" name="anticipoPct" value={num(v.anticipoPct ?? 40)} inputmode="decimal" autocomplete="off" data-anticipo />
+          <span aria-hidden="true">%</span>
+        </span>
+      </label>
+      <span class="nv-toques" data-solo-js hidden>
+        {
+          [0, 30, 40, 50].map((p) => (
+            <button type="button" class="nv-toque" data-pct={p}>
+              {p ? `${p} %` : 'Nada'}
+            </button>
+          ))
+        }
+      </span>
+      <dl class="nv-filas-resumen nv-sin-raya">
+        <div>
+          <dt>Paga al aceptar</dt>
+          <dd data-pago-anticipo>—</dd>
+        </div>
+        <div>
+          <dt>Al terminar</dt>
+          <dd data-pago-resto>—</dd>
+        </div>
+      </dl>
+    </div>
+    <p class="nv-gris" data-extras hidden></p>
+
+    <label class="nv-campo">
+      Forma de pago
+      <input class="campo-panel" name="formaPago" value={v.formaPago ?? ''} maxlength="80" list="formas-pago" placeholder="Transferencia, Bizum…" autocomplete="off" />
+      <datalist id="formas-pago">
+        {FORMAS_PAGO.map((f) => <option value={f} />)}
+      </datalist>
+    </label>
+    <label class="nv-campo">
+      Notas para el cliente <small>(opcional)</small>
+      <textarea class="campo-panel" name="notas" rows="3" maxlength="1000">{v.notas ?? ''}</textarea>
+    </label>
+    <p class="sr-only" aria-live="polite" data-anuncio></p>
+    <button name="accion" value="guardar" class="nv-boton nv-boton-ancho">{boton}</button>
+  </aside>
+</form>
+
+<script is:inline>
+  (() => {
+    const f = document.getElementById('form-presupuesto');
+    if (!f) return;
+    f.querySelectorAll('[data-solo-js]').forEach((e) => (e.hidden = false));
+    const num = (t) => {
+      const l = String(t ?? '').trim().replace(/\s|€|%/g, '');
+      if (!l) return null;
+      if (l.includes(',')) return Number(l.replace(/\./g, '').replace(',', '.'));
+      return Number(/^-?\d{1,3}(\.\d{3})+$/.test(l) ? l.replace(/\./g, '') : l);
+    };
+    const eur = (c) => (c / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true }) + ' €';
+    const cuerpo = f.querySelector('[data-lineas]');
+    const filas = f.querySelector('[data-filas]');
+    const pon = (sel, texto) => {
+      const e = f.querySelector(sel);
+      if (e) e.textContent = texto;
+    };
+    const iva = () => Number(f.iva?.value ?? f.dataset.iva) || 0;
+    // Como el servidor: cantidad a 3 decimales, precio a céntimos, cada línea a céntimos.
+    const recalcular = () => {
+      let base = 0;
+      let extras = 0;
+      cuerpo.querySelectorAll('[data-linea]').forEach((tr) => {
+        if (tr.hidden) return;
+        const [cant, precio] = [...tr.querySelectorAll('input[inputmode="decimal"]')].map((i) => num(i.value));
+        const extra = tr.querySelector('input[type="checkbox"]').checked;
+        const ok = precio !== null && Number.isFinite(precio) && Number.isFinite(cant ?? 1);
+        const c = ok ? Math.round(Math.round((cant ?? 1) * 1000) / 1000 * Math.round(precio * 100)) : null;
+        tr.querySelector('[data-importe]').textContent = c === null ? '—' : eur(c);
+        tr.classList.toggle('nv-linea-extra', extra);
+        if (c !== null && extra) extras += c;
+        else if (c !== null) base += c;
+      });
+      const cuota = Math.round((base * iva()) / 100);
+      const total = base + cuota;
+      const pct = num(f.anticipoPct.value) ?? 0;
+      const anticipo = Number.isFinite(pct) ? Math.round((total * pct) / 100) : 0;
+      pon('[data-base]', eur(base));
+      pon('[data-cuota]', eur(cuota));
+      pon('[data-total]', eur(total));
+      pon('[data-total-flotante]', eur(total));
+      pon('[data-pago-anticipo]', eur(anticipo));
+      pon('[data-pago-resto]', eur(total - anticipo));
+      const ex = f.querySelector('[data-extras]');
+      ex.hidden = extras === 0;
+      ex.textContent = extras ? `Extras ofrecidos aparte: ${eur(extras)} sin IVA (no suman).` : '';
+      f.querySelectorAll('[data-pct]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.pct) === pct)));
+      return total;
+    };
+    // Una fila nueva, copia vacía de la última, con su número.
+    const nuevaFila = () => {
+      const i = Number(filas.value);
+      const modelo = cuerpo.querySelector('[data-linea]:last-of-type');
+      const tr = modelo.cloneNode(true);
+      tr.hidden = false;
+      tr.querySelectorAll('[name]').forEach((e) => (e.name = e.name.replace(/^l\d+\./, `l${i}.`)));
+      tr.querySelectorAll('[aria-label]').forEach((e) => e.setAttribute('aria-label', e.getAttribute('aria-label').replace(/línea \d+/, `línea ${i + 1}`)));
+      tr.querySelectorAll('.sr-only').forEach((e) => (e.textContent = e.textContent.replace(/línea \d+/, `línea ${i + 1}`)));
+      tr.querySelectorAll('input').forEach((e) => (e.type === 'checkbox' ? (e.checked = false) : (e.value = e.name.endsWith('.cantidad') ? '1' : '')));
+      cuerpo.append(tr);
+      filas.value = String(i + 1);
+      return tr;
+    };
+    const libre = () => [...cuerpo.querySelectorAll('[data-linea]')].find((tr) => !tr.hidden && [...tr.querySelectorAll('input[type="text"], input:not([type])')].every((e) => !e.value || e.name.endsWith('.cantidad')));
+    f.querySelector('[data-anadir]').addEventListener('click', (e) => {
+      e.preventDefault();
+      nuevaFila().querySelector('input').focus();
+    });
+    cuerpo.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-quitar]');
+      if (!b) return;
+      const tr = b.closest('[data-linea]');
+      // Se vacía y se oculta: una fila vacía no cuenta al guardar.
+      tr.querySelectorAll('input').forEach((i) => (i.type === 'checkbox' ? (i.checked = false) : (i.value = '')));
+      tr.hidden = true;
+      recalcular();
+      pon('[data-anuncio]', 'Línea quitada.');
+    });
+    f.querySelector('[data-catalogo]')?.addEventListener('change', (e) => {
+      const o = e.target.selectedOptions[0];
+      if (!o?.value) return;
+      const tr = libre() ?? nuevaFila();
+      tr.querySelector('[name$=".concepto"]').value = o.dataset.nombre;
+      tr.querySelector('[name$=".material"]').value = o.dataset.acabado || '';
+      tr.querySelector('[name$=".precio"]').value = String(o.dataset.precio).replace('.', ',');
+      e.target.value = '';
+      recalcular();
+      pon('[data-anuncio]', `${o.dataset.nombre} añadido.`);
+      tr.querySelector('[name$=".cantidad"]').focus();
+    });
+    f.querySelectorAll('[data-dias]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const d = new Date(`${f.fecha.value || new Date().toISOString().slice(0, 10)}T12:00:00Z`);
+        d.setUTCDate(d.getUTCDate() + Number(b.dataset.dias));
+        f.validez.value = d.toISOString().slice(0, 10);
+      }),
+    );
+    f.querySelectorAll('[data-pct]').forEach((b) =>
+      b.addEventListener('click', () => {
+        f.anticipoPct.value = b.dataset.pct;
+        recalcular();
+      }),
+    );
+    f.addEventListener('input', recalcular);
+    f.addEventListener('change', recalcular);
+    recalcular();
+  })();
+</script>

@@ -2,7 +2,8 @@
 import Mensajes from '../../../components/panel/Mensajes.astro';
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
 import FormPresupuesto from '../../../components/panel/presupuestos-cliente/FormPresupuesto.astro';
-import { clienteActual } from '../../../plataforma/actual.ts';
+import FormPresupuestoNuevo from '../../../panel-nuevo/presupuestos/FormPresupuestoNuevo.astro';
+import { clienteActual, rutaDisponible } from '../../../plataforma/actual.ts';
 import { sumarDias } from '../../../server/facturas/facturas.ts';
 import { hoy } from '../../../server/gastos/gastos.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
@@ -40,10 +41,30 @@ if (s && Astro.request.method === 'POST') {
   valores = datos;
 }
 const clientes = s ? await s.repos.clientes.listar() : [];
+// Diseño nuevo: editor en tabla con el total al escribir y los artículos del catálogo a un clic.
+const nuevo = clienteActual().panel?.diseno === 'nuevo';
+const articulos = s && nuevo && rutaDisponible('/panel/catalogo') ? await s.repos.catalogo.articulos() : [];
 ---
 
-<PaginaPanel titulo="Nuevo presupuesto" permiso="facturas" volver="/panel/presupuestos-cliente">
-  <h1 class="titular-grande">Nuevo presupuesto</h1>
-  <Mensajes errores={error ? [{ campo: 'presupuesto', mensaje: error }] : []} />
-  <FormPresupuesto valores={valores} clientes={clientes} ivaFijo={ivaFijo} filas={filas} boton="Guardar el presupuesto" />
+<PaginaPanel titulo="Nuevo presupuesto" permiso="facturas" volver="/panel/presupuestos-cliente" ancho={nuevo ? 'amplio' : 'normal'}>
+  {
+    nuevo ? (
+      <>
+        <div class="nv-titulo">
+          <div>
+            <h1>Nuevo presupuesto</h1>
+            <p>Se numera al guardarlo. Puedes cambiarlo hasta que lo envíes.</p>
+          </div>
+        </div>
+        <Mensajes errores={error ? [{ campo: 'presupuesto', mensaje: error }] : []} />
+        <FormPresupuestoNuevo valores={valores} clientes={clientes} ivaFijo={ivaFijo} filas={filas} boton="Guardar el presupuesto" articulos={articulos} />
+      </>
+    ) : (
+      <>
+        <h1 class="titular-grande">Nuevo presupuesto</h1>
+        <Mensajes errores={error ? [{ campo: 'presupuesto', mensaje: error }] : []} />
+        <FormPresupuesto valores={valores} clientes={clientes} ivaFijo={ivaFijo} filas={filas} boton="Guardar el presupuesto" />
+      </>
+    )
+  }
 </PaginaPanel>

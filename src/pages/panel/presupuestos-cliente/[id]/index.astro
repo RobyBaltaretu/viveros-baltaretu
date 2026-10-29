@@ -10,7 +10,12 @@ import { facturarPresupuesto } from '../../../../server/presupuestos-cliente/fac
 import { enlaceCorreo, enlaceWhatsapp } from '../../../../server/presupuestos-cliente/formulario.ts';
 import { apuntarCobro, cambiarEstado, estadoEfectivo, NOMBRE_ESTADO, pasosDesde } from '../../../../server/presupuestos-cliente/presupuestos.ts';
 
+import FichaPresupuesto from '../../../../panel-nuevo/presupuestos/FichaPresupuesto.astro';
+import { clienteActual } from '../../../../plataforma/actual.ts';
+
 export const prerender = false;
+
+const nuevo = clienteActual().panel?.diseno === 'nuevo';
 
 const s = sesionCon(Astro.locals, 'facturas');
 const id = Astro.params.id ?? '';
@@ -43,9 +48,10 @@ const lineas = p?.lineas.filter((l) => !l.extra) ?? [];
 const extras = p?.lineas.filter((l) => l.extra) ?? [];
 ---
 
-<PaginaPanel titulo={p ? `Presupuesto ${p.codigo}` : 'Presupuesto'} permiso="facturas" volver="/panel/presupuestos-cliente">
+<PaginaPanel titulo={p ? `Presupuesto ${p.codigo}` : 'Presupuesto'} permiso="facturas" volver="/panel/presupuestos-cliente" ancho={nuevo ? 'amplio' : 'normal'}>
+  {nuevo && p && <FichaPresupuesto p={p} efectivo={efectivo} hoy={dia} hecho={hecho} error={error} correo={p.cliente.email ? enlaceCorreo(p, empresa) : null} whatsapp={enlaceWhatsapp(p, empresa)} />}
   {
-    p && (
+    !nuevo && p && (
       <>
         <p class="text-gris">
           {p.codigo} · <strong class:list={[efectivo === 'caducado' || efectivo === 'rechazado' ? 'text-terracota' : 'text-oliva']}>{NOMBRE_ESTADO[efectivo]}</strong>

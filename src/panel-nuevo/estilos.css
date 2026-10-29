@@ -1201,7 +1201,7 @@
     grid-column: 1;
     grid-row: 2;
   }
-  .nv-resumen {
+  .nv-calculadora > .nv-resumen {
     position: sticky;
     top: 5rem;
     grid-column: 2;
@@ -1425,4 +1425,371 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+}
+
+/* ---------- Editor de presupuestos ---------- */
+.nv-editor {
+  display: grid;
+  gap: 1.25rem;
+  align-items: start;
+}
+.nv-editor-principal {
+  display: grid;
+  min-width: 0;
+  gap: 1.25rem;
+}
+@media (min-width: 64rem) {
+  .nv-editor {
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 22rem);
+  }
+  .nv-editor > .nv-resumen {
+    position: sticky;
+    top: 5rem;
+  }
+}
+.nv-resumen .nv-campo {
+  margin-top: 1rem;
+}
+.nv-toques {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+.nv-toque {
+  min-height: 3rem;
+  border: 1px solid var(--nv-borde-fuerte);
+  border-radius: 999px;
+  background: var(--nv-superficie);
+  padding: 0 0.875rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--nv-tinta);
+  cursor: pointer;
+}
+.nv-toque:hover {
+  background: var(--nv-hover);
+}
+.nv-toque[aria-pressed='true'] {
+  border-color: var(--nv-acento);
+  background: var(--nv-acento);
+  color: #fff;
+}
+.nv-secundario {
+  margin-top: 0.375rem;
+  min-height: 3rem;
+  font-size: 0.9375rem !important;
+  color: var(--nv-gris);
+}
+.nv-derecha {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.nv-tabla-lineas td {
+  padding: 0.625rem 0.5rem;
+  vertical-align: top;
+}
+.nv-tabla-lineas td:first-child {
+  min-width: 16rem;
+  padding-left: 1.25rem;
+}
+.nv-tabla-lineas [data-importe] {
+  padding-top: 1.25rem;
+  font-weight: 600;
+}
+.nv-linea-extra [data-importe] {
+  color: var(--nv-gris);
+  font-weight: 400;
+  text-decoration: line-through;
+}
+.nv-marca-extra {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  cursor: pointer;
+}
+.nv-marca-extra input {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--nv-acento);
+}
+.nv-pie-tarjeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  border-top: 1px solid var(--nv-borde);
+  padding: 0.875rem 1.25rem;
+}
+.nv-desde-catalogo {
+  flex: 1 1 14rem;
+  max-width: 22rem;
+}
+.nv-nota {
+  margin: 0;
+  padding: 0 1.25rem 1rem;
+  font-size: 0.875rem;
+  color: var(--nv-gris);
+}
+.nv-sin-raya {
+  margin-top: 0;
+  border-top: 0;
+  padding-top: 0;
+}
+.nv-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--nv-borde);
+  padding-top: 0.75rem;
+}
+.nv-total span {
+  font-weight: 600;
+}
+.nv-total strong {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.nv-anticipo {
+  margin-top: 1rem;
+  border-radius: var(--nv-radio-control);
+  background: var(--nv-fondo);
+  padding: 0.25rem 1rem 1rem;
+}
+.nv-anticipo .nv-filas-resumen {
+  margin-top: 0.75rem;
+}
+.nv-boton-ancho {
+  width: 100%;
+  margin-top: 1.25rem;
+}
+/* En el móvil, cada línea es una tarjeta: concepto arriba; cantidad, precio e importe debajo. */
+@media (max-width: 47.99rem) {
+  .nv-tabla-lineas thead {
+    display: none;
+  }
+  .nv-tabla-lineas tr {
+    display: grid;
+    grid-template-areas: 'concepto concepto concepto' 'cantidad precio extra' 'importe importe quitar';
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+    align-items: end;
+    gap: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--nv-borde);
+    padding: 0.875rem 1rem;
+  }
+  .nv-tabla-lineas tr[hidden] {
+    display: none;
+  }
+  .nv-tabla-lineas td {
+    display: block;
+    min-width: 0 !important;
+    border: 0;
+    padding: 0 !important;
+  }
+  .nv-tabla-lineas td:nth-child(1) {
+    grid-area: concepto;
+  }
+  .nv-tabla-lineas td:nth-child(2) {
+    grid-area: cantidad;
+  }
+  .nv-tabla-lineas td:nth-child(3) {
+    grid-area: precio;
+  }
+  .nv-tabla-lineas td:nth-child(4) {
+    grid-area: importe;
+    align-self: center;
+    text-align: left;
+  }
+  .nv-tabla-lineas td:nth-child(5) {
+    grid-area: extra;
+  }
+  .nv-tabla-lineas td:nth-child(6) {
+    grid-area: quitar;
+  }
+  .nv-tabla-lineas td[data-titulo]::before {
+    content: attr(data-titulo);
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--nv-gris);
+  }
+  .nv-tabla-lineas [data-importe]::before {
+    display: inline !important;
+    margin-right: 0.5rem;
+  }
+  .nv-tabla-lineas .nv-corto {
+    width: 100%;
+    min-width: 0;
+  }
+  .nv-tabla-caja:has(.nv-tabla-lineas) {
+    overflow: visible;
+  }
+}
+
+/* ---------- Lista y ficha de presupuestos ---------- */
+.nv-chip-gris {
+  background: var(--nv-hover);
+  color: var(--nv-tinta);
+}
+.nv-paso-urgente {
+  font-weight: 600;
+  color: var(--nv-acento-oscuro);
+}
+@media (max-width: 47.99rem) {
+  .nv-tabla-lista thead {
+    display: none;
+  }
+  .nv-tabla-lista tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.25rem 0.75rem;
+    border-bottom: 1px solid var(--nv-borde);
+    padding: 0.75rem 1rem;
+  }
+  .nv-tabla-lista td {
+    border: 0;
+    padding: 0;
+  }
+  .nv-tabla-lista td:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .nv-tabla-lista td:nth-child(4) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .nv-tabla-lista td:nth-child(2) {
+    grid-column: 2;
+    grid-row: 2;
+    text-align: right;
+  }
+  .nv-tabla-lista td:nth-child(3) {
+    grid-column: 1;
+    grid-row: 2;
+    font-size: 0.875rem;
+  }
+}
+.nv-fecha .nv-chip {
+  margin-right: 0.375rem;
+}
+.nv-recorrido {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.25rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  counter-reset: paso;
+}
+.nv-recorrido li {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 999px;
+  background: var(--nv-superficie);
+  border: 1px solid var(--nv-borde);
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--nv-gris);
+}
+.nv-recorrido li > span:first-child:empty {
+  display: none;
+}
+.nv-recorrido .nv-hecho {
+  border-color: var(--nv-verde-suave);
+  background: var(--nv-verde-suave);
+  color: var(--nv-verde);
+  font-weight: 600;
+}
+.nv-recorrido .nv-actual {
+  border-color: var(--nv-acento);
+  color: var(--nv-acento-oscuro);
+  font-weight: 700;
+}
+.nv-siguiente {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1.25rem;
+  border: 1px solid var(--nv-borde);
+  border-radius: var(--nv-radio);
+  background: var(--nv-superficie);
+  padding: 1rem 1.25rem;
+}
+.nv-siguiente-urgente {
+  border-color: var(--nv-acento);
+  background: var(--nv-acento-suave);
+}
+.nv-siguiente h2 {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--nv-gris);
+}
+.nv-siguiente p {
+  margin: 0.125rem 0 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+.nv-acciones-siguiente {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.nv-ficha {
+  display: grid;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (min-width: 64rem) {
+  .nv-ficha {
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 22rem);
+  }
+}
+.nv-ficha > *,
+.nv-ficha-lado > * {
+  min-width: 0;
+}
+.nv-ficha-lado {
+  display: grid;
+  gap: 1.25rem;
+}
+.nv-botones-columna {
+  display: grid;
+  gap: 0.5rem;
+}
+.nv-botones-columna .nv-boton {
+  justify-content: flex-start;
+}
+.nv-cobro {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--nv-borde);
+  padding-top: 1rem;
+}
+.nv-nota-arriba {
+  border-top: 1px solid var(--nv-borde);
+  padding-top: 0.75rem;
+}
+.nv-filas-resumen dd .nv-chip {
+  margin-left: 0.375rem;
+}
+@media (max-width: 63.99rem) {
+  .nv-editor {
+    padding-bottom: 4rem;
+  }
 }
