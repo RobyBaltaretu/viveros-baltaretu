@@ -88,3 +88,4 @@ Peticiones del propietario: publicación automática, facturas, control de gasto
 - Tema por cliente (PR 1.3): colores en `cliente.config.json`; Baltaretu sigue con los de `global.css` (no se añade nada a sus páginas). Turia, colores provisionales en tonos madera hasta tener su identidad.
 - Clientes sin web pública (PR 1.4): con `webPublica: false` (Turia) el build solo deja el panel.
 - Vocabulario y marca por sector (PR 1.5): el panel de Turia dice «Creaciones Turia» y «Panel de la carpintería», y no tiene las pantallas de plantas; el de Baltaretu no cambia.
+- Sin web pública, sin zona «Web» en el panel (PR 1.6): Turia no ve textos, publicar ni cambios. Con esto acaban los cimientos multicliente (F1).

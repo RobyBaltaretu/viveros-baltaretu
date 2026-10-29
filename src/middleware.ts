@@ -7,7 +7,8 @@ import { mismoOrigen, sesionPanel, type EntornoPanel } from './server/panel/acce
  * Protege el panel (`/panel` y `/api/panel/*`): Cloudflare Access delante y,
  * además, validación del token y del rol en cada petición. El resto de la web
  * es estática y no pasa por aquí. Las rutas de un módulo apagado en la
- * configuración del cliente, o de otro sector, no existen (404).
+ * configuración del cliente, de otro sector o de la web
+ * pública en un cliente sin web, no existen (404).
  */
 const CABECERAS = {
   'Cache-Control': 'no-store',

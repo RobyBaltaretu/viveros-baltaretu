@@ -1,6 +1,6 @@
 import baltaretu from '../../clientes/baltaretu/cliente.config.json';
 import { esquemaCliente, moduloActivo, type ConfiguracionCliente, type Modulo } from './configuracion.ts';
-import { moduloDeHerramienta, parteDeRuta, sectorDeHerramienta } from './modulos.ts';
+import { esDeLaWeb, herramientaDeLaWeb, moduloDeHerramienta, parteDeRuta, sectorDeHerramienta } from './modulos.ts';
 
 /**
  * Cliente del build, inyectado por astro.config.mjs (ya validado allí). En el
@@ -19,14 +19,19 @@ export const moduloActivoAhora = (m: Modulo) => moduloActivo(clienteActual(), m)
 /** Un módulo apagado no existe; null (núcleo) siempre está. */
 export const permitido = (m: Modulo | null) => m === null || moduloActivoAhora(m);
 
-/** Una ruta existe si su módulo está activo y, si es de un sector, el cliente es de ese sector. */
+/**
+ * Una ruta existe si su módulo está activo, si es de un sector el cliente es de
+ * ese sector y, si es de la web pública, el cliente tiene web pública.
+ */
 export function rutaDisponible(ruta: string): boolean {
   const { modulo, sector } = parteDeRuta(ruta);
-  return permitido(modulo) && (!sector || sector === clienteActual().sector);
+  const c = clienteActual();
+  return permitido(modulo) && (!sector || sector === c.sector) && (c.webPublica || !esDeLaWeb(ruta));
 }
 
 /** Lo mismo para una herramienta del asistente (que además necesita el módulo `asistente`). */
 export function herramientaDisponible(h: { nombre: string; permiso: string }): boolean {
   const sector = sectorDeHerramienta(h);
-  return moduloActivoAhora('asistente') && permitido(moduloDeHerramienta(h)) && (!sector || sector === clienteActual().sector);
+  const c = clienteActual();
+  return moduloActivoAhora('asistente') && permitido(moduloDeHerramienta(h)) && (!sector || sector === c.sector) && (c.webPublica || !herramientaDeLaWeb(h));
 }
