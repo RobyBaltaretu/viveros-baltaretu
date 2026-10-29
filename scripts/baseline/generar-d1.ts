@@ -15,6 +15,7 @@ import { importarContenido, type EntradaImportada } from '../../src/server/conte
 import { VERSION_ESQUEMA } from '../../src/server/data/d1/migraciones.ts';
 import { cargarDatosPrueba } from '../../src/server/panel/pruebas.ts';
 import { moverInventario } from '../../src/server/panel/inventario.ts';
+import { anadirFoto, guardarProyecto } from '../../src/server/portafolio/portafolio.ts';
 import { getPlatformProxy } from 'wrangler';
 import type { BaseD1 } from '../../src/server/data/d1/base.ts';
 import { crearRepositoriosD1, asegurarEsquema } from '../../src/server/data/index.ts';
@@ -75,6 +76,11 @@ try {
     const r = await moverInventario(repos, 'yucca-elephantipes', m, yo);
     if (!r.ok) throw new Error(r.error);
   }
+
+  const proyecto = await guardarProyecto(repos, { titulo: 'Armario de prueba', categoria: 'Armarios', anio: 2025, localidad: 'Valencia' }, yo);
+  if (!proyecto.ok) throw new Error(proyecto.error);
+  const foto = await anadirFoto(repos, proyecto.proyecto.id, 'antes', new Uint8Array([255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0, 1, 1]), yo);
+  if (!foto.ok) throw new Error(foto.error);
 
   await repos.publicaciones.registrar(yo, 'lanzada', 'prueba');
   await repos.usoAsistente.sumar(yo, hoy, 120);
