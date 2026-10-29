@@ -1,5 +1,5 @@
 {
-  "version": 10,
+  "version": 11,
   "tablas": {
     "adjuntos": {
       "columnas": [
@@ -968,6 +968,116 @@
       ],
       "sql": "CREATE TABLE presupuestos ( id TEXT PRIMARY KEY, fecha TEXT NOT NULL, estado TEXT NOT NULL DEFAULT 'nuevo' CHECK (estado IN ('nuevo', 'respondido', 'archivado')), idioma TEXT NOT NULL, tipo_pedido TEXT NOT NULL, nombre TEXT NOT NULL, email TEXT NOT NULL, telefono TEXT NOT NULL DEFAULT '', empresa TEXT NOT NULL DEFAULT '', mensaje TEXT NOT NULL DEFAULT '', lineas TEXT NOT NULL DEFAULT '[]' , provincia TEXT NOT NULL DEFAULT '')"
     },
+    "presupuestos_cliente": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "serie",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "numero",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "codigo",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "estado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "'borrador'",
+          "clave": 0
+        },
+        {
+          "nombre": "fecha",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "validez",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "cliente_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "obra_id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "anticipo_pct",
+          "tipo": "REAL",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "total",
+          "tipo": "REAL",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE presupuestos_cliente ( id TEXT PRIMARY KEY, serie TEXT NOT NULL, numero INTEGER NOT NULL, codigo TEXT NOT NULL UNIQUE, estado TEXT NOT NULL DEFAULT 'borrador' CHECK (estado IN ('borrador', 'enviado', 'aceptado', 'rechazado', 'caducado')), fecha TEXT NOT NULL, validez TEXT, cliente_id TEXT NOT NULL, obra_id TEXT, anticipo_pct REAL NOT NULL DEFAULT 0, total REAL NOT NULL DEFAULT 0, datos TEXT NOT NULL, creado TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL, UNIQUE (serie, numero) )"
+    },
     "publicaciones": {
       "columnas": [
         {
@@ -1148,6 +1258,16 @@
       "nombre": "inventario_referencia",
       "tabla": "inventario_movimientos",
       "sql": "CREATE UNIQUE INDEX inventario_referencia ON inventario_movimientos (referencia) WHERE referencia IS NOT NULL"
+    },
+    {
+      "nombre": "presupuestos_cliente_cliente",
+      "tabla": "presupuestos_cliente",
+      "sql": "CREATE INDEX presupuestos_cliente_cliente ON presupuestos_cliente (cliente_id, fecha)"
+    },
+    {
+      "nombre": "presupuestos_cliente_estado",
+      "tabla": "presupuestos_cliente",
+      "sql": "CREATE INDEX presupuestos_cliente_estado ON presupuestos_cliente (estado, fecha)"
     },
     {
       "nombre": "presupuestos_estado",

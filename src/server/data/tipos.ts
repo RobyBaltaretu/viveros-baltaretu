@@ -500,6 +500,68 @@ export interface RepositorioAdjuntos {
   borrarDe(ambito: string, ref: string): Promise<number>;
 }
 
+export const ESTADOS_PRESUPUESTO_CLIENTE = ['borrador', 'enviado', 'aceptado', 'rechazado', 'caducado'] as const;
+export type EstadoPresupuestoCliente = (typeof ESTADOS_PRESUPUESTO_CLIENTE)[number];
+
+/** Línea de un presupuesto a cliente. Las de `extra` son opcionales: se ofrecen aparte y no suman. */
+export interface LineaPresupuestoCliente {
+  concepto: string;
+  cantidad: number;
+  /** Precio por unidad sin IVA, en euros. */
+  precio: number;
+  material: string;
+  extra: boolean;
+}
+
+export interface TotalesPresupuesto {
+  base: number;
+  cuotaIva: number;
+  total: number;
+  /** Anticipo = total con IVA × porcentaje; restante = total − anticipo. */
+  anticipo: number;
+  restante: number;
+  /** Base de los extras opcionales (no incluida en el total). */
+  baseExtras: number;
+}
+
+/** Presupuesto que el negocio hace a un cliente para una obra (módulo presupuestosCliente). */
+export interface PresupuestoCliente {
+  id: string;
+  serie: string;
+  numero: number;
+  codigo: string;
+  estado: EstadoPresupuestoCliente;
+  fecha: string;
+  /** Hasta cuándo vale (AAAA-MM-DD), o null. */
+  validez: string | null;
+  clienteId: string;
+  /** Copia de los datos del cliente al guardar (lo que sale en el documento). */
+  cliente: Cliente;
+  obraId: string | null;
+  concepto: string;
+  lineas: LineaPresupuestoCliente[];
+  /** IVA de todas las líneas, en %. */
+  iva: number;
+  anticipoPct: number;
+  totales: TotalesPresupuesto;
+  formaPago: string;
+  notas: string;
+  /** Fechas de cobro del anticipo y del resto (AAAA-MM-DD), o null. */
+  cobroAnticipo: string | null;
+  cobroResto: string | null;
+  facturaAnticipoId: string | null;
+  facturaId: string | null;
+  actualizado: string;
+}
+
+export interface RepositorioPresupuestosCliente {
+  listar(filtro?: { estado?: EstadoPresupuestoCliente; clienteId?: string; limite?: number }): Promise<PresupuestoCliente[]>;
+  obtener(id: string): Promise<PresupuestoCliente | null>;
+  /** Alta con el número siguiente de la serie (correlativo, sin huecos ni repetidos). */
+  crear(p: Omit<PresupuestoCliente, 'numero' | 'codigo' | 'actualizado'>, email: string): Promise<PresupuestoCliente>;
+  guardar(p: PresupuestoCliente, email: string): Promise<void>;
+}
+
 export interface Repositorios {
   contenido: RepositorioContenido;
   fotos: RepositorioFotos;
@@ -517,4 +579,5 @@ export interface Repositorios {
   inventario: RepositorioInventario;
   portafolio: RepositorioPortafolio;
   adjuntos: RepositorioAdjuntos;
+  presupuestosCliente: RepositorioPresupuestosCliente;
 }

@@ -252,6 +252,33 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       )`,
     ],
   },
+  {
+    version: 11,
+    nombre: 'presupuestos a cliente',
+    sql: [
+      // Presupuestos que el negocio hace a sus clientes (distintos de las peticiones de la web).
+      `CREATE TABLE presupuestos_cliente (
+        id TEXT PRIMARY KEY,
+        serie TEXT NOT NULL,
+        numero INTEGER NOT NULL,
+        codigo TEXT NOT NULL UNIQUE,
+        estado TEXT NOT NULL DEFAULT 'borrador' CHECK (estado IN ('borrador', 'enviado', 'aceptado', 'rechazado', 'caducado')),
+        fecha TEXT NOT NULL,
+        validez TEXT,
+        cliente_id TEXT NOT NULL,
+        obra_id TEXT,
+        anticipo_pct REAL NOT NULL DEFAULT 0,
+        total REAL NOT NULL DEFAULT 0,
+        datos TEXT NOT NULL,
+        creado TEXT NOT NULL,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL,
+        UNIQUE (serie, numero)
+      )`,
+      `CREATE INDEX presupuestos_cliente_estado ON presupuestos_cliente (estado, fecha)`,
+      `CREATE INDEX presupuestos_cliente_cliente ON presupuestos_cliente (cliente_id, fecha)`,
+    ],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

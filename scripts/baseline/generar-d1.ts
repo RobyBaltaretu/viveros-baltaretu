@@ -16,6 +16,7 @@ import { VERSION_ESQUEMA } from '../../src/server/data/d1/migraciones.ts';
 import { cargarDatosPrueba } from '../../src/server/panel/pruebas.ts';
 import { moverInventario } from '../../src/server/panel/inventario.ts';
 import { anadirFoto, guardarProyecto } from '../../src/server/portafolio/portafolio.ts';
+import { crearPresupuesto } from '../../src/server/presupuestos-cliente/presupuestos.ts';
 import { getPlatformProxy } from 'wrangler';
 import type { BaseD1 } from '../../src/server/data/d1/base.ts';
 import { crearRepositoriosD1, asegurarEsquema } from '../../src/server/data/index.ts';
@@ -81,6 +82,15 @@ try {
   if (!proyecto.ok) throw new Error(proyecto.error);
   const foto = await anadirFoto(repos, proyecto.proyecto.id, 'antes', new Uint8Array([255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0, 1, 1]), yo);
   if (!foto.ok) throw new Error(foto.error);
+
+  const clientePrueba = (await repos.clientes.listar())[0];
+  const presupuesto = await crearPresupuesto(
+    repos,
+    { clienteId: clientePrueba.id, concepto: 'Armario de prueba', fecha: hoy, lineas: [{ concepto: 'Armario', cantidad: 1, precio: 1000, material: '', extra: false }], iva: 21, anticipoPct: 40 },
+    yo,
+    21,
+  );
+  if (!presupuesto.ok) throw new Error(presupuesto.error);
 
   await repos.publicaciones.registrar(yo, 'lanzada', 'prueba');
   await repos.usoAsistente.sumar(yo, hoy, 120);
