@@ -1,0 +1,320 @@
+---
+/**
+ * Borrador de factura con el diseño nuevo. Los campos se llaman igual que en
+ * el editor de siempre (leerBorrador), así que las reglas son las mismas:
+ * - Líneas en una tabla (tarjetas en el móvil), a mano o del catálogo.
+ * - Total, IVA y recargo al escribir (como el servidor: céntimos por línea).
+ * - Con IVA fijo (configuración del cliente), no se elige: va en cada línea.
+ * - Añadir y quitar líneas sin recargar; sin JavaScript, con los botones de siempre.
+ */
+import PdfEnNavegador from '../../components/panel/PdfEnNavegador.astro';
+import Icono from '../../components/panel/ui/Icono.astro';
+import SelectorCatalogo from '../SelectorCatalogo.astro';
+import type { ArticuloCatalogo, Factura, PlantillaCatalogo } from '../../server/data/tipos.ts';
+import { FORMAS_PAGO, type Error } from '../../server/facturas/facturas.ts';
+import { dinero, importeLinea, RECARGO, TIPOS_IVA } from '../../server/facturas/importes.ts';
+
+interface Props {
+  factura: Factura;
+  errores: Error[];
+  crudo: FormData | null;
+  ivaFijo: number | null;
+  articulos: ArticuloCatalogo[];
+  plantillas: PlantillaCatalogo[];
+}
+const { factura: f, errores, crudo, ivaFijo, articulos, plantillas } = Astro.props;
+const valor = (nombre: string, normal: string | number) => (crudo ? String(crudo.get(nombre) ?? '') : String(normal));
+const numero = (n: number) => String(n).replace('.', ',');
+const error = (c: string) => errores.find((e) => e.campo === c)?.mensaje;
+const lineas = f.lineas.length ? f.lineas : [{ concepto: '', cantidad: 1, precio: 0, descuento: 0, iva: ivaFijo ?? 21 }];
+const t = f.totales;
+---
+
+<form method="post" class="nv-editor" id="form-factura" novalidate data-recargo={f.cliente.recargo ? JSON.stringify(RECARGO) : '{}'} data-iva-fijo={ivaFijo ?? ''}>
+  <input type="hidden" name="lineas" value={lineas.length} data-filas />
+  <!-- Pulsar Intro en un campo guarda (sin esto, haría lo del primer botón). -->
+  <button name="accion" value="guardar" class="sr-only" tabindex="-1" aria-hidden="true">Guardar</button>
+  <div class="nv-editor-principal">
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="datos-factura">
+      <h2 id="datos-factura">Para quién y cuándo</h2>
+      <p class="nv-cliente-factura">
+        <a class="enlace-panel" href={`/panel/facturas/clientes/${f.clienteId}`}>{f.cliente.nombre}</a>
+        {f.cliente.nif && <span class="nv-gris">{f.cliente.nif}</span>}
+        {f.cliente.recargo && <span class="nv-chip">Con recargo de equivalencia</span>}
+      </p>
+      {f.rectificaCodigo && <p class="nv-caja-aviso nv-caja-info"><span>Rectifica a la factura {f.rectificaCodigo}. Las cantidades en negativo restan de la original.</span></p>}
+      <div class="nv-rejilla nv-rejilla-2">
+        <div class="nv-campo">
+          <label for="fecha">Fecha de la factura</label>
+          <input id="fecha" name="fecha" type="date" class="campo-panel" value={valor('fecha', f.fecha)} required aria-invalid={error('fecha') ? 'true' : undefined} />
+        </div>
+        <div class="nv-campo">
+          <label for="vencimiento">Fecha límite de pago</label>
+          <input id="vencimiento" name="vencimiento" type="date" class="campo-panel" value={valor('vencimiento', f.vencimiento)} required aria-invalid={error('vencimiento') ? 'true' : undefined} />
+          <span class="nv-toques" data-solo-js hidden>
+            {
+              [0, 15, 30, 60].map((d) => (
+                <button type="button" class="nv-toque" data-dias={d}>
+                  {d ? `${d} días` : 'Al contado'}
+                </button>
+              ))
+            }
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="nv-tarjeta" aria-labelledby="lineas">
+      <div class="nv-cabeza-tarjeta">
+        <h2 id="lineas">Qué se factura</h2>
+        <span class="nv-gris">Precios sin IVA</span>
+      </div>
+      <div class="nv-tabla-caja" tabindex="0" role="region" aria-label="Líneas de la factura">
+        <table class="nv-tabla nv-tabla-lineas nv-lineas-factura">
+          <thead>
+            <tr>
+              <th scope="col">Concepto</th>
+              <th scope="col">Cantidad</th>
+              <th scope="col">Precio</th>
+              <th scope="col">Dto. %</th>
+              <th scope="col">{ivaFijo === null ? 'IVA' : `IVA ${ivaFijo} %`}</th>
+              <th scope="col" class="nv-num">Importe</th>
+              <th scope="col"><span class="sr-only">Quitar</span></th>
+            </tr>
+          </thead>
+          <tbody data-lineas>
+            {
+              lineas.map((l, i) => {
+                const n = i + 1;
+                return (
+                  <tr data-linea>
+                    <td>
+                      <input class="campo-panel" name={`l${i}.concepto`} value={valor(`l${i}.concepto`, l.concepto)} maxlength="300" autocomplete="off" aria-label={`Concepto de la línea ${n}`} placeholder="Qué se factura" aria-invalid={error(`l${i}.concepto`) ? 'true' : undefined} />
+                    </td>
+                    <td data-titulo="Cantidad">
+                      <input class="campo-panel nv-corto nv-derecha" name={`l${i}.cantidad`} value={valor(`l${i}.cantidad`, numero(l.cantidad))} inputmode="decimal" autocomplete="off" aria-label={`Cantidad de la línea ${n}`} aria-invalid={error(`l${i}.cantidad`) ? 'true' : undefined} />
+                    </td>
+                    <td data-titulo="Precio">
+                      <input class="campo-panel nv-corto nv-derecha" name={`l${i}.precio`} value={valor(`l${i}.precio`, numero(l.precio))} inputmode="decimal" autocomplete="off" aria-label={`Precio de la línea ${n}, en euros sin IVA`} aria-invalid={error(`l${i}.precio`) ? 'true' : undefined} />
+                    </td>
+                    <td data-titulo="Dto. %">
+                      <input class="campo-panel nv-corto nv-derecha" name={`l${i}.descuento`} value={valor(`l${i}.descuento`, l.descuento ? numero(l.descuento) : '')} inputmode="decimal" autocomplete="off" aria-label={`Descuento de la línea ${n}, en %`} placeholder="0" />
+                    </td>
+                    <td data-titulo="IVA">
+                      {ivaFijo === null ? (
+                        <select name={`l${i}.iva`} class="campo-panel nv-corto" aria-label={`IVA de la línea ${n}`}>
+                          {TIPOS_IVA.map((iva) => (
+                            <option value={iva} selected={String(iva) === valor(`l${i}.iva`, l.iva)}>
+                              {iva} %
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <>
+                          <input type="hidden" name={`l${i}.iva`} value={ivaFijo} />
+                          <span class="nv-gris">{ivaFijo} %</span>
+                        </>
+                      )}
+                    </td>
+                    <td class="nv-num" data-importe data-titulo="Importe">
+                      {dinero(importeLinea(l))}
+                    </td>
+                    <td>
+                      <button name="accion" value={`quitar:${i}`} class="boton-icono" data-quitar aria-label={`Quitar la línea ${n}`} formnovalidate>
+                        <Icono nombre="borrar" clase="size-5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="nv-pie-tarjeta">
+        <button name="accion" value="agregar" class="nv-boton nv-boton-secundario" data-anadir formnovalidate>
+          <Icono nombre="nuevo" />
+          Añadir una línea
+        </button>
+        {
+          (articulos.length > 0 || plantillas.length > 0) && (
+            <button type="button" class="nv-boton nv-boton-secundario" data-abrir-catalogo hidden>
+              <Icono nombre="catalogo" />
+              Añadir del catálogo
+            </button>
+          )
+        }
+      </div>
+    </section>
+  </div>
+
+  <aside class="nv-tarjeta nv-resumen" aria-labelledby="total-factura">
+    <h2 id="total-factura">Total</h2>
+    <dl class="nv-filas-resumen nv-sin-raya">
+      <div>
+        <dt>Base imponible</dt>
+        <dd data-base>{dinero(t.base)}</dd>
+      </div>
+      <div>
+        <dt>IVA</dt>
+        <dd data-cuota>{dinero(t.cuotaIva)}</dd>
+      </div>
+      {
+        f.cliente.recargo && (
+          <div>
+            <dt>Recargo de equivalencia</dt>
+            <dd data-recargo-total>{dinero(t.cuotaRecargo)}</dd>
+          </div>
+        )
+      }
+    </dl>
+    <div class="nv-total">
+      <span>Total</span>
+      <strong data-total>{dinero(t.total)}</strong>
+    </div>
+    <a href="#total-factura" class="nv-precio-flotante" aria-hidden="true" tabindex="-1">
+      <span>Total de la factura</span>
+      <strong data-total-flotante>{dinero(t.total)}</strong>
+    </a>
+    <label class="nv-campo">
+      Forma de pago
+      <select name="formaPago" class="campo-panel">
+        {[...new Set([f.formaPago, ...FORMAS_PAGO])].map((p) => <option selected={p === f.formaPago}>{p}</option>)}
+      </select>
+    </label>
+    {
+      ivaFijo === null && (
+        <label class="nv-campo">
+          Motivo si alguna línea va sin IVA <small>(opcional)</small>
+          <input name="exencion" class="campo-panel" value={valor('exencion', f.exencion)} maxlength="300" />
+        </label>
+      )
+    }
+    {
+      f.tipo === 'rectificativa' && (
+        <label class="nv-campo">
+          Por qué se rectifica
+          <input name="motivoRectificacion" class="campo-panel" value={valor('motivoRectificacion', f.motivoRectificacion)} maxlength="300" required />
+        </label>
+      )
+    }
+    <label class="nv-campo">
+      Notas en la factura <small>(opcional)</small>
+      <textarea name="notas" rows="2" class="campo-panel" maxlength="1000">{valor('notas', f.notas)}</textarea>
+    </label>
+    <p class="sr-only" aria-live="polite" data-anuncio></p>
+    <button name="accion" value="emitir" class="nv-boton nv-boton-ancho">Emitir la factura</button>
+    <div class="nv-botones-columna nv-arriba">
+      <button name="accion" value="guardar" class="nv-boton nv-boton-secundario">Guardar el borrador</button>
+      <a href={`/api/panel/factura-pdf?id=${f.id}`} class="nv-boton nv-boton-secundario">Ver el borrador en PDF</a>
+    </div>
+  </aside>
+</form>
+<SelectorCatalogo articulos={articulos} plantillas={plantillas} destino="factura" />
+<form method="post" class="nv-acciones">
+  <input type="hidden" name="accion" value="borrar" />
+  <button class="enlace-panel nv-enlace-boton">Borrar este borrador</button>
+</form>
+
+<script is:inline>
+  (() => {
+    const f = document.getElementById('form-factura');
+    if (!f) return;
+    f.querySelectorAll('[data-solo-js]').forEach((e) => (e.hidden = false));
+    const cuerpo = f.querySelector('[data-lineas]');
+    const filas = f.querySelector('[data-filas]');
+    const recargos = JSON.parse(f.dataset.recargo || '{}');
+    const ivaFijo = f.dataset.ivaFijo;
+    const num = (t) => {
+      const l = String(t ?? '').trim().replace(/\s|€|%/g, '');
+      if (!l) return null;
+      if (l.includes(',')) return Number(l.replace(/\./g, '').replace(',', '.'));
+      return Number(/^-?\d{1,3}(\.\d{3})+$/.test(l) ? l.replace(/\./g, '') : l);
+    };
+    const eur = (c) => (c / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true }) + ' €';
+    const pon = (sel, texto) => f.querySelectorAll(sel).forEach((e) => (e.textContent = texto));
+    const campo = (tr, k) => tr.querySelector(`[name$=".${k}"]`);
+    // Como el servidor: importe de cada línea a céntimos; IVA y recargo por tipo sobre su base.
+    const recalcular = () => {
+      const bases = new Map();
+      cuerpo.querySelectorAll('[data-linea]').forEach((tr) => {
+        const cant = num(campo(tr, 'cantidad').value) ?? 1;
+        const precio = num(campo(tr, 'precio').value) ?? 0;
+        const dto = num(campo(tr, 'descuento').value) ?? 0;
+        const iva = Number(campo(tr, 'iva').value);
+        const ok = [cant, precio, dto].every(Number.isFinite);
+        const c = ok ? Math.round(Number((cant * precio * 100 * (1 - dto / 100)).toPrecision(12))) : 0;
+        tr.querySelector('[data-importe]').textContent = ok ? eur(c) : '—';
+        if (campo(tr, 'concepto').value.trim()) bases.set(iva, (bases.get(iva) ?? 0) + c);
+      });
+      let base = 0;
+      let cuota = 0;
+      let recargo = 0;
+      for (const [iva, b] of bases) {
+        base += b;
+        cuota += Math.round((b * iva) / 100);
+        recargo += Math.round((b * (recargos[iva] ?? 0)) / 100);
+      }
+      pon('[data-base]', eur(base));
+      pon('[data-cuota]', eur(cuota));
+      pon('[data-recargo-total]', eur(recargo));
+      pon('[data-total], [data-total-flotante]', eur(base + cuota + recargo));
+    };
+    // Las filas se numeran seguidas (l0, l1…) para que el servidor las lea todas.
+    const renumerar = () => {
+      [...cuerpo.querySelectorAll('[data-linea]')].forEach((tr, i) => {
+        tr.querySelectorAll('[name]').forEach((e) => (e.name = e.name.replace(/^l\d+\./, `l${i}.`)));
+        tr.querySelectorAll('[aria-label]').forEach((e) => e.setAttribute('aria-label', e.getAttribute('aria-label').replace(/línea \d+/, `línea ${i + 1}`)));
+        tr.querySelector('[data-quitar]').value = `quitar:${i}`;
+      });
+      filas.value = String(cuerpo.querySelectorAll('[data-linea]').length);
+    };
+    const nuevaFila = () => {
+      const tr = cuerpo.querySelector('[data-linea]:last-of-type').cloneNode(true);
+      tr.querySelectorAll('input:not([type="hidden"])').forEach((e) => (e.value = e.name.endsWith('.cantidad') ? '1' : ''));
+      if (ivaFijo) tr.querySelector('[name$=".iva"]').value = ivaFijo;
+      tr.querySelectorAll('[aria-invalid]').forEach((e) => e.removeAttribute('aria-invalid'));
+      cuerpo.append(tr);
+      renumerar();
+      return tr;
+    };
+    const libre = () => [...cuerpo.querySelectorAll('[data-linea]')].find((tr) => !campo(tr, 'concepto').value.trim() && !campo(tr, 'precio').value.trim().replace(/^0([,.]0+)?$/, ''));
+    f.querySelector('[data-anadir]').addEventListener('click', (e) => {
+      e.preventDefault();
+      campo(nuevaFila(), 'concepto').focus();
+    });
+    cuerpo.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-quitar]');
+      if (!b) return;
+      e.preventDefault();
+      const tr = b.closest('[data-linea]');
+      if (cuerpo.querySelectorAll('[data-linea]').length === 1) nuevaFila();
+      tr.remove();
+      renumerar();
+      recalcular();
+      pon('[data-anuncio]', 'Línea quitada.');
+    });
+    // Del catálogo: en la factura, el material va con el concepto.
+    document.addEventListener('catalogo:anadir', (e) => {
+      for (const l of e.detail.lineas) {
+        const tr = libre() ?? nuevaFila();
+        campo(tr, 'concepto').value = l.material ? `${l.concepto} (${l.material})` : l.concepto;
+        campo(tr, 'cantidad').value = String(l.cantidad).replace('.', ',');
+        campo(tr, 'precio').value = String(l.precio).replace('.', ',');
+      }
+      recalcular();
+    });
+    f.querySelectorAll('[data-dias]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const d = new Date(`${f.fecha.value || new Date().toISOString().slice(0, 10)}T12:00:00Z`);
+        d.setUTCDate(d.getUTCDate() + Number(b.dataset.dias));
+        f.vencimiento.value = d.toISOString().slice(0, 10);
+      }),
+    );
+    f.addEventListener('input', recalcular);
+    f.addEventListener('change', recalcular);
+    recalcular();
+  })();
+</script>
+
+<PdfEnNavegador />
