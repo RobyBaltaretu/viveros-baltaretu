@@ -1,0 +1,127 @@
+---
+import Mensajes from '../../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { campo, sesionCon } from '../../../../server/panel/pagina.ts';
+import { anadirFoto, MAXIMO_FOTOS_POR_LADO, quitarFoto, type Lado } from '../../../../server/portafolio/portafolio.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'inventario');
+const id = Astro.params.id ?? '';
+let error = '';
+if (s && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const accion = campo(form, 'accion');
+  if (accion === 'quitar') {
+    await quitarFoto(s.repos, id, campo(form, 'adjunto'), s.usuario.email);
+    return Astro.redirect(`/panel/portafolio/${id}/fotos?hecho=quitada`, 303);
+  }
+  const lado: Lado = campo(form, 'lado') === 'antes' ? 'antes' : 'despues';
+  const archivo = form.get('foto');
+  const bytes = archivo instanceof File ? new Uint8Array(await archivo.arrayBuffer()) : new Uint8Array();
+  const r = await anadirFoto(s.repos, id, lado, bytes, s.usuario.email);
+  if (r.ok) return Astro.redirect(`/panel/portafolio/${id}/fotos?hecho=${lado}`, 303);
+  error = r.error;
+  Astro.response.status = 400;
+}
+const p = s ? await s.repos.portafolio.obtener(id) : null;
+if (s && !p) return new Response(null, { status: 404 });
+const foto = (adjunto: string) => `/api/panel/adjunto?id=${encodeURIComponent(adjunto)}`;
+const hecho = { creado: 'Proyecto guardado. Ahora añade las fotos.', antes: 'Foto de antes añadida.', despues: 'Foto de después añadida.', quitada: 'Foto quitada.' }[Astro.url.searchParams.get('hecho') ?? ''];
+const LADOS = [
+  ['antes', 'Antes de la reforma', 'Cómo estaba: el hueco, el mueble viejo…'],
+  ['despues', 'Después de la reforma', 'El trabajo terminado.'],
+] as const;
+---
+
+<PaginaPanel titulo="Fotos de antes y después" permiso="inventario" volver={`/panel/portafolio/${id}`}>
+  <h1 class="titular-grande">Fotos de antes y después</h1>
+  <p class="mt-2 text-gris">{p?.titulo}</p>
+  <Mensajes hecho={hecho} errores={error ? [{ campo: 'foto', mensaje: error }] : []} />
+  {
+    p &&
+      LADOS.map(([lado, titulo, ayuda]) => (
+        <section class="mt-8" aria-labelledby={`lado-${lado}`}>
+          <h2 id={`lado-${lado}`} class="titular-medio">
+            {titulo} <span class="text-gris">({p[lado].length} de {MAXIMO_FOTOS_POR_LADO})</span>
+          </h2>
+          {p[lado].length < MAXIMO_FOTOS_POR_LADO && (
+            <form method="post" enctype="multipart/form-data" class="mt-3 grid gap-3 caja-panel p-5" data-subir-portafolio>
+              <input type="hidden" name="lado" value={lado} />
+              <label for={`foto-${lado}`} class="font-semibold">
+                Añadir una foto de {lado === 'antes' ? 'antes' : 'después'}
+              </label>
+              <p id={`ayuda-${lado}`} class="text-gris">
+                {ayuda} El móvil te deja hacerla con la cámara o elegirla de la galería. Se reduce sola para que cargue rápido.
+              </p>
+              <input id={`foto-${lado}`} name="foto" type="file" accept="image/jpeg,image/png,image/webp,image/*" required aria-describedby={`ayuda-${lado}`} class="campo-panel file:mr-3 file:min-h-10 file:cursor-pointer file:rounded-xl file:border-0 file:bg-oliva file:px-4 file:font-semibold file:text-crema" />
+              <p>
+                <button class="boton-panel">Subir la foto</button>
+              </p>
+              <p data-estado role="status" class="font-semibold" />
+            </form>
+          )}
+          <ul class="portafolio-galeria mt-4 grid gap-4" role="list">
+            {p[lado].map((a, i) => (
+              <li class="grid gap-2 caja-panel p-3">
+                <img src={foto(a)} alt={`${lado === 'antes' ? 'Antes' : 'Después'}, foto ${i + 1}`} class="aspect-[4/3] w-full rounded-tarjeta object-cover" loading="lazy" />
+                <form method="post">
+                  <input type="hidden" name="accion" value="quitar" />
+                  <input type="hidden" name="adjunto" value={a} />
+                  <button class="boton-panel boton-panel-secundario w-full">
+                    Quitar<span class="sr-only">
+                      {' '}
+                      la foto {i + 1} de {lado === 'antes' ? 'antes' : 'después'}
+                    </span>
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+  }
+  <p class="mt-8"><a href={`/panel/portafolio/${id}`} class="boton-panel">Ver el proyecto</a></p>
+</PaginaPanel>
+
+<style is:inline>
+  .portafolio-galeria {
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  }
+</style>
+
+<script is:inline>
+  // Antes de subir, la foto se reduce a 1600 px como mucho en JPEG, en el propio móvil
+  // (sin recortar: el antes y el después tienen que verse enteros). Sin JavaScript se envía tal cual.
+  document.querySelectorAll('[data-subir-portafolio]').forEach(function (form) {
+    form.addEventListener('submit', async function (evento) {
+      const entrada = form.querySelector('input[type=file]');
+      const archivo = entrada && entrada.files && entrada.files[0];
+      const estado = form.querySelector('[data-estado]');
+      if (!archivo || !('createImageBitmap' in window)) return;
+      evento.preventDefault();
+      form.querySelector('button').setAttribute('disabled', '');
+      estado.textContent = 'Preparando la foto…';
+      try {
+        const imagen = await createImageBitmap(archivo, { imageOrientation: 'from-image' });
+        const escala = Math.min(1, 1600 / Math.max(imagen.width, imagen.height));
+        const lienzo = document.createElement('canvas');
+        lienzo.width = Math.round(imagen.width * escala);
+        lienzo.height = Math.round(imagen.height * escala);
+        lienzo.getContext('2d').drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+        const blob = await new Promise(function (ok) {
+          lienzo.toBlob(ok, 'image/jpeg', 0.82);
+        });
+        if (!blob) throw new Error('sin imagen');
+        const datos = new FormData(form);
+        datos.set('foto', blob, 'foto.jpg');
+        estado.textContent = 'Subiendo la foto…';
+        const respuesta = await fetch(location.pathname, { method: 'POST', body: datos });
+        location.replace(respuesta.url);
+      } catch {
+        estado.textContent = 'Subiendo la foto…';
+        form.submit();
+      }
+    });
+  });
+</script>

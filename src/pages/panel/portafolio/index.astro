@@ -1,0 +1,81 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import Icono from '../../../components/panel/ui/Icono.astro';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+import { categorias } from '../../../server/portafolio/portafolio.ts';
+
+export const prerender = false;
+
+// Portafolio privado: lo ven el propietario y el gerente (mismo permiso que el inventario del vivero).
+const s = sesionCon(Astro.locals, 'inventario');
+const todos = s ? await s.repos.portafolio.listar() : [];
+const ver = Astro.url.searchParams.get('categoria') ?? '';
+const lista = todos.filter((p) => !ver || p.categoria === ver).sort((a, b) => Number(b.destacado) - Number(a.destacado) || a.orden - b.orden);
+const grupos = categorias(todos);
+const foto = (p: (typeof todos)[number]) => p.despues[0] ?? p.antes[0];
+---
+
+<PaginaPanel titulo="Portafolio" permiso="inventario">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="titular-grande">Portafolio</h1>
+    <a href="/panel/portafolio/nuevo" class="boton-panel"><Icono nombre="nuevo" clase="size-5" />Añadir un proyecto</a>
+  </div>
+  <p class="mt-2 text-gris">Tus trabajos con su antes y después. Es privado: solo lo ve tu equipo en el panel.</p>
+
+  {
+    grupos.length > 1 && (
+      <nav class="mt-6 flex flex-wrap gap-2" aria-label="Tipo de trabajo">
+        <a href="/panel/portafolio" class:list={['boton-panel', ver && 'boton-panel-secundario']} aria-current={!ver ? 'page' : undefined}>
+          Todos
+        </a>
+        {grupos.map((g) => (
+          <a href={`/panel/portafolio?categoria=${encodeURIComponent(g)}`} class:list={['boton-panel', g !== ver && 'boton-panel-secundario']} aria-current={g === ver ? 'page' : undefined}>
+            {g}
+          </a>
+        ))}
+      </nav>
+    )
+  }
+
+  {todos.length === 0 && <p class="mt-6">Todavía no hay proyectos. Empieza por añadir uno con sus fotos de antes y después.</p>}
+  <ul class="portafolio-lista mt-6 grid gap-4" role="list">
+    {
+      lista.map((p) => (
+        <li class="caja-panel overflow-hidden">
+          <a href={`/panel/portafolio/${p.id}`} class="group grid no-underline">
+            {foto(p) ? (
+              <img src={`/api/panel/adjunto?id=${encodeURIComponent(foto(p)!)}`} alt="" class="aspect-[4/3] w-full object-cover" loading="lazy" />
+            ) : (
+              <span class="portafolio-sin-foto aspect-[4/3] w-full bg-verdor">Sin fotos</span>
+            )}
+            <span class="grid gap-1 p-4">
+              <span class="font-titular text-xl font-bold text-tinta group-hover:underline">{p.titulo}</span>
+              <span class="text-gris">{[p.categoria, p.anio, p.localidad].filter(Boolean).join(' · ')}</span>
+              <span class="text-gris">
+                {p.antes.length} {p.antes.length === 1 ? 'foto' : 'fotos'} de antes · {p.despues.length} de después{p.destacado ? ' · destacado' : ''}
+              </span>
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</PaginaPanel>
+
+<style is:inline>
+  @media (min-width: 40rem) {
+    .portafolio-lista {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 72rem) {
+    .portafolio-lista {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .portafolio-sin-foto {
+    display: grid;
+    place-items: center;
+    color: var(--color-gris);
+  }
+</style>

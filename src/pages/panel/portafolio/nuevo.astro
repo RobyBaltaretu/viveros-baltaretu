@@ -1,0 +1,30 @@
+---
+import Mensajes from '../../../components/panel/Mensajes.astro';
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import FormProyecto from '../../../components/panel/portafolio/FormProyecto.astro';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+import { leerFormularioProyecto } from '../../../server/portafolio/formulario.ts';
+import { categorias, guardarProyecto } from '../../../server/portafolio/portafolio.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'inventario');
+let error = '';
+let enviado = {};
+if (s && Astro.request.method === 'POST') {
+  const datos = leerFormularioProyecto(await Astro.request.formData());
+  const r = await guardarProyecto(s.repos, datos, s.usuario.email);
+  if (r.ok) return Astro.redirect(`/panel/portafolio/${r.proyecto.id}/fotos?hecho=creado`, 303);
+  error = r.error;
+  enviado = datos;
+  Astro.response.status = 400;
+}
+const grupos = s ? categorias(await s.repos.portafolio.listar({ incluirArchivados: true })) : [];
+---
+
+<PaginaPanel titulo="Añadir un proyecto" permiso="inventario" volver="/panel/portafolio">
+  <h1 class="titular-grande">Añadir un proyecto</h1>
+  <p class="mt-2">Primero los datos; después, las fotos de antes y de después.</p>
+  <Mensajes errores={error ? [{ campo: 'titulo', mensaje: error }] : []} />
+  <FormProyecto proyecto={enviado} categorias={grupos} boton="Guardar y añadir fotos" />
+</PaginaPanel>

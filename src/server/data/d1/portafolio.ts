@@ -57,6 +57,10 @@ export function crearRepositoriosPortafolio(db: BaseD1): Pick<Repositorios, 'por
         const r = await db.prepare('UPDATE portafolio SET archivado = ?, actualizado = ?, actualizado_por = ? WHERE id = ?').bind(archivado ? 1 : 0, ahora(), email, id).run();
         return (r.meta?.changes ?? 0) > 0;
       },
+      async borrar(id) {
+        const r = await db.prepare('DELETE FROM portafolio WHERE id = ?').bind(id).run();
+        return (r.meta?.changes ?? 0) > 0;
+      },
     },
     adjuntos: {
       async guardar(a, email) {
@@ -76,6 +80,10 @@ export function crearRepositoriosPortafolio(db: BaseD1): Pick<Repositorios, 'por
       async borrar(id) {
         const r = await db.prepare('DELETE FROM adjuntos WHERE id = ?').bind(id).run();
         return (r.meta?.changes ?? 0) > 0;
+      },
+      async borrarDe(ambito, ref) {
+        const r = await db.prepare('DELETE FROM adjuntos WHERE ambito = ? AND ref = ?').bind(ambito, ref).run();
+        return r.meta?.changes ?? 0;
       },
     },
   };

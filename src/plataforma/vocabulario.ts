@@ -2,6 +2,7 @@ import { vocabularioCarpinteria } from '../../paquetes-sector/carpinteria/vocabu
 import { vocabularioVivero } from '../../paquetes-sector/vivero/vocabulario.ts';
 import { clienteActual } from './actual.ts';
 import type { SECTORES } from './configuracion.ts';
+import type { NombreIcono } from '../server/panel/iconos.ts';
 
 /**
  * Palabras del panel que dependen del sector (paquetes-sector/<sector>/).
@@ -12,7 +13,9 @@ export interface VocabularioPanel {
   tituloPanel: string;
   nombreAsistente: string;
   /** Nombre y descripción de las zonas del menú que cambian con el sector. */
-  zonas: { plantas: { texto: string; descripcion: string } };
+  zonas: { plantas: { texto: string; descripcion: string; icono: NombreIcono } };
+  /** Dibujo del saludo del inicio (escena de `Ilustracion.astro`). */
+  escenaInicio: 'plantas' | 'fotos';
 }
 
 const POR_SECTOR: Record<(typeof SECTORES)[number], VocabularioPanel> = { vivero: vocabularioVivero, carpinteria: vocabularioCarpinteria };

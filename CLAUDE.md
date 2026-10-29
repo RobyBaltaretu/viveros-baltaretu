@@ -59,6 +59,7 @@ Requiere Node 22 (22.12 o superior, ver `.nvmrc`).
 - `npm run contenido:importar`, `contenido:copia`, `contenido:restaurar` y `contenido:equivalencia`: cargar el contenido en D1, copias de seguridad y comprobación de que el build desde D1 da la misma web.
 - `npm run asistente:banco`: precisión del asistente con el banco de frases.
 - `npm run test:e2e`: Playwright + axe sobre el build servido en workerd. Comprueba WCAG 2.1 AA en las páginas clave, en móvil y en escritorio, y los recorridos con teclado. En local, `CHROMIUM_PATH` permite usar un Chromium ya instalado.
+- `npm run test:e2e:turia`: lo mismo para Creaciones Turia (`CLIENTE_ID=turia`, solo panel), con `playwright.turia.config.ts` y `tests-e2e-turia/`.
 - `npm run check:worker`: `wrangler deploy --dry-run`, que valida `wrangler.jsonc` y el bundle sin desplegar.
 - `npm run baseline:actualizar`: regenera la línea base de Baltaretu (`tests/baseline/`). Solo con un cambio aprobado por el propietario y explicado en el PR.
 - Variables: las de build en `.env.example` y las de runtime en `.dev.vars.example`. Los pasos en Cloudflare están en el README.
