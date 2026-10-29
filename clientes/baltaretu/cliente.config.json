@@ -4,6 +4,7 @@
   "sector": "vivero",
   "plan": "completo",
   "dominio": null,
+  "webPublica": true,
   "idiomas": ["es", "en"],
   "idiomaPorDefecto": "es",
   "cloudflare": { "worker": "viveros-baltaretu", "d1": "viveros-baltaretu" },

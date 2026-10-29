@@ -4,6 +4,7 @@
   "sector": "carpinteria",
   "plan": "completo",
   "dominio": null,
+  "webPublica": false,
   "idiomas": ["es"],
   "idiomaPorDefecto": "es",
   "cloudflare": { "worker": "creacionesturia", "d1": "creacionesturia" },

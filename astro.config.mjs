@@ -3,6 +3,7 @@ import { defineConfig, fontProviders } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import tailwindcss from '@tailwindcss/vite';
 import { cargarCliente } from './src/plataforma/cargar.ts';
+import { sinWebPublica } from './src/plataforma/sin-web.ts';
 
 // Cliente de la plataforma (docs/plataforma/plan.md). Sin CLIENTE_ID, Viveros
 // Baltaretu: el build es el de siempre. Un cliente desconocido para el build.
@@ -24,6 +25,8 @@ export default defineConfig({
   output: 'static',
   // Sin sesiones de Astro: así el adaptador no crea un espacio KV que no usamos.
   session: false,
+  // Clientes sin web pública: del build solo queda el panel (en Baltaretu no hace nada).
+  integrations: [sinWebPublica(cliente)],
   adapter: cloudflare({
         // Imágenes optimizadas en el build con Sharp; sin el binding de Cloudflare Images.
         imageService: 'compile',
