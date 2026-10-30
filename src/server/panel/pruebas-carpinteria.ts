@@ -83,3 +83,25 @@ export async function cargarPresupuestosCarpinteria(repos: Repositorios, cliente
   }
   return n;
 }
+
+/** Proveedores de prueba (los mismos de los gastos), con lo que sirven. Contactos que no llevan a nadie. */
+export const PROVEEDORES_CARPINTERIA: { nombre: string; contacto: string; categorias: string[]; plazoDias: number; formaPago: string; notas: string }[] = [
+  { nombre: 'Tableros Levante (prueba)', contacto: 'Comercial de prueba', categorias: ['tableros', 'macizos', 'chapas', 'cantos', 'encimeras'], plazoDias: 3, formaPago: 'A 30 días', notas: 'Corte a medida con canteado. Pedido mínimo de prueba: 5 tableros.' },
+  { nombre: 'Herrajes del Turia (prueba)', contacto: 'Mostrador', categorias: ['herrajes', 'tiradores', 'accesorios', 'iluminacion', 'consumibles'], plazoDias: 2, formaPago: 'Transferencia', notas: '' },
+  { nombre: 'Barnices y Lacas (prueba)', contacto: '', categorias: ['acabados'], plazoDias: 5, formaPago: 'Contado', notas: 'Lacan piezas en su taller (plazo de prueba: una semana).' },
+];
+
+/**
+ * Carga los proveedores de prueba y pone su nombre en los artículos del
+ * catálogo de prueba de sus categorías (así salen en su ficha y en los pedidos).
+ */
+export async function cargarProveedoresCarpinteria(repos: Repositorios, email: string, prefijo: string): Promise<number> {
+  for (const [i, p] of PROVEEDORES_CARPINTERIA.entries())
+    await repos.proveedores.guardar({ id: `${prefijo}proveedor-${i + 1}`, nif: '', telefono: `+34 600 000 2${i}`, email: `proveedor${i + 1}@example.com`, direccion: '', poblacion: 'Valencia', web: '', archivado: false, ...p }, email);
+  for (const a of await repos.catalogo.articulos())
+    if (a.id.startsWith(prefijo) && !a.proveedor) {
+      const p = PROVEEDORES_CARPINTERIA.find((x) => x.categorias.includes(a.categoria));
+      if (p) await repos.catalogo.guardarArticulo({ ...a, proveedor: p.nombre }, email);
+    }
+  return PROVEEDORES_CARPINTERIA.length;
+}

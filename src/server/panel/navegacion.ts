@@ -187,6 +187,16 @@ export const MENU: SeccionMenu[] = [
     descripcion: "Materiales, herrajes, horas y trabajos con su precio",
   },
   {
+    // Carpintería: a quién se compra el material (módulo proveedores).
+    href: "/panel/proveedores",
+    texto: "Proveedores",
+    permiso: "facturas",
+    zona: "plantas",
+    icono: "proveedores",
+    escena: "clientes",
+    descripcion: "A quién compras el material, con su contacto y plazos",
+  },
+  {
     // Carpintería: portafolio privado (solo en ese sector, ver src/plataforma/modulos.ts).
     href: "/panel/portafolio",
     texto: "Portafolio",

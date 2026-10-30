@@ -14,7 +14,7 @@ describe('vocabulario y marca por sector', () => {
     expect(clienteActual().marca).toEqual({ nombreCorto: 'Baltaretu', monograma: '/monograma.png' });
     expect(zonasDe('propietario').find((z) => z.zona === 'plantas')).toMatchObject({ texto: 'Plantas', descripcion: 'Catálogo, inventario y fotos' });
     for (const r of ['/panel/plantas', '/panel/plantas/olivo', '/panel/inventario', '/panel/fotos', '/api/panel/foto']) expect(rutaDisponible(r), r).toBe(true);
-    for (const r of ['/panel/portafolio', '/api/panel/adjunto']) expect(rutaDisponible(r), r).toBe(false);
+    for (const r of ['/panel/portafolio', '/api/panel/adjunto', '/panel/proveedores', '/api/panel/proveedores.csv']) expect(rutaDisponible(r), r).toBe(false);
   });
 
   it('Turia (carpintería): su nombre, sin las pantallas ni las herramientas de plantas', () => {
@@ -24,7 +24,7 @@ describe('vocabulario y marca por sector', () => {
     for (const r of ['/panel/plantas', '/panel/inventario', '/panel/fotos', '/api/panel/foto']) expect(rutaDisponible(r), r).toBe(false);
     expect(rutaDisponible('/panel/facturas')).toBe(true);
     // La zona del sector es el taller: el catálogo con precios y el portafolio privado.
-    expect(zonasDe('propietario').find((z) => z.zona === 'plantas')).toMatchObject({ texto: 'Taller', href: '/panel/catalogo', secciones: [expect.objectContaining({ href: '/panel/catalogo' }), expect.objectContaining({ href: '/panel/portafolio' })] });
+    expect(zonasDe('propietario').find((z) => z.zona === 'plantas')).toMatchObject({ texto: 'Taller', href: '/panel/catalogo', secciones: [expect.objectContaining({ href: '/panel/catalogo' }), expect.objectContaining({ href: '/panel/proveedores' }), expect.objectContaining({ href: '/panel/portafolio' })] });
     expect(rutaDisponible('/panel/catalogo/plantillas/armario-correderas')).toBe(true);
     expect(rutaDisponible('/panel/portafolio/abc/fotos')).toBe(true);
     expect(zonasDe('editor').map((z) => z.zona)).not.toContain('plantas');

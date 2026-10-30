@@ -3,12 +3,12 @@ import { AJUSTES_VACIOS, clienteVacio, huellaDe, lineaVacia, nuevaFactura, serie
 import { calcularTotales } from '../facturas/importes.ts';
 import { gastoVacio } from '../gastos/gastos.ts';
 import { CLAVE_MODO_PRUEBAS, EMISOR_PRUEBA } from './facturacion.ts';
-import { clienteActual } from '../../plataforma/actual.ts';
+import { clienteActual, moduloActivoAhora } from '../../plataforma/actual.ts';
 import { AMBITO as AMBITO_PORTAFOLIO, anadirFoto } from '../portafolio/portafolio.ts';
 import { FOTO_ANTES, FOTO_DESPUES, PROYECTOS_EJEMPLO } from '../portafolio/ejemplos.ts';
 import { guardarTextos } from './textos.ts';
 import { cargarCatalogoDePartida } from '../catalogo/partida.ts';
-import { cargarPresupuestosCarpinteria, clientesCarpinteria, FACTURAS_CARPINTERIA, GASTOS_CARPINTERIA } from './pruebas-carpinteria.ts';
+import { cargarPresupuestosCarpinteria, cargarProveedoresCarpinteria, clientesCarpinteria, FACTURAS_CARPINTERIA, GASTOS_CARPINTERIA } from './pruebas-carpinteria.ts';
 
 /**
  * Datos de prueba para probar el panel con algo dentro (unos 5 de cada cosa).
@@ -213,6 +213,7 @@ export async function cargarDatosPrueba(repos: Repositorios, email: string, hoy:
   const presupuestos = carpinteria ? await cargarPresupuestosCarpinteria(repos, clientes, email, hoy) : PRESUPUESTOS.length;
   // Catálogo de la carpintería con precios de ejemplo (artículos y plantillas `prueba-…`).
   if (carpinteria) await cargarCatalogoDePartida(repos, email, PREFIJO, true);
+  if (carpinteria && moduloActivoAhora('proveedores')) await cargarProveedoresCarpinteria(repos, email, PREFIJO);
 
   await repos.ajustesPrivados.guardar(CLAVE_MODO_PRUEBAS, { activo: true, desde: new Date().toISOString() }, email);
   await repos.auditoria.registrar(email, 'datos de prueba', 'cargados');
@@ -234,6 +235,7 @@ export async function quitarDatosPrueba(repos: Repositorios, email: string): Pro
   for (const p of await repos.presupuestos.listar({ limite: 5000 })) if (p.id.startsWith(PREFIJO) && (await repos.presupuestos.borrar(p.id))) presupuestos++;
   presupuestos += await repos.presupuestosCliente.borrarPruebas();
   await repos.catalogo.borrarPruebas();
+  await repos.proveedores.borrarPruebas();
   let gastos = 0;
   for (const g of await repos.gastos.listar({ limite: 20000 })) if (g.id.startsWith(PREFIJO) && (await repos.gastos.borrar(g.id))) gastos++;
   const autor = { email };

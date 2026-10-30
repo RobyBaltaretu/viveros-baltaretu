@@ -311,6 +311,22 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       )`,
     ],
   },
+  {
+    version: 13,
+    nombre: 'proveedores',
+    sql: [
+      // A quién se compra el material (contacto, qué suministra, plazos). Privado.
+      `CREATE TABLE proveedores (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        nif TEXT NOT NULL DEFAULT '',
+        datos TEXT NOT NULL,
+        archivado INTEGER NOT NULL DEFAULT 0,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL
+      )`,
+    ],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

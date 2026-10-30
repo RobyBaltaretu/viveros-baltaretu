@@ -1,5 +1,5 @@
 {
-  "version": 12,
+  "version": 13,
   "tablas": {
     "adjuntos": {
       "columnas": [
@@ -1220,6 +1220,60 @@
         }
       ],
       "sql": "CREATE TABLE presupuestos_cliente ( id TEXT PRIMARY KEY, serie TEXT NOT NULL, numero INTEGER NOT NULL, codigo TEXT NOT NULL UNIQUE, estado TEXT NOT NULL DEFAULT 'borrador' CHECK (estado IN ('borrador', 'enviado', 'aceptado', 'rechazado', 'caducado')), fecha TEXT NOT NULL, validez TEXT, cliente_id TEXT NOT NULL, obra_id TEXT, anticipo_pct REAL NOT NULL DEFAULT 0, total REAL NOT NULL DEFAULT 0, datos TEXT NOT NULL, creado TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL, UNIQUE (serie, numero) )"
+    },
+    "proveedores": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "nombre",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "nif",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "archivado",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE proveedores ( id TEXT PRIMARY KEY, nombre TEXT NOT NULL, nif TEXT NOT NULL DEFAULT '', datos TEXT NOT NULL, archivado INTEGER NOT NULL DEFAULT 0, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL )"
     },
     "publicaciones": {
       "columnas": [
