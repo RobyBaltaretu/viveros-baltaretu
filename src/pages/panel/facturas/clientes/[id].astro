@@ -4,12 +4,17 @@ import Mensajes from '../../../../components/panel/Mensajes.astro';
 import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
 import { clienteVacio, faltaCliente, leerCliente, type Error } from '../../../../server/facturas/facturas.ts';
 import { sesionCon } from '../../../../server/panel/pagina.ts';
+import FichaCliente from '../../../../panel-nuevo/clientes/FichaCliente.astro';
+import { clienteActual, moduloActivoAhora } from '../../../../plataforma/actual.ts';
 
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'facturas');
 const id = Astro.params.id ?? '';
 const nuevo = id === 'nuevo';
+// Diseño nuevo (Turia): ficha por apartados con contacto, obra y forma de pago, y lo que tiene con el negocio.
+const disenoNuevo = clienteActual().panel?.diseno === 'nuevo';
+const conPresupuestos = disenoNuevo && moduloActivoAhora('presupuestosCliente');
 // Al crear un cliente desde «Nueva factura», después se crea la factura.
 const despues = Astro.url.searchParams.get('despues') === 'factura' ? 'factura' : '';
 let cliente = s ? (nuevo ? clienteVacio() : await s.repos.clientes.obtener(id)) : null;
@@ -33,10 +38,13 @@ if (s && cliente && Astro.request.method === 'POST') {
 const error = (c: string) => errores.find((e) => e.campo === c)?.mensaje;
 const falta = cliente && !nuevo && !errores.length ? faltaCliente(cliente) : [];
 const c = cliente;
+const [presupuestosDe, facturasDe] = s && c && disenoNuevo && !nuevo ? await Promise.all([conPresupuestos ? s.repos.presupuestosCliente.listar({ clienteId: c.id }) : [], s.repos.facturas.listar({ clienteId: c.id })]) : [[], []];
+const faltaTexto = falta.map((f) => f.mensaje.replace('Falta ', '').replace(' del cliente. Complétalo en su ficha.', ''));
 ---
 
-<PaginaPanel titulo={nuevo ? 'Cliente nuevo' : (c?.nombre ?? 'Cliente')} permiso="facturas" volver="/panel/facturas/clientes">
-  <h1 class="titular-grande">{nuevo ? 'Cliente nuevo' : c?.nombre}</h1>
+<PaginaPanel titulo={nuevo ? 'Cliente nuevo' : (c?.nombre ?? 'Cliente')} permiso="facturas" volver="/panel/facturas/clientes" ancho={disenoNuevo ? 'amplio' : undefined}>
+  {disenoNuevo && c && <FichaCliente cliente={c} nuevo={nuevo} errores={errores} falta={faltaTexto} despues={despues} hecho={Astro.url.searchParams.has('hecho')} presupuestos={presupuestosDe} facturas={facturasDe} conPresupuestos={conPresupuestos} />}
+  {!disenoNuevo && <Fragment><h1 class="titular-grande">{nuevo ? 'Cliente nuevo' : c?.nombre}</h1>
   <Mensajes hecho={Astro.url.searchParams.has('hecho') ? 'Guardado.' : undefined} errores={errores} />
   {falta.length > 0 && <p class="mt-4 caja-panel p-3">Para facturarle falta: {falta.map((f) => f.mensaje.replace('Falta ', '').replace(' del cliente. Complétalo en su ficha.', '')).join(', ')}.</p>}
   {
@@ -72,4 +80,5 @@ const c = cliente;
       </div>
     )
   }
+  </Fragment>}
 </PaginaPanel>

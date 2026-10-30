@@ -165,6 +165,7 @@ const marca = tema?.oliva ?? '#3a4632';
         <div>
           <div class="etiqueta">Trabajo</div>
           <strong>{p.concepto}</strong>
+          {p.cliente.direccionObra && <div>Obra: {p.cliente.direccionObra}</div>}
         </div>
       </div>
       <table>

@@ -109,7 +109,7 @@ test('factura: editor nuevo con el catálogo, IVA fijo y total al escribir', asy
   const p = `${test.info().project.name} ${Date.now()}`;
   await page.goto('/panel/facturas/clientes/nuevo');
   await page.getByLabel('Razón social o nombre completo').fill(`Cliente factura ${p}`);
-  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+  await page.getByRole('button', { name: 'Guardar el cliente' }).click();
   await page.goto('/panel/facturas/nueva');
   await page.getByRole('button', { name: new RegExp(`^Cliente factura ${p}`) }).click();
   await expect(page).toHaveURL(/\/panel\/facturas\/[^/]+$/);

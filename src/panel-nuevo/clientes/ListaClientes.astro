@@ -1,0 +1,97 @@
+---
+/**
+ * Clientes con el diseño nuevo: tabla con el contacto, lo que tiene en marcha
+ * (presupuestos enviados o aceptados sin terminar) y lo que debe (facturas
+ * emitidas sin cobrar), y buscador. En el móvil, cada cliente en dos líneas.
+ */
+import Icono from '../../components/panel/ui/Icono.astro';
+import type { Cliente } from '../../server/data/tipos.ts';
+import { dinero } from '../../server/facturas/importes.ts';
+
+interface Props {
+  clientes: (Cliente & { enMarcha: number; debe: number })[];
+  q: string;
+  hecho: boolean;
+}
+const { clientes, q, hecho } = Astro.props;
+const normal = (t: string) =>
+  t
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+const lista = clientes.filter((c) => !q || normal(`${c.nombre} ${c.nif} ${c.contacto ?? ''} ${c.poblacion} ${c.telefono} ${c.email}`).includes(normal(q)));
+const debenTotal = clientes.reduce((t, c) => t + c.debe, 0);
+---
+
+<div class="nv-titulo">
+  <div>
+    <h1>Clientes</h1>
+    <p>
+      Sus datos para facturar, con quién hablar y dónde es la obra.{debenTotal > 0 && ` Te deben ${dinero(debenTotal)} en facturas sin cobrar.`}
+    </p>
+  </div>
+  <a href="/panel/facturas/clientes/nuevo" class="nv-boton">
+    <Icono nombre="nuevo" />
+    Añadir un cliente
+  </a>
+</div>
+{hecho && <p role="status" class="nv-caja-aviso nv-caja-bien"><span>Hecho.</span></p>}
+<form method="get" class="nv-filtros" role="search">
+  <label class="nv-campo">
+    Buscar
+    <input type="search" name="q" value={q} class="campo-panel" placeholder="Nombre, contacto, teléfono o población" />
+  </label>
+  <button class="nv-boton nv-boton-secundario">Buscar</button>
+</form>
+
+{
+  lista.length === 0 ? (
+    <div class="nv-tarjeta nv-vacio">
+      <span class="nv-vacio-icono" aria-hidden="true">
+        <Icono nombre="clientes" />
+      </span>
+      <p>
+        {clientes.length === 0 ? (
+          <>
+            <strong>Todavía no hay clientes.</strong>
+            <br />
+            Añade el primero, o créalo al hacer un presupuesto.
+          </>
+        ) : (
+          <>Nadie con «{q}». Prueba con otra palabra.</>
+        )}
+      </p>
+    </div>
+  ) : (
+    <div class="nv-tarjeta nv-tabla-caja" tabindex="0" role="region" aria-label="Clientes">
+      <table class="nv-tabla nv-tabla-lista">
+        <caption class="sr-only">Clientes</caption>
+        <thead>
+          <tr>
+            <th scope="col">Cliente</th>
+            <th scope="col">Teléfono</th>
+            <th scope="col">En marcha</th>
+            <th scope="col" class="nv-num">
+              Te debe
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {lista.map((c) => (
+            <tr>
+              <td>
+                <a href={`/panel/facturas/clientes/${c.id}`}>{c.nombre}</a>
+                <small>{[c.contacto, c.poblacion, !c.nif && 'sin NIF'].filter(Boolean).join(' · ')}</small>
+              </td>
+              <td data-titulo="Teléfono">{c.telefono ? <a href={`tel:${c.telefono.replace(/\s/g, '')}`}>{c.telefono}</a> : <span class="nv-gris nv-celda-vacia">—</span>}</td>
+              <td data-titulo="En marcha">{c.enMarcha ? <span class="nv-chip nv-chip-azul">{c.enMarcha === 1 ? '1 presupuesto' : `${c.enMarcha} presupuestos`}</span> : <span class="nv-gris nv-celda-vacia">—</span>}</td>
+              <td class="nv-num" data-titulo="Te debe">
+                {c.debe > 0 ? <strong>{dinero(c.debe)}</strong> : <span class="nv-gris nv-celda-vacia">—</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
