@@ -33,11 +33,15 @@ const RUTAS: [prefijo: string, modulo: Modulo, sector?: Sector][] = [
   ['/api/panel/proveedores.csv', 'proveedores', 'carpinteria'],
   // Pedidos de material a proveedor.
   ['/panel/pedidos', 'pedidosProveedor', 'carpinteria'],
+  // Simulador de reformas en vivo con IA.
+  ['/panel/simulador', 'simulador', 'carpinteria'],
+  ['/api/panel/simulador', 'simulador', 'carpinteria'],
   ['/panel/gastos', 'gastos'],
   ['/api/panel/gastos.csv', 'gastos'],
   ['/api/panel/ticket', 'gastos'],
   ['/panel/informes', 'informes'],
   ['/panel/asistente', 'asistente'],
+  ['/api/panel/asistente', 'asistente'],
 ];
 
 /**

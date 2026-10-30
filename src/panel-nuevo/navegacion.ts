@@ -36,6 +36,7 @@ export interface AccionCrear {
 
 /** Lo que se puede crear desde cualquier pantalla, según las secciones que ve cada rol. */
 const CREAR: (AccionCrear & { seccion: string })[] = [
+  { seccion: '/panel/simulador', href: '/panel/simulador', texto: 'Simular reforma', descripcion: 'Visualiza la reforma con IA fotorrealista', icono: 'camara' },
   { seccion: '/panel/presupuestos-cliente', href: '/panel/presupuestos-cliente/nuevo', texto: 'Presupuesto', descripcion: 'Para un cliente, con su anticipo', icono: 'presupuestos' },
   { seccion: '/panel/facturas', href: '/panel/facturas/nueva', texto: 'Factura', descripcion: 'Para un cliente o desde un presupuesto', icono: 'facturas' },
   { seccion: '/panel/gastos', href: '/panel/gastos/nuevo', texto: 'Gasto o ticket', descripcion: 'Hazle una foto y se apunta solo', icono: 'ticket' },
