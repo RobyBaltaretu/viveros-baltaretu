@@ -34,12 +34,13 @@ export const prerender = false;
     </div>
 
     <!-- Banner de Alerta de Error Visual -->
-    <div id="error-banner" class="hidden rounded-2xl border border-red-300 bg-red-50 p-4 text-red-900 shadow-xs space-y-2">
+    <!-- Mismos estilos que los errores del panel (Mensajes.astro): sin clases nuevas que cambien el CSS de Baltaretu. -->
+    <div id="error-banner" role="alert" class="hidden rounded-2xl border-2 border-terracota bg-papel p-4 text-tinta">
       <div class="flex items-start gap-3">
-        <Icono nombre="aviso" clase="size-5 text-red-600 shrink-0 mt-0.5" />
+        <Icono nombre="aviso" clase="size-5 text-terracota shrink-0 mt-0.5" />
         <div class="space-y-1">
           <strong class="font-bold text-sm">Error en la Generación de IA</strong>
-          <p id="error-message" class="text-xs text-red-800 leading-relaxed"></p>
+          <p id="error-message" class="text-xs text-gris"></p>
         </div>
       </div>
     </div>
