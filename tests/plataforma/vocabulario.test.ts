@@ -24,10 +24,10 @@ describe('vocabulario y marca por sector', () => {
     for (const r of ['/panel/plantas', '/panel/inventario', '/panel/fotos', '/api/panel/foto']) expect(rutaDisponible(r), r).toBe(false);
     expect(rutaDisponible('/panel/facturas')).toBe(true);
     // La zona del sector es el taller: el catálogo con precios y el portafolio privado.
-    expect(zonasDe('propietario').find((z) => z.zona === 'plantas')).toMatchObject({ texto: 'Taller', href: '/panel/catalogo', secciones: [expect.objectContaining({ href: '/panel/catalogo' }), expect.objectContaining({ href: '/panel/pedidos' }), expect.objectContaining({ href: '/panel/proveedores' }), expect.objectContaining({ href: '/panel/portafolio' })] });
+    expect(zonasDe('propietario').find((z) => z.zona === 'plantas')).toMatchObject({ texto: 'Taller', href: '/panel/catalogo', secciones: [expect.objectContaining({ href: '/panel/catalogo' }), expect.objectContaining({ href: '/panel/pedidos' }), expect.objectContaining({ href: '/panel/proveedores' }), expect.objectContaining({ href: '/panel/portafolio' }), expect.objectContaining({ href: '/panel/simulador' })] });
     expect(rutaDisponible('/panel/catalogo/plantillas/armario-correderas')).toBe(true);
     expect(rutaDisponible('/panel/portafolio/abc/fotos')).toBe(true);
-    expect(zonasDe('editor').map((z) => z.zona)).not.toContain('plantas');
+    expect(zonasDe('editor').map((z) => z.zona)).toContain('plantas');
     expect(zonasDe('propietario').find((z) => z.zona === 'asistente')?.texto).toBe('Asistente');
     expect(menuDe('propietario').find((s) => s.href === '/panel/asistente')?.texto).toBe('Asistente');
     const nombres = herramientasDe('propietario').map((h) => h.nombre);
