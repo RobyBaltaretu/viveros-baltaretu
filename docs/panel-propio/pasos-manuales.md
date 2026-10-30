@@ -78,8 +78,8 @@ El mismo repositorio construye el panel de Turia con la variable `CLIENTE_ID=tur
    - Nombre del proyecto: `creacionesturia`. Rama de producción: `main`.
    - *Build command*: `npm run build`.
    - *Deploy command*: `npx wrangler deploy` la primera vez. Después, cámbialo a `npx wrangler versions upload` para aprobar tú cada cambio de código en *Deployments*, igual que en Baltaretu.
-   - *Build variables*: `CLIENTE_ID` = `turia` y `SITE_URL` = la dirección `https://creacionesturia.<tu-subdominio>.workers.dev`.
-   - El build deja en `dist/` la configuración de Turia (Worker `creacionesturia` con la D1 `creacionesturia`), y es la que usa `wrangler`. Si Workers Builds se queja de que el nombre del Worker no coincide con `wrangler.jsonc`, avísame. Esto no se ha podido comprobar sin la cuenta.
+   - *Build variables* (**obligatorias**: sin ellas el build falla con «Falta la variable de build SITE_URL» y, sin `CLIENTE_ID`, construiría Baltaretu): `CLIENTE_ID` = `turia` y `SITE_URL` = la dirección `https://creacionesturia.<tu-subdominio>.workers.dev`, sin barra final. Ponlas en *Settings → Build → Variables and secrets* del proyecto `creacionesturia` (no en las variables del Worker, que son las de ejecución).
+   - El build deja en `dist/` la configuración de Turia (Worker `creacionesturia` con la D1 `creacionesturia`), y es la que usa `wrangler` sin `-c` (comprobado con `wrangler deploy --dry-run`). No pongas `-c wrangler.creacionesturia.jsonc` en el comando: falla porque esa configuración apunta al código sin construir.
 3. **Acceso (Cloudflare Access, gratis hasta 50 usuarios).** Turia no tiene web pública, así que Access puede proteger la dirección **entera**:
    - En *Zero Trust → Access → Applications → Add an application → Self-hosted*, el destino es `creacionesturia.<tu-subdominio>.workers.dev`, con política *Allow* y *Emails* para las personas de Turia. Usa el mismo equipo y el mismo One-time PIN del paso 4.
    - En el Worker `creacionesturia`, en *Settings → Variables and Secrets*, añade `ACCESS_EQUIPO`, `ACCESS_AUD` (el AUD de esta aplicación) y `PROPIETARIO_EMAIL` (el correo de quien será el propietario del panel de Turia).
