@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { sesionCon } from '../../../server/panel/pagina.ts';
 import { generateRenovationImage } from '../../../services/renovationAiService.ts';
-import type { RenovationConfig } from '../../../server/simulador/materiales.ts';
+import { resolveRenovationConfig, type RenovationConfig, type RenovationRequestPayload } from '../../../server/simulador/materiales.ts';
 
 export const prerender = false;
 
@@ -17,7 +17,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   try {
     const body = (await request.json()) as {
       image?: string;
-      config?: RenovationConfig;
+      config?: RenovationConfig | RenovationRequestPayload;
       options?: { hfToken?: string; geminiApiKey?: string };
     };
 
@@ -28,7 +28,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
       });
     }
 
-    const result = await generateRenovationImage(body.image, body.config, body.options || {});
+    const resolvedConfig = resolveRenovationConfig(body.config);
+    const result = await generateRenovationImage(body.image, resolvedConfig, body.options || {});
 
     return new Response(JSON.stringify(result), {
       status: result.ok ? 200 : 500,

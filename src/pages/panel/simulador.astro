@@ -364,279 +364,266 @@ export const prerender = false;
   </div>
 </PaginaPanel>
 
-<script>
-  import {
-    MATERIALES_MUEBLE,
-    MATERIALES_ENCIMERA,
-    MATERIALES_SUELO,
-    type RenovationConfig,
-  } from '../../server/simulador/materiales.ts';
+<script is:inline>
+  (() => {
+    // Referencias a elementos del DOM
+    const form = document.getElementById('simulador-form');
+    const fotoInput = document.getElementById('foto-input');
+    const previewThumbContainer = document.getElementById('preview-thumb-container');
+    const previewThumb = document.getElementById('preview-thumb');
+    const dropZonePrompt = document.getElementById('drop-zone-prompt');
 
-  // Referencias a elementos del DOM
-  const form = document.getElementById('simulador-form') as HTMLFormElement;
-  const fotoInput = document.getElementById('foto-input') as HTMLInputElement;
-  const previewThumbContainer = document.getElementById('preview-thumb-container') as HTMLDivElement;
-  const previewThumb = document.getElementById('preview-thumb') as HTMLImageElement;
-  const dropZonePrompt = document.getElementById('drop-zone-prompt') as HTMLDivElement;
+    const vacioContainer = document.getElementById('vacio-container');
+    const loadingContainer = document.getElementById('loading-container');
+    const loadingStatus = document.getElementById('loading-status');
+    const sliderWrapper = document.getElementById('slider-wrapper');
+    const accionesResultado = document.getElementById('acciones-resultado');
 
-  const vacioContainer = document.getElementById('vacio-container') as HTMLDivElement;
-  const loadingContainer = document.getElementById('loading-container') as HTMLDivElement;
-  const loadingStatus = document.getElementById('loading-status') as HTMLParagraphElement;
-  const sliderWrapper = document.getElementById('slider-wrapper') as HTMLDivElement;
-  const accionesResultado = document.getElementById('acciones-resultado') as HTMLDivElement;
+    const comparatorContainer = document.getElementById('comparator-container');
+    const imgBefore = document.getElementById('img-before');
+    const imgAfter = document.getElementById('img-after');
+    const beforeClipLayer = document.getElementById('before-clip-layer');
+    const sliderHandle = document.getElementById('slider-handle');
+    const btnDescargar = document.getElementById('btn-descargar');
 
-  const comparatorContainer = document.getElementById('comparator-container') as HTMLDivElement;
-  const imgBefore = document.getElementById('img-before') as HTMLImageElement;
-  const imgAfter = document.getElementById('img-after') as HTMLImageElement;
-  const beforeClipLayer = document.getElementById('before-clip-layer') as HTMLDivElement;
-  const sliderHandle = document.getElementById('slider-handle') as HTMLDivElement;
-  const btnDescargar = document.getElementById('btn-descargar') as HTMLButtonElement;
+    // Modal Ajustes
+    const btnAbrirAjustes = document.getElementById('btn-abrir-ajustes');
+    const btnCerrarAjustes = document.getElementById('btn-cerrar-ajustes');
+    const btnGuardarAjustes = document.getElementById('btn-guardar-ajustes');
+    const dialogoAjustes = document.getElementById('dialogo-ajustes');
+    const hfTokenInput = document.getElementById('hf-token-input');
+    const geminiKeyInput = document.getElementById('gemini-key-input');
 
-  // Modal Ajustes
-  const btnAbrirAjustes = document.getElementById('btn-abrir-ajustes') as HTMLButtonElement;
-  const btnCerrarAjustes = document.getElementById('btn-cerrar-ajustes') as HTMLButtonElement;
-  const btnGuardarAjustes = document.getElementById('btn-guardar-ajustes') as HTMLButtonElement;
-  const dialogoAjustes = document.getElementById('dialogo-ajustes') as HTMLDialogElement;
-  const hfTokenInput = document.getElementById('hf-token-input') as HTMLInputElement;
-  const geminiKeyInput = document.getElementById('gemini-key-input') as HTMLInputElement;
+    // Cargar claves guardadas en localStorage
+    if (hfTokenInput && geminiKeyInput) {
+      hfTokenInput.value = localStorage.getItem('simulador_hf_token') || '';
+      geminiKeyInput.value = localStorage.getItem('simulador_gemini_key') || '';
+    }
 
-  // Cargar claves guardadas en localStorage
-  if (hfTokenInput && geminiKeyInput) {
-    hfTokenInput.value = localStorage.getItem('simulador_hf_token') || '';
-    geminiKeyInput.value = localStorage.getItem('simulador_gemini_key') || '';
-  }
+    btnAbrirAjustes?.addEventListener('click', () => dialogoAjustes?.showModal());
+    btnCerrarAjustes?.addEventListener('click', () => dialogoAjustes?.close());
+    btnGuardarAjustes?.addEventListener('click', () => {
+      localStorage.setItem('simulador_hf_token', hfTokenInput.value.trim());
+      localStorage.setItem('simulador_gemini_key', geminiKeyInput.value.trim());
+      dialogoAjustes?.close();
+    });
 
-  btnAbrirAjustes?.addEventListener('click', () => dialogoAjustes?.showModal());
-  btnCerrarAjustes?.addEventListener('click', () => dialogoAjustes?.close());
-  btnGuardarAjustes?.addEventListener('click', () => {
-    localStorage.setItem('simulador_hf_token', hfTokenInput.value.trim());
-    localStorage.setItem('simulador_gemini_key', geminiKeyInput.value.trim());
-    dialogoAjustes?.close();
-  });
+    // Estado de imagen comprimida cliente
+    let currentProcessedBase64 = '';
+    let imageAspectRatio = 1.33; // Por defecto 4:3
 
-  // Estado de imagen comprimida cliente
-  let currentProcessedBase64 = '';
-  let imageAspectRatio = 1.33; // Por defecto 4:3
+    // Preprocesado de imagen cliente (canvas max 1536px, JPEG 0.85)
+    fotoInput?.addEventListener('change', async () => {
+      const file = fotoInput.files?.[0];
+      if (!file) return;
 
-  // Preprocesado de imagen cliente (canvas max 1536px, JPEG 0.85)
-  fotoInput?.addEventListener('change', async () => {
-    const file = fotoInput.files?.[0];
-    if (!file) return;
+      try {
+        const bitmap = await createImageBitmap(file);
+        const maxDim = 1536;
+        let width = bitmap.width;
+        let height = bitmap.height;
 
-    try {
-      const bitmap = await createImageBitmap(file);
-      const maxDim = 1536;
-      let width = bitmap.width;
-      let height = bitmap.height;
+        imageAspectRatio = width / height;
 
-      imageAspectRatio = width / height;
-
-      if (width > maxDim || height > maxDim) {
-        if (width > height) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        } else {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
         }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(bitmap, 0, 0, width, height);
+
+        currentProcessedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+
+        if (previewThumb) previewThumb.src = currentProcessedBase64;
+        dropZonePrompt?.classList.add('hidden');
+        previewThumbContainer?.classList.remove('hidden');
+      } catch {
+        console.error('Error preprocesando imagen');
+      }
+    });
+
+    // Animación de estado de carga
+    const loadingSteps = [
+      'Analizando geometría 3D y perspectiva de la habitación...',
+      'Aplicando texturas del catálogo...',
+      'Ajustando iluminación fotorrealista y sombras...',
+      'Generando resultado fotorrealista final...',
+    ];
+
+    function startLoadingAnimation() {
+      vacioContainer?.classList.add('hidden');
+      sliderWrapper?.classList.add('hidden');
+      loadingContainer?.classList.remove('hidden');
+      loadingContainer?.classList.add('flex');
+
+      let stepIdx = 0;
+      if (loadingStatus) loadingStatus.textContent = loadingSteps[0] || 'Procesando...';
+      const interval = setInterval(() => {
+        stepIdx = (stepIdx + 1) % loadingSteps.length;
+        if (loadingStatus) loadingStatus.textContent = loadingSteps[stepIdx] || 'Procesando...';
+      }, 2500);
+
+      return () => clearInterval(interval);
+    }
+
+    // Envío del Formulario
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentProcessedBase64) {
+        alert('Por favor, sube primero una foto de la estancia.');
+        return;
       }
 
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(bitmap, 0, 0, width, height);
+      const formData = new FormData(form);
 
-      currentProcessedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+      const spaceType = formData.get('spaceType');
+      const cabinetStyle = document.getElementById('cabinet-style')?.value;
+      const floorToCeiling = document.getElementById('floor-to-ceiling')?.checked;
 
-      previewThumb.src = currentProcessedBase64;
-      dropZonePrompt.classList.add('hidden');
-      previewThumbContainer.classList.remove('hidden');
-    } catch {
-      console.error('Error preprocesando imagen');
-    }
-  });
+      const zoneCabinets = document.getElementById('zone-cabinets')?.checked;
+      const zoneCountertop = document.getElementById('zone-countertop')?.checked;
+      const zoneFlooring = document.getElementById('zone-flooring')?.checked;
+      const zoneLighting = document.getElementById('zone-lighting')?.checked;
 
-  // Animación de estado de carga
-  const loadingSteps = [
-    'Analizando geometría 3D y perspectiva de la habitación...',
-    'Aplicando texturas del catálogo...',
-    'Ajustando iluminación fotorrealista y sombras...',
-    'Generando resultado fotorrealista final...',
-  ];
+      const upperMaterialId = formData.get('upperMaterial');
+      const lowerMaterialId = formData.get('lowerMaterial');
+      const countertopMaterialId = formData.get('countertopMaterial');
+      const flooringMaterialId = formData.get('flooringMaterial');
 
-  function startLoadingAnimation() {
-    vacioContainer.classList.add('hidden');
-    sliderWrapper.classList.add('hidden');
-    loadingContainer.classList.remove('hidden');
-    loadingContainer.classList.add('flex');
+      const includeBacksplash = document.getElementById('include-backsplash')?.checked;
+      const underCabinetLed = document.getElementById('under-cabinet-led')?.checked;
+      const ledTemp = document.getElementById('led-temp')?.value;
 
-    let stepIdx = 0;
-    loadingStatus.textContent = loadingSteps[0] || 'Procesando...';
-    const interval = setInterval(() => {
-      stepIdx = (stepIdx + 1) % loadingSteps.length;
-      if (loadingStatus) loadingStatus.textContent = loadingSteps[stepIdx] || 'Procesando...';
-    }, 2500);
+      const payload = {
+        spaceType,
+        cabinetStyle,
+        floorToCeiling,
+        zones: {
+          cabinets: zoneCabinets,
+          countertop: zoneCountertop,
+          flooring: zoneFlooring,
+          lighting: zoneLighting,
+        },
+        upperMaterialId,
+        lowerMaterialId,
+        countertopMaterialId,
+        includeBacksplash,
+        flooringMaterialId,
+        lighting: {
+          underCabinetLed,
+          colorTemp: ledTemp,
+        },
+      };
 
-    return () => clearInterval(interval);
-  }
+      const stopAnimation = startLoadingAnimation();
 
-  // Envío del Formulario
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!currentProcessedBase64) {
-      alert('Por favor, sube primero una foto de la estancia.');
-      return;
-    }
+      try {
+        const response = await fetch('/api/panel/simulador', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: currentProcessedBase64,
+            config: payload,
+            options: {
+              hfToken: localStorage.getItem('simulador_hf_token') || undefined,
+              geminiApiKey: localStorage.getItem('simulador_gemini_key') || undefined,
+            },
+          }),
+        });
 
-    const formData = new FormData(form);
+        const resData = await response.json();
+        stopAnimation();
+        loadingContainer?.classList.add('hidden');
+        loadingContainer?.classList.remove('flex');
 
-    const spaceType = formData.get('spaceType') as string;
-    const cabinetStyle = (document.getElementById('cabinet-style') as HTMLSelectElement)?.value;
-    const floorToCeiling = (document.getElementById('floor-to-ceiling') as HTMLInputElement)?.checked;
-
-    const zoneCabinets = (document.getElementById('zone-cabinets') as HTMLInputElement)?.checked;
-    const zoneCountertop = (document.getElementById('zone-countertop') as HTMLInputElement)?.checked;
-    const zoneFlooring = (document.getElementById('zone-flooring') as HTMLInputElement)?.checked;
-    const zoneLighting = (document.getElementById('zone-lighting') as HTMLInputElement)?.checked;
-
-    const upperMatId = formData.get('upperMaterial') as string;
-    const lowerMatId = formData.get('lowerMaterial') as string;
-    const countertopMatId = formData.get('countertopMaterial') as string;
-    const flooringMatId = formData.get('flooringMaterial') as string;
-
-    const includeBacksplash = (document.getElementById('include-backsplash') as HTMLInputElement)?.checked;
-    const underCabinetLed = (document.getElementById('under-cabinet-led') as HTMLInputElement)?.checked;
-    const ledTemp = (document.getElementById('led-temp') as HTMLSelectElement)?.value;
-
-    const upperMaterial = MATERIALES_MUEBLE.find((m) => m.id === upperMatId) || MATERIALES_MUEBLE[0]!;
-    const lowerMaterial = MATERIALES_MUEBLE.find((m) => m.id === lowerMatId) || MATERIALES_MUEBLE[0]!;
-    const countertopMaterial = MATERIALES_ENCIMERA.find((m) => m.id === countertopMatId) || MATERIALES_ENCIMERA[0]!;
-    const flooringMaterial = MATERIALES_SUELO.find((m) => m.id === flooringMatId) || MATERIALES_SUELO[0]!;
-
-    const config: RenovationConfig = {
-      spaceType,
-      cabinetStyle,
-      floorToCeiling,
-      zones: {
-        cabinets: zoneCabinets,
-        countertop: zoneCountertop,
-        flooring: zoneFlooring,
-        lighting: zoneLighting,
-      },
-      upperMaterial,
-      lowerMaterial,
-      countertopMaterial,
-      includeBacksplash,
-      flooringMaterial,
-      lighting: {
-        underCabinetLed,
-        colorTemp: ledTemp,
-      },
-    };
-
-    const stopAnimation = startLoadingAnimation();
-
-    try {
-      const response = await fetch('/api/panel/simulador', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image: currentProcessedBase64,
-          config,
-          options: {
-            hfToken: localStorage.getItem('simulador_hf_token') || undefined,
-            geminiApiKey: localStorage.getItem('simulador_gemini_key') || undefined,
-          },
-        }),
-      });
-
-      const resData = await response.json();
-      stopAnimation();
-      loadingContainer.classList.add('hidden');
-      loadingContainer.classList.remove('flex');
-
-      if (resData.ok && resData.afterImage) {
-        showComparator(currentProcessedBase64, resData.afterImage);
-      } else {
-        alert('Error al generar la reforma: ' + (resData.error || 'Inténtalo de nuevo.'));
-        vacioContainer.classList.remove('hidden');
+        if (resData.ok && resData.afterImage) {
+          showComparator(currentProcessedBase64, resData.afterImage);
+        } else {
+          alert('Error al generar la reforma: ' + (resData.error || 'Inténtalo de nuevo.'));
+          vacioContainer?.classList.remove('hidden');
+        }
+      } catch {
+        stopAnimation();
+        loadingContainer?.classList.add('hidden');
+        loadingContainer?.classList.remove('flex');
+        vacioContainer?.classList.remove('hidden');
+        alert('Error de conexión con el servidor.');
       }
-    } catch {
-      stopAnimation();
-      loadingContainer.classList.add('hidden');
-      loadingContainer.classList.remove('flex');
-      vacioContainer.classList.remove('hidden');
-      alert('Error de conexión con el servidor.');
+    });
+
+    // Renderizado y control del Slider Comparador
+    function showComparator(beforeBase64, afterBase64) {
+      if (imgBefore) imgBefore.src = beforeBase64;
+      if (imgAfter) imgAfter.src = afterBase64;
+
+      if (comparatorContainer) comparatorContainer.style.aspectRatio = `${imageAspectRatio}`;
+
+      sliderWrapper?.classList.remove('hidden');
+      accionesResultado?.classList.remove('hidden');
+      accionesResultado?.classList.add('flex');
+
+      setSliderPosition(50);
     }
-  });
 
-  // Renderizado y control del Slider Comparador
-  function showComparator(beforeBase64: string, afterBase64: string) {
-    imgBefore.src = beforeBase64;
-    imgAfter.src = afterBase64;
+    function setSliderPosition(percentage) {
+      const clamped = Math.max(0, Math.min(100, percentage));
+      if (beforeClipLayer) beforeClipLayer.style.width = `${clamped}%`;
+      if (sliderHandle) sliderHandle.style.left = `${clamped}%`;
 
-    // Forzar el aspect-ratio exacto para que encajen píxel a píxel
-    comparatorContainer.style.aspectRatio = `${imageAspectRatio}`;
+      if (comparatorContainer && imgBefore) {
+        const rect = comparatorContainer.getBoundingClientRect();
+        imgBefore.style.width = `${rect.width}px`;
+        imgBefore.style.height = `${rect.height}px`;
+      }
+    }
 
-    sliderWrapper.classList.remove('hidden');
-    accionesResultado.classList.remove('hidden');
-    accionesResultado.classList.add('flex');
+    // Eventos de arrastre para el Slider
+    let isDragging = false;
 
-    // Inicializar posición al 50%
-    setSliderPosition(50);
-  }
-
-  function setSliderPosition(percentage: number) {
-    const clamped = Math.max(0, Math.min(100, percentage));
-    beforeClipLayer.style.width = `${clamped}%`;
-    sliderHandle.style.left = `${clamped}%`;
-
-    // Sincronizar el tamaño interno de la foto "antes" para que no se deforme al recortar
-    if (comparatorContainer) {
+    function handleMove(clientX) {
+      if (!isDragging || !comparatorContainer) return;
       const rect = comparatorContainer.getBoundingClientRect();
-      imgBefore.style.width = `${rect.width}px`;
-      imgBefore.style.height = `${rect.height}px`;
+      const x = clientX - rect.left;
+      const pct = (x / rect.width) * 100;
+      setSliderPosition(pct);
     }
-  }
 
-  // Eventos de arrastre para el Slider
-  let isDragging = false;
+    comparatorContainer?.addEventListener('pointerdown', (e) => {
+      isDragging = true;
+      handleMove(e.clientX);
+    });
 
-  function handleMove(clientX: number) {
-    if (!isDragging || !comparatorContainer) return;
-    const rect = comparatorContainer.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const pct = (x / rect.width) * 100;
-    setSliderPosition(pct);
-  }
+    window.addEventListener('pointermove', (e) => {
+      if (isDragging) handleMove(e.clientX);
+    });
 
-  comparatorContainer?.addEventListener('pointerdown', (e) => {
-    isDragging = true;
-    handleMove(e.clientX);
-  });
+    window.addEventListener('pointerup', () => {
+      isDragging = false;
+    });
 
-  window.addEventListener('pointermove', (e) => {
-    if (isDragging) handleMove(e.clientX);
-  });
+    window.addEventListener('resize', () => {
+      if (sliderWrapper && !sliderWrapper.classList.contains('hidden') && beforeClipLayer) {
+        const currentPct = parseFloat(beforeClipLayer.style.width) || 50;
+        setSliderPosition(currentPct);
+      }
+    });
 
-  window.addEventListener('pointerup', () => {
-    isDragging = false;
-  });
-
-  window.addEventListener('resize', () => {
-    if (!sliderWrapper.classList.contains('hidden')) {
-      const currentPct = parseFloat(beforeClipLayer.style.width) || 50;
-      setSliderPosition(currentPct);
-    }
-  });
-
-  // Descarga de Imagen
-  btnDescargar?.addEventListener('click', () => {
-    if (!imgAfter.src) return;
-    const link = document.createElement('a');
-    link.download = `reforma-simulada-turia-${Date.now()}.png`;
-    link.href = imgAfter.src;
-    link.click();
-  });
+    // Descarga de Imagen
+    btnDescargar?.addEventListener('click', () => {
+      if (!imgAfter || !imgAfter.src) return;
+      const link = document.createElement('a');
+      link.download = `reforma-simulada-turia-${Date.now()}.png`;
+      link.href = imgAfter.src;
+      link.click();
+    });
+  })();
 </script>

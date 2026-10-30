@@ -31,6 +31,27 @@ export interface RenovationConfig {
   };
 }
 
+export interface RenovationRequestPayload {
+  spaceType: string;
+  cabinetStyle?: string;
+  floorToCeiling?: boolean;
+  zones: {
+    cabinets: boolean;
+    countertop: boolean;
+    flooring: boolean;
+    lighting: boolean;
+  };
+  upperMaterialId: string;
+  lowerMaterialId: string;
+  countertopMaterialId: string;
+  includeBacksplash?: boolean;
+  flooringMaterialId: string;
+  lighting: {
+    underCabinetLed: boolean;
+    colorTemp: string;
+  };
+}
+
 export const MATERIALES_MUEBLE: MaterialOption[] = [
   {
     id: 'roble-maya',
@@ -168,3 +189,27 @@ export const TIPOS_ESTANCIA = [
   { id: 'puertas', nombre: 'Puertas de Paso' },
   { id: 'salon', nombre: 'Salón / Mueble TV' },
 ];
+
+export function resolveRenovationConfig(payload: RenovationRequestPayload | RenovationConfig): RenovationConfig {
+  if ('upperMaterial' in payload && payload.upperMaterial) {
+    return payload as RenovationConfig;
+  }
+  const p = payload as RenovationRequestPayload;
+  const upperMaterial = MATERIALES_MUEBLE.find((m) => m.id === p.upperMaterialId) || MATERIALES_MUEBLE[0]!;
+  const lowerMaterial = MATERIALES_MUEBLE.find((m) => m.id === p.lowerMaterialId) || MATERIALES_MUEBLE[0]!;
+  const countertopMaterial = MATERIALES_ENCIMERA.find((m) => m.id === p.countertopMaterialId) || MATERIALES_ENCIMERA[0]!;
+  const flooringMaterial = MATERIALES_SUELO.find((m) => m.id === p.flooringMaterialId) || MATERIALES_SUELO[0]!;
+
+  return {
+    spaceType: p.spaceType,
+    cabinetStyle: p.cabinetStyle,
+    floorToCeiling: p.floorToCeiling,
+    zones: p.zones,
+    upperMaterial,
+    lowerMaterial,
+    countertopMaterial,
+    includeBacksplash: p.includeBacksplash,
+    flooringMaterial,
+    lighting: p.lighting,
+  };
+}

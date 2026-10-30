@@ -1,6 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
-import { InferenceClient } from '@huggingface/inference';
-import { fal } from '@fal-ai/client';
 import type { RenovationConfig } from '../server/simulador/materiales.ts';
 import { buildRenovationPrompt } from './promptBuilder.ts';
 
@@ -19,17 +16,9 @@ export interface RenovationAiResult {
   error?: string;
 }
 
-interface FalSubscribeResponse {
-  data?: {
-    images?: Array<{ url: string }>;
-  };
-}
-
 /**
  * Service Layer para la transformación fotorrealista de imágenes mediante IA.
- * Soporta Hugging Face Serverless Inference API (gratuito con HF Token),
- * Google Gemini Multimodal Image Editing (`gemini-2.5-flash-image`),
- * Fal.ai (`fal-ai/flux-pro/v1/fill`) u OpenAI.
+ * Utiliza peticiones REST nativas `fetch` sin dependencias pesadas en el bundle de Cloudflare Workers.
  */
 export async function generateRenovationImage(
   imageBase64: string,
@@ -54,33 +43,26 @@ export async function generateRenovationImage(
 
   const fullDataUrl = imageBase64.startsWith('data:') ? imageBase64 : `data:${mimeType};base64,${cleanBase64}`;
 
-  // Convertir base64 a Blob para APIs de imagen que requieren binary/blob
-  const imageBuffer = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
-  const imageBlob = new Blob([imageBuffer], { type: mimeType });
-
-  // 1. Hugging Face Inference API (Proveedor Código Abierto Gratuito)
+  // 1. Hugging Face Serverless Inference API (Código Abierto Gratuito)
   const hfToken =
     options.hfToken ||
     (typeof process !== 'undefined' ? process.env.HF_TOKEN || process.env.VITE_HF_TOKEN : undefined);
 
   if (hfToken) {
     try {
-      const hf = new InferenceClient(hfToken);
-      // Usar modelo inpainting/image-to-image de Hugging Face
-      const blobResult = await hf.imageToImage({
-        model: 'stabilityai/stable-diffusion-xl-refiner-1.0',
-        inputs: imageBlob,
-        parameters: {
-          prompt,
-          negative_prompt: 'deformed, blurry, low quality, unnatural distortion, extra furniture',
+      const imageBuffer = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
+      const res = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-refiner-1.0', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${hfToken}`,
+          'Content-Type': mimeType,
         },
+        body: imageBuffer,
       });
 
-      if (blobResult) {
-        const arrayBuffer = await blobResult.arrayBuffer();
-        const b64 = btoa(
-          new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-        );
+      if (res.ok) {
+        const blob = await res.arrayBuffer();
+        const b64 = btoa(new Uint8Array(blob).reduce((data, byte) => data + String.fromCharCode(byte), ''));
         return {
           ok: true,
           afterImage: `data:image/png;base64,${b64}`,
@@ -89,82 +71,104 @@ export async function generateRenovationImage(
         };
       }
     } catch (err) {
-      console.error('[RenovationAiService] Error en Hugging Face API:', err);
+      console.error('[RenovationAiService] Error en Hugging Face REST API:', err);
     }
   }
 
-  // 2. Google Gemini API (Proveedor Principal)
+  // 2. Google Gemini REST API (gemini-2.5-flash-image)
   const geminiKey = options.geminiApiKey || (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : undefined);
   if (geminiKey) {
     try {
-      const ai = new GoogleGenAI({ apiKey: geminiKey });
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType,
-                  data: cleanBase64,
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${geminiKey}`;
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType,
+                    data: cleanBase64,
+                  },
                 },
-              },
-            ],
+              ],
+            },
+          ],
+          generationConfig: {
+            responseModalities: ['IMAGE', 'TEXT'],
           },
-        ],
-        config: {
-          responseModalities: ['IMAGE', 'TEXT'],
-        },
+        }),
       });
 
-      const candidates = response.candidates;
-      if (candidates && candidates.length > 0 && candidates[0]?.content?.parts) {
-        for (const part of candidates[0].content.parts) {
-          if (part.inlineData && part.inlineData.data) {
-            const outMime = part.inlineData.mimeType || 'image/png';
-            return {
-              ok: true,
-              afterImage: `data:${outMime};base64,${part.inlineData.data}`,
-              promptUsed: prompt,
-              provider: 'gemini-2.5-flash-image',
+      if (res.ok) {
+        const data = (await res.json()) as {
+          candidates?: Array<{
+            content?: {
+              parts?: Array<{
+                inlineData?: { mimeType?: string; data?: string };
+              }>;
             };
+          }>;
+        };
+
+        const parts = data.candidates?.[0]?.content?.parts;
+        if (parts) {
+          for (const part of parts) {
+            if (part.inlineData && part.inlineData.data) {
+              const outMime = part.inlineData.mimeType || 'image/png';
+              return {
+                ok: true,
+                afterImage: `data:${outMime};base64,${part.inlineData.data}`,
+                promptUsed: prompt,
+                provider: 'gemini-2.5-flash-image',
+              };
+            }
           }
         }
       }
     } catch (err) {
-      console.error('[RenovationAiService] Error en Google Gemini API:', err);
+      console.error('[RenovationAiService] Error en Google Gemini REST API:', err);
     }
   }
 
-  // 3. Fal.ai API
+  // 3. Fal.ai REST API
   const falKey = options.falApiKey || (typeof process !== 'undefined' ? process.env.FAL_KEY : undefined);
   if (falKey) {
     try {
-      fal.config({ credentials: falKey });
-      const result = (await fal.subscribe('fal-ai/flux-pro/v1/fill', {
-        input: {
+      const res = await fetch('https://queue.fal.run/fal-ai/flux-pro/v1/fill', {
+        method: 'POST',
+        headers: {
+          Authorization: `Key ${falKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           image_url: fullDataUrl,
           mask_url: fullDataUrl,
           prompt,
-        },
-      })) as FalSubscribeResponse;
+        }),
+      });
 
-      if (result?.data?.images?.[0]?.url) {
-        return {
-          ok: true,
-          afterImage: result.data.images[0].url,
-          promptUsed: prompt,
-          provider: 'fal-ai/flux-pro/v1/fill',
-        };
+      if (res.ok) {
+        const data = (await res.json()) as { images?: Array<{ url: string }> };
+        if (data.images?.[0]?.url) {
+          return {
+            ok: true,
+            afterImage: data.images[0].url,
+            promptUsed: prompt,
+            provider: 'fal-ai/flux-pro/v1/fill',
+          };
+        }
       }
     } catch (err) {
-      console.error('[RenovationAiService] Error en Fal.ai API:', err);
+      console.error('[RenovationAiService] Error en Fal.ai REST API:', err);
     }
   }
 
-  // 4. OpenAI Image Edits API
+  // 4. OpenAI Image Edits REST API
   const openaiKey = options.openaiApiKey || (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined);
   if (openaiKey) {
     try {
@@ -194,7 +198,7 @@ export async function generateRenovationImage(
         }
       }
     } catch (err) {
-      console.error('[RenovationAiService] Error en OpenAI Image Edit API:', err);
+      console.error('[RenovationAiService] Error en OpenAI Image Edit REST API:', err);
     }
   }
 
