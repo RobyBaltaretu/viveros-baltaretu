@@ -2182,3 +2182,22 @@
     flex: none;
   }
 }
+
+/* ---------- Ficha de cliente ---------- */
+.nv-error-campo {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--nv-rojo);
+}
+#form-cliente .nv-resumen .nv-botones-columna {
+  margin: 1rem 0;
+}
+#form-cliente .nv-resumen h2 {
+  margin-top: 0;
+}
+@media (max-width: 47.99rem) {
+  /* En el móvil, una celda sin dato no se pinta (nada de guiones sueltos). */
+  .nv-tabla-lista .nv-celda-vacia {
+    display: none;
+  }
+}

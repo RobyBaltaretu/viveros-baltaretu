@@ -195,6 +195,16 @@ export interface Cliente {
   recargo: boolean;
   notas: string;
   archivado: boolean;
+  /**
+   * Opcionales (D-06, sin migración: van en `datos`). Los clientes guardados
+   * antes no los tienen; el formulario de siempre no los toca.
+   */
+  /** Persona con la que se habla (en una empresa, quien lleva la obra). */
+  contacto?: string;
+  /** Dónde se hace el trabajo, si no es la dirección de facturación. */
+  direccionObra?: string;
+  /** Cómo suele pagar: se propone en sus presupuestos y facturas. */
+  formaPago?: string;
 }
 
 export interface RepositorioClientes {

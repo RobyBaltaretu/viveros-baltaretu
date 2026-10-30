@@ -13,9 +13,9 @@ type DatosCliente = Omit<Cliente, 'id' | 'archivado' | 'notas' | 'pais'>;
 
 export function clientesCarpinteria(cif: (l: 'A' | 'B', n: number) => string, dni: (n: number) => string): DatosCliente[] {
   return [
-    { nombre: 'Lucía Prueba Martínez', nif: dni(23456781), direccion: 'Calle de Prueba 12, 3.º', codigoPostal: '46005', poblacion: 'Valencia', provincia: 'Valencia', email: 'prueba1@example.com', telefono: '+34 600 000 001', recargo: false },
-    { nombre: 'Reformas Albufera SL (prueba)', nif: cif('B', 4698765), direccion: 'Polígono de Prueba, nave 7', codigoPostal: '46470', poblacion: 'Catarroja', provincia: 'Valencia', email: 'prueba2@example.com', telefono: '+34 600 000 002', recargo: false },
-    { nombre: 'Estudio de Interiorismo Patraix SL (prueba)', nif: cif('B', 4611223), direccion: 'Avenida de Prueba 40', codigoPostal: '46018', poblacion: 'Valencia', provincia: 'Valencia', email: 'prueba3@example.com', telefono: '+34 600 000 003', recargo: false },
+    { nombre: 'Lucía Prueba Martínez', nif: dni(23456781), direccion: 'Calle de Prueba 12, 3.º', codigoPostal: '46005', poblacion: 'Valencia', provincia: 'Valencia', email: 'prueba1@example.com', telefono: '+34 600 000 001', recargo: false, direccionObra: 'Calle de Prueba 12, 3.º (la misma)', formaPago: 'Bizum' },
+    { nombre: 'Reformas Albufera SL (prueba)', nif: cif('B', 4698765), direccion: 'Polígono de Prueba, nave 7', codigoPostal: '46470', poblacion: 'Catarroja', provincia: 'Valencia', email: 'prueba2@example.com', telefono: '+34 600 000 002', recargo: false, contacto: 'Andrés Prueba (jefe de obra)', direccionObra: 'Obra de prueba: Calle Mayor de Prueba 5, Alfafar', formaPago: 'Transferencia a 30 días' },
+    { nombre: 'Estudio de Interiorismo Patraix SL (prueba)', nif: cif('B', 4611223), direccion: 'Avenida de Prueba 40', codigoPostal: '46018', poblacion: 'Valencia', provincia: 'Valencia', email: 'prueba3@example.com', telefono: '+34 600 000 003', recargo: false, contacto: 'Marta Prueba (interiorista)', formaPago: 'Transferencia' },
     { nombre: 'Javier Prueba Gómez', nif: dni(34567812), direccion: 'Plaza de Prueba 3', codigoPostal: '46980', poblacion: 'Paterna', provincia: 'Valencia', email: 'prueba4@example.com', telefono: '+34 600 000 004', recargo: false },
     { nombre: 'Inmobiliaria Ruzafa SL (prueba)', nif: cif('B', 4655443), direccion: 'Calle de Prueba 88', codigoPostal: '46006', poblacion: 'Valencia', provincia: 'Valencia', email: 'prueba5@example.com', telefono: '+34 600 000 005', recargo: false },
   ];
@@ -31,11 +31,11 @@ export const FACTURAS_CARPINTERIA: [number, number, number, [string, number, num
 ];
 
 export const GASTOS_CARPINTERIA: { dias: number; proveedor: string; categoria: string; total: number; base: number | null; iva: number | null; concepto: string; estado: Gasto['estado']; formaPago: string }[] = [
-  { dias: 50, proveedor: 'Tableros Levante (prueba)', categoria: 'otros', total: 726, base: 600, iva: 126, concepto: 'Melamina blanca 19 mm (12 tableros)', estado: 'confirmado', formaPago: 'Transferencia' },
-  { dias: 20, proveedor: 'Herrajes del Turia (prueba)', categoria: 'otros', total: 302.5, base: 250, iva: 52.5, concepto: 'Kits de correderas y bisagras con cierre suave', estado: 'confirmado', formaPago: 'Transferencia' },
-  { dias: 9, proveedor: 'Barnices y Lacas (prueba)', categoria: 'otros', total: 181.5, base: 150, iva: 31.5, concepto: 'Laca de poliuretano blanca mate', estado: 'confirmado', formaPago: 'Tarjeta' },
+  { dias: 50, proveedor: 'Tableros Levante (prueba)', categoria: 'tableros', total: 726, base: 600, iva: 126, concepto: 'Melamina blanca 19 mm (12 tableros)', estado: 'confirmado', formaPago: 'Transferencia' },
+  { dias: 20, proveedor: 'Herrajes del Turia (prueba)', categoria: 'herrajes', total: 302.5, base: 250, iva: 52.5, concepto: 'Kits de correderas y bisagras con cierre suave', estado: 'confirmado', formaPago: 'Transferencia' },
+  { dias: 9, proveedor: 'Barnices y Lacas (prueba)', categoria: 'acabados', total: 181.5, base: 150, iva: 31.5, concepto: 'Laca de poliuretano blanca mate', estado: 'confirmado', formaPago: 'Tarjeta' },
   { dias: 4, proveedor: 'Estación de servicio (prueba)', categoria: 'combustible', total: 85.4, base: 70.58, iva: 14.82, concepto: 'Gasóleo de la furgoneta', estado: 'confirmado', formaPago: 'Tarjeta' },
-  { dias: 0, proveedor: 'Ferretería Ruzafa (prueba)', categoria: 'mantenimiento', total: 34.9, base: null, iva: null, concepto: 'Brocas y tornillería', estado: 'revisar', formaPago: 'Efectivo' },
+  { dias: 0, proveedor: 'Ferretería Ruzafa (prueba)', categoria: 'consumibles', total: 34.9, base: null, iva: null, concepto: 'Brocas y tornillería', estado: 'revisar', formaPago: 'Efectivo' },
 ];
 
 const l = (concepto: string, cantidad: number, precio: number, material = '', extra = false): LineaPresupuestoCliente => ({ concepto, cantidad, precio, material, extra });

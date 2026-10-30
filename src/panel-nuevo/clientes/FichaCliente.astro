@@ -1,0 +1,232 @@
+---
+/**
+ * Ficha de un cliente con el diseño nuevo (alta y cambio). Mismos campos que
+ * el formulario de siempre (leerCliente) más los ampliados (D-06): persona de
+ * contacto, dirección de la obra y forma de pago habitual, que se propone en
+ * sus presupuestos y facturas. Al lado, lo que tiene con el negocio y los
+ * atajos para hacerle un presupuesto o una factura.
+ */
+import Icono from '../../components/panel/ui/Icono.astro';
+import type { Cliente, Factura, PresupuestoCliente } from '../../server/data/tipos.ts';
+import type { Error } from '../../server/facturas/facturas.ts';
+import { dinero } from '../../server/facturas/importes.ts';
+
+interface Props {
+  cliente: Cliente;
+  nuevo: boolean;
+  errores: Error[];
+  /** Lo que falta para facturarle (vacío si nada). */
+  falta: string[];
+  despues: string;
+  hecho: boolean;
+  presupuestos: PresupuestoCliente[];
+  facturas: Factura[];
+  conPresupuestos: boolean;
+}
+const { cliente: c, nuevo, errores, falta, despues, hecho, presupuestos, facturas, conPresupuestos } = Astro.props;
+const error = (k: string) => errores.find((e) => e.campo === k)?.mensaje;
+const FORMAS_PAGO = ['Transferencia', 'Bizum', 'Efectivo', 'Tarjeta'];
+const enMarcha = presupuestos.filter((p) => p.estado === 'enviado' || (p.estado === 'aceptado' && !p.cobroResto));
+const debe = facturas.filter((f) => f.estado === 'emitida').reduce((t, f) => t + f.totales.total, 0);
+const facturado = facturas.filter((f) => f.estado !== 'borrador').reduce((t, f) => t + f.totales.total, 0);
+const campo = (k: keyof Cliente) => String(c[k] ?? '');
+---
+
+<div class="nv-titulo">
+  <div>
+    <h1>{nuevo ? 'Cliente nuevo' : c.nombre}</h1>
+    <p>{nuevo ? 'Con el nombre basta para empezar; para facturarle hacen falta el NIF y la dirección.' : [c.contacto, c.telefono, c.poblacion].filter(Boolean).join(' · ') || 'Sus datos para facturar y para la obra.'}</p>
+  </div>
+</div>
+{hecho && <p role="status" class="nv-caja-aviso nv-caja-bien"><span>Guardado.</span></p>}
+{
+  errores.length > 0 && (
+    <div role="alert" class="nv-caja-aviso nv-caja-error">
+      <span>{errores.length === 1 ? errores[0]!.mensaje : `Hay ${errores.length} cosas que revisar: ${errores.map((e) => e.mensaje).join(' ')}`}</span>
+    </div>
+  )
+}
+{
+  falta.length > 0 && (
+    <p class="nv-caja-aviso nv-caja-info">
+      <span>Para facturarle falta: {falta.join(', ')}.</span>
+    </p>
+  )
+}
+
+<form method="post" class="nv-editor" id="form-cliente" novalidate>
+  <div class="nv-editor-principal">
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="quien">
+      <h2 id="quien">Quién es</h2>
+      <div class="nv-rejilla nv-rejilla-2">
+        <div class="nv-campo nv-ancho-todo">
+          <label for="c-nombre">Razón social o nombre completo</label>
+          <input id="c-nombre" class="campo-panel" name="nombre" value={c.nombre} required maxlength="200" autocomplete="off" aria-invalid={error('nombre') ? 'true' : undefined} aria-describedby={error('nombre') ? 'c-nombre-error' : undefined} />
+          {error('nombre') && <span id="c-nombre-error" class="nv-error-campo">{error('nombre')}</span>}
+        </div>
+        <label class="nv-campo">
+          <span>
+            Persona de contacto <small>(opcional)</small>
+          </span>
+          <input class="campo-panel" name="contacto" value={campo('contacto')} maxlength="200" autocomplete="off" placeholder="Quien lleva la obra" />
+        </label>
+        <label class="nv-campo">
+          Teléfono
+          <input class="campo-panel" name="telefono" value={c.telefono} type="tel" autocomplete="off" />
+        </label>
+        <div class="nv-campo">
+          <label for="c-email">Correo</label>
+          <input id="c-email" class="campo-panel" name="email" value={c.email} type="email" autocomplete="off" aria-invalid={error('email') ? 'true' : undefined} aria-describedby={error('email') ? 'c-email-error' : undefined} />
+          {error('email') && <span id="c-email-error" class="nv-error-campo">{error('email')}</span>}
+        </div>
+        <div class="nv-campo">
+          <label for="c-nif">NIF</label>
+          <input id="c-nif" class="campo-panel" name="nif" value={c.nif} autocomplete="off" aria-invalid={error('nif') ? 'true' : undefined} aria-describedby={error('nif') ? 'c-nif-error c-nif-ayuda' : 'c-nif-ayuda'} />
+          <small id="c-nif-ayuda" class="nv-gris">De la empresa o de la persona. Si es de otro país, su número de IVA.</small>
+          {error('nif') && <span id="c-nif-error" class="nv-error-campo">{error('nif')}</span>}
+        </div>
+      </div>
+    </section>
+
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="direcciones">
+      <h2 id="direcciones">Direcciones</h2>
+      <div class="nv-rejilla nv-rejilla-2">
+        <label class="nv-campo nv-ancho-todo">
+          Dirección de facturación
+          <input class="campo-panel" name="direccion" value={c.direccion} autocomplete="off" />
+        </label>
+        <label class="nv-campo">
+          Código postal
+          <input class="campo-panel" name="codigoPostal" value={c.codigoPostal} inputmode="numeric" autocomplete="off" />
+        </label>
+        <label class="nv-campo">
+          Población
+          <input class="campo-panel" name="poblacion" value={c.poblacion} autocomplete="off" />
+        </label>
+        <label class="nv-campo">
+          Provincia
+          <input class="campo-panel" name="provincia" value={c.provincia} autocomplete="off" />
+        </label>
+        <label class="nv-campo">
+          País
+          <input class="campo-panel" name="pais" value={c.pais} required autocomplete="off" />
+        </label>
+        <div class="nv-campo nv-ancho-todo">
+          <label for="c-obra">
+            Dirección de la obra <small>(si es otra)</small>
+          </label>
+          <input id="c-obra" class="campo-panel" name="direccionObra" value={campo('direccionObra')} maxlength="200" autocomplete="off" placeholder="Calle, número y población donde se monta" />
+          <span class="nv-toques" data-solo-js hidden>
+            <button type="button" class="nv-toque" data-copiar-direccion>
+              La misma que la de facturación
+            </button>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="cobro">
+      <h2 id="cobro">Cómo paga</h2>
+      <div class="nv-campo">
+        <label for="c-forma-pago">Forma de pago habitual</label>
+        <input id="c-forma-pago" class="campo-panel" name="formaPago" value={campo('formaPago')} maxlength="80" list="formas-pago-cliente" autocomplete="off" placeholder="Se propone en sus presupuestos y facturas" />
+        <datalist id="formas-pago-cliente">
+          {FORMAS_PAGO.map((f) => <option value={f} />)}
+        </datalist>
+        <span class="nv-toques" data-solo-js hidden>
+          {
+            FORMAS_PAGO.map((f) => (
+              <button type="button" class="nv-toque" data-forma-pago={f} aria-pressed={campo('formaPago') === f ? 'true' : 'false'}>
+                {f}
+              </button>
+            ))
+          }
+        </span>
+      </div>
+      <label class="nv-opcion nv-arriba">
+        <input type="checkbox" name="recargo" value="1" checked={c.recargo} />
+        Recargo de equivalencia (tiendas que venden al público y no hacen la declaración del IVA)
+      </label>
+      <label class="nv-campo nv-arriba">
+        <span>
+          Notas internas <small>(no salen en nada que vea el cliente)</small>
+        </span>
+        <textarea class="campo-panel" name="notas" rows="2" maxlength="1000">{c.notas}</textarea>
+      </label>
+    </section>
+  </div>
+
+  <aside class="nv-tarjeta nv-resumen" aria-labelledby="con-el-cliente">
+    {
+      nuevo ? (
+        <h2 id="con-el-cliente">Cliente nuevo</h2>
+      ) : (
+        <>
+          <h2 id="con-el-cliente">Con este cliente</h2>
+          <dl class="nv-filas-resumen nv-sin-raya">
+            {conPresupuestos && (
+              <div>
+                <dt>Presupuestos en marcha</dt>
+                <dd>{enMarcha.length}</dd>
+              </div>
+            )}
+            <div>
+              <dt>Facturado</dt>
+              <dd>{dinero(facturado)}</dd>
+            </div>
+            <div>
+              <dt>Te debe</dt>
+              <dd>
+                <strong>{dinero(debe)}</strong>
+              </dd>
+            </div>
+          </dl>
+          <div class="nv-botones-columna">
+            {conPresupuestos && (
+              <a class="nv-boton nv-boton-secundario" href={`/panel/presupuestos-cliente/nuevo?cliente=${c.id}`}>
+                <Icono nombre="presupuestos" />
+                Hacerle un presupuesto
+              </a>
+            )}
+            <a class="nv-boton nv-boton-secundario" href={`/panel/facturas/nueva?cliente=${c.id}`}>
+              <Icono nombre="facturas" />
+              Hacerle una factura
+            </a>
+            <a class="enlace-panel" href={`/panel/facturas?cliente=${c.id}`}>
+              Ver sus facturas
+            </a>
+          </div>
+        </>
+      )
+    }
+    <button class="nv-boton nv-boton-ancho">{despues ? 'Guardar y seguir con la factura' : nuevo ? 'Guardar el cliente' : 'Guardar los cambios'}</button>
+  </aside>
+</form>
+{
+  !nuevo && (
+    <form method="post" class="nv-arriba">
+      <input type="hidden" name="accion" value="archivar" />
+      <button class="nv-boton nv-boton-secundario">{c.archivado ? 'Volver a mostrarlo en la lista' : 'Ocultarlo de la lista'}</button>
+    </form>
+  )
+}
+
+<script is:inline>
+  (() => {
+    const f = document.getElementById('form-cliente');
+    if (!f) return;
+    f.querySelectorAll('[data-solo-js]').forEach((e) => (e.hidden = false));
+    const marcar = () => f.querySelectorAll('[data-forma-pago]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.formaPago === f.formaPago.value.trim())));
+    f.querySelectorAll('[data-forma-pago]').forEach((b) =>
+      b.addEventListener('click', () => {
+        f.formaPago.value = b.dataset.formaPago;
+        marcar();
+      }),
+    );
+    f.formaPago.addEventListener('input', marcar);
+    f.querySelector('[data-copiar-direccion]').addEventListener('click', () => {
+      f.direccionObra.value = [f.direccion.value, [f.codigoPostal.value, f.poblacion.value].filter((x) => x.trim()).join(' ')].filter((x) => x.trim()).join(', ');
+      f.direccionObra.focus();
+    });
+  })();
+</script>
