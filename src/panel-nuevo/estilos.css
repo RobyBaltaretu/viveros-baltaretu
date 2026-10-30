@@ -2310,3 +2310,38 @@
 .nv-lista-corta small {
   color: var(--nv-gris);
 }
+
+/* ---------- Pedidos a proveedor ---------- */
+.nv-pareja {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 0.375rem;
+}
+@media (min-width: 48rem) {
+  .nv-lineas-pedido .nv-corto {
+    width: 5.5rem;
+    min-width: 5.5rem;
+  }
+}
+@media (max-width: 47.99rem) {
+  .nv-lineas-pedido tr {
+    grid-template-areas: 'concepto concepto concepto' 'cantidad unidad coste' 'importe importe quitar';
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .nv-lineas-pedido td:nth-child(3) {
+    grid-area: unidad;
+  }
+  .nv-lineas-pedido td:nth-child(4) {
+    grid-area: coste;
+    align-self: end;
+    text-align: right;
+  }
+  .nv-lineas-pedido td:nth-child(5) {
+    grid-area: importe;
+    align-self: center;
+  }
+  .nv-lineas-pedido td:nth-child(6) {
+    grid-area: quitar;
+    justify-self: end;
+  }
+}

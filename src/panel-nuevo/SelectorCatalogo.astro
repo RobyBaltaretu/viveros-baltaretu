@@ -1,6 +1,6 @@
 ---
 /**
- * El catálogo en los editores de presupuestos y facturas, de dos maneras:
+ * El catálogo en los editores de presupuestos, facturas y pedidos a proveedor, de dos maneras:
  * - En la propia línea: al escribir en «Concepto» salen los trabajos y
  *   materiales que coinciden; con Intro o un toque se rellena esa línea.
  * - «Añadir del catálogo»: una ventana con todo, por categorías. Cada toque en
@@ -12,27 +12,40 @@
  * Avisa al formulario con el evento `catalogo:anadir` (detail.lineas:
  * concepto, material, cantidad, precio o null, clave; detail.fila: la línea
  * que se rellena, si se eligió desde ella) y `catalogo:listo` al cerrar la
- * ventana. Nunca muestra costes ni márgenes. Va fuera del formulario (no se
+ * ventana. En presupuestos y facturas nunca muestra costes ni márgenes; en un
+ * pedido (`destino="pedido"`), el precio es el coste de compra, primero sale lo
+ * del proveedor elegido y un trabajo añade sus materiales con las cantidades
+ * (líneas con articuloId, referencia, unidad y detalle). Va fuera del formulario (no se
  * anidan formularios); el editor pone su botón `data-abrir-catalogo` (oculto
  * sin JavaScript: entonces las líneas se escriben a mano).
  */
 import Icono from '../components/panel/ui/Icono.astro';
 import { CATEGORIAS, precioVenta, sinPrecio } from '../server/catalogo/catalogo.ts';
 import type { ArticuloCatalogo, PlantillaCatalogo } from '../server/data/tipos.ts';
+import { claveProveedor } from '../server/proveedores/proveedores.ts';
 
 interface Props {
   articulos: ArticuloCatalogo[];
   plantillas: PlantillaCatalogo[];
-  /** «presupuesto» o «factura», para los textos. */
-  destino: 'presupuesto' | 'factura';
+  /** «presupuesto» o «factura» (precio de venta), o «pedido» (coste de compra). */
+  destino: 'presupuesto' | 'factura' | 'pedido';
 }
 const { articulos, plantillas, destino } = Astro.props;
+const compra = destino === 'pedido';
 const nombreCat = (id: string) => CATEGORIAS.find((c) => c.id === id)?.nombre ?? id;
 const orden = (id: string) => CATEGORIAS.findIndex((c) => c.id === id);
 const datos = {
   articulos: [...articulos]
     .sort((a, b) => orden(a.categoria) - orden(b.categoria) || a.nombre.localeCompare(b.nombre, 'es'))
-    .map((a) => ({ id: a.id, nombre: a.nombre, acabado: a.acabado, unidad: a.unidad, precio: sinPrecio(a) ? null : precioVenta(a), categoria: nombreCat(a.categoria) })),
+    .map((a) => ({
+      id: a.id,
+      nombre: a.nombre,
+      acabado: a.acabado,
+      unidad: a.unidad,
+      precio: compra ? (a.coste > 0 ? a.coste : null) : sinPrecio(a) ? null : precioVenta(a),
+      categoria: nombreCat(a.categoria),
+      ...(compra ? { referencia: a.referencia, prov: claveProveedor(a.proveedor) } : {}),
+    })),
   trabajos: plantillas.map((p) => ({
     id: p.id,
     nombre: p.nombre,
@@ -75,7 +88,7 @@ const faltan = datos.articulos.filter((a) => a.precio === null).length;
             }
           </div>
           {
-            faltan > 0 && (
+            faltan > 0 && !compra && (
               <p class="nv-nota nv-sin-margen">
                 {faltan === 1 ? 'Un material aún no tiene precio' : `${faltan} materiales aún no tienen precio`}: se añaden con el precio en blanco para que lo escribas. <a href="/panel/catalogo/precios" class="enlace-panel">Poner los precios</a>
               </p>
@@ -108,7 +121,7 @@ const faltan = datos.articulos.filter((a) => a.precio === null).length;
             </summary>
             <ul data-lleva-lista />
           </details>
-          <fieldset class="nv-modo">
+          <fieldset class="nv-modo" hidden={compra}>
             <legend>Cómo ponerlo en el {destino}</legend>
             <label class="nv-opcion">
               <input type="radio" name="modo-catalogo" value="una" checked />
@@ -125,11 +138,11 @@ const faltan = datos.articulos.filter((a) => a.precio === null).length;
           </fieldset>
           <div class="nv-dialogo-pie">
             <div class="nv-precio-trabajo" aria-live="polite">
-              <span>Precio sin IVA</span>
+              <span>{compra ? 'Coste de los materiales' : 'Precio sin IVA'}</span>
               <strong data-trabajo-precio>—</strong>
             </div>
             <button type="button" class="nv-boton" data-anadir-trabajo disabled>
-              Añadir al {destino}
+              {compra ? 'Añadir los materiales al pedido' : `Añadir al ${destino}`}
             </button>
           </div>
         </div>
@@ -150,6 +163,7 @@ const faltan = datos.articulos.filter((a) => a.precio === null).length;
     const abrir = document.querySelector('[data-abrir-catalogo]');
     if (!abrir) return;
     const form = abrir.closest('form');
+    const compra = d.dataset.destino === 'pedido';
     abrir.hidden = false;
     const $ = (s) => d.querySelector(s);
     const eur = (n) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true }) + ' €';
@@ -161,8 +175,9 @@ const faltan = datos.articulos.filter((a) => a.precio === null).length;
       hijos.forEach((h) => e.append(h));
       return e;
     };
-    const precioDe = (a) => (a.precio === null ? 'Sin precio' : `${eur(a.precio)}/${a.unidad}`);
-    const lineaDe = (a) => ({ concepto: a.nombre, material: a.acabado || '', cantidad: 1, precio: a.precio, clave: `a:${a.id}` });
+    const SIN = compra ? 'Sin coste' : 'Sin precio';
+    const precioDe = (a) => (a.precio === null ? SIN : `${eur(a.precio)}/${a.unidad}`);
+    const lineaDe = (a) => ({ concepto: a.nombre, material: a.acabado || '', cantidad: 1, precio: a.precio, clave: `a:${a.id}`, ...(compra ? { articuloId: a.id, referencia: a.referencia, unidad: a.unidad, detalle: a.acabado || '' } : {}) });
     // Un precio 0 del catálogo es un precio que falta: la línea va en blanco.
     const anadir = (lineas, fila = null) => document.dispatchEvent(new CustomEvent('catalogo:anadir', { detail: { lineas: lineas.map((l) => ({ ...l, precio: l.precio > 0 ? l.precio : null })), fila } }));
     // Coincide si están todas las palabras; primero lo que empieza por la búsqueda.
@@ -185,6 +200,36 @@ const faltan = datos.articulos.filter((a) => a.precio === null).length;
       lista.replaceChildren();
       let n = 0;
       const cabeza = (t) => lista.append(el('li', { className: 'nv-lista-grupo', textContent: t, ariaHidden: 'true' }));
+      // En un pedido, primero lo que se compra al proveedor elegido.
+      const elegido = compra && !grupo ? form.querySelector('[name="proveedorId"]')?.selectedOptions?.[0] : null;
+      const suyo = elegido?.dataset.clave ? (a) => a.prov === elegido.dataset.clave : () => false;
+      const orden = [...datos.articulos.filter(suyo).map((a) => ({ a, cab: `De ${elegido.textContent.trim()}` })), ...datos.articulos.filter((a) => !suyo(a)).map((a) => ({ a, cab: a.categoria }))];
+      let actual = '';
+      const pintarArticulo = ({ a, cab }) => {
+        if ((grupo && grupo !== a.categoria) || !ok(`${a.nombre} ${a.acabado} ${a.categoria}`)) return;
+        if (cab !== actual) cabeza((actual = cab));
+        const cuantos = veces.get(a.id) ?? 0;
+        const marca = el('span', { className: 'nv-item-veces', textContent: cuantos ? `× ${cuantos}` : '', ariaHidden: 'true' });
+        const b = el(
+          'button',
+          { type: 'button', className: 'nv-item-catalogo' },
+          el('span', {}, el('strong', { textContent: a.nombre }), a.acabado ? el('small', { textContent: a.acabado }) : ''),
+          el('span', { className: 'nv-item-derecha' }, el('span', { className: a.precio === null ? 'nv-item-sin-precio' : 'nv-cifra', textContent: precioDe(a) }), marca, el('span', { className: 'nv-item-mas', textContent: '+', ariaHidden: 'true' })),
+        );
+        b.setAttribute('aria-label', `Añadir ${a.nombre}, ${a.precio === null ? SIN.toLowerCase() : `${eur(a.precio)} por ${a.unidad}`}${cuantos ? `, ya añadido ${cuantos}` : ''}`);
+        b.addEventListener('click', () => {
+          anadir([lineaDe(a)]);
+          const v = (veces.get(a.id) ?? 0) + 1;
+          veces.set(a.id, v);
+          marca.textContent = `× ${v}`;
+          b.setAttribute('aria-label', `Añadir ${a.nombre}, ${a.precio === null ? SIN.toLowerCase() : `${eur(a.precio)} por ${a.unidad}`}, ya añadido ${v}`);
+          anunciar(`${a.nombre} añadido${v > 1 ? ` (van ${v})` : ''}.${a.precio === null && !compra ? ' Escribe su precio en la línea.' : ''}`);
+        });
+        lista.append(el('li', {}, b));
+        n++;
+      };
+      // Lo del proveedor elegido (en un pedido), después los trabajos y después el resto.
+      orden.filter((x) => suyo(x.a)).forEach(pintarArticulo);
       if (!grupo || grupo === 'Trabajos') {
         const tra = datos.trabajos.filter((x) => ok(`${x.nombre} ${x.tipo} ${x.descripcion}`));
         if (tra.length) cabeza('Trabajos');
@@ -196,30 +241,7 @@ const faltan = datos.articulos.filter((a) => a.precio === null).length;
           n++;
         }
       }
-      let actual = '';
-      for (const a of datos.articulos) {
-        if ((grupo && grupo !== a.categoria) || !ok(`${a.nombre} ${a.acabado} ${a.categoria}`)) continue;
-        if (a.categoria !== actual) cabeza((actual = a.categoria));
-        const cuantos = veces.get(a.id) ?? 0;
-        const marca = el('span', { className: 'nv-item-veces', textContent: cuantos ? `× ${cuantos}` : '', ariaHidden: 'true' });
-        const b = el(
-          'button',
-          { type: 'button', className: 'nv-item-catalogo' },
-          el('span', {}, el('strong', { textContent: a.nombre }), a.acabado ? el('small', { textContent: a.acabado }) : ''),
-          el('span', { className: 'nv-item-derecha' }, el('span', { className: a.precio === null ? 'nv-item-sin-precio' : 'nv-cifra', textContent: precioDe(a) }), marca, el('span', { className: 'nv-item-mas', textContent: '+', ariaHidden: 'true' })),
-        );
-        b.setAttribute('aria-label', `Añadir ${a.nombre}, ${a.precio === null ? 'sin precio' : `${eur(a.precio)} por ${a.unidad}`}${cuantos ? `, ya añadido ${cuantos}` : ''}`);
-        b.addEventListener('click', () => {
-          anadir([lineaDe(a)]);
-          const v = (veces.get(a.id) ?? 0) + 1;
-          veces.set(a.id, v);
-          marca.textContent = `× ${v}`;
-          b.setAttribute('aria-label', `Añadir ${a.nombre}, ${a.precio === null ? 'sin precio' : `${eur(a.precio)} por ${a.unidad}`}, ya añadido ${v}`);
-          anunciar(`${a.nombre} añadido${v > 1 ? ` (van ${v})` : ''}.${a.precio === null ? ' Escribe su precio en la línea.' : ''}`);
-        });
-        lista.append(el('li', {}, b));
-        n++;
-      }
+      orden.filter((x) => !suyo(x.a)).forEach(pintarArticulo);
       $('[data-vacio]').hidden = n > 0;
     };
     const elegirGrupo = (g) => {
@@ -235,7 +257,7 @@ const faltan = datos.articulos.filter((a) => a.precio === null).length;
     let lineas = null;
     const calcular = async () => {
       const n = ++pedido;
-      const q = new URLSearchParams({ id: trabajo.id });
+      const q = new URLSearchParams({ id: trabajo.id, ...(compra ? { compra: '1' } : {}) });
       $('[data-trabajo-form]').querySelectorAll('input, select').forEach((c) => q.set(c.name, c.value));
       $('[data-anadir-trabajo]').disabled = true;
       try {
@@ -243,9 +265,9 @@ const faltan = datos.articulos.filter((a) => a.precio === null).length;
         if (!r.ok || n !== pedido) return;
         const j = await r.json();
         lineas = j.lineas;
-        $('[data-trabajo-precio]').textContent = j.precio > 0 ? eur(j.precio) : 'Sin precio';
+        $('[data-trabajo-precio]').textContent = j.precio > 0 ? eur(j.precio) : SIN;
         const avisos = [...j.avisos];
-        if (j.faltanPrecios) avisos.push(`${j.faltanPrecios === 1 ? 'Un material' : `${j.faltanPrecios} materiales`} sin precio en el catálogo: puedes añadirlo igual y escribir el precio en la línea.`);
+        if (j.faltanPrecios) avisos.push(compra ? `${j.faltanPrecios === 1 ? 'Un material' : `${j.faltanPrecios} materiales`} sin coste en el catálogo: se piden igual, con el coste en blanco.` : `${j.faltanPrecios === 1 ? 'Un material' : `${j.faltanPrecios} materiales`} sin precio en el catálogo: puedes añadirlo igual y escribir el precio en la línea.`);
         const av = $('[data-trabajo-avisos]');
         av.replaceChildren(...avisos.map((a) => el('li', { textContent: a })));
         av.hidden = avisos.length === 0;
@@ -253,7 +275,7 @@ const faltan = datos.articulos.filter((a) => a.precio === null).length;
         lleva.hidden = j.lleva.length === 0;
         $('[data-lleva-n]').textContent = `(${j.lleva.length})`;
         $('[data-lleva-lista]').replaceChildren(...j.lleva.map((x) => el('li', {}, el('span', { textContent: x.articulo }), el('span', { className: x.sinPrecio ? 'nv-item-sin-precio' : 'nv-cifra', textContent: `${cifra(x.cantidad)} ${x.unidad}${x.sinPrecio ? ' · sin precio' : ''}` }))));
-        $('[data-anadir-trabajo]').disabled = j.lineas.una.length === 0;
+        $('[data-anadir-trabajo]').disabled = (compra ? j.lineas.compra : j.lineas.una).length === 0;
       } catch {
         $('[data-trabajo-precio]').textContent = 'Sin conexión';
       }
@@ -301,7 +323,7 @@ const faltan = datos.articulos.filter((a) => a.precio === null).length;
     });
     $('[data-anadir-trabajo]').addEventListener('click', () => {
       if (!lineas) return;
-      const modo = d.querySelector('input[name="modo-catalogo"]:checked').value;
+      const modo = compra ? 'compra' : d.querySelector('input[name="modo-catalogo"]:checked').value;
       anadir(lineas[modo], fila);
       d.close();
     });

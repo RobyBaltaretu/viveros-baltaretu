@@ -31,6 +31,8 @@ const RUTAS: [prefijo: string, modulo: Modulo, sector?: Sector][] = [
   // Proveedores de la carpintería (a quién se compra el material).
   ['/panel/proveedores', 'proveedores', 'carpinteria'],
   ['/api/panel/proveedores.csv', 'proveedores', 'carpinteria'],
+  // Pedidos de material a proveedor.
+  ['/panel/pedidos', 'pedidosProveedor', 'carpinteria'],
   ['/panel/gastos', 'gastos'],
   ['/api/panel/gastos.csv', 'gastos'],
   ['/api/panel/ticket', 'gastos'],

@@ -1,0 +1,126 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import Icono from '../../../components/panel/ui/Icono.astro';
+import { ESTADOS_PEDIDO, type EstadoPedido } from '../../../server/data/tipos.ts';
+import { dinero } from '../../../server/facturas/importes.ts';
+import { hoy } from '../../../server/gastos/gastos.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+import { NOMBRE_ESTADO_PEDIDO } from '../../../server/pedidos/pedidos.ts';
+
+export const prerender = false;
+
+/** Pedidos de material (módulo `pedidosProveedor`): pestañas por estado, búsqueda y tabla. */
+const s = sesionCon(Astro.locals, 'facturas');
+const pedidoVer = Astro.url.searchParams.get('ver') ?? '';
+const ver: EstadoPedido | 'todos' = pedidoVer === 'todos' ? 'todos' : (ESTADOS_PEDIDO as readonly string[]).includes(pedidoVer) ? (pedidoVer as EstadoPedido) : 'borrador';
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+const todos = s ? await s.repos.pedidosProveedor.listar({ limite: 1000 }) : [];
+const normal = (t: string) =>
+  t
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+const coincide = (p: (typeof todos)[number]) => !q || normal(`${p.codigo} ${p.proveedor.nombre} ${p.lineas.map((l) => `${l.concepto} ${l.referencia}`).join(' ')}`).includes(normal(q));
+const de = (e: EstadoPedido | 'todos') => todos.filter((p) => (e === 'todos' || p.estado === e) && coincide(p));
+const lista = de(ver);
+const PESTANAS: [EstadoPedido | 'todos', string][] = [
+  ['borrador', 'Por enviar'],
+  ['enviado', 'Esperando'],
+  ['recibido', 'Recibidos'],
+  ['todos', 'Todos'],
+];
+const dia = hoy();
+const fecha = (iso: string) => iso.split('-').reverse().join('/');
+const TONO: Record<EstadoPedido, string> = { borrador: 'gris', enviado: 'azul', recibido: 'verde' };
+const tarde = (p: (typeof todos)[number]) => p.estado === 'enviado' && !!p.entrega && p.entrega < dia;
+const enlace = (k: string) => `/panel/pedidos?ver=${k}${q ? `&q=${encodeURIComponent(q)}` : ''}`;
+const esperando = todos.filter((p) => p.estado === 'enviado');
+---
+
+<PaginaPanel titulo="Pedidos" permiso="facturas" ancho="amplio">
+  <div class="nv-titulo">
+    <div>
+      <h1>Pedidos de material</h1>
+      <p>
+        Lo que pides a tus proveedores, sin precios en lo que les envías.{esperando.length > 0 && ` Esperando ${esperando.length === 1 ? '1 pedido' : `${esperando.length} pedidos`}${esperando.some(tarde) ? ', alguno con retraso' : ''}.`}
+      </p>
+    </div>
+    <a href="/panel/pedidos/nuevo" class="nv-boton">
+      <Icono nombre="nuevo" />
+      Nuevo pedido
+    </a>
+  </div>
+  <nav class="nv-pestanas" aria-label="Ver pedidos">
+    {
+      PESTANAS.map(([k, t]) => (
+        <a href={enlace(k)} aria-current={k === ver ? 'page' : undefined}>
+          {t} <span class="nv-chip">{de(k).length}</span>
+        </a>
+      ))
+    }
+  </nav>
+  <form method="get" class="nv-filtros" role="search">
+    <input type="hidden" name="ver" value={ver} />
+    <label class="nv-campo">
+      Buscar
+      <input type="search" name="q" value={q} class="campo-panel" placeholder="Proveedor, material o número" />
+    </label>
+    <button class="nv-boton nv-boton-secundario">Buscar</button>
+  </form>
+  {
+    lista.length === 0 ? (
+      <div class="nv-tarjeta nv-vacio">
+        <span class="nv-vacio-icono" aria-hidden="true">
+          <Icono nombre="pedidos" />
+        </span>
+        <p>
+          {todos.length === 0 ? (
+            <>
+              <strong>Todavía no hay pedidos.</strong>
+              <br />
+              Haz uno eligiendo del catálogo, o desde un trabajo («Pedir el material») para pedir todo lo que lleva.
+            </>
+          ) : q ? (
+            <>Nada con «{q}». Prueba con otra palabra.</>
+          ) : (
+            <>No hay pedidos aquí.</>
+          )}
+        </p>
+      </div>
+    ) : (
+      <div class="nv-tarjeta nv-tabla-caja" tabindex="0" role="region" aria-label="Pedidos">
+        <table class="nv-tabla nv-tabla-lista">
+          <caption class="sr-only">Pedidos de material</caption>
+          <thead>
+            <tr>
+              <th scope="col">Pedido y proveedor</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Para cuándo</th>
+              <th scope="col" class="nv-num">
+                Coste
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map((p) => (
+              <tr>
+                <td>
+                  <a href={`/panel/pedidos/${p.id}`}>{p.proveedor.nombre}</a>
+                  <small>
+                    {p.codigo} · {p.lineas.slice(0, 2).map((l) => l.concepto).join(', ')}
+                    {p.lineas.length > 2 && ` y ${p.lineas.length - 2} más`}
+                  </small>
+                </td>
+                <td>
+                  <span class={`nv-chip nv-chip-${tarde(p) ? 'rojo' : TONO[p.estado]}`}>{tarde(p) ? 'Con retraso' : NOMBRE_ESTADO_PEDIDO[p.estado]}</span>
+                </td>
+                <td>{p.estado === 'recibido' && p.recibidoEl ? `Llegó el ${fecha(p.recibidoEl)}` : p.entrega ? fecha(p.entrega) : <span class="nv-gris nv-celda-vacia">—</span>}</td>
+                <td class="nv-num">{p.coste > 0 ? <strong>{dinero(p.coste)}</strong> : <span class="nv-gris nv-celda-vacia">—</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+</PaginaPanel>

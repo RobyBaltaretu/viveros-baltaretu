@@ -327,6 +327,28 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       )`,
     ],
   },
+  {
+    version: 14,
+    nombre: 'pedidos a proveedor',
+    sql: [
+      // Pedidos de material: lo que se pide a cada proveedor. El coste es interno: nunca va en lo que se le envía.
+      `CREATE TABLE pedidos_proveedor (
+        id TEXT PRIMARY KEY,
+        codigo TEXT UNIQUE,
+        estado TEXT NOT NULL DEFAULT 'borrador' CHECK (estado IN ('borrador', 'enviado', 'recibido')),
+        proveedor_id TEXT NOT NULL,
+        obra_id TEXT,
+        presupuesto_cliente_id TEXT,
+        fecha TEXT NOT NULL,
+        coste REAL NOT NULL DEFAULT 0,
+        datos TEXT NOT NULL,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL
+      )`,
+      `CREATE INDEX pedidos_proveedor_estado ON pedidos_proveedor (estado, fecha)`,
+      `CREATE INDEX pedidos_proveedor_proveedor ON pedidos_proveedor (proveedor_id, fecha)`,
+    ],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

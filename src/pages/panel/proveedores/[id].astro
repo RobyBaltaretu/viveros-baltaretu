@@ -3,6 +3,7 @@ import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
 import FichaProveedor from '../../../panel-nuevo/proveedores/FichaProveedor.astro';
 import { sesionCon } from '../../../server/panel/pagina.ts';
 import { esDelProveedor, gastadoCon, leerProveedor, proveedorVacio, type Error } from '../../../server/proveedores/proveedores.ts';
+import { moduloActivoAhora } from '../../../plataforma/actual.ts';
 
 export const prerender = false;
 
@@ -31,8 +32,10 @@ if (s && proveedor && Astro.request.method === 'POST') {
 const anio = new Date().getFullYear();
 const [articulos, gastos] = s && proveedor && !nuevo ? await Promise.all([s.repos.catalogo.articulos(), s.repos.gastos.listar({ estado: 'confirmado', desde: `${anio}-01-01`, limite: 5000 })]) : [[], []];
 const p = proveedor;
+const conPedidos = moduloActivoAhora('pedidosProveedor');
+const pedidos = s && p && !nuevo && conPedidos ? await s.repos.pedidosProveedor.listar({ proveedorId: p.id }) : [];
 ---
 
 <PaginaPanel titulo={nuevo ? 'Proveedor nuevo' : (p?.nombre ?? 'Proveedor')} permiso="facturas" volver="/panel/proveedores" ancho="amplio">
-  {p && <FichaProveedor proveedor={p} nuevo={nuevo} errores={errores} hecho={Astro.url.searchParams.has('hecho')} articulos={articulos.filter((a) => esDelProveedor(a, p))} gastado={gastadoCon(p, gastos)} anio={anio} />}
+  {p && <FichaProveedor proveedor={p} nuevo={nuevo} errores={errores} hecho={Astro.url.searchParams.has('hecho')} articulos={articulos.filter((a) => esDelProveedor(a, p))} gastado={gastadoCon(p, gastos)} anio={anio} pedidos={pedidos} conPedidos={conPedidos} />}
 </PaginaPanel>

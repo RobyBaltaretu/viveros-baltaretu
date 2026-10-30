@@ -1,0 +1,55 @@
+---
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import FichaPedido from '../../../../panel-nuevo/pedidos/FichaPedido.astro';
+import { ESTADOS_PEDIDO, type EstadoPedido } from '../../../../server/data/tipos.ts';
+import { hoy } from '../../../../server/gastos/gastos.ts';
+import { ajustesFacturacion } from '../../../../server/panel/facturacion.ts';
+import { campo, sesionCon } from '../../../../server/panel/pagina.ts';
+import { cambiarEstadoPedido, enlaceCorreoPedido, enlaceWhatsappPedido, gastoDePedido } from '../../../../server/pedidos/pedidos.ts';
+import { moduloActivoAhora } from '../../../../plataforma/actual.ts';
+
+export const prerender = false;
+
+/** Ficha de un pedido a proveedor: recorrido, lo que toca ahora, envío sin precios, líneas y paso a gasto. */
+const s = sesionCon(Astro.locals, 'facturas');
+const id = Astro.params.id ?? '';
+const dia = hoy();
+const conGastos = moduloActivoAhora('gastos');
+let error = '';
+if (s && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const [que, valor] = campo(form, 'accion').split(':');
+  if (que === 'estado' && (ESTADOS_PEDIDO as readonly string[]).includes(valor)) {
+    const r = await cambiarEstadoPedido(s.repos, id, valor as EstadoPedido, s.usuario.email, dia);
+    if (r.ok) return Astro.redirect(`/panel/pedidos/${id}?hecho=${valor}`, 303);
+    error = r.error;
+  } else if (que === 'borrar') {
+    const p = await s.repos.pedidosProveedor.obtener(id);
+    if (p && (await s.repos.pedidosProveedor.borrar(id))) {
+      await s.repos.auditoria.registrar(s.usuario.email, 'pedido borrado', p.codigo);
+      return Astro.redirect('/panel/pedidos?ver=borrador', 303);
+    }
+    error = 'Solo se borra un pedido por enviar.';
+  } else if (que === 'gasto' && conGastos) {
+    const p = await s.repos.pedidosProveedor.obtener(id);
+    if (p?.estado !== 'recibido') error = 'Primero marca el pedido como recibido.';
+    else if (p.gastoId && (await s.repos.gastos.obtener(p.gastoId))) return Astro.redirect(`/panel/gastos/${p.gastoId}`, 303);
+    else {
+      const g = gastoDePedido(p, await s.repos.catalogo.articulos({ incluirArchivados: true }), s.usuario.email, dia);
+      await s.repos.gastos.guardar(g);
+      await s.repos.pedidosProveedor.guardar({ ...p, gastoId: g.id }, s.usuario.email);
+      return Astro.redirect(`/panel/gastos/${g.id}`, 303);
+    }
+  } else error = 'No se ha entendido la acción.';
+  Astro.response.status = 400;
+}
+const p = s ? await s.repos.pedidosProveedor.obtener(id) : null;
+if (s && !p) return new Response(null, { status: 404 });
+const empresa = s ? (await ajustesFacturacion(s.repos)).nombre : '';
+const presupuesto = s && p?.presupuestoClienteId && moduloActivoAhora('presupuestosCliente') ? await s.repos.presupuestosCliente.obtener(p.presupuestoClienteId) : null;
+const hecho = { creado: 'Pedido guardado. Envíalo cuando quieras.', cambiado: 'Cambios guardados.', enviado: 'Marcado como enviado.', recibido: 'Marcado como recibido.', borrador: 'Vuelve a estar por enviar.' }[Astro.url.searchParams.get('hecho') ?? ''];
+---
+
+<PaginaPanel titulo={p ? `Pedido ${p.codigo}` : 'Pedido'} permiso="facturas" volver="/panel/pedidos" ancho="amplio">
+  {p && <FichaPedido p={p} hoy={dia} hecho={hecho} error={error} whatsapp={enlaceWhatsappPedido(p, empresa)} correo={p.proveedor.email ? enlaceCorreoPedido(p, empresa) : null} presupuesto={presupuesto} conGastos={conGastos} />}
+</PaginaPanel>
