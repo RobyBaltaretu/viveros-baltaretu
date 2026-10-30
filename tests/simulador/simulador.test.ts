@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { MATERIALES_ENCIMERA, MATERIALES_MUEBLE, MATERIALES_SUELO, type RenovationConfig } from '../../src/server/simulador/materiales.ts';
 import { buildRenovationPrompt } from '../../src/services/promptBuilder.ts';
-import { generateRenovationImage } from '../../src/services/renovationAiService.ts';
+import { explicarErrorHf, generateRenovationImage } from '../../src/services/renovationAiService.ts';
 
 describe('Simulador de Reformas con IA', () => {
   const dummyConfig: RenovationConfig = {
@@ -59,9 +59,18 @@ describe('Simulador de Reformas con IA', () => {
       expect(llamadas).toEqual([]);
       await generateRenovationImage('data:image/jpeg;base64,aGVsbG8=', dummyConfig, { hfToken: 'hf_prueba' });
       expect(llamadas.length).toBeGreaterThan(0);
-      expect(llamadas.every((u) => u.includes('huggingface.co'))).toBe(true);
+      expect(llamadas.every((u) => new URL(u).hostname.endsWith('huggingface.co'))).toBe(true);
+      // La API antigua ya no existe (daba «error code: 1016»).
+      expect(llamadas.some((u) => u.includes('api-inference.huggingface.co'))).toBe(false);
     } finally {
       globalThis.fetch = original;
     }
+  });
+
+  test('errores de Hugging Face con arreglo: permiso del token, token no válido y saldo agotado', () => {
+    expect(explicarErrorHf('{"error":"This authentication method does not have sufficient permissions to call Inference Providers on behalf of user X"}')).toContain('Make calls to Inference Providers');
+    expect(explicarErrorHf('Invalid credentials in Authorization header')).toContain('no es válido');
+    expect(explicarErrorHf('You have exceeded your monthly included credits for Inference Providers')).toContain('saldo gratuito');
+    expect(explicarErrorHf('Model is overloaded')).toBeNull();
   });
 });
