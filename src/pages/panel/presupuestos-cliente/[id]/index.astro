@@ -6,7 +6,7 @@ import { dinero } from '../../../../server/facturas/importes.ts';
 import { hoy } from '../../../../server/gastos/gastos.ts';
 import { ajustesFacturacion } from '../../../../server/panel/facturacion.ts';
 import { campo, sesionCon } from '../../../../server/panel/pagina.ts';
-import { facturarPresupuesto } from '../../../../server/presupuestos-cliente/facturar.ts';
+import { facturarLoQueToca, facturarPresupuesto } from '../../../../server/presupuestos-cliente/facturar.ts';
 import { enlaceCorreo, enlaceWhatsapp } from '../../../../server/presupuestos-cliente/formulario.ts';
 import { apuntarCobro, cambiarEstado, estadoEfectivo, NOMBRE_ESTADO, pasosDesde } from '../../../../server/presupuestos-cliente/presupuestos.ts';
 
@@ -30,6 +30,12 @@ if (s && Astro.request.method === 'POST') {
   if (que === 'cobro' && (valor === 'anticipo' || valor === 'resto')) r = await apuntarCobro(s.repos, id, valor, campo(form, 'fecha') || null, s.usuario.email);
   if (que === 'facturar' && (valor === 'anticipo' || valor === 'final')) {
     const f = await facturarPresupuesto(s.repos, id, valor, s.usuario.email, await ajustesFacturacion(s.repos));
+    if (f.ok) return Astro.redirect(`/panel/facturas/${f.factura.id}`, 303);
+    r = f;
+  }
+  // Aceptado y facturado de un toque (diseño nuevo): lo da por aceptado y hace la factura que toca.
+  if (que === 'facturar' && valor === 'toca' && nuevo) {
+    const f = await facturarLoQueToca(s.repos, id, s.usuario.email, await ajustesFacturacion(s.repos), dia);
     if (f.ok) return Astro.redirect(`/panel/facturas/${f.factura.id}`, 303);
     r = f;
   }

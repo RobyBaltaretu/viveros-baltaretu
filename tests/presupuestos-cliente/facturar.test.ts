@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { aplicarMigraciones, crearRepositoriosD1, type Repositorios } from '../../src/server/data/index.ts';
 import { AJUSTES_VACIOS, clienteVacio } from '../../src/server/facturas/facturas.ts';
 import { calcularTotales } from '../../src/server/facturas/importes.ts';
-import { baseParaTotal, facturarPresupuesto } from '../../src/server/presupuestos-cliente/facturar.ts';
+import { baseParaTotal, facturables, facturarLoQueToca, facturarPresupuesto, porFacturar } from '../../src/server/presupuestos-cliente/facturar.ts';
 import { cambiarEstado, crearPresupuesto } from '../../src/server/presupuestos-cliente/presupuestos.ts';
 import { d1DePrueba } from '../panel/d1.ts';
 
@@ -65,5 +65,48 @@ describe('del presupuesto a la factura', () => {
     // Lo que queda por facturar es el restante del presupuesto (al céntimo).
     expect(f.factura.totales.total).toBe(r.presupuesto.totales.restante);
     expect(await repos.presupuestosCliente.obtener(id)).toMatchObject({ facturaAnticipoId: a.factura.id, facturaId: f.factura.id });
+  });
+
+  it('qué toca facturar y la lista de facturables (aceptados y enviados vigentes)', () => {
+    const base = { totales: { total: 1210, anticipo: 484, restante: 726 }, facturaAnticipoId: null, facturaId: null, fecha: '2026-10-01', validez: '2026-11-30' };
+    const mk = (id: string, cambios: object) => ({ ...base, id, ...cambios }) as unknown as Parameters<typeof porFacturar>[0] & { id: string };
+    expect(porFacturar(mk('a', {}))).toBe('anticipo');
+    expect(porFacturar(mk('a', { facturaAnticipoId: 'f1' }))).toBe('final');
+    expect(porFacturar(mk('a', { facturaAnticipoId: 'f1', facturaId: 'f2' }))).toBeNull();
+    expect(porFacturar(mk('a', { totales: { total: 100, anticipo: 0, restante: 100 } }))).toBe('final');
+    const lista = facturables(
+      [
+        mk('enviado', { estado: 'enviado', fecha: '2026-10-20' }),
+        mk('caducado', { estado: 'enviado', validez: '2026-10-01' }),
+        mk('borrador', { estado: 'borrador' }),
+        mk('hecho', { estado: 'aceptado', facturaAnticipoId: 'f1', facturaId: 'f2' }),
+        mk('final', { estado: 'aceptado', facturaAnticipoId: 'f1' }),
+      ] as never,
+      '2026-10-30',
+    );
+    expect(lista.map((x) => [x.p.id, x.que, x.importe, x.acepta])).toEqual([
+      ['final', 'final', 726, false],
+      ['enviado', 'anticipo', 484, true],
+    ]);
+  });
+
+  it('facturar lo que toca: un enviado se da por aceptado; después la final; uno caducado, no', async () => {
+    const r = await crearPresupuesto(repos, { clienteId: 'cli-f', concepto: 'Puerta', fecha: '2026-10-29', validez: '2026-11-28', lineas: [{ concepto: 'Puerta', cantidad: 1, precio: 500, material: '', extra: false }], iva: 21, anticipoPct: 30 }, yo, 21);
+    if (!r.ok) throw new Error(r.error);
+    const id = r.presupuesto.id;
+    expect(await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-10-30')).toMatchObject({ ok: false });
+    await cambiarEstado(repos, id, 'enviado', yo, '2026-10-30');
+    expect(await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-12-01')).toMatchObject({ ok: false, error: expect.stringContaining('caducado') });
+    const a = await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-10-30');
+    if (!a.ok) throw new Error(a.error);
+    expect(a.factura.totales.total).toBe(181.5);
+    expect((await repos.presupuestosCliente.obtener(id))?.estado).toBe('aceptado');
+    const f = await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-10-30');
+    if (!f.ok) throw new Error(f.error);
+    expect(f.factura.id).not.toBe(a.factura.id);
+    expect(f.factura.totales.total).toBe(423.5);
+    // Ya está todo: devuelve la final, sin crear otra.
+    const otra = await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-10-30');
+    expect(otra.ok && otra.factura.id).toBe(f.factura.id);
   });
 });

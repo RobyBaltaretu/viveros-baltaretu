@@ -8,7 +8,9 @@ import { sesionCon } from '../../../server/panel/pagina.ts';
 import { puede } from '../../../server/panel/permisos.ts';
 
 import ListaFacturas from '../../../panel-nuevo/facturas/ListaFacturas.astro';
-import { clienteActual } from '../../../plataforma/actual.ts';
+import { clienteActual, moduloActivoAhora } from '../../../plataforma/actual.ts';
+import { hoy } from '../../../server/gastos/gastos.ts';
+import { facturables } from '../../../server/presupuestos-cliente/facturar.ts';
 
 export const prerender = false;
 
@@ -36,10 +38,12 @@ const PESTANAS: [EstadoFactura | 'todas', string][] = [
 ];
 const fechaEs = (iso: string) => iso.split('-').reverse().join('/');
 const borrada = Astro.url.searchParams.get('hecho') === 'borrada';
+// Presupuestos aceptados por facturar (diseño nuevo con presupuestos a cliente): aviso con enlace a «Nueva factura».
+const porFacturar = s && nuevo && moduloActivoAhora('presupuestosCliente') ? facturables(await s.repos.presupuestosCliente.listar({ clienteId }), hoy()).filter((x) => !x.acepta) : [];
 ---
 
 <PaginaPanel titulo="Facturas" permiso="facturas" ancho={nuevo ? 'amplio' : 'normal'}>
-  {nuevo ? <ListaFacturas todas={todas} estado={estado} pestanas={PESTANAS} cliente={cliente} q={(Astro.url.searchParams.get('q') ?? '').trim()} faltanDatos={faltan > 0} borrada={borrada} esPropietario={esPropietario} /> : <Fragment>
+  {nuevo ? <ListaFacturas porFacturar={porFacturar.length} todas={todas} estado={estado} pestanas={PESTANAS} cliente={cliente} q={(Astro.url.searchParams.get('q') ?? '').trim()} faltanDatos={faltan > 0} borrada={borrada} esPropietario={esPropietario} /> : <Fragment>
   <h1 class="titular-grande">Facturas{cliente && ` de ${cliente.nombre}`}</h1>
   {borrada && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">Borrador borrado.</p>}
   {
