@@ -45,4 +45,23 @@ describe('Simulador de Reformas con IA', () => {
     expect(result.ok).toBe(false);
     expect(result.error).toContain('No hay tokens o claves de IA configurados');
   });
+
+  test('solo Hugging Face: otras claves (de pago) se ignoran y no se llama a ningún otro servicio', async () => {
+    const llamadas: string[] = [];
+    const original = globalThis.fetch;
+    globalThis.fetch = (async (url: string | URL | Request) => {
+      llamadas.push(String(url));
+      return new Response('sin cupo', { status: 503 });
+    }) as typeof fetch;
+    try {
+      const opciones = { geminiApiKey: 'x', falApiKey: 'x', openaiApiKey: 'x' } as unknown as Parameters<typeof generateRenovationImage>[2];
+      expect((await generateRenovationImage('data:image/jpeg;base64,aGVsbG8=', dummyConfig, opciones)).ok).toBe(false);
+      expect(llamadas).toEqual([]);
+      await generateRenovationImage('data:image/jpeg;base64,aGVsbG8=', dummyConfig, { hfToken: 'hf_prueba' });
+      expect(llamadas.length).toBeGreaterThan(0);
+      expect(llamadas.every((u) => u.includes('huggingface.co'))).toBe(true);
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
 });

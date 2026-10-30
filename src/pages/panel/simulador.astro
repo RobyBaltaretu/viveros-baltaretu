@@ -8,11 +8,14 @@ import {
   MATERIALES_SUELO,
   TIPOS_ESTANCIA,
 } from '../../server/simulador/materiales.ts';
+// CSS propio, en línea (scripts/generar-css-simulador.mjs): el simulador está fuera del Tailwind de la web para que Baltaretu no cambie.
+import estilosSimulador from '../../panel-nuevo/simulador.css?raw';
 
 export const prerender = false;
 ---
 
 <PaginaPanel titulo="Simulador de Reformas en Vivo (IA)" permiso="editar">
+  <style is:inline set:html={estilosSimulador}></style>
   <div class="simulador-wrapper space-y-6">
     <!-- Cabecera de la Herramienta -->
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-linea pb-4">
@@ -55,7 +58,7 @@ export const prerender = false;
           </button>
         </div>
         <p class="text-xs text-gris">
-          El simulador funciona automáticamente. Si deseas usar tu propio token gratuito de <strong>Hugging Face</strong> (código abierto) o <strong>Google Gemini</strong>, introdúcelo aquí:
+          Para generar la reforma hace falta un token gratuito de <strong>Hugging Face</strong> (código abierto). Es el único proveedor de IA: no se usa ningún servicio de pago.
         </p>
         <div>
           <label for="hf-token-input" class="block text-xs font-bold text-tinta mb-1">
@@ -68,17 +71,6 @@ export const prerender = false;
             class="w-full rounded-xl border border-linea px-3 py-2 text-sm text-tinta focus:border-terracota focus:outline-hidden"
           />
           <span class="text-[11px] text-gris">Consíguelo gratis sin tarjeta en <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener" class="underline text-terracota">huggingface.co/settings/tokens</a>.</span>
-        </div>
-        <div>
-          <label for="gemini-key-input" class="block text-xs font-bold text-tinta mb-1">
-            Google Gemini API Key (Opcional)
-          </label>
-          <input
-            type="password"
-            id="gemini-key-input"
-            placeholder="AIzaSy..."
-            class="w-full rounded-xl border border-linea px-3 py-2 text-sm text-tinta focus:border-terracota focus:outline-hidden"
-          />
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" id="btn-guardar-ajustes" class="rounded-xl bg-terracota px-4 py-2 text-sm font-semibold text-papel hover:opacity-90">
@@ -406,19 +398,18 @@ export const prerender = false;
     const btnGuardarAjustes = document.getElementById('btn-guardar-ajustes');
     const dialogoAjustes = document.getElementById('dialogo-ajustes');
     const hfTokenInput = document.getElementById('hf-token-input');
-    const geminiKeyInput = document.getElementById('gemini-key-input');
 
     // Cargar claves guardadas en localStorage
-    if (hfTokenInput && geminiKeyInput) {
+    if (hfTokenInput) {
       hfTokenInput.value = localStorage.getItem('simulador_hf_token') || '';
-      geminiKeyInput.value = localStorage.getItem('simulador_gemini_key') || '';
     }
+    // Ya no hay otros proveedores: se borra la clave de Gemini que hubiera guardada.
+    localStorage.removeItem('simulador_gemini_key');
 
     btnAbrirAjustes?.addEventListener('click', () => dialogoAjustes?.showModal());
     btnCerrarAjustes?.addEventListener('click', () => dialogoAjustes?.close());
     btnGuardarAjustes?.addEventListener('click', () => {
       localStorage.setItem('simulador_hf_token', hfTokenInput.value.trim());
-      localStorage.setItem('simulador_gemini_key', geminiKeyInput.value.trim());
       dialogoAjustes?.close();
     });
 
@@ -561,7 +552,6 @@ export const prerender = false;
             config: payload,
             options: {
               hfToken: localStorage.getItem('simulador_hf_token') || undefined,
-              geminiApiKey: localStorage.getItem('simulador_gemini_key') || undefined,
             },
           }),
         });

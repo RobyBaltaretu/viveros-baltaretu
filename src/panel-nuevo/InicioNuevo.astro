@@ -68,19 +68,13 @@ const nombre = (s?.usuario.nombre || '').split(' ')[0];
   {
     verSimulador && (
       <section aria-labelledby="nv-simulador-banner">
-        <a href="/panel/simulador" class="nv-tarjeta flex items-center justify-between gap-4 p-5 transition-transform hover:scale-[1.01]" style="background: linear-gradient(135deg, var(--color-verdor) 0%, var(--color-papel) 100%); border: 1.5px solid var(--color-terracota);">
-          <div class="space-y-1">
-            <span class="inline-flex items-center gap-1.5 rounded-md bg-terracota px-2.5 py-0.5 text-[11px] font-bold text-papel uppercase tracking-wider">
-              Herramienta Destacada IA
-            </span>
-            <h2 id="nv-simulador-banner" class="font-titular text-xl font-bold text-tinta">
-              Simulador de Reformas en Vivo
-            </h2>
-            <p class="text-xs text-gris">
-              Sube la foto del cliente y simula en vivo acabados de cocina, armarios o suelo con IA fotorrealista.
-            </p>
-          </div>
-          <span class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-terracota text-papel shadow-md">
+        <a href="/panel/simulador" class="nv-tarjeta nv-destacado">
+          <span class="nv-destacado-texto">
+            <span class="nv-destacado-etiqueta">Herramienta destacada con IA</span>
+            <strong id="nv-simulador-banner">Simulador de reformas en vivo</strong>
+            <small>Sube la foto del cliente y simula acabados de cocina, armarios o suelo con IA fotorrealista.</small>
+          </span>
+          <span class="nv-destacado-icono" aria-hidden="true">
             <Icono nombre="camara" clase="size-6" />
           </span>
         </a>

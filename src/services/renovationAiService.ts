@@ -1,11 +1,9 @@
 import type { RenovationConfig } from '../server/simulador/materiales.ts';
 import { buildRenovationPrompt } from './promptBuilder.ts';
 
+/** Solo Hugging Face (gratuito): por decisión del propietario, ningún proveedor de IA de pago. */
 export interface RenovationAiOptions {
   hfToken?: string;
-  geminiApiKey?: string;
-  falApiKey?: string;
-  openaiApiKey?: string;
 }
 
 export interface RenovationAiResult {
@@ -18,7 +16,7 @@ export interface RenovationAiResult {
 
 /**
  * Service Layer para la transformación fotorrealista de imágenes mediante IA.
- * Soporta Hugging Face Router / Inference API, Google Gemini, Fal.ai y OpenAI.
+ * Solo Hugging Face (Router / Inference API, gratuito). Sin proveedores de pago.
  */
 export async function generateRenovationImage(
   imageBase64: string,
@@ -146,157 +144,12 @@ export async function generateRenovationImage(
     }
   }
 
-  // 2. Google Gemini REST API (gemini-2.5-flash-image)
-  const geminiKey = options.geminiApiKey || (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : undefined);
-  if (geminiKey) {
-    try {
-      console.log('[RenovationAiService] API Key Gemini detectada. Enviando petición a Google Gemini API...');
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${geminiKey}`;
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                { text: prompt },
-                {
-                  inlineData: {
-                    mimeType,
-                    data: cleanBase64,
-                  },
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            responseModalities: ['IMAGE', 'TEXT'],
-          },
-        }),
-      });
-
-      console.log(`[RenovationAiService] Respuesta Gemini status: ${res.status}`);
-
-      if (res.ok) {
-        const data = (await res.json()) as {
-          candidates?: Array<{
-            content?: {
-              parts?: Array<{
-                inlineData?: { mimeType?: string; data?: string };
-              }>;
-            };
-          }>;
-        };
-
-        const parts = data.candidates?.[0]?.content?.parts;
-        if (parts) {
-          for (const part of parts) {
-            if (part.inlineData && part.inlineData.data) {
-              const outMime = part.inlineData.mimeType || 'image/png';
-              console.log('[RenovationAiService] ¡Imagen generada con éxito en Google Gemini!');
-              return {
-                ok: true,
-                afterImage: `data:${outMime};base64,${part.inlineData.data}`,
-                promptUsed: prompt,
-                provider: 'gemini-2.5-flash-image',
-              };
-            }
-          }
-        }
-      } else {
-        const errText = await res.text();
-        console.warn('[RenovationAiService] Error en Gemini API:', errText);
-        errorsLogged.push(`Gemini: ${errText.slice(0, 150)}`);
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error('[RenovationAiService] Excepción en Gemini API:', msg);
-      errorsLogged.push(`Gemini: ${msg}`);
-    }
-  }
-
-  // 3. Fal.ai REST API
-  const falKey = options.falApiKey || (typeof process !== 'undefined' ? process.env.FAL_KEY : undefined);
-  if (falKey) {
-    try {
-      console.log('[RenovationAiService] FAL_KEY detectada. Enviando petición a Fal.ai...');
-      const res = await fetch('https://queue.fal.run/fal-ai/flux-pro/v1/fill', {
-        method: 'POST',
-        headers: {
-          Authorization: `Key ${falKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image_url: fullDataUrl,
-          mask_url: fullDataUrl,
-          prompt,
-        }),
-      });
-
-      if (res.ok) {
-        const data = (await res.json()) as { images?: Array<{ url: string }> };
-        if (data.images?.[0]?.url) {
-          console.log('[RenovationAiService] ¡Imagen generada con éxito en Fal.ai!');
-          return {
-            ok: true,
-            afterImage: data.images[0].url,
-            promptUsed: prompt,
-            provider: 'fal-ai/flux-pro/v1/fill',
-          };
-        }
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error('[RenovationAiService] Excepción en Fal.ai REST API:', msg);
-      errorsLogged.push(`Fal.ai: ${msg}`);
-    }
-  }
-
-  // 4. OpenAI Image Edits REST API
-  const openaiKey = options.openaiApiKey || (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined);
-  if (openaiKey) {
-    try {
-      console.log('[RenovationAiService] OPENAI_API_KEY detectada. Enviando petición a OpenAI...');
-      const res = await fetch('https://api.openai.com/v1/images/edits', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${openaiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-image-1',
-          image: fullDataUrl,
-          prompt,
-          response_format: 'b64_json',
-        }),
-      });
-
-      if (res.ok) {
-        const data = (await res.json()) as { data?: Array<{ b64_json?: string }> };
-        if (data?.data?.[0]?.b64_json) {
-          console.log('[RenovationAiService] ¡Imagen generada con éxito en OpenAI!');
-          return {
-            ok: true,
-            afterImage: `data:image/png;base64,${data.data[0].b64_json}`,
-            promptUsed: prompt,
-            provider: 'openai-gpt-image-1',
-          };
-        }
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error('[RenovationAiService] Excepción en OpenAI API:', msg);
-      errorsLogged.push(`OpenAI: ${msg}`);
-    }
-  }
-
-  // 5. Sin proveedor funcional / Error de Cuota o Token
-  console.warn('[RenovationAiService] Ningún proveedor de IA pudo procesar la solicitud.');
+  // 2. Sin respuesta de Hugging Face / Error de Cuota o Token
+  console.warn('[RenovationAiService] Hugging Face no pudo procesar la solicitud.');
   const errorMsg =
     errorsLogged.length > 0
-      ? `Error al conectar con los servicios de IA: ${errorsLogged.join(' | ')}`
-      : 'No hay tokens o claves de IA configurados o activos. Introduce tu Token gratuito de Hugging Face o API Key de Gemini en la configuración (⚙️).';
+      ? `Error al conectar con Hugging Face: ${errorsLogged.join(' | ')}`
+      : 'No hay tokens o claves de IA configurados o activos. Introduce tu token gratuito de Hugging Face en la configuración (⚙️).';
 
   return {
     ok: false,
