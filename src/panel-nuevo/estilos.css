@@ -2201,3 +2201,87 @@
     display: none;
   }
 }
+/* ---------- Nueva factura: desde un presupuesto o en blanco ---------- */
+.nv-nueva-factura {
+  display: grid;
+  gap: 1.25rem;
+}
+@media (min-width: 64rem) {
+  .nv-nueva-factura {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    align-items: start;
+  }
+}
+.nv-relleno {
+  margin: 0;
+  padding: 1rem 1.25rem 1.25rem;
+}
+.nv-desde {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem;
+  list-style: none;
+}
+.nv-relleno .nv-desde {
+  padding: 0;
+}
+.nv-relleno .nv-campo.nv-arriba {
+  margin-top: 1.25rem;
+}
+.nv-desde-boton {
+  display: flex;
+  width: 100%;
+  min-height: 3.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  border: 1px solid var(--nv-borde);
+  border-radius: var(--nv-radio-control);
+  background: var(--nv-superficie);
+  padding: 0.75rem 1rem;
+  font: inherit;
+  text-align: left;
+  color: var(--nv-tinta);
+  cursor: pointer;
+}
+.nv-desde-boton:hover,
+.nv-desde-boton:focus-visible {
+  border-color: var(--nv-acento);
+  background: var(--nv-acento-suave);
+}
+.nv-desde-texto {
+  display: grid;
+  flex: 1 1 14rem;
+  min-width: 0;
+  justify-items: start;
+  gap: 0.125rem;
+}
+.nv-desde-texto strong {
+  font-weight: 600;
+}
+.nv-desde-texto small,
+.nv-desde-importe small {
+  font-size: 0.8125rem;
+  color: var(--nv-gris);
+}
+.nv-desde-texto .nv-chip {
+  margin-top: 0.25rem;
+}
+.nv-desde-importe {
+  display: grid;
+  margin-left: auto;
+  justify-items: end;
+  text-align: right;
+}
+.nv-desde-importe strong {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+.nv-desde-ir {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: var(--nv-acento);
+}

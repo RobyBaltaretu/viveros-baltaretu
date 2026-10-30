@@ -1,0 +1,145 @@
+---
+/**
+ * «Nueva factura» con el diseño nuevo: de dónde sale la factura.
+ * - Desde un presupuesto: los aceptados con algo por facturar y los enviados
+ *   vigentes (al facturarlos se dan por aceptados). Un toque hace la factura que
+ *   toca (anticipo o final, facturar.ts) y abre su borrador.
+ * - A un cliente: lista con buscador, o uno nuevo.
+ * Con `?cliente=`, solo los presupuestos de ese cliente y la factura en blanco.
+ */
+import Icono from '../../components/panel/ui/Icono.astro';
+import type { Cliente, PresupuestoCliente } from '../../server/data/tipos.ts';
+import { dinero } from '../../server/facturas/importes.ts';
+
+interface Props {
+  presupuestos: { p: PresupuestoCliente; que: 'anticipo' | 'final'; importe: number; acepta: boolean }[];
+  clientes: Cliente[];
+  elegido: Cliente | null;
+  error: string;
+}
+const { presupuestos, clientes, elegido, error } = Astro.props;
+const fecha = (iso: string) => iso.split('-').reverse().join('/');
+const pct = (n: number) => String(n).replace('.', ',');
+const queEs = (x: Props['presupuestos'][number]) => (x.que === 'anticipo' ? `Anticipo del ${pct(x.p.anticipoPct)} %` : x.p.facturaAnticipoId ? 'Factura final (descuenta el anticipo)' : 'Factura de todo');
+---
+
+<div class="nv-titulo">
+  <div>
+    <h1>Nueva factura{elegido && ` para ${elegido.nombre}`}</h1>
+    <p>Desde un presupuesto se copian sus líneas y su IVA; o empieza una en blanco. Siempre queda en borrador para revisarla antes de emitirla.</p>
+  </div>
+</div>
+{error && <p role="alert" class="nv-caja-aviso nv-caja-error"><span>{error}</span></p>}
+
+<div class="nv-nueva-factura">
+  <section class="nv-tarjeta" aria-labelledby="desde-presupuesto">
+    <div class="nv-cabeza-tarjeta">
+      <h2 id="desde-presupuesto">Desde un presupuesto</h2>
+      <span class="nv-gris">{presupuestos.length === 1 ? '1 por facturar' : `${presupuestos.length} por facturar`}</span>
+    </div>
+    {
+      presupuestos.length === 0 ? (
+        <p class="nv-gris nv-relleno">
+          No hay presupuestos aceptados ni enviados pendientes de facturar{elegido && ' para este cliente'}. <a href="/panel/presupuestos-cliente" class="enlace-panel">Ver los presupuestos</a>
+        </p>
+      ) : (
+        <ul class="nv-desde" role="list">
+          {presupuestos.map((x) => (
+            <li>
+              <form method="post">
+                <input type="hidden" name="presupuestoCliente" value={x.p.id} />
+                <button class="nv-desde-boton" aria-label={`Facturar ${x.p.concepto}, de ${x.p.cliente.nombre}: ${queEs(x).toLowerCase()}, ${dinero(x.importe)}${x.acepta ? '. Se dará por aceptado' : ''}`}>
+                  <span class="nv-desde-texto">
+                    <strong>{x.p.concepto}</strong>
+                    <small>
+                      {x.p.cliente.nombre} · {x.p.codigo} · {fecha(x.p.fecha)}
+                    </small>
+                    {x.acepta && <span class="nv-chip nv-chip-naranja">Enviado: se dará por aceptado</span>}
+                  </span>
+                  <span class="nv-desde-importe">
+                    <small>{queEs(x)}</small>
+                    <strong class="nv-cifra">{dinero(x.importe)}</strong>
+                  </span>
+                  <span class="nv-desde-ir" aria-hidden="true">
+                    Facturar
+                    <Icono nombre="siguiente" clase="size-4" />
+                  </span>
+                </button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+
+  <section class="nv-tarjeta" aria-labelledby="a-un-cliente">
+    <div class="nv-cabeza-tarjeta">
+      <h2 id="a-un-cliente">{elegido ? 'En blanco' : 'En blanco, a un cliente'}</h2>
+    </div>
+    <div class="nv-relleno">
+      {
+        elegido ? (
+          <form method="post">
+            <input type="hidden" name="cliente" value={elegido.id} />
+            <button class="nv-boton">
+              <Icono nombre="nuevo" />
+              Empezar la factura para {elegido.nombre}
+            </button>
+          </form>
+        ) : (
+          <>
+            <a href="/panel/facturas/clientes/nuevo?despues=factura" class="nv-boton nv-boton-secundario">
+              <Icono nombre="nuevo" />A un cliente nuevo
+            </a>
+            {clientes.length > 0 && (
+              <>
+                <label class="nv-campo nv-arriba" data-solo-js hidden>
+                  Buscar un cliente
+                  <input type="search" class="campo-panel" placeholder="Nombre, NIF o población" autocomplete="off" data-buscar-cliente />
+                </label>
+                <ul class="nv-desde nv-arriba" role="list" data-clientes>
+                  {clientes.map((c) => (
+                    <li data-texto={`${c.nombre} ${c.nif} ${c.poblacion}`}>
+                      <form method="post">
+                        <input type="hidden" name="cliente" value={c.id} />
+                        <button class="nv-desde-boton">
+                          <span class="nv-desde-texto">
+                            <strong>{c.nombre}</strong>
+                            <small>{[c.nif || 'sin NIF', c.poblacion].filter(Boolean).join(' · ')}</small>
+                          </span>
+                        </button>
+                      </form>
+                    </li>
+                  ))}
+                </ul>
+                <p class="nv-gris" data-sin-clientes hidden>
+                  Ningún cliente con ese nombre.
+                </p>
+              </>
+            )}
+          </>
+        )
+      }
+    </div>
+  </section>
+</div>
+
+<script is:inline>
+  (() => {
+    const buscar = document.querySelector('[data-buscar-cliente]');
+    if (!buscar) return;
+    buscar.closest('[data-solo-js]').hidden = false;
+    const normal = (t) => String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const filas = [...document.querySelectorAll('[data-clientes] > li')];
+    buscar.addEventListener('input', () => {
+      const q = normal(buscar.value.trim());
+      let n = 0;
+      for (const li of filas) {
+        li.hidden = !!q && !normal(li.dataset.texto).includes(q);
+        if (!li.hidden) n++;
+      }
+      document.querySelector('[data-sin-clientes]').hidden = n > 0;
+    });
+  })();
+</script>

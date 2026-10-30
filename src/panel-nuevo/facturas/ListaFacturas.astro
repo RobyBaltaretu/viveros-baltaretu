@@ -19,8 +19,10 @@ interface Props {
   faltanDatos: boolean;
   borrada: boolean;
   esPropietario: boolean;
+  /** Presupuestos aceptados con una factura por hacer. */
+  porFacturar?: number;
 }
-const { todas, estado, pestanas, cliente, q, faltanDatos, borrada, esPropietario } = Astro.props;
+const { todas, estado, pestanas, cliente, q, faltanDatos, borrada, esPropietario, porFacturar = 0 } = Astro.props;
 const normal = (t: string) =>
   t
     .toLowerCase()
@@ -52,6 +54,16 @@ const chip = (f: Factura) =>
   </a>
 </div>
 {borrada && <p role="status" class="nv-caja-aviso nv-caja-bien"><span>Borrador borrado.</span></p>}
+{
+  porFacturar > 0 && (
+    <p class="nv-caja-aviso nv-caja-info">
+      <span>{porFacturar === 1 ? 'Hay 1 presupuesto aceptado por facturar.' : `Hay ${porFacturar} presupuestos aceptados por facturar.`}</span>
+      <a class="nv-boton nv-boton-secundario" href={cliente ? `/panel/facturas/nueva?cliente=${cliente.id}` : '/panel/facturas/nueva'}>
+        Facturarlos
+      </a>
+    </p>
+  )
+}
 {
   faltanDatos && (
     <p class="nv-caja-aviso">
