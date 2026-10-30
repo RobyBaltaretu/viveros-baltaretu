@@ -10,10 +10,13 @@ import { CATEGORIAS, categoria, guardarArticulo, MARGEN_PROPUESTO, NOMBRE_UNIDAD
 import type { ArticuloCatalogo } from '../../../../server/data/tipos.ts';
 import { campo, sesionCon } from '../../../../server/panel/pagina.ts';
 import { numero } from '../../../../server/presupuestos-cliente/formulario.ts';
+import { moduloActivoAhora } from '../../../../plataforma/actual.ts';
 
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'facturas');
+// Con el módulo de proveedores, el campo «Proveedor» propone sus nombres (así el artículo sale en su ficha).
+const proveedores = s && moduloActivoAhora('proveedores') ? await s.repos.proveedores.listar() : [];
 const id = Astro.params.id ?? '';
 const nuevo = id === 'nuevo';
 const guardado: ArticuloCatalogo | null = s && !nuevo ? await s.repos.catalogo.articulo(id) : null;
@@ -168,7 +171,16 @@ const titulo = guardado ? guardado.nombre : 'Nuevo artículo';
       <div class="nv-rejilla nv-rejilla-2">
         <label class="nv-campo">
           Proveedor
-          <input name="proveedor" value={v.proveedor} class="campo-panel" maxlength="80" />
+          <input name="proveedor" value={v.proveedor} class="campo-panel" maxlength="80" list={proveedores.length ? 'lista-proveedores' : undefined} autocomplete="off" />
+          {
+            proveedores.length > 0 && (
+              <datalist id="lista-proveedores">
+                {proveedores.map((p) => (
+                  <option value={p.nombre} />
+                ))}
+              </datalist>
+            )
+          }
         </label>
         <label class="nv-campo">
           Referencia del proveedor

@@ -101,4 +101,5 @@ Peticiones del propietario: publicación automática, facturas, control de gasto
 - Presupuestos y facturas de Turia enganchados al catálogo («Añadir del catálogo»: artículos y trabajos con sus medidas) además de las líneas a mano; editor de facturas nuevo con el total al escribir.
 - Facturas de Turia con el diseño nuevo (PR facturas v2): lista con las cifras de cobro y ficha de la emitida con lo que toca ahora.
 - Factura desde un presupuesto en Turia: «Nueva factura» enseña primero los presupuestos por facturar y un toque hace la factura que toca (anticipo o final); en la ficha de uno enviado, «Aceptado: hacer la factura».
+- Proveedores de Turia (PR 3.4a, migración 13): a quién se compra el material, con contacto, lo que sirve, plazo, sus artículos del catálogo, lo gastado este año y CSV.
 - Elegir del catálogo en presupuestos y facturas de Turia, más sencillo: se busca escribiendo en la propia línea, la ventana enseña todo (también los materiales sin precio, que se añaden con el precio en blanco) y cada trabajo dice qué lleva; se puede añadir material a material.

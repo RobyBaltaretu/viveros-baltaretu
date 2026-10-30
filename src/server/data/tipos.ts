@@ -650,6 +650,36 @@ export interface RepositorioCatalogo {
   borrarPruebas(): Promise<number>;
 }
 
+/** A quién se compra el material (módulo `proveedores`). Privado: no sale en nada que vea un cliente. */
+export interface Proveedor {
+  id: string;
+  nombre: string;
+  nif: string;
+  /** Persona con la que se habla. */
+  contacto: string;
+  telefono: string;
+  email: string;
+  direccion: string;
+  poblacion: string;
+  web: string;
+  /** Categorías del catálogo que suministra (ids de `CATEGORIAS` del catálogo). */
+  categorias: string[];
+  /** Días que suele tardar en servir. */
+  plazoDias: number | null;
+  formaPago: string;
+  notas: string;
+  archivado: boolean;
+  actualizado: string;
+}
+
+export interface RepositorioProveedores {
+  listar(opciones?: { incluirArchivados?: boolean }): Promise<Proveedor[]>;
+  obtener(id: string): Promise<Proveedor | null>;
+  guardar(p: Omit<Proveedor, 'actualizado'>, email: string): Promise<void>;
+  /** Quita los de prueba (id `prueba-…`). Devuelve cuántos. */
+  borrarPruebas(): Promise<number>;
+}
+
 export interface Repositorios {
   contenido: RepositorioContenido;
   fotos: RepositorioFotos;
@@ -669,4 +699,5 @@ export interface Repositorios {
   adjuntos: RepositorioAdjuntos;
   presupuestosCliente: RepositorioPresupuestosCliente;
   catalogo: RepositorioCatalogo;
+  proveedores: RepositorioProveedores;
 }

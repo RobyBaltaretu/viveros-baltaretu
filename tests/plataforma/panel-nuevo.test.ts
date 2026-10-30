@@ -25,7 +25,7 @@ describe('diseño nuevo del panel', () => {
     expect(grupos[0]!.secciones.map((s) => s.href)).toEqual(['/panel', '/panel/asistente']);
     const ventas = grupos.find((g) => g.texto === 'Ventas');
     expect(ventas?.secciones.map((s) => s.texto)).toEqual(['Presupuestos', 'Facturas', 'Clientes']);
-    expect(grupos.find((g) => g.texto === 'Taller')?.secciones.map((s) => s.texto)).toEqual(['Catálogo', 'Portafolio']);
+    expect(grupos.find((g) => g.texto === 'Taller')?.secciones.map((s) => s.texto)).toEqual(['Catálogo', 'Proveedores', 'Portafolio']);
   });
 
   it('«Crear» solo ofrece lo que el rol puede usar', () => {

@@ -2267,3 +2267,33 @@
   font-weight: 600;
   color: var(--nv-acento);
 }
+
+/* ---------- Proveedores ---------- */
+.nv-casillas {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+@media (min-width: 40rem) {
+  .nv-casillas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.nv-lista-corta {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9375rem;
+}
+.nv-lista-corta small {
+  color: var(--nv-gris);
+}
+.nv-error-campo {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--nv-rojo);
+}

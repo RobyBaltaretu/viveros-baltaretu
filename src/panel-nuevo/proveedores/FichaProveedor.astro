@@ -1,0 +1,184 @@
+---
+/**
+ * Ficha de un proveedor (alta y cambio): con quién hablar, qué suministra
+ * (categorías del catálogo), plazo y forma de pago. Al lado, los artículos del
+ * catálogo que se le compran (los que llevan su nombre) y lo gastado este año.
+ */
+import Icono from '../../components/panel/ui/Icono.astro';
+import { CATEGORIAS } from '../../server/catalogo/catalogo.ts';
+import type { ArticuloCatalogo, Proveedor } from '../../server/data/tipos.ts';
+import { dinero } from '../../server/facturas/importes.ts';
+import type { Error } from '../../server/proveedores/proveedores.ts';
+
+interface Props {
+  proveedor: Omit<Proveedor, 'actualizado'>;
+  nuevo: boolean;
+  errores: Error[];
+  hecho: boolean;
+  articulos: ArticuloCatalogo[];
+  gastado: number;
+  anio: number;
+}
+const { proveedor: p, nuevo, errores, hecho, articulos, gastado, anio } = Astro.props;
+const error = (k: string) => errores.find((e) => e.campo === k)?.mensaje;
+const FORMAS_PAGO = ['Transferencia', 'Recibo domiciliado', 'Contado', 'A 30 días'];
+const describe = (k: string, ayuda?: string) => [error(k) && `p-${k}-error`, ayuda].filter(Boolean).join(' ') || undefined;
+---
+
+<div class="nv-titulo">
+  <div>
+    <h1>{nuevo ? 'Proveedor nuevo' : p.nombre}</h1>
+    <p>{nuevo ? 'Con el nombre basta para empezar. El resto lo completas cuando lo tengas.' : [p.contacto, p.telefono, p.poblacion].filter(Boolean).join(' · ') || 'Sus datos de contacto y lo que te sirve.'}</p>
+  </div>
+</div>
+{hecho && <p role="status" class="nv-caja-aviso nv-caja-bien"><span>Guardado.</span></p>}
+{
+  errores.length > 0 && (
+    <div role="alert" class="nv-caja-aviso nv-caja-error">
+      <span>{errores.length === 1 ? errores[0]!.mensaje : `Hay ${errores.length} cosas que revisar: ${errores.map((e) => e.mensaje).join(' ')}`}</span>
+    </div>
+  )
+}
+
+<form method="post" class="nv-editor" id="form-proveedor" novalidate>
+  <div class="nv-editor-principal">
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="quien-proveedor">
+      <h2 id="quien-proveedor">Quién es</h2>
+      <div class="nv-rejilla nv-rejilla-2">
+        <div class="nv-campo nv-ancho-todo">
+          <label for="p-nombre">Nombre</label>
+          <input id="p-nombre" class="campo-panel" name="nombre" value={p.nombre} required maxlength="120" autocomplete="off" aria-invalid={error('nombre') ? 'true' : undefined} aria-describedby={describe('nombre')} placeholder="Por ejemplo: Tableros Levante" />
+          {error('nombre') && <span id="p-nombre-error" class="nv-error-campo">{error('nombre')}</span>}
+        </div>
+        <label class="nv-campo">
+          <span>
+            Persona de contacto <small>(opcional)</small>
+          </span>
+          <input class="campo-panel" name="contacto" value={p.contacto} maxlength="120" autocomplete="off" placeholder="Tu comercial o quien atiende" />
+        </label>
+        <label class="nv-campo">
+          Teléfono
+          <input class="campo-panel" name="telefono" value={p.telefono} type="tel" maxlength="40" autocomplete="off" />
+        </label>
+        <div class="nv-campo">
+          <label for="p-email">Correo</label>
+          <input id="p-email" class="campo-panel" name="email" value={p.email} type="email" maxlength="120" autocomplete="off" aria-invalid={error('email') ? 'true' : undefined} aria-describedby={describe('email')} />
+          {error('email') && <span id="p-email-error" class="nv-error-campo">{error('email')}</span>}
+        </div>
+        <div class="nv-campo">
+          <label for="p-nif">NIF</label>
+          <input id="p-nif" class="campo-panel" name="nif" value={p.nif} maxlength="20" autocomplete="off" aria-invalid={error('nif') ? 'true' : undefined} aria-describedby={describe('nif')} />
+          {error('nif') && <span id="p-nif-error" class="nv-error-campo">{error('nif')}</span>}
+        </div>
+        <label class="nv-campo">
+          Dirección
+          <input class="campo-panel" name="direccion" value={p.direccion} maxlength="200" autocomplete="off" />
+        </label>
+        <label class="nv-campo">
+          Población
+          <input class="campo-panel" name="poblacion" value={p.poblacion} maxlength="80" autocomplete="off" />
+        </label>
+        <label class="nv-campo nv-ancho-todo">
+          <span>
+            Web o tienda en línea <small>(opcional)</small>
+          </span>
+          <input class="campo-panel" name="web" value={p.web} maxlength="200" inputmode="url" autocomplete="off" />
+        </label>
+      </div>
+    </section>
+
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="que-sirve">
+      <h2 id="que-sirve">Qué te sirve</h2>
+      <fieldset class="nv-casillas">
+        <legend class="sr-only">Lo que te suministra</legend>
+        {
+          CATEGORIAS.map((c) => (
+            <label class="nv-opcion">
+              <input type="checkbox" name="categorias" value={c.id} checked={p.categorias.includes(c.id)} />
+              {c.nombre}
+            </label>
+          ))
+        }
+      </fieldset>
+      <div class="nv-rejilla nv-rejilla-2 nv-arriba">
+        <div class="nv-campo">
+          <label for="p-plazo">Plazo de entrega habitual</label>
+          <span class="nv-con-unidad">
+            <input id="p-plazo" class="campo-panel" name="plazoDias" value={p.plazoDias ?? ''} inputmode="numeric" autocomplete="off" aria-invalid={error('plazoDias') ? 'true' : undefined} aria-describedby={describe('plazoDias')} />
+            <span aria-hidden="true">días</span>
+          </span>
+          {error('plazoDias') && <span id="p-plazoDias-error" class="nv-error-campo">{error('plazoDias')}</span>}
+        </div>
+        <div class="nv-campo">
+          <label for="p-forma-pago">Cómo le pagas</label>
+          <input id="p-forma-pago" class="campo-panel" name="formaPago" value={p.formaPago} maxlength="80" list="formas-pago-proveedor" autocomplete="off" />
+          <datalist id="formas-pago-proveedor">
+            {FORMAS_PAGO.map((f) => <option value={f} />)}
+          </datalist>
+        </div>
+      </div>
+      <label class="nv-campo nv-arriba">
+        <span>
+          Notas <small>(descuentos, pedido mínimo, horario de recogida…)</small>
+        </span>
+        <textarea class="campo-panel" name="notas" rows="3" maxlength="1000">{p.notas}</textarea>
+      </label>
+    </section>
+  </div>
+
+  <aside class="nv-tarjeta nv-resumen" aria-labelledby="con-el-proveedor">
+    {
+      nuevo ? (
+        <h2 id="con-el-proveedor">Proveedor nuevo</h2>
+      ) : (
+        <>
+          <h2 id="con-el-proveedor">Con este proveedor</h2>
+          <dl class="nv-filas-resumen nv-sin-raya">
+            <div>
+              <dt>Gastado en {anio}</dt>
+              <dd>
+                <strong>{dinero(gastado)}</strong>
+              </dd>
+            </div>
+            <div>
+              <dt>Artículos del catálogo</dt>
+              <dd>{articulos.length}</dd>
+            </div>
+          </dl>
+          {articulos.length > 0 ? (
+            <ul class="nv-lista-corta">
+              {articulos.slice(0, 8).map((a) => (
+                <li>
+                  <a class="enlace-panel" href={`/panel/catalogo/articulos/${a.id}`}>
+                    {a.nombre}
+                  </a>
+                  {a.referencia && <small> · ref. {a.referencia}</small>}
+                </li>
+              ))}
+              {articulos.length > 8 && <li class="nv-gris">y {articulos.length - 8} más</li>}
+            </ul>
+          ) : (
+            <p class="nv-gris nv-nota">Ningún artículo del catálogo lleva su nombre. En la ficha de cada artículo, escribe «{p.nombre}» en «Proveedor».</p>
+          )}
+          {p.telefono && (
+            <a class="nv-boton nv-boton-secundario nv-arriba" href={`tel:${p.telefono.replace(/\s/g, '')}`}>
+              Llamar
+            </a>
+          )}
+        </>
+      )
+    }
+    <button class="nv-boton nv-boton-ancho nv-arriba">
+      <Icono nombre="hecho" />
+      {nuevo ? 'Guardar el proveedor' : 'Guardar los cambios'}
+    </button>
+  </aside>
+</form>
+{
+  !nuevo && (
+    <form method="post" class="nv-arriba">
+      <input type="hidden" name="accion" value="archivar" />
+      <button class="nv-boton nv-boton-secundario">{p.archivado ? 'Volver a usarlo' : 'Ocultarlo (ya no le compras)'}</button>
+    </form>
+  )
+}

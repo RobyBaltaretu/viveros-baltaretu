@@ -1,0 +1,38 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import FichaProveedor from '../../../panel-nuevo/proveedores/FichaProveedor.astro';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+import { esDelProveedor, gastadoCon, leerProveedor, proveedorVacio, type Error } from '../../../server/proveedores/proveedores.ts';
+
+export const prerender = false;
+
+/** Ficha de un proveedor (alta con `nuevo`): datos, qué suministra, sus artículos del catálogo y lo gastado. */
+const s = sesionCon(Astro.locals, 'facturas');
+const id = Astro.params.id ?? '';
+const nuevo = id === 'nuevo';
+let proveedor = s ? (nuevo ? proveedorVacio() : await s.repos.proveedores.obtener(id)) : null;
+if (s && !proveedor) return Astro.redirect('/panel/proveedores', 303);
+let errores: Error[] = [];
+if (s && proveedor && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  if (form.get('accion') === 'archivar' && !nuevo) {
+    await s.repos.proveedores.guardar({ ...proveedor, archivado: !proveedor.archivado }, s.usuario.email);
+    return Astro.redirect(proveedor.archivado ? `/panel/proveedores/${id}?hecho=1` : '/panel/proveedores?hecho=1', 303);
+  }
+  const r = leerProveedor(form, proveedor);
+  proveedor = r.proveedor;
+  errores = r.errores;
+  if (!errores.length) {
+    await s.repos.proveedores.guardar(r.proveedor, s.usuario.email);
+    return Astro.redirect(`/panel/proveedores/${r.proveedor.id}?hecho=1`, 303);
+  }
+  Astro.response.status = 400;
+}
+const anio = new Date().getFullYear();
+const [articulos, gastos] = s && proveedor && !nuevo ? await Promise.all([s.repos.catalogo.articulos(), s.repos.gastos.listar({ estado: 'confirmado', desde: `${anio}-01-01`, limite: 5000 })]) : [[], []];
+const p = proveedor;
+---
+
+<PaginaPanel titulo={nuevo ? 'Proveedor nuevo' : (p?.nombre ?? 'Proveedor')} permiso="facturas" volver="/panel/proveedores" ancho="amplio">
+  {p && <FichaProveedor proveedor={p} nuevo={nuevo} errores={errores} hecho={Astro.url.searchParams.has('hecho')} articulos={articulos.filter((a) => esDelProveedor(a, p))} gastado={gastadoCon(p, gastos)} anio={anio} />}
+</PaginaPanel>

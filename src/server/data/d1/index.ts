@@ -17,6 +17,7 @@ import { crearRepositorioInventario } from './inventario.ts';
 import { crearRepositoriosPortafolio } from './portafolio.ts';
 import { crearRepositorioPresupuestosCliente } from './presupuestos-cliente.ts';
 import { crearRepositorioCatalogo } from './catalogo.ts';
+import { crearRepositorioProveedores } from './proveedores.ts';
 
 /** Implementación de los repositorios sobre D1. Es el único sitio con SQL. */
 const ahora = () => new Date().toISOString();
@@ -338,5 +339,6 @@ export function crearRepositoriosD1(db: BaseD1): Repositorios {
     ...crearRepositoriosPortafolio(db),
     ...crearRepositorioPresupuestosCliente(db),
     ...crearRepositorioCatalogo(db),
+    ...crearRepositorioProveedores(db),
   };
 }

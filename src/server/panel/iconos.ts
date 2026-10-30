@@ -28,6 +28,8 @@ import {
   Sparkles,
   Sprout,
   Trash2,
+  Truck,
+  ClipboardList,
   TriangleAlert,
   User,
   UserCog,
@@ -82,6 +84,8 @@ export const ICONOS = {
   catalogo: interior(BookOpen),
   calcular: interior(Calculator),
   descargar: interior(Download),
+  proveedores: interior(Truck),
+  pedidos: interior(ClipboardList),
 } as const;
 
 export type NombreIcono = keyof typeof ICONOS;

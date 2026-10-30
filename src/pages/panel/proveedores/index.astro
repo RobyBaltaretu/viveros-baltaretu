@@ -1,0 +1,123 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import Icono from '../../../components/panel/ui/Icono.astro';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+import { esDelProveedor, gastadoCon, nombresCategorias } from '../../../server/proveedores/proveedores.ts';
+import { dinero } from '../../../server/facturas/importes.ts';
+
+export const prerender = false;
+
+/** Proveedores de la carpintería (módulo `proveedores`, solo con el diseño nuevo): lista con buscador. */
+const s = sesionCon(Astro.locals, 'facturas');
+const ocultos = Astro.url.searchParams.get('ver') === 'ocultos';
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+const [todos, articulos, gastos] = s ? await Promise.all([s.repos.proveedores.listar({ incluirArchivados: true }), s.repos.catalogo.articulos(), s.repos.gastos.listar({ estado: 'confirmado', desde: `${new Date().getFullYear()}-01-01`, limite: 5000 })]) : [[], [], []];
+const normal = (t: string) =>
+  t
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+const lista = todos.filter((p) => p.archivado === ocultos && (!q || normal(`${p.nombre} ${p.nif} ${p.contacto} ${p.poblacion} ${nombresCategorias(p.categorias).join(' ')}`).includes(normal(q))));
+const nOcultos = todos.filter((p) => p.archivado).length;
+const anio = new Date().getFullYear();
+const hecho = Astro.url.searchParams.has('hecho');
+---
+
+<PaginaPanel titulo="Proveedores" permiso="facturas" ancho="amplio">
+  <div class="nv-titulo">
+    <div>
+      <h1>Proveedores</h1>
+      <p>A quién compras el material: con quién hablar, qué te sirve y cuánto tarda. Nada de esto lo ve un cliente.</p>
+    </div>
+    <a href="/panel/proveedores/nuevo" class="nv-boton">
+      <Icono nombre="nuevo" />
+      Añadir un proveedor
+    </a>
+  </div>
+  {hecho && <p role="status" class="nv-caja-aviso nv-caja-bien"><span>Hecho.</span></p>}
+  <nav class="nv-pestanas" aria-label="Ver proveedores">
+    <a href={`/panel/proveedores${q ? `?q=${encodeURIComponent(q)}` : ''}`} aria-current={ocultos ? undefined : 'page'}>
+      En uso <span class="nv-chip">{todos.length - nOcultos}</span>
+    </a>
+    <a href={`/panel/proveedores?ver=ocultos${q ? `&q=${encodeURIComponent(q)}` : ''}`} aria-current={ocultos ? 'page' : undefined}>
+      Ocultos <span class="nv-chip">{nOcultos}</span>
+    </a>
+  </nav>
+  <form method="get" class="nv-filtros" role="search">
+    {ocultos && <input type="hidden" name="ver" value="ocultos" />}
+    <label class="nv-campo">
+      Buscar
+      <input type="search" name="q" value={q} class="campo-panel" placeholder="Nombre, contacto o lo que te sirve" />
+    </label>
+    <button class="nv-boton nv-boton-secundario">Buscar</button>
+  </form>
+  {
+    lista.length === 0 ? (
+      <div class="nv-tarjeta nv-vacio">
+        <span class="nv-vacio-icono" aria-hidden="true">
+          <Icono nombre="proveedores" />
+        </span>
+        <p>
+          {todos.length === 0 ? (
+            <>
+              <strong>Todavía no hay proveedores.</strong>
+              <br />
+              Añade a quién compras los tableros, los herrajes o el barniz, y pídeles el material desde aquí.
+            </>
+          ) : q ? (
+            <>Nadie con «{q}». Prueba con otra palabra.</>
+          ) : (
+            <>No hay proveedores ocultos.</>
+          )}
+        </p>
+      </div>
+    ) : (
+      <div class="nv-tarjeta nv-tabla-caja" tabindex="0" role="region" aria-label="Proveedores">
+        <table class="nv-tabla nv-tabla-lista">
+          <caption class="sr-only">Proveedores</caption>
+          <thead>
+            <tr>
+              <th scope="col">Proveedor</th>
+              <th scope="col">Teléfono</th>
+              <th scope="col">Te sirve</th>
+              <th scope="col" class="nv-num">
+                Gastado en {anio}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map((p) => {
+              const nArt = articulos.filter((a) => esDelProveedor(a, p)).length;
+              const gastado = gastadoCon(p, gastos);
+              return (
+                <tr>
+                  <td>
+                    <a href={`/panel/proveedores/${p.id}`}>{p.nombre}</a>
+                    <small>{[p.contacto, p.poblacion, p.plazoDias !== null && `sirve en ${p.plazoDias === 1 ? '1 día' : `${p.plazoDias} días`}`].filter(Boolean).join(' · ')}</small>
+                  </td>
+                  <td data-titulo="Teléfono">{p.telefono ? <a href={`tel:${p.telefono.replace(/\s/g, '')}`}>{p.telefono}</a> : <span class="nv-gris nv-celda-vacia">—</span>}</td>
+                  <td data-titulo="Te sirve">
+                    {nombresCategorias(p.categorias).join(', ') || <span class="nv-gris nv-celda-vacia">—</span>}
+                    {nArt > 0 && <small>{nArt === 1 ? '1 artículo del catálogo' : `${nArt} artículos del catálogo`}</small>}
+                  </td>
+                  <td class="nv-num" data-titulo={`Gastado en ${anio}`}>
+                    {gastado > 0 ? dinero(gastado) : <span class="nv-gris nv-celda-vacia">—</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+  {
+    todos.length > 0 && (
+      <p class="nv-arriba">
+        <a class="enlace-panel" href="/api/panel/proveedores.csv" download>
+          Descargar los proveedores (CSV)
+        </a>
+      </p>
+    )
+  }
+</PaginaPanel>
