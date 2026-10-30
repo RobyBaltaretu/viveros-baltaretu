@@ -1,0 +1,192 @@
+---
+/**
+ * Lista de facturas con el diseño nuevo: cifras de cobro arriba (por cobrar,
+ * vencido y cobrado este mes), pestañas con su número, búsqueda y una tabla
+ * con número, cliente, fechas, estado y total. Las descargas para la
+ * gestoría, al final como siempre.
+ */
+import Icono from '../../components/panel/ui/Icono.astro';
+import type { Cliente, EstadoFactura, Factura } from '../../server/data/tipos.ts';
+import { hoy, vencida } from '../../server/facturas/facturas.ts';
+import { dinero } from '../../server/facturas/importes.ts';
+
+interface Props {
+  todas: Factura[];
+  estado: EstadoFactura | 'todas';
+  pestanas: [EstadoFactura | 'todas', string][];
+  cliente: Cliente | null;
+  q: string;
+  faltanDatos: boolean;
+  borrada: boolean;
+  esPropietario: boolean;
+}
+const { todas, estado, pestanas, cliente, q, faltanDatos, borrada, esPropietario } = Astro.props;
+const normal = (t: string) =>
+  t
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+const coincide = (f: Factura) => !q || normal(`${f.cliente.nombre} ${f.codigo ?? ''} ${f.lineas.map((l) => l.concepto).join(' ')}`).includes(normal(q));
+const de = (e: EstadoFactura | 'todas') => todas.filter((f) => (e === 'todas' || f.estado === e) && coincide(f));
+const lista = de(estado);
+const pendientes = todas.filter((f) => f.estado === 'emitida');
+const vencidas = pendientes.filter((f) => vencida(f));
+const mes = hoy().slice(0, 7);
+const cobradoMes = todas.filter((f) => f.estado === 'cobrada' && (f.cobradaEl ?? '').startsWith(mes)).reduce((t, f) => t + f.totales.total, 0);
+const suma = (fs: Factura[]) => fs.reduce((t, f) => t + f.totales.total, 0);
+const fecha = (iso: string) => iso.split('-').reverse().join('/');
+const anio = new Date().getFullYear();
+const enlace = (e: string) => `/panel/facturas?estado=${e}${cliente ? `&cliente=${cliente.id}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`;
+const chip = (f: Factura) =>
+  f.estado === 'borrador' ? ['gris', 'Borrador'] : f.estado === 'cobrada' ? ['verde', 'Cobrada'] : vencida(f) ? ['rojo', 'Vencida'] : ['azul', 'Por cobrar'];
+---
+
+<div class="nv-titulo">
+  <div>
+    <h1>Facturas{cliente && ` de ${cliente.nombre}`}</h1>
+    <p>Lo que has facturado y lo que falta por cobrar. Una factura emitida no se cambia: se corrige con una rectificativa.</p>
+  </div>
+  <a href={cliente ? `/panel/facturas/nueva?cliente=${cliente.id}` : '/panel/facturas/nueva'} class="nv-boton">
+    <Icono nombre="nuevo" />
+    Nueva factura
+  </a>
+</div>
+{borrada && <p role="status" class="nv-caja-aviso nv-caja-bien"><span>Borrador borrado.</span></p>}
+{
+  faltanDatos && (
+    <p class="nv-caja-aviso">
+      <span>Antes de emitir facturas, completa los datos de facturación de la empresa.</span>
+      <a class="nv-boton nv-boton-secundario" href="/panel/facturas/datos">
+        Completar los datos
+      </a>
+    </p>
+  )
+}
+
+<ul class="nv-kpis" role="list">
+  <li>
+    <a href={enlace('emitida')} class="nv-kpi nv-tarjeta">
+      <span class="nv-kpi-nombre">Por cobrar</span>
+      <span class="nv-kpi-valor nv-cifra">{dinero(suma(pendientes))}</span>
+      <span class="nv-kpi-nota">{pendientes.length === 1 ? '1 factura' : `${pendientes.length} facturas`}</span>
+    </a>
+  </li>
+  <li>
+    <a href={enlace('emitida')} class="nv-kpi nv-tarjeta">
+      <span class="nv-kpi-nombre">Vencido</span>
+      <span class="nv-kpi-valor nv-cifra">{dinero(suma(vencidas))}</span>
+      <span class:list={['nv-kpi-nota', vencidas.length ? 'nv-aviso' : 'nv-bien']}>{vencidas.length ? `${vencidas.length} con la fecha de pago pasada` : 'Nada vencido'}</span>
+    </a>
+  </li>
+  <li>
+    <a href={enlace('cobrada')} class="nv-kpi nv-tarjeta">
+      <span class="nv-kpi-nombre">Cobrado este mes</span>
+      <span class="nv-kpi-valor nv-cifra">{dinero(cobradoMes)}</span>
+      <span class="nv-kpi-nota">con IVA</span>
+    </a>
+  </li>
+  <li>
+    <a href={enlace('borrador')} class="nv-kpi nv-tarjeta">
+      <span class="nv-kpi-nombre">Borradores</span>
+      <span class="nv-kpi-valor nv-cifra">{todas.filter((f) => f.estado === 'borrador').length}</span>
+      <span class="nv-kpi-nota">sin emitir</span>
+    </a>
+  </li>
+</ul>
+
+<nav class="nv-pestanas" aria-label="Qué facturas ver">
+  {
+    pestanas.map(([e, texto]) => (
+      <a href={enlace(e)} aria-current={e === estado ? 'page' : undefined}>
+        {texto} <span class="nv-chip">{de(e).length}</span>
+      </a>
+    ))
+  }
+</nav>
+<form method="get" class="nv-filtros" role="search">
+  <input type="hidden" name="estado" value={estado} />
+  {cliente && <input type="hidden" name="cliente" value={cliente.id} />}
+  <label class="nv-campo">
+    Buscar
+    <input type="search" name="q" value={q} class="campo-panel" placeholder="Cliente, número o concepto" />
+  </label>
+  <button class="nv-boton nv-boton-secundario">Buscar</button>
+</form>
+
+{
+  lista.length === 0 ? (
+    <div class="nv-tarjeta nv-vacio">
+      <span class="nv-vacio-icono" aria-hidden="true">
+        <Icono nombre="facturas" />
+      </span>
+      <p>{todas.length === 0 ? 'Todavía no hay facturas. Haz la primera o pásala desde un presupuesto aceptado.' : q ? `Nada con «${q}».` : 'No hay facturas aquí.'}</p>
+    </div>
+  ) : (
+    <div class="nv-tarjeta nv-tabla-caja" tabindex="0" role="region" aria-label="Facturas">
+      <table class="nv-tabla nv-tabla-lista">
+        <caption class="sr-only">Facturas</caption>
+        <thead>
+          <tr>
+            <th scope="col">Cliente y número</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Fechas</th>
+            <th scope="col" class="nv-num">
+              Total
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {lista.map((f) => {
+            const [tono, texto] = chip(f);
+            return (
+              <tr>
+                <td>
+                  <a href={`/panel/facturas/${f.id}`}>{f.cliente.nombre}</a>
+                  <small>
+                    {f.codigo ?? 'Borrador'}
+                    {f.tipo === 'rectificativa' && ' · rectificativa'}
+                  </small>
+                </td>
+                <td>
+                  <span class={`nv-chip nv-chip-${tono}`}>{texto}</span>
+                </td>
+                <td>
+                  {fecha(f.fecha)}
+                  <small>{f.estado === 'cobrada' && f.cobradaEl ? `cobrada el ${fecha(f.cobradaEl)}` : `pago hasta el ${fecha(f.vencimiento)}`}</small>
+                </td>
+                <td class="nv-num">
+                  <strong>{dinero(f.totales.total)}</strong>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+<details class="nv-tarjeta nv-descargas">
+  <summary>Descargas para la gestoría</summary>
+  <div class="nv-seccion">
+    <p>Libro de facturas emitidas, en una hoja de cálculo:</p>
+    <div class="nv-acciones">
+      <a class="nv-boton nv-boton-secundario" href={`/api/panel/facturas.csv?anio=${anio}`} download>
+        Descargar {anio}
+      </a>
+      <a class="nv-boton nv-boton-secundario" href={`/api/panel/facturas.csv?anio=${anio - 1}`} download>
+        Descargar {anio - 1}
+      </a>
+    </div>
+    {
+      esPropietario && (
+        <>
+          <p>Copia de seguridad de toda la facturación (guárdala fuera del panel cada cierto tiempo):</p>
+          <a class="nv-boton nv-boton-secundario" href="/api/panel/facturas-copia" download>
+            Descargar la copia
+          </a>
+        </>
+      )
+    }
+  </div>
+</details>

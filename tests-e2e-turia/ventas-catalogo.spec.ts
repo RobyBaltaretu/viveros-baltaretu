@@ -75,4 +75,11 @@ test('factura: editor nuevo con el catálogo, IVA fijo y total al escribir', asy
   await expect(page.getByRole('status').first()).toContainText('Borrador guardado');
   await expect(page.getByLabel('Concepto de la línea 2')).toHaveValue('Transporte y descarga');
   await expect(page.locator('[data-total]')).toHaveText(/^136,73/);
+  // La lista nueva: cifras de cobro, pestañas con su número y búsqueda.
+  await page.goto(`/panel/facturas?estado=borrador&q=${encodeURIComponent(p)}`);
+  for (const k of ['Por cobrar', 'Vencido', 'Cobrado este mes', 'Borradores']) await expect(page.locator('.nv-kpis').getByText(k, { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: `Cliente factura ${p}` })).toBeVisible();
+  await expect(page.getByRole('row', { name: new RegExp(`Cliente factura ${p}.*Borrador.*136,73`) })).toBeVisible();
+  await auditar(page);
+  await controlesGrandes(page);
 });

@@ -10,6 +10,7 @@ import { ajustesFacturacion, borradorAlDia, comprobarEmision, emitirFactura, pla
 import { campo, sesionCon } from '../../../server/panel/pagina.ts';
 
 import EditorFacturaNuevo from '../../../panel-nuevo/facturas/EditorFacturaNuevo.astro';
+import VistaFacturaNueva from '../../../panel-nuevo/facturas/VistaFacturaNueva.astro';
 import { clienteActual, rutaDisponible } from '../../../plataforma/actual.ts';
 
 export const prerender = false;
@@ -86,12 +87,22 @@ const confirmar = f?.estado === 'borrador' && Astro.url.searchParams.has('confir
 const titulo = !f ? 'Factura' : f.estado === 'borrador' ? (f.tipo === 'rectificativa' ? 'Rectificativa (borrador)' : 'Factura (borrador)') : `Factura ${f.codigo}`;
 ---
 
-<PaginaPanel titulo={titulo} permiso="facturas" volver="/panel/facturas" ancho={nuevo && f?.estado === 'borrador' ? 'amplio' : 'normal'}>
+<PaginaPanel titulo={titulo} permiso="facturas" volver="/panel/facturas" ancho={nuevo ? 'amplio' : 'normal'}>
   {
     f && (
       <>
-        <h1 class="titular-grande">{titulo}</h1>
-        {f.estado !== "borrador" && <p class="mt-1 text-gris">{f.cliente.nombre}</p>}
+        {nuevo ? (
+          <div class="nv-titulo">
+            <div>
+              <h1>{titulo}</h1>
+            </div>
+          </div>
+        ) : (
+          <>
+            <h1 class="titular-grande">{titulo}</h1>
+            {f.estado !== "borrador" && <p class="mt-1 text-gris">{f.cliente.nombre}</p>}
+          </>
+        )}
         <Mensajes hecho={hecho ? MENSAJES[hecho] : undefined} errores={errores} />
         {confirmar ? (
           <section class="mt-6 grid gap-4 rounded-panel border-2 border-oliva bg-papel p-5" aria-labelledby="confirmar-titulo">
@@ -114,7 +125,7 @@ const titulo = !f ? 'Factura' : f.estado === 'borrador' ? (f.tipo === 'rectifica
             <EditorFactura factura={f} plantas={plantas} errores={errores} crudo={crudo} />
           )
         ) : (
-          <VistaFactura factura={f} />
+          nuevo ? <VistaFacturaNueva factura={f} /> : <VistaFactura factura={f} />
         )}
       </>
     )
