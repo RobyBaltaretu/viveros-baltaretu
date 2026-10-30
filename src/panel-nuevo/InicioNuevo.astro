@@ -45,6 +45,7 @@ const VISIBLES = 8;
 const meses = ver.facturas ? evolucion(datos) : [];
 const maximo = Math.max(...meses.map((m) => m.base), 0);
 const crear = accionesCrear(s ? menuDe(rol) : []);
+const verSimulador = rutaDisponible('/panel/simulador');
 
 const eur = dinero;
 const eurCorto = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000).toLocaleString('es-ES')}\u00a0mil\u00a0€` : `${Math.round(n).toLocaleString('es-ES', { useGrouping: true })}\u00a0€`);
@@ -63,6 +64,29 @@ const nombre = (s?.usuario.nombre || '').split(' ')[0];
       <p>{tareas.length ? `Tienes ${tareas.length === 1 ? '1 cosa' : `${tareas.length} cosas`} por hacer. Empieza por la primera.` : 'No tienes nada pendiente.'}</p>
     </div>
   </div>
+
+  {
+    verSimulador && (
+      <section aria-labelledby="nv-simulador-banner">
+        <a href="/panel/simulador" class="nv-tarjeta flex items-center justify-between gap-4 p-5 transition-transform hover:scale-[1.01]" style="background: linear-gradient(135deg, var(--color-verdor) 0%, var(--color-papel) 100%); border: 1.5px solid var(--color-terracota);">
+          <div class="space-y-1">
+            <span class="inline-flex items-center gap-1.5 rounded-md bg-terracota px-2.5 py-0.5 text-[11px] font-bold text-papel uppercase tracking-wider">
+              Herramienta Destacada IA
+            </span>
+            <h2 id="nv-simulador-banner" class="font-titular text-xl font-bold text-tinta">
+              Simulador de Reformas en Vivo
+            </h2>
+            <p class="text-xs text-gris">
+              Sube la foto del cliente y simula en vivo acabados de cocina, armarios o suelo con IA fotorrealista.
+            </p>
+          </div>
+          <span class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-terracota text-papel shadow-md">
+            <Icono nombre="camara" clase="size-6" />
+          </span>
+        </a>
+      </section>
+    )
+  }
 
   {
     cifras.length > 0 && (

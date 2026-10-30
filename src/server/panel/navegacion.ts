@@ -217,6 +217,16 @@ export const MENU: SeccionMenu[] = [
     descripcion: "Proyectos con su antes y después",
   },
   {
+    // Carpintería: simulador de reformas en vivo con IA.
+    href: "/panel/simulador",
+    texto: "Simulador IA",
+    permiso: "editar",
+    zona: "plantas",
+    icono: "camara",
+    escena: "fotos",
+    descripcion: "Simula reformas en vivo con IA fotorrealista",
+  },
+  {
     href: "/panel/gastos",
     texto: "Gastos",
     permiso: "gastos",
