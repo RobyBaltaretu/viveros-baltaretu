@@ -59,3 +59,42 @@ test('presupuestos: alta con extra, anticipo, envío, aceptación y factura de a
   await expect(page).toHaveURL(/\/panel\/facturas\/[^/]+$/);
   await expect(page.locator('[name="l0.concepto"]')).toHaveValue(/^Anticipo del 40 % del presupuesto P\d{4}-\d{4}/);
 });
+
+test('factura desde un presupuesto: desde «Nueva factura» (el enviado se da por aceptado) y después la final', async ({ page }) => {
+  test.setTimeout(90_000);
+  const p = `${test.info().project.name} ${Date.now()}`;
+  await page.goto('/panel/facturas/clientes/nuevo');
+  await page.getByLabel('Razón social o nombre completo').fill(`Cliente desde ${p}`);
+  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+  await page.goto('/panel/presupuestos-cliente/nuevo');
+  await page.getByRole('combobox', { name: /^Cliente/ }).selectOption({ label: `Cliente desde ${p}` });
+  await page.getByLabel('Qué se presupuesta').fill(`Cocina ${p}`);
+  await page.getByLabel('Concepto de la línea 1').fill('Muebles de cocina');
+  await page.getByLabel('Precio por unidad de la línea 1, en euros sin IVA').fill('1000');
+  await page.getByRole('button', { name: 'Guardar el presupuesto' }).click();
+  await page.getByRole('button', { name: 'Marcar como enviado' }).click();
+  await expect(page.getByRole('button', { name: 'Aceptado: hacer la factura de anticipo' })).toBeVisible();
+
+  await page.goto('/panel/facturas/nueva');
+  await expect(page.getByRole('heading', { name: 'Desde un presupuesto' })).toBeVisible();
+  const boton = page.getByRole('button', { name: new RegExp(`^Facturar Cocina ${p}, de Cliente desde ${p}: anticipo del 40 %, 484,00.€\\. Se dará por aceptado$`) });
+  await expect(boton).toBeVisible();
+  await auditar(page);
+  await controlesGrandes(page);
+  await boton.click();
+  await expect(page).toHaveURL(/\/panel\/facturas\/[^/]+$/);
+  await expect(page.locator('[name="l0.concepto"]')).toHaveValue(/^Anticipo del 40 % del presupuesto/);
+  await expect(page.locator('[data-total]').first()).toHaveText(/^484,00/);
+
+  // La lista avisa de lo que queda por facturar; la siguiente es la final, que descuenta el anticipo.
+  await page.goto('/panel/facturas');
+  await expect(page.getByText(/presupuestos? aceptados? por facturar/)).toBeVisible();
+  await page.getByRole('link', { name: 'Facturarlos' }).click();
+  await page.getByRole('button', { name: new RegExp(`^Facturar Cocina ${p}, .*factura final \\(descuenta el anticipo\\), 726,00`) }).click();
+  await expect(page.locator('[name="l0.concepto"]')).toHaveValue('Muebles de cocina');
+  await expect(page.locator('[name="l1.concepto"]')).toHaveValue(/^Anticipo ya facturado/);
+  await expect(page.locator('[data-total]').first()).toHaveText(/^726,00/);
+  // Ya no queda nada de este presupuesto por facturar.
+  await page.goto('/panel/facturas/nueva');
+  await expect(page.getByRole('button', { name: new RegExp(`^Facturar Cocina ${p},`) })).toHaveCount(0);
+});

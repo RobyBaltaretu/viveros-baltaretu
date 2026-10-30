@@ -88,6 +88,15 @@ const principalEstado = (e: EstadoPresupuestoCliente) => e === 'enviado' || e ==
       )
     }
     {
+      efectivo === 'enviado' && (
+        <form method="post">
+          <button name="accion" value="facturar:toca" class="nv-boton">
+            Aceptado: hacer la factura{p.totales.anticipo > 0 && ' de anticipo'}
+          </button>
+        </form>
+      )
+    }
+    {
       pasosDesde(efectivo).map((e) => (
         <form method="post">
           <button name="accion" value={`estado:${e}`} class:list={['nv-boton', !principalEstado(e) && 'nv-boton-secundario']}>

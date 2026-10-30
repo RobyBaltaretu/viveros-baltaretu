@@ -4,13 +4,30 @@ import { calcularTotales } from '../../../server/facturas/importes.ts';
 import { clienteDePresupuesto, lineasDePresupuesto, nuevaFactura } from '../../../server/facturas/facturas.ts';
 import { ajustesFacturacion, plantasParaFacturar } from '../../../server/panel/facturacion.ts';
 import { campo, sesionCon } from '../../../server/panel/pagina.ts';
+import { hoy } from '../../../server/gastos/gastos.ts';
+import { facturables, facturarLoQueToca } from '../../../server/presupuestos-cliente/facturar.ts';
+import NuevaFactura from '../../../panel-nuevo/facturas/NuevaFactura.astro';
+import { clienteActual, moduloActivoAhora } from '../../../plataforma/actual.ts';
 
 export const prerender = false;
 
+const nuevo = clienteActual().panel?.diseno === 'nuevo';
+// Facturar un presupuesto a cliente desde aquí: con el diseño nuevo y el módulo de presupuestos a cliente.
+const conPresupuestos = nuevo && moduloActivoAhora('presupuestosCliente');
 const s = sesionCon(Astro.locals, 'facturas');
+let error = '';
 if (s && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const ajustes = await ajustesFacturacion(s.repos);
+  if (conPresupuestos && campo(form, 'presupuestoCliente')) {
+    const r = await facturarLoQueToca(s.repos, campo(form, 'presupuestoCliente'), s.usuario.email, ajustes, hoy());
+    if (r.ok) {
+      await s.repos.auditoria.registrar(s.usuario.email, 'factura nueva', `${r.factura.cliente.nombre} (desde presupuesto a cliente)`);
+      return Astro.redirect(`/panel/facturas/${r.factura.id}`, 303);
+    }
+    error = r.error;
+    Astro.response.status = 400;
+  }
   const presupuesto = campo(form, 'presupuesto') ? await s.repos.presupuestos.obtener(campo(form, 'presupuesto')) : null;
   let cliente = campo(form, 'cliente') ? await s.repos.clientes.obtener(campo(form, 'cliente')) : null;
   if (presupuesto && !cliente) {
@@ -33,16 +50,18 @@ if (s && Astro.request.method === 'POST') {
     await s.repos.auditoria.registrar(s.usuario.email, 'factura nueva', `${cliente.nombre}${presupuesto ? ' (desde presupuesto)' : ''}`);
     return Astro.redirect(`/panel/facturas/${factura.id}`, 303);
   }
-  return Astro.redirect('/panel/facturas/nueva', 303);
+  if (!error) return Astro.redirect('/panel/facturas/nueva', 303);
 }
 const elegido = s && Astro.url.searchParams.get('cliente') ? await s.repos.clientes.obtener(Astro.url.searchParams.get('cliente') ?? '') : null;
 const clientes = s && !elegido ? await s.repos.clientes.listar() : [];
+const presupuestos = s && conPresupuestos ? facturables(await s.repos.presupuestosCliente.listar(elegido ? { clienteId: elegido.id } : {}), hoy()) : [];
 ---
 
-<PaginaPanel titulo="Nueva factura" permiso="facturas" volver="/panel/facturas">
-  <h1 class="titular-grande">Nueva factura</h1>
+<PaginaPanel titulo="Nueva factura" permiso="facturas" volver="/panel/facturas" ancho={nuevo ? 'amplio' : undefined}>
+  {nuevo && <NuevaFactura presupuestos={presupuestos} clientes={clientes} elegido={elegido} error={error} />}
+  {!nuevo && <h1 class="titular-grande">Nueva factura</h1>}
   {
-    elegido ? (
+    nuevo ? null : elegido ? (
       <form method="post" class="mt-6 grid gap-4">
         <input type="hidden" name="cliente" value={elegido.id} />
         <p>Para <strong>{elegido.nombre}</strong>.</p>
