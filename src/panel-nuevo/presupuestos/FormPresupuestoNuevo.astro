@@ -3,7 +3,8 @@
  * Editor de un presupuesto a cliente con el diseño nuevo (alta y cambio). Los
  * campos se llaman igual que en el de siempre (leerFormularioPresupuesto):
  * - Líneas en una tabla; «Añadir una línea» sin recargar y «Quitar».
- * - Artículos del catálogo a un clic (concepto, material y precio de venta).
+ * - Del catálogo: buscando en el propio concepto o en «Añadir del catálogo»
+ *   (SelectorCatalogo.astro); el mismo artículo otra vez suma uno.
  * - Resumen al lado, recalculado al escribir como lo hará el servidor
  *   (céntimos por línea, IVA sobre la base, anticipo sobre el total).
  * - Validez y anticipo con un toque (15, 30 o 60 días; 0, 30, 40 o 50 %).
@@ -103,7 +104,7 @@ const fila = (i: number) => {
               Array.from({ length: filas }, (_, i) => fila(i)).map((l) => (
                 <tr data-linea>
                   <td>
-                    <input class="campo-panel" name={`l${l.i}.concepto`} value={l.concepto} maxlength="200" autocomplete="off" aria-label={`Concepto de la línea ${l.n}`} placeholder="Qué haces o pones" />
+                    <input class="campo-panel" name={`l${l.i}.concepto`} value={l.concepto} maxlength="200" autocomplete="off" aria-label={`Concepto de la línea ${l.n}`} placeholder={articulos.length || plantillas.length ? 'Escribe o busca en el catálogo' : 'Qué haces o pones'} />
                     <input class="campo-panel nv-secundario" name={`l${l.i}.material`} value={l.material} maxlength="120" autocomplete="off" aria-label={`Material o acabado de la línea ${l.n} (opcional)`} placeholder="Material o acabado (opcional)" />
                   </td>
                   <td data-titulo="Cantidad">
@@ -146,6 +147,13 @@ const fila = (i: number) => {
           )
         }
       </div>
+      {
+        (articulos.length > 0 || plantillas.length > 0) && (
+          <p class="nv-nota" data-solo-js hidden>
+            Escribe en «Concepto» y elige del catálogo (bisagra, armario, montaje…), o pulsa «Añadir del catálogo» para verlo todo.
+          </p>
+        )
+      }
       <p class="nv-nota">Marca «Extra» lo que ofreces aparte: sale en el presupuesto, pero no suma al total.</p>
     </section>
   </div>
@@ -297,6 +305,7 @@ const fila = (i: number) => {
       tr.querySelectorAll('[aria-label]').forEach((e) => e.setAttribute('aria-label', e.getAttribute('aria-label').replace(/línea \d+/, `línea ${i + 1}`)));
       tr.querySelectorAll('.sr-only').forEach((e) => (e.textContent = e.textContent.replace(/línea \d+/, `línea ${i + 1}`)));
       tr.querySelectorAll('input').forEach((e) => (e.type === 'checkbox' ? (e.checked = false) : (e.value = e.name.endsWith('.cantidad') ? '1' : '')));
+      delete tr.dataset.clave;
       cuerpo.append(tr);
       filas.value = String(i + 1);
       return tr;
@@ -312,20 +321,50 @@ const fila = (i: number) => {
       const tr = b.closest('[data-linea]');
       // Se vacía y se oculta: una fila vacía no cuenta al guardar.
       tr.querySelectorAll('input').forEach((i) => (i.type === 'checkbox' ? (i.checked = false) : (i.value = '')));
+      delete tr.dataset.clave;
       tr.hidden = true;
       recalcular();
       pon('[data-anuncio]', 'Línea quitada.');
     });
-    // Del selector del catálogo (SelectorCatalogo.astro): cada línea, en una fila libre o nueva.
+    // Del catálogo (SelectorCatalogo.astro): en la línea elegida o en una libre
+    // o nueva; el mismo artículo otra vez suma uno en su línea. Sin precio en
+    // el catálogo, el precio queda en blanco para escribirlo.
+    const campo = (tr, n) => tr.querySelector(`[name$=".${n}"]`);
+    const coma = (n) => String(n).replace('.', ',');
     document.addEventListener('catalogo:anadir', (e) => {
-      for (const l of e.detail.lineas) {
-        const tr = libre() ?? nuevaFila();
-        tr.querySelector('[name$=".concepto"]').value = l.concepto;
-        tr.querySelector('[name$=".material"]').value = l.material || '';
-        tr.querySelector('[name$=".cantidad"]').value = String(l.cantidad).replace('.', ',');
-        tr.querySelector('[name$=".precio"]').value = String(l.precio).replace('.', ',');
-      }
+      const { lineas, fila } = e.detail;
+      let foco = null;
+      lineas.forEach((l, k) => {
+        const ya = !fila && l.clave && [...cuerpo.querySelectorAll('[data-linea]')].find((tr) => !tr.hidden && tr.dataset.clave === l.clave);
+        if (ya) {
+          campo(ya, 'cantidad').value = coma((num(campo(ya, 'cantidad').value) ?? 0) + 1);
+          return;
+        }
+        const tr = (k === 0 && fila) || libre() || nuevaFila();
+        campo(tr, 'concepto').value = l.concepto;
+        campo(tr, 'material').value = l.material || '';
+        if (l.cantidad !== null) campo(tr, 'cantidad').value = coma(l.cantidad);
+        else if (!campo(tr, 'cantidad').value.trim()) campo(tr, 'cantidad').value = '1';
+        campo(tr, 'precio').value = l.precio === null ? '' : coma(l.precio);
+        if (l.clave) tr.dataset.clave = l.clave;
+        else delete tr.dataset.clave;
+        if (fila && !foco) foco = l.precio === null ? campo(tr, 'precio') : campo(tr, 'cantidad');
+      });
       recalcular();
+      if (foco) {
+        foco.focus();
+        foco.select();
+        pon('[data-anuncio]', foco.name.endsWith('.precio') ? 'Añadido. Escribe su precio.' : 'Añadido. Escribe la cantidad.');
+      }
+    });
+    // Al cerrar el catálogo: al primer precio que falte o, si se eligió desde
+    // una línea, a su cantidad (después de que la ventana devuelva el foco).
+    document.addEventListener('catalogo:listo', (e) => {
+      const tr = [...cuerpo.querySelectorAll('[data-linea]')].find((x) => !x.hidden && campo(x, 'concepto').value.trim() && !campo(x, 'precio').value.trim());
+      const fila = e.detail.fila;
+      if (tr) pon('[data-anuncio]', `Falta el precio de «${campo(tr, 'concepto').value}».`);
+      const foco = tr ? campo(tr, 'precio') : fila && !fila.hidden ? campo(fila, 'cantidad') : null;
+      if (foco) setTimeout(() => foco.focus());
     });
     f.querySelectorAll('[data-dias]').forEach((b) =>
       b.addEventListener('click', () => {
@@ -340,7 +379,11 @@ const fila = (i: number) => {
         recalcular();
       }),
     );
-    f.addEventListener('input', recalcular);
+    f.addEventListener('input', (e) => {
+      // Un concepto cambiado a mano ya no es el artículo del catálogo.
+      if (e.target.name?.endsWith('.concepto')) delete e.target.closest('[data-linea]').dataset.clave;
+      recalcular();
+    });
     f.addEventListener('change', recalcular);
     recalcular();
   })();

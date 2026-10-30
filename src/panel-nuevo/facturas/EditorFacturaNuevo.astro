@@ -89,7 +89,7 @@ const t = f.totales;
                 return (
                   <tr data-linea>
                     <td>
-                      <input class="campo-panel" name={`l${i}.concepto`} value={valor(`l${i}.concepto`, l.concepto)} maxlength="300" autocomplete="off" aria-label={`Concepto de la línea ${n}`} placeholder="Qué se factura" aria-invalid={error(`l${i}.concepto`) ? 'true' : undefined} />
+                      <input class="campo-panel" name={`l${i}.concepto`} value={valor(`l${i}.concepto`, l.concepto)} maxlength="300" autocomplete="off" aria-label={`Concepto de la línea ${n}`} placeholder={articulos.length || plantillas.length ? 'Escribe o busca en el catálogo' : 'Qué se factura'} aria-invalid={error(`l${i}.concepto`) ? 'true' : undefined} />
                     </td>
                     <td data-titulo="Cantidad">
                       <input class="campo-panel nv-corto nv-derecha" name={`l${i}.cantidad`} value={valor(`l${i}.cantidad`, numero(l.cantidad))} inputmode="decimal" autocomplete="off" aria-label={`Cantidad de la línea ${n}`} aria-invalid={error(`l${i}.cantidad`) ? 'true' : undefined} />
@@ -145,6 +145,13 @@ const t = f.totales;
           )
         }
       </div>
+      {
+        (articulos.length > 0 || plantillas.length > 0) && (
+          <p class="nv-nota" data-solo-js hidden>
+            Escribe en «Concepto» y elige del catálogo (bisagra, armario, montaje…), o pulsa «Añadir del catálogo» para verlo todo.
+          </p>
+        )
+      }
     </section>
   </div>
 
@@ -274,6 +281,7 @@ const t = f.totales;
       tr.querySelectorAll('input:not([type="hidden"])').forEach((e) => (e.value = e.name.endsWith('.cantidad') ? '1' : ''));
       if (ivaFijo) tr.querySelector('[name$=".iva"]').value = ivaFijo;
       tr.querySelectorAll('[aria-invalid]').forEach((e) => e.removeAttribute('aria-invalid'));
+      delete tr.dataset.clave;
       cuerpo.append(tr);
       renumerar();
       return tr;
@@ -294,15 +302,44 @@ const t = f.totales;
       recalcular();
       pon('[data-anuncio]', 'Línea quitada.');
     });
-    // Del catálogo: en la factura, el material va con el concepto.
+    // Del catálogo (SelectorCatalogo.astro): en la línea elegida o en una libre
+    // o nueva; el mismo artículo otra vez suma uno. En la factura, el material
+    // va con el concepto; sin precio en el catálogo, el precio queda en blanco.
+    const coma = (n) => String(n).replace('.', ',');
+    const filasVivas = () => [...cuerpo.querySelectorAll('[data-linea]')];
     document.addEventListener('catalogo:anadir', (e) => {
-      for (const l of e.detail.lineas) {
-        const tr = libre() ?? nuevaFila();
+      const { lineas, fila } = e.detail;
+      let foco = null;
+      lineas.forEach((l, k) => {
+        const ya = !fila && l.clave && filasVivas().find((tr) => tr.dataset.clave === l.clave);
+        if (ya) {
+          campo(ya, 'cantidad').value = coma((num(campo(ya, 'cantidad').value) ?? 0) + 1);
+          return;
+        }
+        const tr = (k === 0 && fila?.isConnected && fila) || libre() || nuevaFila();
         campo(tr, 'concepto').value = l.material ? `${l.concepto} (${l.material})` : l.concepto;
-        campo(tr, 'cantidad').value = String(l.cantidad).replace('.', ',');
-        campo(tr, 'precio').value = String(l.precio).replace('.', ',');
-      }
+        if (l.cantidad !== null) campo(tr, 'cantidad').value = coma(l.cantidad);
+        else if (!campo(tr, 'cantidad').value.trim()) campo(tr, 'cantidad').value = '1';
+        campo(tr, 'precio').value = l.precio === null ? '' : coma(l.precio);
+        if (l.clave) tr.dataset.clave = l.clave;
+        else delete tr.dataset.clave;
+        if (fila && !foco) foco = l.precio === null ? campo(tr, 'precio') : campo(tr, 'cantidad');
+      });
       recalcular();
+      if (foco) {
+        foco.focus();
+        foco.select();
+        pon('[data-anuncio]', foco.name.endsWith('.precio') ? 'Añadido. Escribe su precio.' : 'Añadido. Escribe la cantidad.');
+      }
+    });
+    // Al cerrar el catálogo: al primer precio que falte o, si se eligió desde
+    // una línea, a su cantidad (después de que la ventana devuelva el foco).
+    document.addEventListener('catalogo:listo', (e) => {
+      const tr = filasVivas().find((x) => campo(x, 'concepto').value.trim() && !campo(x, 'precio').value.trim());
+      const fila = e.detail.fila;
+      if (tr) pon('[data-anuncio]', `Falta el precio de «${campo(tr, 'concepto').value}».`);
+      const foco = tr ? campo(tr, 'precio') : fila?.isConnected ? campo(fila, 'cantidad') : null;
+      if (foco) setTimeout(() => foco.focus());
     });
     f.querySelectorAll('[data-dias]').forEach((b) =>
       b.addEventListener('click', () => {
@@ -311,7 +348,11 @@ const t = f.totales;
         f.vencimiento.value = d.toISOString().slice(0, 10);
       }),
     );
-    f.addEventListener('input', recalcular);
+    f.addEventListener('input', (e) => {
+      // Un concepto cambiado a mano ya no es el artículo del catálogo.
+      if (e.target.name?.endsWith('.concepto')) delete e.target.closest('[data-linea]').dataset.clave;
+      recalcular();
+    });
     f.addEventListener('change', recalcular);
     recalcular();
   })();

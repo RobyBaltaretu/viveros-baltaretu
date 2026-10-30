@@ -1,16 +1,20 @@
 ---
 /**
- * «Añadir del catálogo» en los editores de presupuestos y facturas: una
- * ventana con buscador y dos pestañas.
- * - Artículos: se añaden con su precio de venta (sin IVA), uno detrás de otro.
- * - Trabajos: se escriben las medidas y se eligen los materiales; el precio se
- *   calcula al momento (/api/panel/catalogo-trabajo) y se añade en una línea o
- *   por partes.
+ * El catálogo en los editores de presupuestos y facturas, de dos maneras:
+ * - En la propia línea: al escribir en «Concepto» salen los trabajos y
+ *   materiales que coinciden; con Intro o un toque se rellena esa línea.
+ * - «Añadir del catálogo»: una ventana con todo, por categorías. Cada toque en
+ *   un material lo añade (otro toque suma uno más); un trabajo pide sus medidas
+ *   y materiales, enseña lo que lleva y su precio (/api/panel/catalogo-trabajo),
+ *   y se añade en una línea, por partes o material a material.
+ * Salen todos los materiales: los que aún no tienen precio se añaden con el
+ * precio en blanco, para escribirlo en la línea.
  * Avisa al formulario con el evento `catalogo:anadir` (detail.lineas:
- * concepto, material, cantidad, precio); cada editor decide cómo escribirlas.
- * Nunca muestra costes ni márgenes. Va fuera del formulario del editor (no se
- * puede anidar un formulario); el editor pone su botón `data-abrir-catalogo`
- * (oculto sin JavaScript: entonces las líneas se escriben a mano).
+ * concepto, material, cantidad, precio o null, clave; detail.fila: la línea
+ * que se rellena, si se eligió desde ella) y `catalogo:listo` al cerrar la
+ * ventana. Nunca muestra costes ni márgenes. Va fuera del formulario (no se
+ * anidan formularios); el editor pone su botón `data-abrir-catalogo` (oculto
+ * sin JavaScript: entonces las líneas se escriben a mano).
  */
 import Icono from '../components/panel/ui/Icono.astro';
 import { CATEGORIAS, precioVenta, sinPrecio } from '../server/catalogo/catalogo.ts';
@@ -23,10 +27,12 @@ interface Props {
   destino: 'presupuesto' | 'factura';
 }
 const { articulos, plantillas, destino } = Astro.props;
-const conPrecio = articulos.filter((a) => !sinPrecio(a));
 const nombreCat = (id: string) => CATEGORIAS.find((c) => c.id === id)?.nombre ?? id;
+const orden = (id: string) => CATEGORIAS.findIndex((c) => c.id === id);
 const datos = {
-  articulos: conPrecio.map((a) => ({ id: a.id, nombre: a.nombre, acabado: a.acabado, unidad: a.unidad, precio: precioVenta(a), categoria: nombreCat(a.categoria), orden: CATEGORIAS.findIndex((c) => c.id === a.categoria) })),
+  articulos: [...articulos]
+    .sort((a, b) => orden(a.categoria) - orden(b.categoria) || a.nombre.localeCompare(b.nombre, 'es'))
+    .map((a) => ({ id: a.id, nombre: a.nombre, acabado: a.acabado, unidad: a.unidad, precio: sinPrecio(a) ? null : precioVenta(a), categoria: nombreCat(a.categoria) })),
   trabajos: plantillas.map((p) => ({
     id: p.id,
     nombre: p.nombre,
@@ -36,7 +42,9 @@ const datos = {
     opciones: p.opciones.map((o) => ({ id: o.id, nombre: o.nombre, defecto: o.defecto, articulos: articulos.filter((a) => o.categorias.includes(a.categoria)).map((a) => ({ id: a.id, nombre: a.nombre })) })),
   })),
 };
-const hay = datos.articulos.length > 0 || datos.trabajos.length > 0;
+const grupos = [...(datos.trabajos.length ? [{ nombre: 'Trabajos', n: datos.trabajos.length }] : []), ...[...new Set(datos.articulos.map((a) => a.categoria))].map((c) => ({ nombre: c, n: datos.articulos.filter((a) => a.categoria === c).length }))];
+const hay = grupos.length > 0;
+const faltan = datos.articulos.filter((a) => a.precio === null).length;
 ---
 
 {
@@ -54,23 +62,37 @@ const hay = datos.articulos.length > 0 || datos.trabajos.length > 0;
             <span class="sr-only">Buscar en el catálogo</span>
             <input type="search" class="campo-panel" placeholder="Buscar: armario, bisagra, hora de montaje…" data-buscar autocomplete="off" />
           </label>
-          <div class="nv-pestanas" role="tablist" aria-label="Partes del catálogo">
-            <button type="button" role="tab" aria-selected="true" aria-controls="cat-trabajos" id="tab-trabajos" data-tab="trabajos">
-              Trabajos <span class="nv-chip">{datos.trabajos.length}</span>
+          <div class="nv-toques nv-filtro-catalogo" role="group" aria-label="Qué ver">
+            <button type="button" class="nv-toque" data-grupo="" aria-pressed="true">
+              Todo
             </button>
-            <button type="button" role="tab" aria-selected="false" aria-controls="cat-articulos" id="tab-articulos" data-tab="articulos">
-              Artículos <span class="nv-chip">{datos.articulos.length}</span>
-            </button>
+            {
+              grupos.map((g) => (
+                <button type="button" class="nv-toque" data-grupo={g.nombre} aria-pressed="false">
+                  {g.nombre} <span class="nv-gris-suave">{g.n}</span>
+                </button>
+              ))
+            }
           </div>
-          <div id="cat-trabajos" role="tabpanel" aria-labelledby="tab-trabajos" data-panel="trabajos">
-            <ul class="nv-lista-catalogo" data-lista="trabajos" />
-          </div>
-          <div id="cat-articulos" role="tabpanel" aria-labelledby="tab-articulos" data-panel="articulos" hidden>
-            <ul class="nv-lista-catalogo" data-lista="articulos" />
-          </div>
+          {
+            faltan > 0 && (
+              <p class="nv-nota nv-sin-margen">
+                {faltan === 1 ? 'Un material aún no tiene precio' : `${faltan} materiales aún no tienen precio`}: se añaden con el precio en blanco para que lo escribas. <a href="/panel/catalogo/precios" class="enlace-panel">Poner los precios</a>
+              </p>
+            )
+          }
+          <ul class="nv-lista-catalogo" data-lista aria-label="Catálogo" />
           <p class="nv-gris" data-vacio hidden>
             Nada con esa búsqueda. Puedes escribir la línea a mano.
           </p>
+          <div class="nv-dialogo-pie">
+            <p class="nv-estado-catalogo" role="status" data-anadido>
+              Toca lo que quieras añadir. Puedes añadir varios.
+            </p>
+            <button type="button" class="nv-boton" data-listo>
+              Listo
+            </button>
+          </div>
         </div>
         <div class="nv-dialogo-cuerpo" data-paso="trabajo" hidden>
           <button type="button" class="enlace-panel nv-enlace-boton" data-volver>
@@ -80,15 +102,25 @@ const hay = datos.articulos.length > 0 || datos.trabajos.length > 0;
           <h3 data-trabajo-nombre />
           <div class="nv-rejilla nv-rejilla-2" data-trabajo-form />
           <ul class="nv-avisos" data-trabajo-avisos hidden />
+          <details class="nv-lleva" data-lleva hidden>
+            <summary>
+              Qué lleva <span class="nv-gris" data-lleva-n />
+            </summary>
+            <ul data-lleva-lista />
+          </details>
           <fieldset class="nv-modo">
-            <legend>Cómo añadirlo</legend>
+            <legend>Cómo ponerlo en el {destino}</legend>
             <label class="nv-opcion">
               <input type="radio" name="modo-catalogo" value="una" checked />
               En una línea, con sus medidas
             </label>
             <label class="nv-opcion">
               <input type="radio" name="modo-catalogo" value="partes" />
-              Por partes (materiales, mano de obra…)
+              Por partes: materiales, herrajes, mano de obra
+            </label>
+            <label class="nv-opcion">
+              <input type="radio" name="modo-catalogo" value="detalle" />
+              Material a material, con sus cantidades
             </label>
           </fieldset>
           <div class="nv-dialogo-pie">
@@ -101,8 +133,8 @@ const hay = datos.articulos.length > 0 || datos.trabajos.length > 0;
             </button>
           </div>
         </div>
-        <p class="nv-aviso-anadido" role="status" data-anadido />
       </dialog>
+      <ul class="nv-sugerencias" id="sugerencias-catalogo" role="listbox" aria-label="Del catálogo" hidden />
       <script type="application/json" id="datos-catalogo" set:html={JSON.stringify(datos).replace(/</g, '\\u003c')} />
     </>
   )
@@ -112,13 +144,16 @@ const hay = datos.articulos.length > 0 || datos.trabajos.length > 0;
   (() => {
     const d = document.getElementById('dialogo-catalogo');
     const fuente = document.getElementById('datos-catalogo');
-    if (!d || !fuente || !d.showModal) return;
+    const sug = document.getElementById('sugerencias-catalogo');
+    if (!d || !fuente || !sug || !d.showModal) return;
     const datos = JSON.parse(fuente.textContent);
     const abrir = document.querySelector('[data-abrir-catalogo]');
     if (!abrir) return;
+    const form = abrir.closest('form');
     abrir.hidden = false;
     const $ = (s) => d.querySelector(s);
     const eur = (n) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true }) + ' €';
+    const cifra = (n) => n.toLocaleString('es-ES', { maximumFractionDigits: 2 });
     const normal = (t) => String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     const el = (tag, props = {}, ...hijos) => {
       const e = document.createElement(tag);
@@ -126,57 +161,81 @@ const hay = datos.articulos.length > 0 || datos.trabajos.length > 0;
       hijos.forEach((h) => e.append(h));
       return e;
     };
-    let tab = 'trabajos';
-    let actual = null;
-    const anunciar = (t) => {
-      const a = $('[data-anadido]');
-      a.textContent = t;
-      clearTimeout(a._reloj);
-      a._reloj = setTimeout(() => (a.textContent = ''), 2500);
+    const precioDe = (a) => (a.precio === null ? 'Sin precio' : `${eur(a.precio)}/${a.unidad}`);
+    const lineaDe = (a) => ({ concepto: a.nombre, material: a.acabado || '', cantidad: 1, precio: a.precio, clave: `a:${a.id}` });
+    // Un precio 0 del catálogo es un precio que falta: la línea va en blanco.
+    const anadir = (lineas, fila = null) => document.dispatchEvent(new CustomEvent('catalogo:anadir', { detail: { lineas: lineas.map((l) => ({ ...l, precio: l.precio > 0 ? l.precio : null })), fila } }));
+    // Coincide si están todas las palabras; primero lo que empieza por la búsqueda.
+    const buscar = (q, texto) => {
+      const t = normal(texto);
+      const palabras = normal(q).split(/\s+/).filter(Boolean);
+      if (!palabras.every((p) => t.includes(p))) return -1;
+      return t.startsWith(palabras[0] ?? '') ? 0 : 1;
     };
-    const anadir = (lineas) => document.dispatchEvent(new CustomEvent('catalogo:anadir', { detail: { lineas } }));
+
+    // ---------- La ventana ----------
+    let grupo = '';
+    let fila = null;
+    const veces = new Map();
+    const anunciar = (t) => ($('[data-anadido]').textContent = t);
     const pintar = () => {
-      const q = normal($('[data-buscar]').value.trim());
-      const ok = (t) => !q || normal(t).includes(q);
-      const art = $('[data-lista="articulos"]');
-      const tra = $('[data-lista="trabajos"]');
-      art.replaceChildren();
-      tra.replaceChildren();
-      const arts = datos.articulos.filter((a) => ok(`${a.nombre} ${a.acabado} ${a.categoria}`)).sort((a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre));
-      let grupo = '';
-      for (const a of arts) {
-        if (a.categoria !== grupo) {
-          grupo = a.categoria;
-          art.append(el('li', { className: 'nv-lista-grupo', textContent: grupo }));
+      const q = $('[data-buscar]').value.trim();
+      const ok = (texto) => !q || buscar(q, texto) >= 0;
+      const lista = $('[data-lista]');
+      lista.replaceChildren();
+      let n = 0;
+      const cabeza = (t) => lista.append(el('li', { className: 'nv-lista-grupo', textContent: t, ariaHidden: 'true' }));
+      if (!grupo || grupo === 'Trabajos') {
+        const tra = datos.trabajos.filter((x) => ok(`${x.nombre} ${x.tipo} ${x.descripcion}`));
+        if (tra.length) cabeza('Trabajos');
+        for (const t of tra) {
+          const b = el('button', { type: 'button', className: 'nv-item-catalogo' }, el('span', {}, el('strong', { textContent: t.nombre }), el('small', { textContent: t.tipo || 'Con medidas' })), el('span', { className: 'nv-item-accion', textContent: 'Medidas →' }));
+          b.setAttribute('aria-label', `${t.nombre}: poner medidas y materiales`);
+          b.addEventListener('click', () => abrirTrabajo(t));
+          lista.append(el('li', {}, b));
+          n++;
         }
-        const b = el('button', { type: 'button', className: 'nv-item-catalogo' }, el('span', {}, el('strong', { textContent: a.nombre }), el('small', { textContent: a.acabado || '' })), el('span', { className: 'nv-cifra', textContent: `${eur(a.precio)}/${a.unidad}` }));
-        b.setAttribute('aria-label', `Añadir ${a.nombre}, ${eur(a.precio)} por ${a.unidad}`);
+      }
+      let actual = '';
+      for (const a of datos.articulos) {
+        if ((grupo && grupo !== a.categoria) || !ok(`${a.nombre} ${a.acabado} ${a.categoria}`)) continue;
+        if (a.categoria !== actual) cabeza((actual = a.categoria));
+        const cuantos = veces.get(a.id) ?? 0;
+        const marca = el('span', { className: 'nv-item-veces', textContent: cuantos ? `× ${cuantos}` : '', ariaHidden: 'true' });
+        const b = el(
+          'button',
+          { type: 'button', className: 'nv-item-catalogo' },
+          el('span', {}, el('strong', { textContent: a.nombre }), a.acabado ? el('small', { textContent: a.acabado }) : ''),
+          el('span', { className: 'nv-item-derecha' }, el('span', { className: a.precio === null ? 'nv-item-sin-precio' : 'nv-cifra', textContent: precioDe(a) }), marca, el('span', { className: 'nv-item-mas', textContent: '+', ariaHidden: 'true' })),
+        );
+        b.setAttribute('aria-label', `Añadir ${a.nombre}, ${a.precio === null ? 'sin precio' : `${eur(a.precio)} por ${a.unidad}`}${cuantos ? `, ya añadido ${cuantos}` : ''}`);
         b.addEventListener('click', () => {
-          anadir([{ concepto: a.nombre, material: a.acabado || '', cantidad: 1, precio: a.precio }]);
-          anunciar(`${a.nombre} añadido. Cambia la cantidad en la línea.`);
+          anadir([lineaDe(a)]);
+          const v = (veces.get(a.id) ?? 0) + 1;
+          veces.set(a.id, v);
+          marca.textContent = `× ${v}`;
+          b.setAttribute('aria-label', `Añadir ${a.nombre}, ${a.precio === null ? 'sin precio' : `${eur(a.precio)} por ${a.unidad}`}, ya añadido ${v}`);
+          anunciar(`${a.nombre} añadido${v > 1 ? ` (van ${v})` : ''}.${a.precio === null ? ' Escribe su precio en la línea.' : ''}`);
         });
-        art.append(el('li', {}, b));
+        lista.append(el('li', {}, b));
+        n++;
       }
-      for (const t of datos.trabajos.filter((x) => ok(`${x.nombre} ${x.tipo} ${x.descripcion}`))) {
-        const b = el('button', { type: 'button', className: 'nv-item-catalogo' }, el('span', {}, el('strong', { textContent: t.nombre }), el('small', { textContent: t.tipo || '' })), el('span', { className: 'nv-gris', textContent: 'Poner medidas →' }));
-        b.addEventListener('click', () => abrirTrabajo(t));
-        tra.append(el('li', {}, b));
-      }
-      $('[data-vacio]').hidden = (tab === 'articulos' ? arts.length : tra.children.length) > 0;
+      $('[data-vacio]').hidden = n > 0;
     };
-    const elegirTab = (t) => {
-      tab = t;
-      d.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
-      $('[data-panel="articulos"]').hidden = t !== 'articulos';
-      $('[data-panel="trabajos"]').hidden = t !== 'trabajos';
+    const elegirGrupo = (g) => {
+      grupo = g;
+      d.querySelectorAll('[data-grupo]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.grupo === g)));
       pintar();
     };
+
+    // ---------- Un trabajo: medidas, materiales y precio ----------
+    let trabajo = null;
     let reloj = 0;
     let pedido = 0;
     let lineas = null;
     const calcular = async () => {
       const n = ++pedido;
-      const q = new URLSearchParams({ id: actual.id });
+      const q = new URLSearchParams({ id: trabajo.id });
       $('[data-trabajo-form]').querySelectorAll('input, select').forEach((c) => q.set(c.name, c.value));
       $('[data-anadir-trabajo]').disabled = true;
       try {
@@ -184,17 +243,23 @@ const hay = datos.articulos.length > 0 || datos.trabajos.length > 0;
         if (!r.ok || n !== pedido) return;
         const j = await r.json();
         lineas = j.lineas;
-        $('[data-trabajo-precio]').textContent = eur(j.precio);
+        $('[data-trabajo-precio]').textContent = j.precio > 0 ? eur(j.precio) : 'Sin precio';
+        const avisos = [...j.avisos];
+        if (j.faltanPrecios) avisos.push(`${j.faltanPrecios === 1 ? 'Un material' : `${j.faltanPrecios} materiales`} sin precio en el catálogo: puedes añadirlo igual y escribir el precio en la línea.`);
         const av = $('[data-trabajo-avisos]');
-        av.replaceChildren(...j.avisos.map((a) => el('li', { textContent: a })));
-        av.hidden = j.avisos.length === 0;
-        $('[data-anadir-trabajo]').disabled = !(j.precio > 0);
+        av.replaceChildren(...avisos.map((a) => el('li', { textContent: a })));
+        av.hidden = avisos.length === 0;
+        const lleva = $('[data-lleva]');
+        lleva.hidden = j.lleva.length === 0;
+        $('[data-lleva-n]').textContent = `(${j.lleva.length})`;
+        $('[data-lleva-lista]').replaceChildren(...j.lleva.map((x) => el('li', {}, el('span', { textContent: x.articulo }), el('span', { className: x.sinPrecio ? 'nv-item-sin-precio' : 'nv-cifra', textContent: `${cifra(x.cantidad)} ${x.unidad}${x.sinPrecio ? ' · sin precio' : ''}` }))));
+        $('[data-anadir-trabajo]').disabled = j.lineas.una.length === 0;
       } catch {
         $('[data-trabajo-precio]').textContent = 'Sin conexión';
       }
     };
     const abrirTrabajo = (t) => {
-      actual = t;
+      trabajo = t;
       $('[data-paso="lista"]').hidden = true;
       $('[data-paso="trabajo"]').hidden = false;
       $('[data-trabajo-nombre]').textContent = t.nombre;
@@ -209,15 +274,16 @@ const hay = datos.articulos.length > 0 || datos.trabajos.length > 0;
         for (const a of o.articulos) s.append(el('option', { value: a.id, textContent: a.nombre, selected: a.id === o.defecto }));
         f.append(el('label', { className: 'nv-campo nv-ancho-todo' }, o.nombre, s));
       }
+      $('[data-trabajo-avisos]').hidden = true;
+      $('[data-lleva]').hidden = true;
       $('[data-trabajo-precio]').textContent = '…';
       calcular();
       f.querySelector('input, select')?.focus();
     };
-    const volver = () => {
-      actual = null;
+    const verLista = () => {
+      trabajo = null;
       $('[data-paso="trabajo"]').hidden = true;
       $('[data-paso="lista"]').hidden = false;
-      $('[data-buscar]').focus();
     };
     $('[data-trabajo-form]').addEventListener('input', () => {
       // Hasta tener el precio de las medidas nuevas, no se puede añadir. Una
@@ -229,25 +295,153 @@ const hay = datos.articulos.length > 0 || datos.trabajos.length > 0;
       clearTimeout(reloj);
       reloj = setTimeout(calcular, 250);
     });
-    $('[data-volver]').addEventListener('click', volver);
+    $('[data-volver]').addEventListener('click', () => {
+      verLista();
+      $('[data-buscar]').focus();
+    });
     $('[data-anadir-trabajo]').addEventListener('click', () => {
       if (!lineas) return;
       const modo = d.querySelector('input[name="modo-catalogo"]:checked').value;
-      anadir(lineas[modo]);
-      anunciar(`${actual.nombre} añadido.`);
+      anadir(lineas[modo], fila);
       d.close();
     });
-    d.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => elegirTab(b.dataset.tab)));
+    d.querySelectorAll('[data-grupo]').forEach((b) => b.addEventListener('click', () => elegirGrupo(b.dataset.grupo)));
     $('[data-buscar]').addEventListener('input', pintar);
     $('[data-cerrar]').addEventListener('click', () => d.close());
+    $('[data-listo]').addEventListener('click', () => d.close());
     d.addEventListener('click', (e) => {
       if (e.target === d) d.close();
     });
-    abrir.addEventListener('click', () => {
-      volver();
-      d.showModal();
-      $('[data-buscar]').focus();
+    d.addEventListener('close', () => {
+      const habia = fila;
+      fila = null;
+      document.dispatchEvent(new CustomEvent('catalogo:listo', { detail: { fila: habia } }));
     });
-    elegirTab(datos.trabajos.length ? 'trabajos' : 'articulos');
+    const abrirVentana = (q = '', t = null, desde = null) => {
+      fila = desde;
+      veces.clear();
+      $('[data-buscar]').value = q;
+      anunciar('Toca lo que quieras añadir. Puedes añadir varios.');
+      elegirGrupo('');
+      verLista();
+      d.showModal();
+      if (t) abrirTrabajo(t);
+      else $('[data-buscar]').focus();
+    };
+    abrir.addEventListener('click', () => abrirVentana());
+
+    // ---------- En la propia línea: sugerencias al escribir el concepto ----------
+    const conceptos = () => form.querySelectorAll('input[name$=".concepto"]');
+    const preparar = (i) => {
+      i.setAttribute('role', 'combobox');
+      i.setAttribute('aria-autocomplete', 'list');
+      i.setAttribute('aria-expanded', 'false');
+      i.setAttribute('aria-controls', 'sugerencias-catalogo');
+    };
+    conceptos().forEach(preparar);
+    let campo = null;
+    let opciones = [];
+    let activa = -1;
+    const cerrar = () => {
+      sug.hidden = true;
+      sug.replaceChildren();
+      opciones = [];
+      activa = -1;
+      if (campo) {
+        campo.setAttribute('aria-expanded', 'false');
+        campo.removeAttribute('aria-activedescendant');
+      }
+    };
+    const colocar = () => {
+      if (!campo || sug.hidden) return;
+      const r = campo.getBoundingClientRect();
+      const ancho = Math.min(Math.max(r.width, 320), window.innerWidth - 16);
+      sug.style.left = `${Math.max(8, Math.min(r.left, window.innerWidth - ancho - 8))}px`;
+      sug.style.width = `${ancho}px`;
+      const abajo = window.innerHeight - r.bottom;
+      if (abajo < 240 && r.top > abajo) {
+        sug.style.top = '';
+        sug.style.bottom = `${window.innerHeight - r.top + 4}px`;
+      } else {
+        sug.style.bottom = '';
+        sug.style.top = `${r.bottom + 4}px`;
+      }
+    };
+    const marcar = (k) => {
+      activa = k;
+      sug.querySelectorAll('[role="option"]').forEach((o, j) => o.setAttribute('aria-selected', String(j === k)));
+      if (k >= 0) {
+        campo.setAttribute('aria-activedescendant', `sug-catalogo-${k}`);
+        sug.querySelector(`#sug-catalogo-${k}`)?.scrollIntoView({ block: 'nearest' });
+      } else campo.removeAttribute('aria-activedescendant');
+    };
+    const sugerir = () => {
+      const q = campo.value.trim();
+      if (q.length < 2) return cerrar();
+      const tra = datos.trabajos.map((t) => ({ t, p: buscar(q, `${t.nombre} ${t.tipo}`) })).filter((x) => x.p >= 0);
+      const art = datos.articulos.map((a) => ({ a, p: buscar(q, `${a.nombre} ${a.acabado} ${a.categoria}`) })).filter((x) => x.p >= 0);
+      const todas = [...tra, ...art].sort((x, y) => x.p - y.p).slice(0, 7);
+      opciones = todas.map((x) => (x.t ? { tipo: 'trabajo', t: x.t } : { tipo: 'articulo', a: x.a }));
+      if (todas.length) opciones.push({ tipo: 'todo', q });
+      sug.replaceChildren(
+        ...opciones.map((o, k) => {
+          const li = el('li', { id: `sug-catalogo-${k}`, className: 'nv-sugerencia' });
+          li.setAttribute('role', 'option');
+          li.setAttribute('aria-selected', 'false');
+          if (o.tipo === 'trabajo') li.append(el('span', {}, el('strong', { textContent: o.t.nombre }), el('small', { textContent: 'Trabajo · con medidas' })), el('span', { className: 'nv-item-accion', textContent: 'Medidas →' }));
+          else if (o.tipo === 'articulo') li.append(el('span', {}, el('strong', { textContent: o.a.nombre }), el('small', { textContent: [o.a.acabado, o.a.categoria].filter(Boolean).join(' · ') })), el('span', { className: o.a.precio === null ? 'nv-item-sin-precio' : 'nv-cifra', textContent: precioDe(o.a) }));
+          else {
+            li.classList.add('nv-sugerencia-todo');
+            li.textContent = `Ver todo el catálogo con «${o.q}»`;
+          }
+          li.addEventListener('mousedown', (e) => e.preventDefault());
+          li.addEventListener('click', () => elegir(k));
+          return li;
+        }),
+      );
+      if (!todas.length) return cerrar();
+      sug.hidden = false;
+      campo.setAttribute('aria-expanded', 'true');
+      marcar(-1);
+      colocar();
+    };
+    const elegir = (k) => {
+      const o = opciones[k];
+      const i = campo;
+      const tr = i?.closest('[data-linea]');
+      cerrar();
+      if (!o || !tr) return;
+      if (o.tipo === 'articulo') anadir([{ ...lineaDe(o.a), cantidad: null }], tr);
+      else if (o.tipo === 'trabajo') abrirVentana('', o.t, tr);
+      else abrirVentana(o.q, null, null);
+    };
+    form.addEventListener('focusin', (e) => {
+      if (e.target.matches?.('input[name$=".concepto"]')) {
+        if (!e.target.hasAttribute('role')) preparar(e.target);
+        campo = e.target;
+      }
+    });
+    form.addEventListener('input', (e) => {
+      if (e.target === campo) sugerir();
+    });
+    form.addEventListener('keydown', (e) => {
+      if (e.target !== campo || sug.hidden) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const n = opciones.length;
+        marcar(e.key === 'ArrowDown' ? (activa + 1) % n : (activa - 1 + n) % n);
+      } else if (e.key === 'Enter' && activa >= 0) {
+        e.preventDefault();
+        elegir(activa);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        cerrar();
+      }
+    });
+    form.addEventListener('focusout', (e) => {
+      if (e.target === campo) cerrar();
+    });
+    window.addEventListener('resize', colocar);
+    document.addEventListener('scroll', colocar, true);
   })();
 </script>
