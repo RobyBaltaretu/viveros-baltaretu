@@ -7,7 +7,7 @@ test('presupuestos: alta con extra, anticipo, envío, aceptación y factura de a
   const p = test.info().project.name;
   await page.goto('/panel/facturas/clientes/nuevo');
   await page.getByLabel('Razón social o nombre completo').fill(`Cliente ${p}`);
-  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+  await page.getByRole('button', { name: 'Guardar el cliente' }).click();
 
   await page.goto('/panel/presupuestos-cliente');
   await auditar(page);
@@ -65,7 +65,7 @@ test('factura desde un presupuesto: desde «Nueva factura» (el enviado se da po
   const p = `${test.info().project.name} ${Date.now()}`;
   await page.goto('/panel/facturas/clientes/nuevo');
   await page.getByLabel('Razón social o nombre completo').fill(`Cliente desde ${p}`);
-  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+  await page.getByRole('button', { name: 'Guardar el cliente' }).click();
   await page.goto('/panel/presupuestos-cliente/nuevo');
   await page.getByRole('combobox', { name: /^Cliente/ }).selectOption({ label: `Cliente desde ${p}` });
   await page.getByLabel('Qué se presupuesta').fill(`Cocina ${p}`);

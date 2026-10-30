@@ -32,6 +32,9 @@ const { valores: v, clientes, ivaFijo, filas, boton, articulos, plantillas } = A
 const lineas = v.lineas ?? [];
 const num = (n: number | undefined) => (n === undefined || Number.isNaN(n) ? '' : String(n).replace('.', ','));
 const FORMAS_PAGO = ['Transferencia', 'Bizum', 'Efectivo', 'Tarjeta'];
+// La forma de pago habitual del cliente se propone si no hay otra escrita.
+const elegido = clientes.find((c) => c.id === v.clienteId);
+const formaPago = v.formaPago || elegido?.formaPago || '';
 const fila = (i: number) => {
   const l = lineas[i];
   return { i, n: i + 1, concepto: l?.concepto ?? '', material: l?.material ?? '', cantidad: l ? num(l.cantidad) : '1', precio: num(l?.precio), extra: l?.extra ?? false };
@@ -50,12 +53,15 @@ const fila = (i: number) => {
             <option value="">Elige un cliente</option>
             {
               clientes.map((c) => (
-                <option value={c.id} selected={c.id === v.clienteId}>
+                <option value={c.id} selected={c.id === v.clienteId} data-forma-pago={c.formaPago || undefined} data-obra={c.direccionObra || undefined}>
                   {c.nombre}
                 </option>
               ))
             }
           </select>
+          <p class="nv-gris nv-sin-margen" data-obra-cliente hidden={!elegido?.direccionObra}>
+            Obra: <span>{elegido?.direccionObra}</span>
+          </p>
           <a href="/panel/facturas/clientes/nuevo" class="enlace-panel">¿No está? Añadir un cliente</a>
         </div>
         <label class="nv-campo">
@@ -230,7 +236,7 @@ const fila = (i: number) => {
 
     <label class="nv-campo">
       Forma de pago
-      <input class="campo-panel" name="formaPago" value={v.formaPago ?? ''} maxlength="80" list="formas-pago" placeholder="Transferencia, Bizum…" autocomplete="off" />
+      <input class="campo-panel" name="formaPago" value={formaPago} data-auto={!v.formaPago && formaPago ? formaPago : undefined} maxlength="80" list="formas-pago" placeholder="Transferencia, Bizum…" autocomplete="off" />
       <datalist id="formas-pago">
         {FORMAS_PAGO.map((f) => <option value={f} />)}
       </datalist>
@@ -365,6 +371,16 @@ const fila = (i: number) => {
       if (tr) pon('[data-anuncio]', `Falta el precio de «${campo(tr, 'concepto').value}».`);
       const foco = tr ? campo(tr, 'precio') : fila && !fila.hidden ? campo(fila, 'cantidad') : null;
       if (foco) setTimeout(() => foco.focus());
+    });
+    // Al elegir el cliente: su dirección de obra a la vista y su forma de pago
+    // habitual, si no se ha escrito otra a mano.
+    let formaAuto = f.formaPago.dataset.auto ?? '';
+    f.clienteId.addEventListener('change', () => {
+      const o = f.clienteId.selectedOptions[0];
+      const obra = f.querySelector('[data-obra-cliente]');
+      obra.hidden = !o?.dataset.obra;
+      obra.querySelector('span').textContent = o?.dataset.obra ?? '';
+      if (!f.formaPago.value.trim() || f.formaPago.value === formaAuto) f.formaPago.value = formaAuto = o?.dataset.formaPago ?? '';
     });
     f.querySelectorAll('[data-dias]').forEach((b) =>
       b.addEventListener('click', () => {

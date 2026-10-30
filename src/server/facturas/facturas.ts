@@ -132,6 +132,8 @@ export function leerCliente(form: FormData, previo: Cliente): { cliente: Cliente
     telefono: v('telefono'),
     recargo: form.get('recargo') === '1',
     notas: v('notas'),
+    // Campos ampliados (D-06): solo si el formulario los trae; el de siempre no los toca.
+    ...Object.fromEntries((['contacto', 'direccionObra', 'formaPago'] as const).filter((k) => form.has(k)).map((k) => [k, v(k).slice(0, k === 'formaPago' ? 80 : 200)])),
   };
   const errores: Error[] = [];
   if (!cliente.nombre) errores.push({ campo: 'nombre', mensaje: 'Falta el nombre o la razón social del cliente.' });
@@ -171,7 +173,7 @@ export function nuevaFactura(cliente: Cliente, email: string, ajustes: AjustesFa
     emisor: null,
     lineas: [],
     totales: calcularTotales([], cliente.recargo),
-    formaPago: ajustes.formaPago,
+    formaPago: cliente.formaPago || ajustes.formaPago,
     notas: '',
     exencion: '',
     rectificaId: null,

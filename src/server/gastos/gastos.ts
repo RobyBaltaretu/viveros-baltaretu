@@ -1,4 +1,8 @@
 import type { Gasto, LineaGasto } from '../data/tipos.ts';
+import { categoriasGastoCarpinteria } from '../../../paquetes-sector/carpinteria/gastos.ts';
+import { categoriasGastoVivero } from '../../../paquetes-sector/vivero/gastos.ts';
+import { clienteActual } from '../../plataforma/actual.ts';
+import type { SECTORES } from '../../plataforma/configuracion.ts';
 import { leerNumero } from '../facturas/importes.ts';
 
 /** Reglas de los gastos: categorías, lectura del formulario y validación. */
@@ -7,23 +11,20 @@ export interface Error {
   mensaje: string;
 }
 
-export const CATEGORIAS: { id: string; nombre: string; palabras: string[] }[] = [
-  { id: 'planta', nombre: 'Planta y semillas', palabras: ['planta', 'semilla', 'esqueje', 'plantel', 'bulbo', 'arbol', 'palmera', 'olivo'] },
-  { id: 'sustratos', nombre: 'Sustratos y abonos', palabras: ['sustrato', 'turba', 'abono', 'fertiliz', 'tierra', 'compost', 'humus', 'perlita'] },
-  { id: 'macetas', nombre: 'Macetas y envases', palabras: ['maceta', 'contenedor', 'bandeja', 'alveolo', 'tiesto', 'envase'] },
-  { id: 'fitosanitarios', nombre: 'Fitosanitarios', palabras: ['insecticida', 'fungicida', 'herbicida', 'fitosanitario', 'plaga', 'cobre', 'azufre'] },
-  { id: 'riego', nombre: 'Riego', palabras: ['riego', 'gotero', 'manguera', 'aspersor', 'tuberia', 'goteo'] },
-  { id: 'combustible', nombre: 'Combustible', palabras: ['gasolina', 'gasoil', 'diesel', 'gasoleo', 'carburante', 'repsol', 'cepsa', 'galp', 'bp ', 'shell', 'adblue'] },
-  { id: 'transporte', nombre: 'Transporte y envíos', palabras: ['transporte', 'envio', 'mensajeria', 'porte', 'peaje', 'autopista', 'seur', 'mrw', 'correos'] },
-  { id: 'herramientas', nombre: 'Herramientas y maquinaria', palabras: ['herramienta', 'tijera', 'pala', 'azada', 'motosierra', 'desbrozadora', 'maquina', 'carretilla'] },
-  { id: 'mantenimiento', nombre: 'Reparaciones y mantenimiento', palabras: ['reparacion', 'taller', 'recambio', 'mantenimiento', 'ferreteria', 'tornill'] },
-  { id: 'suministros', nombre: 'Luz, agua y teléfono', palabras: ['electricidad', 'iberdrola', 'endesa', 'naturgy', 'agua', 'telefono', 'movistar', 'vodafone', 'orange', 'fibra'] },
-  { id: 'oficina', nombre: 'Oficina y papelería', palabras: ['papel', 'papeleria', 'tinta', 'impresora', 'oficina', 'sobre'] },
-  { id: 'comidas', nombre: 'Comidas y dietas', palabras: ['restaurante', 'menu', 'cafe', 'bar ', 'comida', 'bocadillo'] },
-  { id: 'otros', nombre: 'Otros', palabras: [] },
-];
+export interface CategoriaGasto {
+  id: string;
+  nombre: string;
+  /** Palabras del proveedor o de las líneas que apuntan a esta categoría (sin tildes, en minúscula). */
+  palabras: string[];
+}
 
-export const nombreCategoria = (id: string) => CATEGORIAS.find((c) => c.id === id)?.nombre ?? 'Sin categoría';
+const POR_SECTOR: Record<(typeof SECTORES)[number], CategoriaGasto[]> = { vivero: categoriasGastoVivero, carpinteria: categoriasGastoCarpinteria };
+
+/** Tipos de gasto del sector del cliente (paquetes-sector/<sector>/gastos.ts); «otros», siempre el último. */
+export const CATEGORIAS: CategoriaGasto[] = POR_SECTOR[clienteActual().sector];
+
+/** Nombre de una categoría; también de las de otro sector (un gasto guardado antes de cambiar la lista). */
+export const nombreCategoria = (id: string) => (CATEGORIAS.find((c) => c.id === id) ?? Object.values(POR_SECTOR).flat().find((c) => c.id === id))?.nombre ?? 'Sin categoría';
 
 const normal = (t: string) =>
   ` ${t
@@ -32,10 +33,10 @@ const normal = (t: string) =>
     .toLowerCase()} `;
 
 /** Categoría probable por las palabras del proveedor y las líneas. */
-export function sugerirCategoria(proveedor: string, lineas: LineaGasto[]): string {
+export function sugerirCategoria(proveedor: string, lineas: LineaGasto[], categorias: CategoriaGasto[] = CATEGORIAS): string {
   const texto = normal([proveedor, ...lineas.map((l) => l.concepto)].join(' '));
   let mejor = { id: 'otros', puntos: 0 };
-  for (const c of CATEGORIAS) {
+  for (const c of categorias) {
     const puntos = c.palabras.filter((p) => texto.includes(p)).length;
     if (puntos > mejor.puntos) mejor = { id: c.id, puntos };
   }

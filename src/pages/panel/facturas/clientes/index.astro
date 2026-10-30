@@ -1,15 +1,26 @@
 ---
 import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
 import { sesionCon } from '../../../../server/panel/pagina.ts';
+import ListaClientes from '../../../../panel-nuevo/clientes/ListaClientes.astro';
+import { clienteActual, moduloActivoAhora } from '../../../../plataforma/actual.ts';
 
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'facturas');
 const clientes = s ? await s.repos.clientes.listar() : [];
+// Diseño nuevo (Turia): tabla con contacto, presupuestos en marcha y lo que debe cada uno.
+const nuevo = clienteActual().panel?.diseno === 'nuevo';
+const [presupuestos, facturas] = s && nuevo ? await Promise.all([moduloActivoAhora('presupuestosCliente') ? s.repos.presupuestosCliente.listar() : [], s.repos.facturas.listar()]) : [[], []];
+const conDatos = clientes.map((c) => ({
+  ...c,
+  enMarcha: presupuestos.filter((p) => p.clienteId === c.id && (p.estado === 'enviado' || (p.estado === 'aceptado' && !p.cobroResto))).length,
+  debe: facturas.filter((f) => f.clienteId === c.id && f.estado === 'emitida').reduce((t, f) => t + f.totales.total, 0),
+}));
 ---
 
-<PaginaPanel titulo="Clientes" permiso="facturas" volver="/panel/facturas">
-  <h1 class="titular-grande">Clientes</h1>
+<PaginaPanel titulo="Clientes" permiso="facturas" volver="/panel/facturas" ancho={nuevo ? 'amplio' : undefined}>
+  {nuevo && <ListaClientes clientes={conDatos} q={(Astro.url.searchParams.get('q') ?? '').trim()} hecho={Astro.url.searchParams.has('hecho')} />}
+  {!nuevo && <Fragment><h1 class="titular-grande">Clientes</h1>
   <p class="mt-4"><a href="/panel/facturas/clientes/nuevo" class="boton-panel">Añadir un cliente</a></p>
   {clientes.length === 0 && <p class="mt-6">Aún no hay clientes. También se crean solos al facturar un presupuesto de la web.</p>}
   <ul class="mt-6 grid gap-3" role="list">
@@ -24,4 +35,5 @@ const clientes = s ? await s.repos.clientes.listar() : [];
       ))
     }
   </ul>
+  </Fragment>}
 </PaginaPanel>
