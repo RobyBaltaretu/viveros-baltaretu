@@ -1,0 +1,243 @@
+---
+/**
+ * Ficha de un pedido a proveedor: recorrido (por enviar → esperando →
+ * recibido), «Ahora» con lo que toca, envío por WhatsApp o correo y PDF (sin
+ * precios), las líneas con su coste (solo para el taller) y, al recibirlo,
+ * apuntarlo como gasto.
+ */
+import Mensajes from '../../components/panel/Mensajes.astro';
+import Icono from '../../components/panel/ui/Icono.astro';
+import type { PedidoProveedor, PresupuestoCliente } from '../../server/data/tipos.ts';
+import { dinero } from '../../server/facturas/importes.ts';
+import { NOMBRE_ESTADO_PEDIDO } from '../../server/pedidos/pedidos.ts';
+
+interface Props {
+  p: PedidoProveedor;
+  hoy: string;
+  hecho: string | undefined;
+  error: string;
+  whatsapp: string;
+  correo: string | null;
+  presupuesto: PresupuestoCliente | null;
+  conGastos: boolean;
+}
+const { p, hoy, hecho, error, whatsapp, correo, presupuesto, conGastos } = Astro.props;
+const fecha = (iso: string) => iso.split('-').reverse().join('/');
+const cifra = (n: number) => n.toLocaleString('es-ES', { maximumFractionDigits: 3 });
+const tarde = p.estado === 'enviado' && !!p.entrega && p.entrega < hoy;
+const pasos = [
+  { texto: 'Hecho', hecho: true },
+  { texto: 'Enviado', hecho: p.estado !== 'borrador' },
+  { texto: 'Recibido', hecho: p.estado === 'recibido' },
+];
+const actual = pasos.findIndex((x) => !x.hecho);
+const ahora =
+  p.estado === 'borrador'
+    ? 'Envíaselo al proveedor (WhatsApp, correo o PDF) y márcalo como enviado.'
+    : p.estado === 'enviado'
+      ? tarde
+        ? `Tenía que llegar el ${fecha(p.entrega!)}: llama a ${p.proveedor.contacto || p.proveedor.nombre}.`
+        : `Esperando el material${p.entrega ? ` para el ${fecha(p.entrega)}` : ''}. Cuando llegue, márcalo como recibido.`
+      : p.gastoId
+        ? `Recibido el ${fecha(p.recibidoEl ?? hoy)} y apuntado como gasto.`
+        : conGastos
+          ? `Recibido el ${fecha(p.recibidoEl ?? hoy)}. Apúntalo como gasto para revisarlo con la factura del proveedor.`
+          : `Recibido el ${fecha(p.recibidoEl ?? hoy)}.`;
+const TONO = { borrador: 'gris', enviado: 'azul', recibido: 'verde' } as const;
+---
+
+<div class="nv-titulo">
+  <div>
+    <p>
+      <span class:list={['nv-chip', `nv-chip-${tarde ? 'rojo' : TONO[p.estado]}`]}>{tarde ? 'Con retraso' : NOMBRE_ESTADO_PEDIDO[p.estado]}</span>
+      <span class="nv-gris"> {p.codigo} · del {fecha(p.fecha)}</span>
+    </p>
+    <h1>Pedido a {p.proveedor.nombre}</h1>
+    <p>
+      {p.lineas.length === 1 ? '1 cosa' : `${p.lineas.length} cosas`}
+      {p.entrega && ` · para el ${fecha(p.entrega)}`}
+      {presupuesto && ` · para ${presupuesto.codigo}: ${presupuesto.concepto}`}
+    </p>
+  </div>
+  {
+    p.estado === 'borrador' && (
+      <a href={`/panel/pedidos/${p.id}/editar`} class="nv-boton nv-boton-secundario">
+        Cambiar el pedido
+      </a>
+    )
+  }
+</div>
+<Mensajes hecho={hecho} errores={error ? [{ campo: 'pedido', mensaje: error }] : []} />
+
+<ol class="nv-recorrido" aria-label="Recorrido del pedido">
+  {
+    pasos.map((x, i) => (
+      <li class:list={[x.hecho && 'nv-hecho', i === actual && 'nv-actual']} aria-current={i === actual ? 'step' : undefined}>
+        <span aria-hidden="true">{x.hecho ? <Icono nombre="hecho" clase="size-4" /> : null}</span>
+        {x.texto}
+        {x.hecho && <span class="sr-only"> (hecho)</span>}
+      </li>
+    ))
+  }
+</ol>
+
+<section class:list={['nv-siguiente', (p.estado === 'borrador' || tarde) && 'nv-siguiente-urgente']} aria-labelledby="siguiente">
+  <div>
+    <h2 id="siguiente">Ahora</h2>
+    <p>{ahora}</p>
+  </div>
+  <div class="nv-acciones-siguiente">
+    {
+      p.estado === 'borrador' && (
+        <>
+          <a href={whatsapp} class="nv-boton" target="_blank" rel="noopener">
+            <Icono nombre="conversacion" />
+            Enviar por WhatsApp
+          </a>
+          <form method="post">
+            <button name="accion" value="estado:enviado" class="nv-boton nv-boton-secundario">
+              Ya se lo he enviado
+            </button>
+          </form>
+        </>
+      )
+    }
+    {
+      p.estado === 'enviado' && (
+        <>
+          <form method="post">
+            <button name="accion" value="estado:recibido" class="nv-boton">
+              <Icono nombre="hecho" />
+              Ha llegado: recibido
+            </button>
+          </form>
+          <form method="post">
+            <button name="accion" value="estado:borrador" class="nv-boton nv-boton-secundario">
+              Volver a «por enviar» para cambiarlo
+            </button>
+          </form>
+        </>
+      )
+    }
+    {
+      p.estado === 'recibido' && conGastos && (
+        <form method="post">
+          <button name="accion" value="gasto" class:list={['nv-boton', p.gastoId && 'nv-boton-secundario']}>
+            {p.gastoId ? 'Ver el gasto' : 'Apuntarlo como gasto'}
+          </button>
+        </form>
+      )
+    }
+    {
+      p.estado === 'recibido' && (
+        <form method="post">
+          <button name="accion" value="estado:enviado" class="nv-boton nv-boton-secundario">
+            Aún no ha llegado todo
+          </button>
+        </form>
+      )
+    }
+  </div>
+</section>
+
+<div class="nv-ficha">
+  <section class="nv-tarjeta" aria-labelledby="lineas-pedido">
+    <div class="nv-cabeza-tarjeta">
+      <h2 id="lineas-pedido">Qué se pide</h2>
+      <span class="nv-gris">El coste solo lo ves tú</span>
+    </div>
+    <div class="nv-tabla-caja" tabindex="0" role="region" aria-label="Líneas del pedido">
+      <table class="nv-tabla">
+        <caption class="sr-only">Líneas del pedido, con el coste interno</caption>
+        <thead>
+          <tr>
+            <th scope="col">Qué</th>
+            <th scope="col" class="nv-num">Cantidad</th>
+            <th scope="col" class="nv-num">Coste</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            p.lineas.map((l) => (
+              <tr>
+                <td>
+                  {l.articuloId ? (
+                    <a class="enlace-panel" href={`/panel/catalogo/articulos/${l.articuloId}`}>
+                      {l.concepto}
+                    </a>
+                  ) : (
+                    l.concepto
+                  )}
+                  {(l.referencia || l.detalle) && <small>{[l.referencia && `ref. ${l.referencia}`, l.detalle].filter(Boolean).join(' · ')}</small>}
+                </td>
+                <td class="nv-num">
+                  {cifra(l.cantidad)} {l.unidad}
+                </td>
+                <td class="nv-num">{l.coste > 0 ? dinero(Math.round(l.cantidad * l.coste * 100) / 100) : <span class="nv-gris">—</span>}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    {p.notas && <p class="nv-nota nv-nota-arriba">Notas para el proveedor: {p.notas}</p>}
+    {p.notasInternas && <p class="nv-nota">Notas internas: {p.notasInternas}</p>}
+  </section>
+
+  <div class="nv-ficha-lado">
+    <section class="nv-tarjeta nv-resumen" aria-labelledby="coste-pedido">
+      <h2 id="coste-pedido">Coste estimado</h2>
+      <div class="nv-total">
+        <span>
+          Sin IVA <small class="nv-gris">(solo lo ves tú)</small>
+        </span>
+        <strong>{p.coste > 0 ? dinero(p.coste) : '—'}</strong>
+      </div>
+      {p.lineas.some((l) => !(l.coste > 0)) && <p class="nv-nota">Hay líneas sin coste: el proveedor te dirá el precio.</p>}
+    </section>
+
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="enviar-pedido">
+      <h2 id="enviar-pedido">Enviar al proveedor</h2>
+      <p class="nv-gris">El mensaje y el PDF llevan lo que pides, las medidas y las referencias. Nunca los precios.</p>
+      <div class="nv-botones-columna">
+        <a href={whatsapp} class="nv-boton nv-boton-secundario" target="_blank" rel="noopener">
+          <Icono nombre="conversacion" />
+          Enviar por WhatsApp
+        </a>
+        {
+          correo && (
+            <a href={correo} class="nv-boton nv-boton-secundario">
+              <Icono nombre="enviar" />
+              Enviar por correo
+            </a>
+          )
+        }
+        <a href={`/panel/pedidos/${p.id}/imprimir`} class="nv-boton nv-boton-secundario">
+          <Icono nombre="descargar" />
+          Imprimir o guardar en PDF
+        </a>
+        {
+          p.proveedor.telefono && (
+            <a href={`tel:${p.proveedor.telefono.replace(/\s/g, '')}`} class="enlace-panel">
+              Llamar a {p.proveedor.contacto || p.proveedor.nombre}
+            </a>
+          )
+        }
+        <a href={`/panel/proveedores/${p.proveedorId}`} class="enlace-panel">
+          Ver el proveedor
+        </a>
+      </div>
+    </section>
+
+    {
+      p.estado === 'borrador' && (
+        <form method="post" class="nv-arriba">
+          <button name="accion" value="borrar" class="nv-boton nv-boton-secundario">
+            <Icono nombre="borrar" />
+            Borrar este pedido
+          </button>
+        </form>
+      )
+    }
+  </div>
+</div>

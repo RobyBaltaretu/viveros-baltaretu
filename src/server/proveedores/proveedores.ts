@@ -46,7 +46,8 @@ export function leerProveedor(form: FormData, previo: Omit<Proveedor, 'actualiza
   return { proveedor, errores };
 }
 
-const normal = (t: string) =>
+/** Nombre para comparar: sin tildes, mayúsculas, «SL»/«SA», «(prueba)» ni signos. */
+export const claveProveedor = (t: string) =>
   t
     .toLowerCase()
     .normalize('NFD')
@@ -56,11 +57,11 @@ const normal = (t: string) =>
     .trim();
 
 /** ¿Este artículo se compra a este proveedor? Por el nombre escrito en el artículo (sin tildes, mayúsculas ni «SL»). */
-export const esDelProveedor = (a: Pick<ArticuloCatalogo, 'proveedor'>, p: Pick<Proveedor, 'nombre'>) => !!a.proveedor.trim() && normal(a.proveedor) === normal(p.nombre);
+export const esDelProveedor = (a: Pick<ArticuloCatalogo, 'proveedor'>, p: Pick<Proveedor, 'nombre'>) => !!a.proveedor.trim() && claveProveedor(a.proveedor) === claveProveedor(p.nombre);
 
 /** Lo que se ha gastado con un proveedor (gastos revisados con el mismo nombre o NIF). */
 export function gastadoCon(p: Pick<Proveedor, 'nombre' | 'nif'>, gastos: Gasto[]): number {
-  const suyos = gastos.filter((g) => g.estado === 'confirmado' && ((p.nif && normalizarNif(g.nifProveedor) === p.nif) || normal(g.proveedor) === normal(p.nombre)));
+  const suyos = gastos.filter((g) => g.estado === 'confirmado' && ((p.nif && normalizarNif(g.nifProveedor) === p.nif) || claveProveedor(g.proveedor) === claveProveedor(p.nombre)));
   return Math.round(suyos.reduce((t, g) => t + g.total, 0) * 100) / 100;
 }
 

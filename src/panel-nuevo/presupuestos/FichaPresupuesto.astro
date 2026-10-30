@@ -11,6 +11,7 @@ import type { EstadoPresupuestoCliente, PresupuestoCliente } from '../../server/
 import { dinero } from '../../server/facturas/importes.ts';
 import { NOMBRE_ESTADO, pasosDesde } from '../../server/presupuestos-cliente/presupuestos.ts';
 import { recorrido, siguientePaso, TONO_ESTADO } from './pasos.ts';
+import { moduloActivoAhora } from '../../plataforma/actual.ts';
 
 interface Props {
   p: PresupuestoCliente;
@@ -229,6 +230,11 @@ const principalEstado = (e: EstadoPresupuestoCliente) => e === 'enviado' || e ==
             {p.facturaId && (
               <a href={`/panel/facturas/${p.facturaId}`} class="enlace-panel">
                 Ver la factura final
+              </a>
+            )}
+            {moduloActivoAhora('pedidosProveedor') && (
+              <a href={`/panel/pedidos/nuevo?presupuesto=${p.id}`} class="enlace-panel">
+                Pedir material para esta obra
               </a>
             )}
           </div>

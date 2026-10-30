@@ -25,7 +25,7 @@ describe('diseño nuevo del panel', () => {
     expect(grupos[0]!.secciones.map((s) => s.href)).toEqual(['/panel', '/panel/asistente']);
     const ventas = grupos.find((g) => g.texto === 'Ventas');
     expect(ventas?.secciones.map((s) => s.texto)).toEqual(['Presupuestos', 'Facturas', 'Clientes']);
-    expect(grupos.find((g) => g.texto === 'Taller')?.secciones.map((s) => s.texto)).toEqual(['Catálogo', 'Proveedores', 'Portafolio']);
+    expect(grupos.find((g) => g.texto === 'Taller')?.secciones.map((s) => s.texto)).toEqual(['Catálogo', 'Pedidos', 'Proveedores', 'Portafolio']);
   });
 
   it('«Crear» solo ofrece lo que el rol puede usar', () => {
@@ -35,10 +35,12 @@ describe('diseño nuevo del panel', () => {
       '/panel/facturas/nueva',
       '/panel/gastos/nuevo',
       '/panel/facturas/clientes/nuevo',
+      '/panel/pedidos/nuevo',
       '/panel/catalogo/articulos/nuevo',
       '/panel/portafolio/nuevo',
     ]);
     expect(accionesCrear(menuDe('editor')).map((a) => a.href)).not.toContain('/panel/facturas/nueva');
+    expect(accionesCrear(menuDe('editor')).map((a) => a.href)).not.toContain('/panel/pedidos/nuevo');
   });
 
   it('barra del móvil: Inicio, Ventas, Crear, la zona del sector y Más', () => {

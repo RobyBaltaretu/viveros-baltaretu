@@ -1,0 +1,356 @@
+---
+/**
+ * Editor de un pedido a proveedor (alta y cambio). Los campos los lee
+ * `leerFormularioPedido` (src/server/pedidos/pedidos.ts):
+ * - Proveedor, para cuándo y para qué obra (presupuesto), opcional.
+ * - Líneas: qué, detalle (medidas, acabado), referencia, cantidad, unidad y
+ *   coste por unidad (interno: no sale en lo que se envía). A mano o del
+ *   catálogo (SelectorCatalogo en modo pedido): buscando en el propio concepto
+ *   o en la ventana, donde sale primero lo del proveedor elegido y un trabajo
+ *   añade sus materiales con las cantidades.
+ * - Coste estimado al escribir. Sin JavaScript funciona igual («Añadir más líneas»).
+ */
+import Icono from '../../components/panel/ui/Icono.astro';
+import SelectorCatalogo from '../SelectorCatalogo.astro';
+import { UNIDADES } from '../../server/catalogo/catalogo.ts';
+import type { ArticuloCatalogo, PlantillaCatalogo, PresupuestoCliente, Proveedor } from '../../server/data/tipos.ts';
+import type { EntradaPedido, Error } from '../../server/pedidos/pedidos.ts';
+import { claveProveedor } from '../../server/proveedores/proveedores.ts';
+
+interface Props {
+  valores: EntradaPedido;
+  proveedores: Proveedor[];
+  presupuestos: PresupuestoCliente[];
+  articulos: ArticuloCatalogo[];
+  plantillas: PlantillaCatalogo[];
+  filas: number;
+  boton: string;
+  errores: Error[];
+  hoy: string;
+}
+const { valores: v, proveedores, presupuestos, articulos, plantillas, filas, boton, errores, hoy } = Astro.props;
+const error = (k: string) => errores.find((e) => e.campo === k)?.mensaje;
+const num = (n: number | undefined) => (n === undefined || Number.isNaN(n) ? '' : String(n).replace('.', ','));
+const fila = (i: number) => {
+  const l = v.lineas[i];
+  return { i, n: i + 1, concepto: l?.concepto ?? '', detalle: l?.detalle ?? '', referencia: l?.referencia ?? '', cantidad: l ? num(l.cantidad) : '1', unidad: l?.unidad ?? 'ud', coste: l && l.coste > 0 ? num(l.coste) : '', articulo: l?.articuloId ?? '' };
+};
+---
+
+{
+  errores.length > 0 && (
+    <div role="alert" class="nv-caja-aviso nv-caja-error">
+      <span>{errores.length === 1 ? errores[0]!.mensaje : `Hay ${errores.length} cosas que revisar: ${errores.map((e) => e.mensaje).join(' ')}`}</span>
+    </div>
+  )
+}
+<form method="post" id="form-pedido" class="nv-editor" novalidate>
+  <input type="hidden" name="filas" value={filas} data-filas />
+  <div class="nv-editor-principal">
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="a-quien">
+      <h2 id="a-quien">A quién y para cuándo</h2>
+      <div class="nv-rejilla nv-rejilla-2">
+        <div class="nv-campo">
+          <label for="pe-proveedor">Proveedor</label>
+          <select id="pe-proveedor" name="proveedorId" class="campo-panel" required aria-invalid={error('proveedorId') ? 'true' : undefined} aria-describedby={error('proveedorId') ? 'pe-proveedor-error' : undefined}>
+            <option value="">Elige un proveedor</option>
+            {
+              proveedores.map((p) => (
+                <option value={p.id} selected={p.id === v.proveedorId} data-clave={claveProveedor(p.nombre)} data-plazo={p.plazoDias ?? undefined}>
+                  {p.nombre}
+                </option>
+              ))
+            }
+          </select>
+          {error('proveedorId') && <span id="pe-proveedor-error" class="nv-error-campo">{error('proveedorId')}</span>}
+          <a href="/panel/proveedores/nuevo" class="enlace-panel">¿No está? Añadir un proveedor</a>
+        </div>
+        <div class="nv-campo">
+          <label for="pe-entrega">
+            Lo necesitas para <small>(opcional)</small>
+          </label>
+          <input id="pe-entrega" class="campo-panel" name="entrega" type="date" value={v.entrega ?? ''} min={hoy} aria-invalid={error('entrega') ? 'true' : undefined} />
+          <span class="nv-toques" data-solo-js hidden>
+            {
+              [
+                [1, 'Mañana'],
+                [3, 'En 3 días'],
+                [7, 'En una semana'],
+              ].map(([d, t]) => (
+                <button type="button" class="nv-toque" data-dias={d}>
+                  {t}
+                </button>
+              ))
+            }
+          </span>
+          <small class="nv-gris" data-plazo-proveedor hidden />
+        </div>
+        {
+          presupuestos.length > 0 && (
+            <label class="nv-campo nv-ancho-todo">
+              <span>
+                Para la obra <small>(opcional: así sabes qué material es de cada trabajo)</small>
+              </span>
+              <select name="presupuestoClienteId" class="campo-panel">
+                <option value="">Para el taller, sin obra</option>
+                {presupuestos.map((p) => (
+                  <option value={p.id} selected={p.id === v.presupuestoClienteId}>
+                    {p.codigo}: {p.concepto} ({p.cliente.nombre})
+                  </option>
+                ))}
+              </select>
+            </label>
+          )
+        }
+      </div>
+    </section>
+
+    <section class="nv-tarjeta" aria-labelledby="que-pides">
+      <div class="nv-cabeza-tarjeta">
+        <h2 id="que-pides">Qué pides</h2>
+        <span class="nv-gris">El coste solo lo ves tú</span>
+      </div>
+      {error('lineas') && <p class="nv-error-campo nv-relleno">{error('lineas')}</p>}
+      <div class="nv-tabla-caja" tabindex="0" role="region" aria-label="Líneas del pedido">
+        <table class="nv-tabla nv-tabla-lineas nv-lineas-pedido">
+          <thead>
+            <tr>
+              <th scope="col">Qué</th>
+              <th scope="col">Cantidad</th>
+              <th scope="col">Unidad</th>
+              <th scope="col">Coste/ud</th>
+              <th scope="col" class="nv-num">Importe</th>
+              <th scope="col"><span class="sr-only">Quitar</span></th>
+            </tr>
+          </thead>
+          <tbody data-lineas>
+            {
+              Array.from({ length: filas }, (_, i) => fila(i)).map((l) => (
+                <tr data-linea>
+                  <td>
+                    <input type="hidden" name={`l${l.i}.articulo`} value={l.articulo} />
+                    <input class="campo-panel" name={`l${l.i}.concepto`} value={l.concepto} maxlength="200" autocomplete="off" aria-label={`Qué pides en la línea ${l.n}`} placeholder={articulos.length || plantillas.length ? 'Escribe o busca en el catálogo' : 'Material o herraje'} />
+                    <span class="nv-pareja">
+                      <input class="campo-panel nv-secundario" name={`l${l.i}.detalle`} value={l.detalle} maxlength="200" autocomplete="off" aria-label={`Medidas o acabado de la línea ${l.n} (opcional)`} placeholder="Medidas o acabado (opcional)" />
+                      <input class="campo-panel nv-secundario" name={`l${l.i}.referencia`} value={l.referencia} maxlength="60" autocomplete="off" aria-label={`Referencia del proveedor de la línea ${l.n} (opcional)`} placeholder="Ref. (opcional)" />
+                    </span>
+                  </td>
+                  <td data-titulo="Cantidad">
+                    <input class="campo-panel nv-corto nv-derecha" name={`l${l.i}.cantidad`} value={l.cantidad} inputmode="decimal" autocomplete="off" aria-label={`Cantidad de la línea ${l.n}`} aria-invalid={error(`l${l.i}.cantidad`) ? 'true' : undefined} />
+                  </td>
+                  <td data-titulo="Unidad">
+                    <select class="campo-panel nv-corto" name={`l${l.i}.unidad`} aria-label={`Unidad de la línea ${l.n}`}>
+                      {[...new Set([...UNIDADES, l.unidad])].map((u) => (
+                        <option value={u} selected={u === l.unidad}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td data-titulo="Coste/ud">
+                    <input class="campo-panel nv-corto nv-derecha" name={`l${l.i}.coste`} value={l.coste} inputmode="decimal" autocomplete="off" aria-label={`Coste por unidad de la línea ${l.n}, en euros sin IVA (opcional, solo lo ves tú)`} placeholder="—" />
+                  </td>
+                  <td class="nv-num" data-importe data-titulo="Importe">
+                    —
+                  </td>
+                  <td>
+                    <button type="button" class="boton-icono" data-quitar data-solo-js hidden aria-label={`Quitar la línea ${l.n}`}>
+                      <Icono nombre="borrar" clase="size-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="nv-pie-tarjeta">
+        <button name="accion" value="mas" class="nv-boton nv-boton-secundario" formnovalidate data-anadir>
+          <Icono nombre="nuevo" />
+          Añadir una línea
+        </button>
+        {
+          (articulos.length > 0 || plantillas.length > 0) && (
+            <button type="button" class="nv-boton nv-boton-secundario" data-abrir-catalogo hidden>
+              <Icono nombre="catalogo" />
+              Añadir del catálogo
+            </button>
+          )
+        }
+      </div>
+      {
+        (articulos.length > 0 || plantillas.length > 0) && (
+          <p class="nv-nota" data-solo-js hidden>
+            Escribe en «Qué pides» y elige del catálogo, o pulsa «Añadir del catálogo»: sale primero lo de este proveedor, y un trabajo (un armario, una puerta…) añade todo su material con las medidas.
+          </p>
+        )
+      }
+    </section>
+  </div>
+
+  <aside class="nv-tarjeta nv-resumen" aria-labelledby="resumen-pedido">
+    <h2 id="resumen-pedido">Resumen</h2>
+    <dl class="nv-filas-resumen nv-sin-raya">
+      <div>
+        <dt>Líneas</dt>
+        <dd data-n-lineas>—</dd>
+      </div>
+    </dl>
+    <div class="nv-total">
+      <span>
+        Coste estimado <small class="nv-gris">(sin IVA, solo lo ves tú)</small>
+      </span>
+      <strong data-total>—</strong>
+    </div>
+    <label class="nv-campo">
+      <span>
+        Notas para el proveedor <small>(opcional)</small>
+      </span>
+      <textarea class="campo-panel" name="notas" rows="3" maxlength="1000" placeholder="Corte a medida, entrega en el taller…">{v.notas}</textarea>
+    </label>
+    <label class="nv-campo">
+      <span>
+        Notas internas <small>(no se envían)</small>
+      </span>
+      <textarea class="campo-panel" name="notasInternas" rows="2" maxlength="1000">{v.notasInternas}</textarea>
+    </label>
+    <p class="sr-only" aria-live="polite" data-anuncio></p>
+    <button name="accion" value="guardar" class="nv-boton nv-boton-ancho">{boton}</button>
+  </aside>
+</form>
+<SelectorCatalogo articulos={articulos} plantillas={plantillas} destino="pedido" />
+
+<script is:inline>
+  (() => {
+    const f = document.getElementById('form-pedido');
+    if (!f) return;
+    f.querySelectorAll('[data-solo-js]').forEach((e) => (e.hidden = false));
+    const num = (t) => {
+      const l = String(t ?? '').trim().replace(/\s|€/g, '');
+      if (!l) return null;
+      if (l.includes(',')) return Number(l.replace(/\./g, '').replace(',', '.'));
+      return Number(/^-?\d{1,3}(\.\d{3})+$/.test(l) ? l.replace(/\./g, '') : l);
+    };
+    const coma = (n) => String(n).replace('.', ',');
+    const eur = (c) => (c / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true }) + ' €';
+    const cuerpo = f.querySelector('[data-lineas]');
+    const filas = f.querySelector('[data-filas]');
+    const campo = (tr, n) => tr.querySelector(`[name$=".${n}"]`);
+    const pon = (sel, texto) => {
+      const e = f.querySelector(sel);
+      if (e) e.textContent = texto;
+    };
+    const vivas = () => [...cuerpo.querySelectorAll('[data-linea]')].filter((tr) => !tr.hidden);
+    // Como el servidor: cantidad a 3 decimales y cada línea a céntimos.
+    const recalcular = () => {
+      let total = 0;
+      let n = 0;
+      for (const tr of vivas()) {
+        const cant = num(campo(tr, 'cantidad').value);
+        const coste = num(campo(tr, 'coste').value);
+        const c = cant !== null && coste !== null && Number.isFinite(cant) && Number.isFinite(coste) ? Math.round((Math.round(cant * 1000) / 1000) * coste * 100) : null;
+        tr.querySelector('[data-importe]').textContent = c === null ? '—' : eur(c);
+        if (campo(tr, 'concepto').value.trim()) {
+          n++;
+          total += c ?? 0;
+        }
+      }
+      pon('[data-n-lineas]', String(n));
+      pon('[data-total]', eur(total));
+    };
+    const nuevaFila = () => {
+      const i = Number(filas.value);
+      const tr = cuerpo.querySelector('[data-linea]:last-of-type').cloneNode(true);
+      tr.hidden = false;
+      delete tr.dataset.clave;
+      tr.querySelectorAll('[name]').forEach((e) => (e.name = e.name.replace(/^l\d+\./, `l${i}.`)));
+      tr.querySelectorAll('[aria-label]').forEach((e) => e.setAttribute('aria-label', e.getAttribute('aria-label').replace(/línea \d+/, `línea ${i + 1}`)));
+      tr.querySelectorAll('input').forEach((e) => (e.value = e.name.endsWith('.cantidad') ? '1' : ''));
+      campo(tr, 'unidad').value = 'ud';
+      tr.querySelectorAll('[aria-invalid]').forEach((e) => e.removeAttribute('aria-invalid'));
+      cuerpo.append(tr);
+      filas.value = String(i + 1);
+      return tr;
+    };
+    const libre = () => vivas().find((tr) => !campo(tr, 'concepto').value.trim() && !campo(tr, 'detalle').value.trim() && !campo(tr, 'coste').value.trim());
+    f.querySelector('[data-anadir]').addEventListener('click', (e) => {
+      e.preventDefault();
+      campo(nuevaFila(), 'concepto').focus();
+    });
+    cuerpo.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-quitar]');
+      if (!b) return;
+      const tr = b.closest('[data-linea]');
+      // Se vacía y se oculta: una fila sin «qué» no cuenta al guardar.
+      tr.querySelectorAll('input').forEach((i) => (i.value = ''));
+      delete tr.dataset.clave;
+      tr.hidden = true;
+      recalcular();
+      pon('[data-anuncio]', 'Línea quitada.');
+    });
+    // Del catálogo (SelectorCatalogo.astro en modo pedido): en la línea elegida
+    // o en una libre o nueva; el mismo artículo otra vez suma uno.
+    document.addEventListener('catalogo:anadir', (e) => {
+      const { lineas, fila } = e.detail;
+      let foco = null;
+      lineas.forEach((l, k) => {
+        const ya = !fila && l.clave && vivas().find((tr) => tr.dataset.clave === l.clave);
+        if (ya) {
+          campo(ya, 'cantidad').value = coma((num(campo(ya, 'cantidad').value) ?? 0) + 1);
+          return;
+        }
+        const tr = (k === 0 && fila) || libre() || nuevaFila();
+        campo(tr, 'articulo').value = l.articuloId || '';
+        campo(tr, 'concepto').value = l.concepto;
+        campo(tr, 'detalle').value = l.detalle ?? l.material ?? '';
+        campo(tr, 'referencia').value = l.referencia || '';
+        const u = campo(tr, 'unidad');
+        if (l.unidad && ![...u.options].some((o) => o.value === l.unidad)) u.append(new Option(l.unidad, l.unidad));
+        u.value = l.unidad || 'ud';
+        if (l.cantidad !== null) campo(tr, 'cantidad').value = coma(l.cantidad);
+        else if (!campo(tr, 'cantidad').value.trim()) campo(tr, 'cantidad').value = '1';
+        campo(tr, 'coste').value = l.precio === null ? '' : coma(l.precio);
+        if (l.clave) tr.dataset.clave = l.clave;
+        else delete tr.dataset.clave;
+        if (fila && !foco) foco = campo(tr, 'cantidad');
+      });
+      recalcular();
+      if (foco) {
+        foco.focus();
+        foco.select();
+        pon('[data-anuncio]', 'Añadido. Escribe la cantidad.');
+      }
+    });
+    document.addEventListener('catalogo:listo', (e) => {
+      const fila = e.detail.fila;
+      if (fila && !fila.hidden) setTimeout(() => campo(fila, 'cantidad').focus());
+    });
+    f.addEventListener('input', (e) => {
+      // Un «qué» cambiado a mano ya no es el artículo del catálogo.
+      if (e.target.name?.endsWith('.concepto')) {
+        const tr = e.target.closest('[data-linea]');
+        delete tr.dataset.clave;
+        campo(tr, 'articulo').value = '';
+      }
+      recalcular();
+    });
+    f.addEventListener('change', recalcular);
+    // Para cuándo: con un toque; y el plazo habitual del proveedor a la vista.
+    f.querySelectorAll('[data-dias]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const d = new Date();
+        d.setDate(d.getDate() + Number(b.dataset.dias));
+        f.entrega.value = d.toLocaleDateString('sv-SE');
+      }),
+    );
+    const plazo = () => {
+      const o = f.proveedorId.selectedOptions[0];
+      const p = f.querySelector('[data-plazo-proveedor]');
+      p.hidden = !o?.dataset.plazo;
+      p.textContent = o?.dataset.plazo ? `Suele servir en ${o.dataset.plazo === '1' ? '1 día' : `${o.dataset.plazo} días`}.` : '';
+    };
+    f.proveedorId.addEventListener('change', plazo);
+    plazo();
+    recalcular();
+  })();
+</script>

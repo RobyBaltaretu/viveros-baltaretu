@@ -1,0 +1,49 @@
+---
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import FormPedido from '../../../../panel-nuevo/pedidos/FormPedido.astro';
+import { hoy } from '../../../../server/gastos/gastos.ts';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+import { cambiarPedido, leerFormularioPedido, type EntradaPedido, type Error } from '../../../../server/pedidos/pedidos.ts';
+import { moduloActivoAhora } from '../../../../plataforma/actual.ts';
+
+export const prerender = false;
+
+/** Cambiar un pedido por enviar (lo enviado ya lo tiene el proveedor). */
+const s = sesionCon(Astro.locals, 'facturas');
+const id = Astro.params.id ?? '';
+const pedido = s ? await s.repos.pedidosProveedor.obtener(id) : null;
+if (s && !pedido) return new Response(null, { status: 404 });
+if (s && pedido && pedido.estado !== 'borrador') return Astro.redirect(`/panel/pedidos/${id}`, 303);
+const [proveedores, articulos, plantillas, presupuestos] = s
+  ? await Promise.all([s.repos.proveedores.listar({ incluirArchivados: true }), s.repos.catalogo.articulos(), s.repos.catalogo.plantillas(), moduloActivoAhora('presupuestosCliente') ? s.repos.presupuestosCliente.listar({ limite: 200 }) : []])
+  : [[], [], [], []];
+let valores: EntradaPedido = pedido ?? { proveedorId: '', presupuestoClienteId: null, entrega: null, lineas: [], notas: '', notasInternas: '' };
+let filas = valores.lineas.length + 2;
+let errores: Error[] = [];
+if (s && pedido && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const datos = leerFormularioPedido(form);
+  valores = datos;
+  if (form.get('accion') === 'mas') filas = datos.filas + 3;
+  else {
+    const r = await cambiarPedido(s.repos, id, datos, s.usuario.email);
+    if (r.ok) return Astro.redirect(`/panel/pedidos/${id}?hecho=cambiado`, 303);
+    errores = r.errores;
+    filas = Math.max(datos.filas, 1);
+    Astro.response.status = 400;
+  }
+}
+const obras = presupuestos.filter((p) => p.estado === 'aceptado' || p.estado === 'enviado' || p.id === valores.presupuestoClienteId);
+// Un proveedor oculto se sigue viendo si es el de este pedido.
+const elegibles = proveedores.filter((p) => !p.archivado || p.id === valores.proveedorId);
+---
+
+<PaginaPanel titulo={pedido ? `Cambiar ${pedido.codigo}` : 'Pedido'} permiso="facturas" volver={`/panel/pedidos/${id}`} ancho="amplio">
+  <div class="nv-titulo">
+    <div>
+      <h1>Cambiar el pedido {pedido?.codigo}</h1>
+      <p>Aún no lo has enviado: cambia lo que quieras.</p>
+    </div>
+  </div>
+  <FormPedido valores={valores} proveedores={elegibles} presupuestos={obras} articulos={articulos} plantillas={plantillas} filas={filas} boton="Guardar los cambios" errores={errores} hoy={hoy()} />
+</PaginaPanel>

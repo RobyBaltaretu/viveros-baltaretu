@@ -187,6 +187,16 @@ export const MENU: SeccionMenu[] = [
     descripcion: "Materiales, herrajes, horas y trabajos con su precio",
   },
   {
+    // Carpintería: pedidos de material a proveedor (módulo pedidosProveedor).
+    href: "/panel/pedidos",
+    texto: "Pedidos",
+    permiso: "facturas",
+    zona: "plantas",
+    icono: "pedidos",
+    escena: "presupuestos",
+    descripcion: "El material que pides a tus proveedores",
+  },
+  {
     // Carpintería: a quién se compra el material (módulo proveedores).
     href: "/panel/proveedores",
     texto: "Proveedores",

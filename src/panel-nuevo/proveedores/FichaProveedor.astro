@@ -6,7 +6,7 @@
  */
 import Icono from '../../components/panel/ui/Icono.astro';
 import { CATEGORIAS } from '../../server/catalogo/catalogo.ts';
-import type { ArticuloCatalogo, Proveedor } from '../../server/data/tipos.ts';
+import type { ArticuloCatalogo, PedidoProveedor, Proveedor } from '../../server/data/tipos.ts';
 import { dinero } from '../../server/facturas/importes.ts';
 import type { Error } from '../../server/proveedores/proveedores.ts';
 
@@ -18,8 +18,12 @@ interface Props {
   articulos: ArticuloCatalogo[];
   gastado: number;
   anio: number;
+  /** Sus pedidos (vacío sin el módulo de pedidos). */
+  pedidos: PedidoProveedor[];
+  conPedidos: boolean;
 }
-const { proveedor: p, nuevo, errores, hecho, articulos, gastado, anio } = Astro.props;
+const { proveedor: p, nuevo, errores, hecho, articulos, gastado, anio, pedidos, conPedidos } = Astro.props;
+const enCurso = pedidos.filter((x) => x.estado !== 'recibido');
 const error = (k: string) => errores.find((e) => e.campo === k)?.mensaje;
 const FORMAS_PAGO = ['Transferencia', 'Recibo domiciliado', 'Contado', 'A 30 días'];
 const describe = (k: string, ayuda?: string) => [error(k) && `p-${k}-error`, ayuda].filter(Boolean).join(' ') || undefined;
@@ -159,6 +163,20 @@ const describe = (k: string, ayuda?: string) => [error(k) && `p-${k}-error`, ayu
             </ul>
           ) : (
             <p class="nv-gris nv-nota">Ningún artículo del catálogo lleva su nombre. En la ficha de cada artículo, escribe «{p.nombre}» en «Proveedor».</p>
+          )}
+          {conPedidos && !p.archivado && (
+            <a class="nv-boton nv-boton-secundario nv-arriba" href={`/panel/pedidos/nuevo?proveedor=${p.id}`}>
+              <Icono nombre="pedidos" />
+              Hacerle un pedido
+            </a>
+          )}
+          {conPedidos && pedidos.length > 0 && (
+            <p class="nv-nota">
+              {enCurso.length > 0 ? `${enCurso.length === 1 ? '1 pedido' : `${enCurso.length} pedidos`} sin recibir. ` : ''}
+              <a class="enlace-panel" href={`/panel/pedidos?ver=todos&q=${encodeURIComponent(p.nombre)}`}>
+                Ver sus pedidos ({pedidos.length})
+              </a>
+            </p>
           )}
           {p.telefono && (
             <a class="nv-boton nv-boton-secundario nv-arriba" href={`tel:${p.telefono.replace(/\s/g, '')}`}>

@@ -1,0 +1,196 @@
+---
+/**
+ * Pedido a proveedor listo para imprimir o guardar en PDF desde el navegador.
+ * Sin el armazón del panel. NUNCA lleva precios ni costes: solo qué, cuánto,
+ * medidas y referencias.
+ */
+import { clienteActual } from '../../../../plataforma/actual.ts';
+import { ajustesFacturacion } from '../../../../server/panel/facturacion.ts';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+
+export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'facturas');
+if (!s) return Astro.redirect('/panel', 303);
+const p = await s.repos.pedidosProveedor.obtener(Astro.params.id ?? '');
+if (!p) return new Response(null, { status: 404 });
+const e = await ajustesFacturacion(s.repos);
+const tema = clienteActual().tema;
+const fecha = (iso: string | null) => (iso ? iso.split('-').reverse().join('/') : '');
+const direccion = [e.direccion, [e.codigoPostal, e.poblacion].filter(Boolean).join(' '), e.provincia].filter(Boolean).join(', ');
+const cifra = (n: number) => n.toLocaleString('es-ES', { maximumFractionDigits: 3 });
+const marca = tema?.oliva ?? '#3a4632';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Pedido {p.codigo} · {e.nombre || clienteActual().nombre}</title>
+    <style is:inline set:html={`:root{--marca:${marca}}`} />
+    <style is:inline>
+      body {
+        font: 15px/1.5 system-ui, sans-serif;
+        color: #222;
+        background: #fff;
+        margin: 0;
+      }
+      main {
+        max-width: 48rem;
+        margin: 0 auto;
+        padding: 2rem 1.25rem;
+      }
+      h1 {
+        color: var(--marca);
+        font-size: 1.75rem;
+        margin: 0 0 0.25rem;
+      }
+      .cabecera {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 1.5rem;
+        border-bottom: 3px solid var(--marca);
+        padding-bottom: 1rem;
+      }
+      .bloques {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin: 1.5rem 0;
+      }
+      .etiqueta {
+        color: #555;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+      th,
+      td {
+        padding: 0.5rem;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+        vertical-align: top;
+      }
+      td.n,
+      th.n {
+        text-align: right;
+        white-space: nowrap;
+      }
+      tfoot th {
+        text-align: right;
+        font-weight: 600;
+      }
+      .total td,
+      .total th {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--marca);
+      }
+      .nota {
+        color: #444;
+        margin-top: 1.25rem;
+      }
+      .acciones {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+      }
+      .acciones button,
+      .acciones a {
+        min-height: 48px;
+        padding: 0 1.25rem;
+        border-radius: 999px;
+        border: 2px solid var(--marca);
+        background: var(--marca);
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+      }
+      .acciones a {
+        background: #fff;
+        color: var(--marca);
+      }
+      @media print {
+        .acciones {
+          display: none;
+        }
+        main {
+          padding: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="acciones">
+        <button type="button" onclick="window.print()">Imprimir o guardar en PDF</button>
+        <a href={`/panel/pedidos/${p.id}`}>Volver</a>
+      </div>
+      <div class="cabecera">
+        <div>
+          <h1>Pedido de material</h1>
+          <div>
+            <strong>{p.codigo}</strong> · {fecha(p.fecha)}
+          </div>
+        </div>
+        <div>
+          <strong>{e.nombre || '[PLACEHOLDER: datos de la empresa]'}</strong>
+          {e.nif && <div>NIF {e.nif}</div>}
+          {direccion && <div>{direccion}</div>}
+          {(e.telefono || e.email) && <div>{[e.telefono, e.email].filter(Boolean).join(' · ')}</div>}
+        </div>
+      </div>
+      <div class="bloques">
+        <div>
+          <div class="etiqueta">Proveedor</div>
+          <strong>{p.proveedor.nombre}</strong>
+          {p.proveedor.contacto && <div>A la atención de {p.proveedor.contacto}</div>}
+          {p.proveedor.nif && <div>NIF {p.proveedor.nif}</div>}
+        </div>
+        <div>
+          <div class="etiqueta">Entrega</div>
+          <strong>{p.entrega ? `Para el ${fecha(p.entrega)}` : 'Cuando nos digáis'}</strong>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Material</th>
+            <th scope="col">Referencia</th>
+            <th scope="col" class="n">Cantidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            p.lineas.map((l) => (
+              <tr>
+                <td>
+                  {l.concepto}
+                  {l.detalle && <div style="color:#555">{l.detalle}</div>}
+                </td>
+                <td>{l.referencia}</td>
+                <td class="n">
+                  {cifra(l.cantidad)} {l.unidad}
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+      {p.notas && <p class="nota">{p.notas}</p>}
+      <p class="nota">Por favor, confirmadnos plazo y precio. Gracias.</p>
+    </main>
+  </body>
+</html>

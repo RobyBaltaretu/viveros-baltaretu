@@ -690,6 +690,63 @@ export interface RepositorioProveedores {
   borrarPruebas(): Promise<number>;
 }
 
+export const ESTADOS_PEDIDO = ['borrador', 'enviado', 'recibido'] as const;
+export type EstadoPedido = (typeof ESTADOS_PEDIDO)[number];
+
+/** Una línea de un pedido a proveedor. El coste es interno: no sale en el mensaje ni en el PDF. */
+export interface LineaPedido {
+  /** Artículo del catálogo, si sale de él. */
+  articuloId: string | null;
+  concepto: string;
+  /** Referencia del proveedor. */
+  referencia: string;
+  /** Medidas, acabado o lo que el proveedor tenga que saber. */
+  detalle: string;
+  cantidad: number;
+  unidad: string;
+  /** Coste por unidad, sin IVA (interno). 0 si no se sabe. */
+  coste: number;
+}
+
+/** Pedido de material a un proveedor (módulo `pedidosProveedor`). */
+export interface PedidoProveedor {
+  id: string;
+  /** PE2026-0001: correlativo por año. */
+  codigo: string;
+  estado: EstadoPedido;
+  proveedorId: string;
+  /** Datos del proveedor al hacer el pedido (para el mensaje y el PDF). */
+  proveedor: Pick<Proveedor, 'nombre' | 'nif' | 'contacto' | 'telefono' | 'email'>;
+  /** Presupuesto (obra) para el que es, si lo hay. */
+  presupuestoClienteId: string | null;
+  fecha: string;
+  /** Para cuándo hace falta. */
+  entrega: string | null;
+  lineas: LineaPedido[];
+  /** Lo que se le dice al proveedor. */
+  notas: string;
+  /** Solo para el taller. */
+  notasInternas: string;
+  /** Suma de cantidad × coste (interno). */
+  coste: number;
+  enviadoEl: string | null;
+  recibidoEl: string | null;
+  /** Gasto apuntado al recibirlo. */
+  gastoId: string | null;
+  actualizado: string;
+}
+
+export interface RepositorioPedidosProveedor {
+  listar(filtro?: { estado?: EstadoPedido; proveedorId?: string; presupuestoClienteId?: string; limite?: number }): Promise<PedidoProveedor[]>;
+  obtener(id: string): Promise<PedidoProveedor | null>;
+  /** Alta con el código siguiente del año (correlativo, sin repetidos). */
+  crear(p: Omit<PedidoProveedor, 'codigo' | 'actualizado'>, email: string): Promise<PedidoProveedor>;
+  guardar(p: PedidoProveedor, email: string): Promise<void>;
+  borrar(id: string): Promise<boolean>;
+  /** Quita los de prueba (id `prueba-…`). Devuelve cuántos. */
+  borrarPruebas(): Promise<number>;
+}
+
 export interface Repositorios {
   contenido: RepositorioContenido;
   fotos: RepositorioFotos;
@@ -710,4 +767,5 @@ export interface Repositorios {
   presupuestosCliente: RepositorioPresupuestosCliente;
   catalogo: RepositorioCatalogo;
   proveedores: RepositorioProveedores;
+  pedidosProveedor: RepositorioPedidosProveedor;
 }

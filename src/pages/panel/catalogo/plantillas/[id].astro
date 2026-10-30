@@ -8,7 +8,7 @@
 import Mensajes from '../../../../components/panel/Mensajes.astro';
 import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
 import Icono from '../../../../components/panel/ui/Icono.astro';
-import { clienteActual } from '../../../../plataforma/actual.ts';
+import { clienteActual, moduloActivoAhora } from '../../../../plataforma/actual.ts';
 import { anadirAPresupuesto, enlaceNuevoPresupuesto, lineasDelTrabajo, type ModoPresupuesto } from '../../../../server/catalogo/al-presupuesto.ts';
 import { precioVenta, sinPrecio } from '../../../../server/catalogo/catalogo.ts';
 import { calcularEscandallo } from '../../../../server/catalogo/escandallo.ts';
@@ -63,6 +63,9 @@ const conIva = e ? Math.round(e.precio * (100 + iva.general)) / 100 : 0;
 const pct = (n: number | null) => (n === null || !Number.isFinite(n) ? '—' : `${String(n).replace('.', ',')}\u00a0%`);
 const cantidad = (n: number) => n.toLocaleString('es-ES', { maximumFractionDigits: 3 });
 const deCategoria = (cats: string[]) => articulos.filter((a) => cats.includes(a.categoria));
+// «Pedir el material»: un pedido nuevo con los materiales de este trabajo y estas medidas (módulo pedidosProveedor).
+const conPedidos = moduloActivoAhora('pedidosProveedor');
+const enlacePedido = plantilla ? `/panel/pedidos/nuevo?${new URLSearchParams({ trabajo: plantilla.id, ...Object.fromEntries(plantilla.parametros.map((x) => [`m.${x.id}`, escrito[x.id] ?? ''])), ...Object.fromEntries(plantilla.opciones.map((o) => [`o.${o.id}`, elegidos[o.id] ?? ''])) })}` : '';
 ---
 
 <PaginaPanel titulo={plantilla?.nombre ?? 'Trabajo'} permiso="facturas" volver="/panel/catalogo" ancho="amplio">
@@ -188,6 +191,12 @@ const deCategoria = (cats: string[]) => articulos.filter((a) => cats.includes(a.
                 Llevar al presupuesto
               </button>
             </form>
+            {conPedidos && (
+              <a class="nv-boton nv-boton-secundario nv-arriba" href={enlacePedido}>
+                <Icono nombre="pedidos" />
+                Pedir el material
+              </a>
+            )}
           </aside>
           <section class="nv-tarjeta nv-desglose" aria-labelledby="desglose" data-resultado="desglose">
             <div class="nv-cabeza-tarjeta">

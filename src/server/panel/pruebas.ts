@@ -235,6 +235,7 @@ export async function quitarDatosPrueba(repos: Repositorios, email: string): Pro
   for (const p of await repos.presupuestos.listar({ limite: 5000 })) if (p.id.startsWith(PREFIJO) && (await repos.presupuestos.borrar(p.id))) presupuestos++;
   presupuestos += await repos.presupuestosCliente.borrarPruebas();
   await repos.catalogo.borrarPruebas();
+  await repos.pedidosProveedor.borrarPruebas();
   await repos.proveedores.borrarPruebas();
   let gastos = 0;
   for (const g of await repos.gastos.listar({ limite: 20000 })) if (g.id.startsWith(PREFIJO) && (await repos.gastos.borrar(g.id))) gastos++;

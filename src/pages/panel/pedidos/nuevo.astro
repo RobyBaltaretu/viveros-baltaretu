@@ -1,0 +1,65 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import FormPedido from '../../../panel-nuevo/pedidos/FormPedido.astro';
+import { calcularEscandallo } from '../../../server/catalogo/escandallo.ts';
+import { hoy } from '../../../server/gastos/gastos.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+import { crearPedido, leerFormularioPedido, type EntradaPedido, lineasDeTrabajo, proveedorProbable, type Error } from '../../../server/pedidos/pedidos.ts';
+import { numero } from '../../../server/presupuestos-cliente/formulario.ts';
+import { moduloActivoAhora } from '../../../plataforma/actual.ts';
+
+export const prerender = false;
+
+/**
+ * Pedido nuevo. Desde la dirección se puede traer:
+ * - `proveedor`: el proveedor elegido; `presupuesto`: la obra para la que es.
+ * - `trabajo` con `m.<medida>` y `o.<material>`: los materiales de un trabajo
+ *   del catálogo (la calculadora, «Pedir el material») y su proveedor probable.
+ */
+const s = sesionCon(Astro.locals, 'facturas');
+const dia = hoy();
+const q = Astro.url.searchParams;
+const [proveedores, articulos, plantillas, presupuestos] = s
+  ? await Promise.all([s.repos.proveedores.listar(), s.repos.catalogo.articulos(), s.repos.catalogo.plantillas(), moduloActivoAhora('presupuestosCliente') ? s.repos.presupuestosCliente.listar({ limite: 200 }) : []])
+  : [[], [], [], []];
+let valores: EntradaPedido = { proveedorId: q.get('proveedor') ?? '', presupuestoClienteId: q.get('presupuesto') || null, entrega: null, lineas: [], notas: '', notasInternas: '' };
+let filas = 4;
+let errores: Error[] = [];
+const trabajo = s && q.get('trabajo') ? await s.repos.catalogo.plantilla(q.get('trabajo') ?? '') : null;
+if (Astro.request.method === 'GET' && trabajo && !trabajo.archivado) {
+  const medidas = Object.fromEntries(trabajo.parametros.map((x) => [x.id, numero(q.get(`m.${x.id}`) ?? '') ?? x.defecto]));
+  const elegidos = Object.fromEntries(trabajo.opciones.map((o) => [o.id, q.get(`o.${o.id}`) ?? '']));
+  const lineas = lineasDeTrabajo(calcularEscandallo(trabajo, articulos, medidas, elegidos), articulos, trabajo.nombre);
+  valores = { ...valores, lineas, proveedorId: valores.proveedorId || proveedorProbable(lineas, articulos, proveedores)?.id || '', notasInternas: `Material de: ${trabajo.nombre}.` };
+  filas = lineas.length + 1;
+}
+if (s && Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const datos = leerFormularioPedido(form);
+  valores = datos;
+  if (form.get('accion') === 'mas') {
+    filas = datos.filas + 3;
+  } else {
+    const r = await crearPedido(s.repos, datos, s.usuario.email, dia);
+    if (r.ok) {
+      await s.repos.auditoria.registrar(s.usuario.email, 'pedido nuevo', `${r.pedido.codigo} a ${r.pedido.proveedor.nombre}`);
+      return Astro.redirect(`/panel/pedidos/${r.pedido.id}?hecho=creado`, 303);
+    }
+    errores = r.errores;
+    filas = Math.max(datos.filas, 1);
+    Astro.response.status = 400;
+  }
+}
+// Para la obra: los presupuestos enviados y aceptados (y el ya elegido).
+const obras = presupuestos.filter((p) => p.estado === 'aceptado' || p.estado === 'enviado' || p.id === valores.presupuestoClienteId);
+---
+
+<PaginaPanel titulo="Pedido nuevo" permiso="facturas" volver="/panel/pedidos" ancho="amplio">
+  <div class="nv-titulo">
+    <div>
+      <h1>Pedido nuevo</h1>
+      <p>{trabajo ? `Con el material de «${trabajo.nombre}». Revisa las cantidades y elige el proveedor.` : 'Lo que necesitas pedir. Se numera al guardarlo y lo envías desde su ficha, sin precios.'}</p>
+    </div>
+  </div>
+  <FormPedido valores={valores} proveedores={proveedores} presupuestos={obras} articulos={articulos} plantillas={plantillas} filas={Math.max(filas, valores.lineas.length + 1)} boton="Guardar el pedido" errores={errores} hoy={dia} />
+</PaginaPanel>

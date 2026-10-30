@@ -1,5 +1,5 @@
 {
-  "version": 13,
+  "version": 14,
   "tablas": {
     "adjuntos": {
       "columnas": [
@@ -954,6 +954,88 @@
       ],
       "sql": "CREATE TABLE inventario_movimientos ( id INTEGER PRIMARY KEY AUTOINCREMENT, planta TEXT NOT NULL, tipo TEXT NOT NULL CHECK (tipo IN ('entrada', 'salida', 'baja')), cantidad INTEGER NOT NULL, motivo TEXT NOT NULL, nota TEXT NOT NULL DEFAULT '', referencia TEXT, fecha TEXT NOT NULL, email TEXT NOT NULL )"
     },
+    "pedidos_proveedor": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "codigo",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "estado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "'borrador'",
+          "clave": 0
+        },
+        {
+          "nombre": "proveedor_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "obra_id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "presupuesto_cliente_id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "fecha",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "coste",
+          "tipo": "REAL",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE pedidos_proveedor ( id TEXT PRIMARY KEY, codigo TEXT UNIQUE, estado TEXT NOT NULL DEFAULT 'borrador' CHECK (estado IN ('borrador', 'enviado', 'recibido')), proveedor_id TEXT NOT NULL, obra_id TEXT, presupuesto_cliente_id TEXT, fecha TEXT NOT NULL, coste REAL NOT NULL DEFAULT 0, datos TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL )"
+    },
     "portafolio": {
       "columnas": [
         {
@@ -1460,6 +1542,16 @@
       "nombre": "inventario_referencia",
       "tabla": "inventario_movimientos",
       "sql": "CREATE UNIQUE INDEX inventario_referencia ON inventario_movimientos (referencia) WHERE referencia IS NOT NULL"
+    },
+    {
+      "nombre": "pedidos_proveedor_estado",
+      "tabla": "pedidos_proveedor",
+      "sql": "CREATE INDEX pedidos_proveedor_estado ON pedidos_proveedor (estado, fecha)"
+    },
+    {
+      "nombre": "pedidos_proveedor_proveedor",
+      "tabla": "pedidos_proveedor",
+      "sql": "CREATE INDEX pedidos_proveedor_proveedor ON pedidos_proveedor (proveedor_id, fecha)"
     },
     {
       "nombre": "presupuestos_cliente_cliente",
