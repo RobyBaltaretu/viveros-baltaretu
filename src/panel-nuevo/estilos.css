@@ -1936,17 +1936,143 @@
   margin-bottom: 0.25rem;
   font-weight: 600;
 }
-.nv-aviso-anadido {
-  position: sticky;
-  bottom: 0;
+.nv-filtro-catalogo {
   margin: 0;
-  background: var(--nv-verde-suave);
-  padding: 0 1.25rem;
+}
+.nv-gris-suave {
+  font-weight: 500;
+  color: var(--nv-gris);
+}
+.nv-toque[aria-pressed='true'] .nv-gris-suave {
+  color: inherit;
+}
+.nv-sin-margen {
+  margin: 0;
+}
+.nv-item-derecha {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.625rem;
+}
+.nv-item-sin-precio {
+  font-size: 0.8125rem;
   font-weight: 600;
+  color: var(--nv-naranja);
+}
+.nv-item-veces:not(:empty) {
+  border-radius: 999px;
+  background: var(--nv-verde-suave);
+  padding: 0.125rem 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
   color: var(--nv-verde);
 }
-.nv-aviso-anadido:not(:empty) {
-  padding: 0.75rem 1.25rem;
+.nv-item-mas {
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--nv-acento-suave);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--nv-acento-oscuro);
+}
+.nv-item-catalogo:hover .nv-item-mas,
+.nv-item-catalogo:focus-visible .nv-item-mas {
+  background: var(--nv-acento);
+  color: #fff;
+}
+.nv-item-accion {
+  flex: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--nv-acento);
+}
+.nv-estado-catalogo {
+  flex: 1 1 12rem;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--nv-gris);
+}
+.nv-dialogo-pie .nv-estado-catalogo + .nv-boton {
+  flex: 0 1 10rem;
+}
+.nv-lleva {
+  border: 1px solid var(--nv-borde);
+  border-radius: var(--nv-radio-control);
+}
+.nv-lleva summary {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.nv-lleva ul {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid var(--nv-borde);
+  padding: 0.5rem 1rem 0.75rem;
+  list-style: none;
+}
+.nv-lleva li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.25rem 0;
+  font-size: 0.9375rem;
+}
+.nv-lleva li > :last-child {
+  flex: none;
+}
+/* Sugerencias del catálogo al escribir el concepto de una línea. */
+.nv-sugerencias {
+  position: fixed;
+  z-index: 60;
+  max-height: min(22rem, 60dvh);
+  overflow-y: auto;
+  margin: 0;
+  border: 1px solid var(--nv-borde);
+  border-radius: var(--nv-radio-control);
+  background: var(--nv-superficie);
+  padding: 0.25rem;
+  list-style: none;
+  box-shadow: var(--nv-sombra-alta);
+}
+.nv-sugerencia {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-radius: 8px;
+  padding: 0.375rem 0.75rem;
+  color: var(--nv-tinta);
+  cursor: pointer;
+}
+.nv-sugerencia strong {
+  display: block;
+  font-weight: 600;
+}
+.nv-sugerencia small {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--nv-gris);
+}
+.nv-sugerencia:hover,
+.nv-sugerencia[aria-selected='true'] {
+  background: var(--nv-acento-suave);
+}
+.nv-sugerencia-todo {
+  border-top: 1px solid var(--nv-borde);
+  border-radius: 0 0 8px 8px;
+  font-weight: 600;
+  color: var(--nv-acento);
 }
 @media (max-width: 47.99rem) {
   .nv-lineas-factura tr {
@@ -2042,4 +2168,17 @@
 }
 .nv-seccion > .nv-nota-pie {
   margin: 0.75rem 0 0;
+}
+@media (max-width: 39.99rem) {
+  /* En el móvil, los filtros del catálogo en una fila que se desliza. */
+  .nv-filtro-catalogo {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -1.25rem;
+    padding: 0 1.25rem 0.25rem;
+    scrollbar-width: none;
+  }
+  .nv-filtro-catalogo .nv-toque {
+    flex: none;
+  }
 }

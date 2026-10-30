@@ -8,8 +8,22 @@ import type { ResultadoEscandallo } from './escandallo.ts';
  * márgenes:
  * - «una»: una línea con el trabajo, sus medidas y materiales.
  * - «partes»: una línea por grupo (materiales, herrajes, acabados, mano de obra, servicios).
+ * - «detalle»: una línea por artículo, con su cantidad y su precio por unidad
+ *   (el mismo artículo en varias piezas va junto).
  */
-export type ModoPresupuesto = 'una' | 'partes';
+export type ModoPresupuesto = 'una' | 'partes' | 'detalle';
+
+/** Lo que lleva el trabajo: cada artículo con su cantidad (con la merma), sin costes. */
+export function llevaDelTrabajo(e: Pick<ResultadoEscandallo, 'lineas'>): { articulo: string; cantidad: number; unidad: string; precioUnidad: number; grupo: string }[] {
+  const porArticulo = new Map<string, { articulo: string; cantidad: number; unidad: string; precioUnidad: number; grupo: string }>();
+  for (const l of e.lineas) {
+    const clave = l.articuloId ?? l.articulo;
+    const ya = porArticulo.get(clave);
+    if (ya) ya.cantidad = Math.round((ya.cantidad + l.cantidad) * 1000) / 1000;
+    else porArticulo.set(clave, { articulo: l.articulo, cantidad: l.cantidad, unidad: l.unidad, precioUnidad: l.precioUnidad, grupo: l.grupo });
+  }
+  return [...porArticulo.values()];
+}
 
 const corta = (t: string, max: number) => (t.length <= max ? t : `${t.slice(0, max - 1).trimEnd()}…`);
 
@@ -21,6 +35,7 @@ export function lineasDelTrabajo(p: Pick<PlantillaCatalogo, 'nombre'>, e: Result
     .map((x) => x.split(': ')[1])
     .join(', ');
   const concepto = corta(medidas ? `${p.nombre} (${medidas})` : p.nombre, 200);
+  if (modo === 'detalle') return llevaDelTrabajo(e).map((x) => ({ concepto: corta(x.unidad === 'ud' ? x.articulo : `${x.articulo} (${x.unidad})`, 200), cantidad: x.cantidad, precio: x.precioUnidad, material: '', extra: false }));
   if (modo === 'una') return [{ concepto, cantidad: 1, precio: e.precio, material: corta(materiales, 120), extra: false }];
   return e.grupos.map((g, i) => ({ concepto: corta(`${g.grupo}: ${i === 0 ? concepto : p.nombre}`, 200), cantidad: 1, precio: g.precio, material: i === 0 ? corta(materiales, 120) : '', extra: false }));
 }

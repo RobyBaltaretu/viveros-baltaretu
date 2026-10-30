@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { enlaceNuevoPresupuesto, lineasDelTrabajo } from '../../src/server/catalogo/al-presupuesto.ts';
+import { enlaceNuevoPresupuesto, lineasDelTrabajo, llevaDelTrabajo } from '../../src/server/catalogo/al-presupuesto.ts';
 import type { ResultadoEscandallo } from '../../src/server/catalogo/escandallo.ts';
 
 const e = {
@@ -32,5 +32,22 @@ describe('del catálogo al presupuesto', () => {
     const url = new URL(enlaceNuevoPresupuesto(lineasDelTrabajo({ nombre: 'Armario' }, e, 'una'), 'Armario'), 'https://x');
     expect(url.pathname).toBe('/panel/presupuestos-cliente/nuevo');
     expect(Object.fromEntries(url.searchParams)).toMatchObject({ concepto: 'Armario', filas: '1', 'l0.precio': '734,07', 'l0.cantidad': '1' });
+  });
+
+  it('material a material: un artículo por línea (juntos si se repite), con cantidad y precio por unidad', () => {
+    const lineas = [
+      { articuloId: 'mel', articulo: 'Melamina blanca 19 mm', unidad: 'm²', cantidad: 3.3, precioUnidad: 20, grupo: 'Materiales' },
+      { articuloId: 'bis', articulo: 'Bisagra cazoleta', unidad: 'ud', cantidad: 8, precioUnidad: 2.4, grupo: 'Herrajes y accesorios' },
+      { articuloId: 'mel', articulo: 'Melamina blanca 19 mm', unidad: 'm²', cantidad: 1.25, precioUnidad: 20, grupo: 'Materiales' },
+    ];
+    const conLineas = { ...e, lineas } as unknown as ResultadoEscandallo;
+    expect(llevaDelTrabajo(conLineas).map((x) => [x.articulo, x.cantidad])).toEqual([
+      ['Melamina blanca 19 mm', 4.55],
+      ['Bisagra cazoleta', 8],
+    ]);
+    expect(lineasDelTrabajo({ nombre: 'Armario' }, conLineas, 'detalle')).toEqual([
+      { concepto: 'Melamina blanca 19 mm (m²)', cantidad: 4.55, precio: 20, material: '', extra: false },
+      { concepto: 'Bisagra cazoleta', cantidad: 8, precio: 2.4, material: '', extra: false },
+    ]);
   });
 });

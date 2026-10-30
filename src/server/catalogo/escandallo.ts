@@ -60,6 +60,9 @@ export function revisarMedidas(p: PlantillaCatalogo, valores: Record<string, num
   });
 }
 
+/** El aviso de un artículo sin precio (el selector del catálogo los cuenta en vez de listarlos). */
+export const avisoSinPrecio = (nombre: string) => `«${nombre}» no tiene precio: rellénalo en el catálogo.`;
+
 export function calcularEscandallo(p: PlantillaCatalogo, articulos: ArticuloCatalogo[], valores: Record<string, number>, elegidos: Record<string, string> = {}): ResultadoEscandallo {
   const porId = new Map(articulos.map((a) => [a.id, a]));
   const vars = valoresFormula(p, valores);
@@ -84,7 +87,7 @@ export function calcularEscandallo(p: PlantillaCatalogo, articulos: ArticuloCata
       avisos.push(o ? `Elige ${o.nombre.toLowerCase()}.` : `«${c.concepto}»: su artículo ya no está en el catálogo.`);
       continue;
     }
-    if (sinPrecio(a)) avisos.push(`«${a.nombre}» no tiene precio: rellénalo en el catálogo.`);
+    if (sinPrecio(a)) avisos.push(avisoSinPrecio(a.nombre));
     const cantidad = tres(neta * (1 + a.merma / 100));
     const precioUnidad = precioVenta(a);
     lineas.push({
