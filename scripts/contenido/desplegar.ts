@@ -7,7 +7,6 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { MARCA_DESCARGA, modoDespliegue } from './desplegar-comun.ts';
-import { clienteActual } from '../../src/plataforma/actual.ts';
 
 const token = process.env.CONTENIDO_TOKEN;
 const url = process.env.CONTENIDO_URL || process.env.SITE_URL;
@@ -22,12 +21,12 @@ if (token && url && existsSync(MARCA_DESCARGA)) {
   else console.warn(`[desplegar] No se pudo consultar las publicaciones (${r.status}); se sube como versión.`);
 }
 
-const cliente = clienteActual();
-const configArgs = cliente.cloudflare.wrangler ? ['-c', cliente.cloudflare.wrangler] : [];
-
 const modo = modoDespliegue(pendientes, process.env.PUBLICAR_SIEMPRE);
 console.log(modo === 'desplegar' ? `[desplegar] ${pendientes} publicaciones del panel: se publica en la web.` : '[desplegar] Sin publicaciones del panel: se sube una versión para aprobarla en Cloudflare.');
-execFileSync('npx', ['wrangler', ...configArgs, ...(modo === 'desplegar' ? ['deploy'] : ['versions', 'upload'])], { stdio: 'inherit' });
+// Sin `-c`: el build deja en .wrangler/deploy/config.json la configuración del cliente
+// (Turia: Worker y D1 `creacionesturia`). Pasar wrangler.creacionesturia.jsonc rompe el
+// despliegue: su `main` apunta al código sin construir.
+execFileSync('npx', ['wrangler', ...(modo === 'desplegar' ? ['deploy'] : ['versions', 'upload'])], { stdio: 'inherit' });
 
 if (modo === 'desplegar' && hasta) {
   const r = await fetch(new URL('/api/contenido/publicacion', url), { method: 'POST', headers: cabeceras, body: JSON.stringify({ hasta }) });
