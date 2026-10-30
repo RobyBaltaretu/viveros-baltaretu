@@ -8,11 +8,14 @@ import {
   MATERIALES_SUELO,
   TIPOS_ESTANCIA,
 } from '../../server/simulador/materiales.ts';
+// CSS propio, en línea (scripts/generar-css-simulador.mjs): el simulador está fuera del Tailwind de la web para que Baltaretu no cambie.
+import estilosSimulador from '../../panel-nuevo/simulador.css?raw';
 
 export const prerender = false;
 ---
 
 <PaginaPanel titulo="Simulador de Reformas en Vivo (IA)" permiso="editar">
+  <style is:inline set:html={estilosSimulador}></style>
   <div class="simulador-wrapper space-y-6">
     <!-- Cabecera de la Herramienta -->
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-linea pb-4">
@@ -29,8 +32,20 @@ export const prerender = false;
         title="Configurar Claves de IA Gratuita"
       >
         <Icono nombre="personas" clase="size-5 text-terracota" />
-        <span>Configuración IA</span>
+        <span>Configuración IA (⚙️)</span>
       </button>
+    </div>
+
+    <!-- Banner de Alerta de Error Visual -->
+    <!-- Mismos estilos que los errores del panel (Mensajes.astro): sin clases nuevas que cambien el CSS de Baltaretu. -->
+    <div id="error-banner" role="alert" class="hidden rounded-2xl border-2 border-terracota bg-papel p-4 text-tinta">
+      <div class="flex items-start gap-3">
+        <Icono nombre="aviso" clase="size-5 text-terracota shrink-0 mt-0.5" />
+        <div class="grid gap-1">
+          <strong class="font-bold text-sm">Error en la Generación de IA</strong>
+          <p id="error-message" class="text-xs text-gris"></p>
+        </div>
+      </div>
     </div>
 
     <!-- Modal / Panel de Configuración de Claves IA -->
@@ -43,7 +58,7 @@ export const prerender = false;
           </button>
         </div>
         <p class="text-xs text-gris">
-          El simulador funciona automáticamente. Si deseas usar tu propio token gratuito de <strong>Hugging Face</strong> (código abierto) o <strong>Google Gemini</strong>, introdúcelo aquí:
+          Para generar la reforma hace falta un token gratuito de <strong>Hugging Face</strong> (código abierto). Es el único proveedor de IA: no se usa ningún servicio de pago.
         </p>
         <div>
           <label for="hf-token-input" class="block text-xs font-bold text-tinta mb-1">
@@ -56,17 +71,6 @@ export const prerender = false;
             class="w-full rounded-xl border border-linea px-3 py-2 text-sm text-tinta focus:border-terracota focus:outline-hidden"
           />
           <span class="text-[11px] text-gris">Consíguelo gratis sin tarjeta en <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener" class="underline text-terracota">huggingface.co/settings/tokens</a>.</span>
-        </div>
-        <div>
-          <label for="gemini-key-input" class="block text-xs font-bold text-tinta mb-1">
-            Google Gemini API Key (Opcional)
-          </label>
-          <input
-            type="password"
-            id="gemini-key-input"
-            placeholder="AIzaSy..."
-            class="w-full rounded-xl border border-linea px-3 py-2 text-sm text-tinta focus:border-terracota focus:outline-hidden"
-          />
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" id="btn-guardar-ajustes" class="rounded-xl bg-terracota px-4 py-2 text-sm font-semibold text-papel hover:opacity-90">
@@ -378,6 +382,8 @@ export const prerender = false;
     const loadingStatus = document.getElementById('loading-status');
     const sliderWrapper = document.getElementById('slider-wrapper');
     const accionesResultado = document.getElementById('acciones-resultado');
+    const errorBanner = document.getElementById('error-banner');
+    const errorMessage = document.getElementById('error-message');
 
     const comparatorContainer = document.getElementById('comparator-container');
     const imgBefore = document.getElementById('img-before');
@@ -392,19 +398,18 @@ export const prerender = false;
     const btnGuardarAjustes = document.getElementById('btn-guardar-ajustes');
     const dialogoAjustes = document.getElementById('dialogo-ajustes');
     const hfTokenInput = document.getElementById('hf-token-input');
-    const geminiKeyInput = document.getElementById('gemini-key-input');
 
     // Cargar claves guardadas en localStorage
-    if (hfTokenInput && geminiKeyInput) {
+    if (hfTokenInput) {
       hfTokenInput.value = localStorage.getItem('simulador_hf_token') || '';
-      geminiKeyInput.value = localStorage.getItem('simulador_gemini_key') || '';
     }
+    // Ya no hay otros proveedores: se borra la clave de Gemini que hubiera guardada.
+    localStorage.removeItem('simulador_gemini_key');
 
     btnAbrirAjustes?.addEventListener('click', () => dialogoAjustes?.showModal());
     btnCerrarAjustes?.addEventListener('click', () => dialogoAjustes?.close());
     btnGuardarAjustes?.addEventListener('click', () => {
       localStorage.setItem('simulador_hf_token', hfTokenInput.value.trim());
-      localStorage.setItem('simulador_gemini_key', geminiKeyInput.value.trim());
       dialogoAjustes?.close();
     });
 
@@ -418,6 +423,7 @@ export const prerender = false;
       if (!file) return;
 
       try {
+        console.log('[Simulador UI] Preprocesando foto del cliente...');
         const bitmap = await createImageBitmap(file);
         const maxDim = 1536;
         let width = bitmap.width;
@@ -446,8 +452,10 @@ export const prerender = false;
         if (previewThumb) previewThumb.src = currentProcessedBase64;
         dropZonePrompt?.classList.add('hidden');
         previewThumbContainer?.classList.remove('hidden');
+        errorBanner?.classList.add('hidden');
+        console.log('[Simulador UI] Foto comprimida exitosamente.');
       } catch {
-        console.error('Error preprocesando imagen');
+        console.error('[Simulador UI] Error preprocesando imagen');
       }
     });
 
@@ -462,6 +470,7 @@ export const prerender = false;
     function startLoadingAnimation() {
       vacioContainer?.classList.add('hidden');
       sliderWrapper?.classList.add('hidden');
+      errorBanner?.classList.add('hidden');
       loadingContainer?.classList.remove('hidden');
       loadingContainer?.classList.add('flex');
 
@@ -473,6 +482,13 @@ export const prerender = false;
       }, 2500);
 
       return () => clearInterval(interval);
+    }
+
+    function showError(msg) {
+      console.error('[Simulador UI] Error en IA:', msg);
+      if (errorMessage) errorMessage.textContent = msg;
+      errorBanner?.classList.remove('hidden');
+      vacioContainer?.classList.remove('hidden');
     }
 
     // Envío del Formulario
@@ -525,6 +541,7 @@ export const prerender = false;
       };
 
       const stopAnimation = startLoadingAnimation();
+      console.log('[Simulador UI] Enviando petición a la API con la configuración seleccionada...');
 
       try {
         const response = await fetch('/api/panel/simulador', {
@@ -535,12 +552,13 @@ export const prerender = false;
             config: payload,
             options: {
               hfToken: localStorage.getItem('simulador_hf_token') || undefined,
-              geminiApiKey: localStorage.getItem('simulador_gemini_key') || undefined,
             },
           }),
         });
 
         const resData = await response.json();
+        console.log('[Simulador UI] Respuesta recibida:', resData);
+
         stopAnimation();
         loadingContainer?.classList.add('hidden');
         loadingContainer?.classList.remove('flex');
@@ -548,15 +566,13 @@ export const prerender = false;
         if (resData.ok && resData.afterImage) {
           showComparator(currentProcessedBase64, resData.afterImage);
         } else {
-          alert('Error al generar la reforma: ' + (resData.error || 'Inténtalo de nuevo.'));
-          vacioContainer?.classList.remove('hidden');
+          showError(resData.error || 'Error al generar la reforma con la IA. Revisa tus tokens configurados (⚙️).');
         }
       } catch {
         stopAnimation();
         loadingContainer?.classList.add('hidden');
         loadingContainer?.classList.remove('flex');
-        vacioContainer?.classList.remove('hidden');
-        alert('Error de conexión con el servidor.');
+        showError('Error de red o conexión al comunicarse con el servidor.');
       }
     });
 

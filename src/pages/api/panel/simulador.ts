@@ -18,7 +18,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     const body = (await request.json()) as {
       image?: string;
       config?: RenovationConfig | RenovationRequestPayload;
-      options?: { hfToken?: string; geminiApiKey?: string };
+      options?: { hfToken?: string };
     };
 
     if (!body || !body.image || !body.config) {
@@ -29,7 +29,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
     }
 
     const resolvedConfig = resolveRenovationConfig(body.config);
-    const result = await generateRenovationImage(body.image, resolvedConfig, body.options || {});
+    // Solo el token de Hugging Face: cualquier otra clave que llegue se ignora.
+    const result = await generateRenovationImage(body.image, resolvedConfig, { hfToken: body.options?.hfToken });
 
     return new Response(JSON.stringify(result), {
       status: result.ok ? 200 : 500,

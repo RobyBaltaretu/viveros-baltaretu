@@ -38,13 +38,30 @@ describe('Simulador de Reformas con IA', () => {
     expect(prompt).toContain('Extend upper cabinets cleanly up to the ceiling');
   });
 
-  test('generateRenovationImage funciona con fallback en entorno de prueba sin claves', async () => {
+  test('generateRenovationImage informa explícitamente cuando no hay claves configuradas o fallan', async () => {
     const testBase64 = 'data:image/jpeg;base64,aGVsbG8gd29ybGQ=';
     const result = await generateRenovationImage(testBase64, dummyConfig, {});
 
-    expect(result.ok).toBe(true);
-    expect(result.afterImage).toBeTruthy();
-    expect(result.promptUsed).toBeTruthy();
-    expect(result.provider).toBe('demo-fallback');
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('No hay tokens o claves de IA configurados');
+  });
+
+  test('solo Hugging Face: otras claves (de pago) se ignoran y no se llama a ningún otro servicio', async () => {
+    const llamadas: string[] = [];
+    const original = globalThis.fetch;
+    globalThis.fetch = (async (url: string | URL | Request) => {
+      llamadas.push(String(url));
+      return new Response('sin cupo', { status: 503 });
+    }) as typeof fetch;
+    try {
+      const opciones = { geminiApiKey: 'x', falApiKey: 'x', openaiApiKey: 'x' } as unknown as Parameters<typeof generateRenovationImage>[2];
+      expect((await generateRenovationImage('data:image/jpeg;base64,aGVsbG8=', dummyConfig, opciones)).ok).toBe(false);
+      expect(llamadas).toEqual([]);
+      await generateRenovationImage('data:image/jpeg;base64,aGVsbG8=', dummyConfig, { hfToken: 'hf_prueba' });
+      expect(llamadas.length).toBeGreaterThan(0);
+      expect(llamadas.every((u) => u.includes('huggingface.co'))).toBe(true);
+    } finally {
+      globalThis.fetch = original;
+    }
   });
 });

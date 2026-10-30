@@ -2,6 +2,11 @@
 /* El diseño nuevo del panel lleva su CSS en línea: Tailwind no lo mira (así no cambia el CSS de la web). */
 @source not '../panel-nuevo';
 @source not '../pages/panel/catalogo';
+/* El simulador de reformas (solo carpintería) lleva su CSS en línea (scripts/generar-css-simulador.mjs): así la web de Baltaretu no cambia. */
+@source not '../pages/panel/simulador.astro';
+@source not '../pages/api/panel/simulador.ts';
+@source not '../services';
+@source not '../server/simulador';
 
 /*
  * Sistema de diseño con la identidad visual de Viveros Baltaretu: crema de fondo,
