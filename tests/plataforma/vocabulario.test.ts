@@ -4,6 +4,8 @@ import { menuDe, zonasDe } from '../../src/server/panel/navegacion.ts';
 import { clienteActual, rutaDisponible } from '../../src/plataforma/actual.ts';
 import { cargarCliente } from '../../src/plataforma/cargar.ts';
 import { vocabularioPanel } from '../../src/plataforma/vocabulario.ts';
+import { instruccionesDe } from '../../src/server/asistente/instrucciones.ts';
+import { readFileSync } from 'node:fs';
 
 const comoCliente = (id: string) => vi.stubEnv('CLIENTE_CONFIG', JSON.stringify(cargarCliente(id)));
 afterEach(() => vi.unstubAllEnvs());
@@ -19,7 +21,7 @@ describe('vocabulario y marca por sector', () => {
 
   it('Turia (carpintería): su nombre, sin las pantallas ni las herramientas de plantas', () => {
     comoCliente('turia');
-    expect(vocabularioPanel()).toMatchObject({ tituloPanel: 'Panel de la carpintería', nombreAsistente: 'Asistente' });
+    expect(vocabularioPanel()).toMatchObject({ tituloPanel: 'Panel de la carpintería', nombreAsistente: 'Gubia' });
     expect(clienteActual().marca).toEqual({ nombreCorto: 'Creaciones Turia', monograma: null });
     for (const r of ['/panel/plantas', '/panel/inventario', '/panel/fotos', '/api/panel/foto']) expect(rutaDisponible(r), r).toBe(false);
     expect(rutaDisponible('/panel/facturas')).toBe(true);
@@ -28,10 +30,24 @@ describe('vocabulario y marca por sector', () => {
     expect(rutaDisponible('/panel/catalogo/plantillas/armario-correderas')).toBe(true);
     expect(rutaDisponible('/panel/portafolio/abc/fotos')).toBe(true);
     expect(zonasDe('editor').map((z) => z.zona)).toContain('plantas');
-    expect(zonasDe('propietario').find((z) => z.zona === 'asistente')?.texto).toBe('Asistente');
-    expect(menuDe('propietario').find((s) => s.href === '/panel/asistente')?.texto).toBe('Asistente');
+    expect(zonasDe('propietario').find((z) => z.zona === 'asistente')?.texto).toBe('Gubia');
+    expect(menuDe('propietario').find((s) => s.href === '/panel/asistente')?.texto).toBe('Gubia');
     const nombres = herramientasDe('propietario').map((h) => h.nombre);
     for (const n of ['buscar_plantas', 'cambiar_plantas', 'crear_planta', 'ver_inventario', 'mover_inventario']) expect(nombres, n).not.toContain(n);
     expect(nombres).toContain('crear_factura');
+  });
+
+  it('el asistente de Turia es Gubia, de la carpintería: ni AgricolAI, ni el vivero, ni plantas', () => {
+    const ctx = { usuario: { email: 'ana@example.com', nombre: 'Ana', rol: 'gerente' as const, activo: true }, hoy: '2026-10-31' } as never;
+    const vivero = instruccionesDe(ctx);
+    expect(vivero.startsWith('Eres AgricolAI, el asistente del panel interno de Viveros Baltaretu')).toBe(true);
+    comoCliente('turia');
+    const turia = instruccionesDe(ctx);
+    expect(turia.startsWith('Eres Gubia, el asistente del panel interno de Creaciones Turia, una carpintería')).toBe(true);
+    expect(turia).not.toMatch(/AgricolAI|Baltaretu|vivero|planta|palmera|olivo/i);
+    expect(turia).toContain('llevan el 21 %');
+    expect(vocabularioPanel().sugerencias.join(' ')).not.toMatch(/palmera|planta/i);
+    const pagina = readFileSync('src/pages/panel/asistente.astro', 'utf8');
+    expect(pagina).not.toMatch(/const NOMBRE = 'AgricolAI';\nconst s =/);
   });
 });
