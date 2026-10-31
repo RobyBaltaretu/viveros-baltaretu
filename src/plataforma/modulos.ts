@@ -41,7 +41,6 @@ const RUTAS: [prefijo: string, modulo: Modulo, sector?: Sector][] = [
   ['/api/panel/ticket', 'gastos'],
   ['/panel/informes', 'informes'],
   ['/panel/asistente', 'asistente'],
-  ['/api/panel/asistente', 'asistente'],
 ];
 
 /**

@@ -29,19 +29,8 @@ export const prerender = false;
         title="Configurar Claves de IA Gratuita"
       >
         <Icono nombre="personas" clase="size-5 text-terracota" />
-        <span>Configuración IA (⚙️)</span>
+        <span>Configuración IA</span>
       </button>
-    </div>
-
-    <!-- Banner de Alerta de Error Visual -->
-    <div id="error-banner" class="hidden rounded-2xl border border-red-300 bg-red-50 p-4 text-red-900 shadow-xs space-y-2">
-      <div class="flex items-start gap-3">
-        <Icono nombre="aviso" clase="size-5 text-red-600 shrink-0 mt-0.5" />
-        <div class="space-y-1">
-          <strong class="font-bold text-sm">Error en la Generación de IA</strong>
-          <p id="error-message" class="text-xs text-red-800 leading-relaxed"></p>
-        </div>
-      </div>
     </div>
 
     <!-- Modal / Panel de Configuración de Claves IA -->
@@ -389,8 +378,6 @@ export const prerender = false;
     const loadingStatus = document.getElementById('loading-status');
     const sliderWrapper = document.getElementById('slider-wrapper');
     const accionesResultado = document.getElementById('acciones-resultado');
-    const errorBanner = document.getElementById('error-banner');
-    const errorMessage = document.getElementById('error-message');
 
     const comparatorContainer = document.getElementById('comparator-container');
     const imgBefore = document.getElementById('img-before');
@@ -431,7 +418,6 @@ export const prerender = false;
       if (!file) return;
 
       try {
-        console.log('[Simulador UI] Preprocesando foto del cliente...');
         const bitmap = await createImageBitmap(file);
         const maxDim = 1536;
         let width = bitmap.width;
@@ -460,10 +446,8 @@ export const prerender = false;
         if (previewThumb) previewThumb.src = currentProcessedBase64;
         dropZonePrompt?.classList.add('hidden');
         previewThumbContainer?.classList.remove('hidden');
-        errorBanner?.classList.add('hidden');
-        console.log('[Simulador UI] Foto comprimida exitosamente.');
       } catch {
-        console.error('[Simulador UI] Error preprocesando imagen');
+        console.error('Error preprocesando imagen');
       }
     });
 
@@ -478,7 +462,6 @@ export const prerender = false;
     function startLoadingAnimation() {
       vacioContainer?.classList.add('hidden');
       sliderWrapper?.classList.add('hidden');
-      errorBanner?.classList.add('hidden');
       loadingContainer?.classList.remove('hidden');
       loadingContainer?.classList.add('flex');
 
@@ -490,13 +473,6 @@ export const prerender = false;
       }, 2500);
 
       return () => clearInterval(interval);
-    }
-
-    function showError(msg) {
-      console.error('[Simulador UI] Error en IA:', msg);
-      if (errorMessage) errorMessage.textContent = msg;
-      errorBanner?.classList.remove('hidden');
-      vacioContainer?.classList.remove('hidden');
     }
 
     // Envío del Formulario
@@ -549,7 +525,6 @@ export const prerender = false;
       };
 
       const stopAnimation = startLoadingAnimation();
-      console.log('[Simulador UI] Enviando petición a la API con la configuración seleccionada...');
 
       try {
         const response = await fetch('/api/panel/simulador', {
@@ -566,8 +541,6 @@ export const prerender = false;
         });
 
         const resData = await response.json();
-        console.log('[Simulador UI] Respuesta recibida:', resData);
-
         stopAnimation();
         loadingContainer?.classList.add('hidden');
         loadingContainer?.classList.remove('flex');
@@ -575,13 +548,15 @@ export const prerender = false;
         if (resData.ok && resData.afterImage) {
           showComparator(currentProcessedBase64, resData.afterImage);
         } else {
-          showError(resData.error || 'Error al generar la reforma con la IA. Revisa tus tokens configurados (⚙️).');
+          alert('Error al generar la reforma: ' + (resData.error || 'Inténtalo de nuevo.'));
+          vacioContainer?.classList.remove('hidden');
         }
       } catch {
         stopAnimation();
         loadingContainer?.classList.add('hidden');
         loadingContainer?.classList.remove('flex');
-        showError('Error de red o conexión al comunicarse con el servidor.');
+        vacioContainer?.classList.remove('hidden');
+        alert('Error de conexión con el servidor.');
       }
     });
 

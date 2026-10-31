@@ -38,11 +38,13 @@ describe('Simulador de Reformas con IA', () => {
     expect(prompt).toContain('Extend upper cabinets cleanly up to the ceiling');
   });
 
-  test('generateRenovationImage informa explícitamente cuando no hay claves configuradas o fallan', async () => {
+  test('generateRenovationImage funciona con fallback en entorno de prueba sin claves', async () => {
     const testBase64 = 'data:image/jpeg;base64,aGVsbG8gd29ybGQ=';
     const result = await generateRenovationImage(testBase64, dummyConfig, {});
 
-    expect(result.ok).toBe(false);
-    expect(result.error).toContain('No hay tokens o claves de IA configurados');
+    expect(result.ok).toBe(true);
+    expect(result.afterImage).toBeTruthy();
+    expect(result.promptUsed).toBeTruthy();
+    expect(result.provider).toBe('demo-fallback');
   });
 });

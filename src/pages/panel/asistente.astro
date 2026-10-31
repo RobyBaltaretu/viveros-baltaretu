@@ -11,20 +11,14 @@ import { hoy } from '../../server/gastos/gastos.ts';
 import { campo, sesionCon } from '../../server/panel/pagina.ts';
 import { puede } from '../../server/panel/permisos.ts';
 import type { EntornoPublicar } from '../../server/panel/publicar.ts';
-import { clienteActual } from '../../plataforma/actual.ts';
-import { processCarpentryAssistantMessage } from '../../services/aiAssistantService.ts';
 
 export const prerender = false;
 
-const cliente = clienteActual();
-const esCarpinteria = cliente.sector === 'carpinteria';
-const NOMBRE = esCarpinteria ? 'Asistente Operativo' : 'AgricolAI';
-
+const NOMBRE = 'AgricolAI';
 const s = sesionCon(Astro.locals, 'asistente');
 const entorno = env as EntornoPublicar & { AI?: BindingAI; GROQ_API_KEY?: string };
 const ctx = s ? { repos: s.repos, usuario: s.usuario, hoy: hoy(), env: entorno } : null;
-const conFotos = !esCarpinteria && !!s && puede(s.usuario.rol, 'editar');
-
+const conFotos = !!s && puede(s.usuario.rol, 'editar');
 if (s && ctx && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const accion = campo(form, 'accion');
@@ -33,43 +27,18 @@ if (s && ctx && Astro.request.method === 'POST') {
   else if (accion === 'borrar') await borrarConversacion(ctx, campo(form, 'conversacion'));
   else if (accion === 'si' || accion === 'no') await responderPropuesta(ctx, campo(form, 'propuesta'), accion === 'si');
   else {
-    const textoMensaje = campo(form, 'texto');
-    if (esCarpinteria) {
-      if (textoMensaje) {
-        const conversacionId = await s.repos.conversaciones.actual(s.usuario.email);
-        await s.repos.conversaciones.anadir({ conversacion: conversacionId, rol: 'usuario', texto: textoMensaje, propuestas: [] });
-
-        const result = await processCarpentryAssistantMessage(textoMensaje, {
-          repos: s.repos,
-          email: s.usuario.email,
-        });
-
-        let extraText = result.text;
-        if (result.actionExecuted) {
-          extraText += `\n\n[Acción «${result.actionExecuted.title}»: ${result.actionExecuted.summary}]`;
-        }
-
-        await s.repos.conversaciones.anadir({
-          conversacion: conversacionId,
-          rol: 'asistente',
-          texto: extraText,
-          propuestas: [],
-        });
-      }
-    } else {
-      // Viveros Baltaretu
-      const archivos = form.getAll('foto').filter((f): f is File => f instanceof File && f.size > 0);
-      if (archivos.length && conFotos) {
-        const plantas = form.getAll('fotoPlanta').map(String);
-        const fotos = await Promise.all(archivos.map(async (f, i) => ({ bytes: new Uint8Array(await f.arrayBuffer()), planta: plantas.length === 1 ? plantas[0] : (plantas[i] ?? '') })));
-        await enviarFotos(ctx, fotos);
-      }
-      if (textoMensaje) await conversar(ctx, textoMensaje, await modelosDe(entorno));
+    // Fotos (cada una con su planta; sin JavaScript, una planta para todas) y después el texto.
+    const archivos = form.getAll('foto').filter((f): f is File => f instanceof File && f.size > 0);
+    if (archivos.length && conFotos) {
+      const plantas = form.getAll('fotoPlanta').map(String);
+      const fotos = await Promise.all(archivos.map(async (f, i) => ({ bytes: new Uint8Array(await f.arrayBuffer()), planta: plantas.length === 1 ? plantas[0] : (plantas[i] ?? '') })));
+      await enviarFotos(ctx, fotos);
     }
+    if (campo(form, 'texto')) await conversar(ctx, campo(form, 'texto'), await modelosDe(entorno));
   }
+  // Siempre se vuelve a la conversación (recargar no repite el mensaje).
   return Astro.redirect('/panel/asistente#final', 303);
 }
-
 const conversacion = s ? await s.repos.conversaciones.actual(s.usuario.email) : '';
 const mensajes = s ? await s.repos.conversaciones.mensajes(conversacion, 60) : [];
 const propuestas = new Map<string, Propuesta>(s ? (await s.repos.conversaciones.propuestas(mensajes.flatMap((m) => m.propuestas))).map((p) => [p.id, p]) : []);
@@ -98,59 +67,16 @@ const iniciales =
     .map((p) => p[0]?.toUpperCase())
     .join('') || 'Tú';
 const hora = (iso: string) => new Date(iso.includes('T') ? iso : `${iso.replace(' ', 'T')}Z`).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
-const conIA = esCarpinteria ? true : Boolean(entorno.AI || entorno.GROQ_API_KEY);
+const conIA = Boolean(entorno.AI || entorno.GROQ_API_KEY);
 const pct = (a: number, b: number) => Math.min(100, Math.round((a / Math.max(1, b)) * 100));
 const quedanMensajes = uso ? Math.max(0, uso.limiteMensajes - uso.mensajes) : 0;
 const iaGastada = uso ? pct(uso.neuronas, uso.limiteNeuronas) : 0;
 const miles = (n: number) => new Intl.NumberFormat('es-ES', { useGrouping: 'always' } as Intl.NumberFormatOptions).format(n);
-const sinCupo = !esCarpinteria && !!uso && (quedanMensajes === 0 || iaGastada >= 100);
-
-const SUGERENCIAS_CARPINTERIA = [
-  'Crear borrador de factura de 580€ para Cliente Taller',
-  'Dar de alta tablero Roble Maya 19mm a 48.50€',
-  'Consultar inventario de tableros en almacén',
-  'Calcular presupuesto reforma cocina 12m2 calidad premium',
-];
+const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
 ---
 
 <PaginaPanel titulo={NOMBRE} permiso="asistente">
-  <div class="chat-agricolai space-y-4">
-    <!-- Diálogo Ajustes Token HF (Carpintería) -->
-    {
-      esCarpinteria && (
-        <dialog id="dialogo-ajustes-hf" class="m-auto w-full max-w-md rounded-2xl border border-linea bg-papel p-6 shadow-2xl backdrop:bg-tinta/50">
-          <div class="space-y-4">
-            <div class="flex items-center justify-between border-b border-linea pb-3">
-              <h3 class="font-titular text-lg font-bold text-tinta">Configuración Token Hugging Face</h3>
-              <button type="button" id="btn-cerrar-ajustes-hf" class="rounded-lg p-1 text-gris hover:bg-crema">
-                <Icono nombre="cerrar" clase="size-5" />
-              </button>
-            </div>
-            <p class="text-xs text-gris">
-              El asistente funciona con Llama 3.3 70B / Qwen 2.5 mediante la API de Hugging Face. Puedes introducir tu token gratuito <code>VITE_HF_TOKEN</code> aquí:
-            </p>
-            <div>
-              <label for="hf-token-chat" class="block text-xs font-bold text-tinta mb-1">
-                Token Gratuito (hf_...)
-              </label>
-              <input
-                type="password"
-                id="hf-token-chat"
-                placeholder="hf_..."
-                class="w-full rounded-xl border border-linea px-3 py-2 text-sm text-tinta focus:border-terracota focus:outline-hidden"
-              />
-              <span class="text-[11px] text-gris">Consíguelo gratis sin tarjeta en <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener" class="underline text-terracota">huggingface.co/settings/tokens</a>.</span>
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-              <button type="button" id="btn-guardar-ajustes-hf" class="rounded-xl bg-terracota px-4 py-2 text-sm font-semibold text-papel hover:opacity-90">
-                Guardar
-              </button>
-            </div>
-          </div>
-        </dialog>
-      )
-    }
-
+  <div class="chat-agricolai">
     <header class="cabecera-chat caja-panel">
       <div class="flex min-w-0 items-center gap-3">
         <span class="avatar avatar-ia avatar-grande" aria-hidden="true"><Icono nombre="asistente" clase="size-6" /></span>
@@ -158,39 +84,17 @@ const SUGERENCIAS_CARPINTERIA = [
           <h1 class="titular-medio leading-tight">{NOMBRE}</h1>
           <p class="flex items-center gap-1.5 text-base text-gris">
             <span class:list={['punto-estado', conIA && !sinCupo ? 'punto-activo' : 'punto-basico']} aria-hidden="true"></span>
-            {
-              esCarpinteria
-                ? 'Modelo Open Source (Llama 3.3 70B / Qwen 2.5)'
-                : conIA && !sinCupo
-                ? 'Tu asistente del vivero'
-                : 'Modo básico (sin IA)'
-            }
+            {conIA && !sinCupo ? 'Tu asistente del vivero' : 'Modo básico (sin IA)'}
           </p>
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        {
-          esCarpinteria && (
-            <button
-              type="button"
-              id="btn-abrir-ajustes-hf"
-              class="boton-panel boton-panel-secundario !p-2.5"
-              title="Configurar Token Hugging Face (⚙️)"
-            >
-              <Icono nombre="personas" clase="size-5 text-terracota" />
-              <span class="sr-only sm:not-sr-only">Token ⚙️</span>
-            </button>
-          )
-        }
-        <form method="post">
-          <input type="hidden" name="accion" value="nueva" />
-          <button class="boton-panel boton-panel-secundario">
-            <Icono nombre="conversacion" clase="size-5" />
-            Nueva<span class="sr-only sm:not-sr-only">&nbsp;conversación</span>
-          </button>
-        </form>
-      </div>
-
+      <form method="post">
+        <input type="hidden" name="accion" value="nueva" />
+        <button class="boton-panel boton-panel-secundario">
+          <Icono nombre="conversacion" clase="size-5" />
+          Nueva<span class="sr-only sm:not-sr-only">&nbsp;conversación</span>
+        </button>
+      </form>
       {
         anteriores.length > 0 && (
           <details class="historial" open={mensajes.length === 0 ? true : undefined}>
@@ -226,7 +130,7 @@ const SUGERENCIAS_CARPINTERIA = [
         )
       }
       {
-        !esCarpinteria && uso && (
+        uso && (
           <details id="uso" class="uso">
             <summary>
               <span class="ficha-uso">
@@ -279,14 +183,10 @@ const SUGERENCIAS_CARPINTERIA = [
             </span>
             <h2 class="titular-medio">{primerNombre ? `Hola, ${primerNombre}. Soy ${NOMBRE}.` : `Hola, soy ${NOMBRE}.`}</h2>
             <p class="max-w-md text-gris">
-              {
-                esCarpinteria
-                  ? 'Pregúntame para crear facturas o albaranes, registrar materiales en el catálogo, consultar stock del taller o calcular un presupuesto de reforma.'
-                  : `Pregúntame por ventas, facturas, gastos o plantas. ${conFotos ? 'Puedes enviarme fotos para tus plantas. ' : ''}Nada se cambia hasta que pulses «Sí».`
-              }
+              Pregúntame por ventas, facturas, gastos o plantas, o pídeme cambios, también de muchas cosas a la vez. {conFotos ? 'Puedes enviarme fotos para tus plantas. ' : ''}Nada se cambia hasta que pulses «Sí».
             </p>
             <ul class="mt-2 flex flex-wrap justify-center gap-2" role="list" aria-label="Sugerencias">
-              {(esCarpinteria ? SUGERENCIAS_CARPINTERIA : SUGERENCIAS).map((t) => (
+              {SUGERENCIAS.map((t) => (
                 <li>
                   <button type="button" class="sugerencia" data-sugerencia={t}>
                     {t}
@@ -362,7 +262,7 @@ const SUGERENCIAS_CARPINTERIA = [
       <div id="final"></div>
     </section>
 
-    <form method="post" enctype="multipart/form-data" class="redactor caja-panel mt-6 grid gap-2 p-2 sm:p-3" data-redactor data-es-carpinteria={esCarpinteria ? '1' : '0'}>
+    <form method="post" enctype="multipart/form-data" class="redactor caja-panel mt-6 grid gap-2 p-2 sm:p-3" data-redactor>
       {
         conFotos && (
           <div class="bandeja" data-bandeja hidden>
@@ -789,47 +689,264 @@ const SUGERENCIAS_CARPINTERIA = [
   }
 </style>
 
-<script is:inline>
-  (() => {
-    // Configuración Token HF (Carpintería)
-    const btnAbrirAjustesHF = document.getElementById('btn-abrir-ajustes-hf');
-    const btnCerrarAjustesHF = document.getElementById('btn-cerrar-ajustes-hf');
-    const btnGuardarAjustesHF = document.getElementById('btn-guardar-ajustes-hf');
-    const dialogoAjustesHF = document.getElementById('dialogo-ajustes-hf');
-    const hfTokenChat = document.getElementById('hf-token-chat');
+<script>
+  // Con JavaScript: el mensaje aparece al momento y la caja se vacía; «pensando…»
+  // mientras responde, y solo se cambian la conversación y el uso (sin recargar).
+  // Sin JavaScript, los formularios funcionan igual.
+  const NOMBRE = 'AgricolAI';
+  const redactor = document.querySelector<HTMLFormElement>('[data-redactor]');
+  const texto = redactor?.querySelector<HTMLTextAreaElement>('textarea');
+  const contador = redactor?.querySelector<HTMLElement>('[data-contador]');
+  const entradaFotos = redactor?.querySelector<HTMLInputElement>('[data-fotos]');
+  const bandeja = redactor?.querySelector<HTMLElement>('[data-bandeja]');
+  const listaFotos = redactor?.querySelector<HTMLElement>('[data-lista-fotos]');
+  const opciones = document.querySelector<HTMLTemplateElement>('#opciones-plantas');
+  const iniciales = document.querySelector('.fila-usuario .avatar')?.textContent?.trim();
+  const MAXIMO_FOTOS = Number(entradaFotos?.dataset.maximo ?? 10);
+  let fotos: { archivo: File; url: string; planta: string }[] = [];
 
-    if (hfTokenChat) {
-      hfTokenChat.value = localStorage.getItem('simulador_hf_token') || '';
+  // Con JavaScript cada foto lleva su planta: sobra el selector común.
+  redactor?.querySelector('[data-sin-js]')?.remove();
+
+  const conversacion = () => document.querySelector<HTMLElement>('#conversacion');
+  // Hasta abajo del todo: la caja de escribir es fija y taparía el último mensaje.
+  const alFinal = () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  const ajustar = () => {
+    if (!texto) return;
+    texto.style.height = 'auto';
+    texto.style.height = `${Math.min(texto.scrollHeight, 160)}px`;
+    if (contador) {
+      const quedan = texto.maxLength - texto.value.length;
+      contador.hidden = quedan > 200;
+      contador.textContent = `Quedan ${quedan} letras`;
     }
+  };
 
-    btnAbrirAjustesHF?.addEventListener('click', () => dialogoAjustesHF?.showModal());
-    btnCerrarAjustesHF?.addEventListener('click', () => dialogoAjustesHF?.close());
-    btnGuardarAjustesHF?.addEventListener('click', () => {
-      if (hfTokenChat) {
-        localStorage.setItem('simulador_hf_token', hfTokenChat.value.trim());
+  /** Una fila de mensaje como las del servidor (mismas clases y estilos). */
+  function fila(usuario: boolean, contenido: Node[], extra = ''): HTMLElement {
+    const a = document.createElement('article');
+    a.className = `fila fila-nueva ${usuario ? 'fila-usuario' : 'fila-ia'} ${extra}`;
+    a.setAttribute('aria-label', usuario ? 'Tú' : NOMBRE);
+    const avatar = document.createElement('span');
+    avatar.className = `avatar ${usuario ? 'avatar-usuario' : 'avatar-ia'}`;
+    avatar.setAttribute('aria-hidden', 'true');
+    if (usuario) avatar.textContent = iniciales || 'Tú';
+    else avatar.innerHTML = document.querySelector('.cabecera-chat .avatar-ia')?.innerHTML ?? '';
+    const columna = document.createElement('div');
+    columna.className = 'grid min-w-0 gap-1';
+    const autor = document.createElement('p');
+    autor.className = 'autor';
+    autor.setAttribute('aria-hidden', 'true');
+    autor.textContent = `${usuario ? 'Tú' : NOMBRE} · ahora`;
+    const burbuja = document.createElement('div');
+    burbuja.className = `burbuja ${usuario ? 'burbuja-usuario' : 'burbuja-ia'}`;
+    burbuja.append(...contenido);
+    columna.append(autor, burbuja);
+    a.append(avatar, columna);
+    return a;
+  }
+
+  function pintarFotos() {
+    if (!listaFotos || !bandeja) return;
+    bandeja.hidden = fotos.length === 0;
+    listaFotos.replaceChildren(
+      ...fotos.map((f, i) => {
+        const li = document.createElement('li');
+        li.className = 'foto-item';
+        const img = document.createElement('img');
+        img.src = f.url;
+        img.alt = `Foto ${i + 1}`;
+        const select = document.createElement('select');
+        select.className = 'campo-panel';
+        select.setAttribute('aria-label', `Planta de la foto ${i + 1}`);
+        if (opciones) select.append(opciones.content.cloneNode(true));
+        select.value = f.planta;
+        select.addEventListener('change', () => (f.planta = select.value));
+        const quitar = document.createElement('button');
+        quitar.type = 'button';
+        quitar.className = 'boton-icono';
+        quitar.setAttribute('aria-label', `Quitar la foto ${i + 1}`);
+        quitar.innerHTML = '<svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+        quitar.addEventListener('click', () => {
+          URL.revokeObjectURL(f.url);
+          fotos.splice(i, 1);
+          pintarFotos();
+        });
+        li.append(img, select, quitar);
+        return li;
+      }),
+    );
+  }
+
+  /** Planta que encaja con el nombre del archivo (por ejemplo «palmera-canaria-2.jpg»). */
+  function adivinar(nombre: string): string {
+    const limpio = (t: string) =>
+      t
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z]+/g, ' ')
+        .trim();
+    const archivo = limpio(nombre.replace(/\.[a-z]+$/i, ''));
+    if (!archivo || !opciones) return '';
+    const lista = [...opciones.content.querySelectorAll('option')].filter((o) => o.value);
+    const encaja = lista.find((o) => archivo.includes(limpio(o.textContent ?? '')) || archivo.includes(limpio(o.value)));
+    return encaja?.value ?? '';
+  }
+
+  /** Reencuadre a 4:3 y 1600 px en JPEG, como al subir fotos en la ficha. */
+  async function preparar(archivo: File): Promise<Blob> {
+    if (!('createImageBitmap' in window)) return archivo;
+    try {
+      const imagen = await createImageBitmap(archivo, { imageOrientation: 'from-image' });
+      const proporcion = 4 / 3;
+      let ancho = imagen.width;
+      let alto = imagen.height;
+      let x = 0;
+      let y = 0;
+      if (ancho / alto > proporcion) {
+        ancho = Math.round(alto * proporcion);
+        x = Math.round((imagen.width - ancho) / 2);
+      } else {
+        alto = Math.round(ancho / proporcion);
+        y = Math.round((imagen.height - alto) / 2);
       }
-      dialogoAjustesHF?.close();
-    });
-
-    const redactor = document.querySelector('[data-redactor]');
-    const texto = redactor?.querySelector('textarea');
-    const esCarpinteria = redactor?.dataset.esCarpinteria === '1';
-
-    // Interceptar envío para carpintería y usar la API con token HF
-    if (esCarpinteria && redactor) {
-      redactor.addEventListener('submit', async () => {
-        const val = texto?.value.trim();
-        if (!val) return;
-        console.log('[Asistente Carpintería] Procesando consulta:', val);
-      });
+      const escala = Math.min(1, 1600 / ancho);
+      const lienzo = document.createElement('canvas');
+      lienzo.width = Math.round(ancho * escala);
+      lienzo.height = Math.round(alto * escala);
+      lienzo.getContext('2d')?.drawImage(imagen, x, y, ancho, alto, 0, 0, lienzo.width, lienzo.height);
+      return (await new Promise<Blob | null>((ok) => lienzo.toBlob(ok, 'image/jpeg', 0.82))) ?? archivo;
+    } catch {
+      return archivo;
     }
+  }
 
-    document.addEventListener('click', (e) => {
-      const sugerencia = e.target.closest('[data-sugerencia]');
-      if (sugerencia && texto) {
-        texto.value = sugerencia.dataset.sugerencia || '';
-        texto.focus();
+  async function enviar(form: HTMLFormElement, datos: FormData, burbuja?: { texto: string; fotos: string[] }) {
+    const actual = conversacion();
+    if (!actual) return form.submit();
+    form.querySelectorAll('button').forEach((b) => b.setAttribute('disabled', ''));
+    let pensando: HTMLElement | null = null;
+    if (burbuja) {
+      const contenido: Node[] = [];
+      if (burbuja.texto) {
+        const p = document.createElement('p');
+        p.className = 'whitespace-pre-line';
+        p.textContent = burbuja.texto;
+        contenido.push(p);
       }
-    });
-  })();
+      if (burbuja.fotos.length) {
+        const m = document.createElement('div');
+        m.className = `miniaturas${burbuja.texto ? ' mt-2' : ''}`;
+        for (const src of burbuja.fotos) {
+          const img = document.createElement('img');
+          img.src = src;
+          img.alt = 'Foto enviada';
+          m.append(img);
+        }
+        contenido.push(m);
+      }
+      const espera = document.createElement('span');
+      espera.className = 'pensando';
+      espera.setAttribute('role', 'status');
+      espera.innerHTML = '<span class="puntos" aria-hidden="true"><span></span><span></span><span></span></span>';
+      espera.append(`${NOMBRE} está ${burbuja.fotos.length && !burbuja.texto ? 'guardando las fotos' : 'pensando'}…`);
+      pensando = fila(false, [espera]);
+      document.querySelector('.vacio')?.remove();
+      document.querySelector('#final')?.before(fila(true, contenido), pensando);
+      alFinal();
+    } else {
+      const boton = form.querySelector<HTMLButtonElement>(`[value=${datos.get('accion') === 'si' ? 'si' : 'no'}]`);
+      if (boton) boton.textContent = datos.get('accion') === 'si' ? 'Aplicando…' : 'Un momento…';
+    }
+    try {
+      const r = await fetch('/panel/asistente', { method: 'POST', body: datos });
+      if (!r.ok) throw new Error(String(r.status));
+      const html = new DOMParser().parseFromString(await r.text(), 'text/html');
+      const nueva = html.querySelector('#conversacion');
+      if (!nueva) throw new Error('sin conversación');
+      conversacion()?.replaceWith(nueva);
+      const uso = html.querySelector('#uso');
+      if (uso) document.querySelector('#uso')?.replaceWith(uso);
+      history.replaceState(null, '', '/panel/asistente');
+      alFinal();
+    } catch {
+      if (pensando) {
+        const aviso = document.createElement('p');
+        aviso.textContent = 'No se ha podido enviar. Revisa la conexión y vuelve a probar: te he dejado el texto en la caja.';
+        pensando.replaceWith(fila(false, [aviso], 'fila-error'));
+        document.querySelector('.fila-error .burbuja')?.classList.add('burbuja-error');
+        if (texto && burbuja && !texto.value) {
+          texto.value = burbuja.texto;
+          ajustar();
+        }
+      } else location.reload();
+    } finally {
+      form.querySelectorAll('button').forEach((b) => b.removeAttribute('disabled'));
+      texto?.focus();
+    }
+  }
+
+  redactor?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const valor = texto?.value.trim() ?? '';
+    if (!valor && !fotos.length) {
+      texto?.focus();
+      return;
+    }
+    const sinPlanta = fotos.findIndex((f) => !f.planta);
+    if (sinPlanta >= 0) {
+      listaFotos?.querySelectorAll('select')[sinPlanta]?.focus();
+      return;
+    }
+    const datos = new FormData();
+    if (valor) datos.set('texto', valor);
+    const enviadas = fotos;
+    for (const f of enviadas) {
+      datos.append('foto', await preparar(f.archivo), 'foto.jpg');
+      datos.append('fotoPlanta', f.planta);
+    }
+    // La caja se vacía al momento: el mensaje ya está en la conversación.
+    if (texto) texto.value = '';
+    fotos = [];
+    pintarFotos();
+    ajustar();
+    await enviar(redactor, datos, { texto: valor, fotos: enviadas.map((f) => f.url) });
+  });
+  entradaFotos?.addEventListener('change', () => {
+    for (const archivo of [...(entradaFotos.files ?? [])].slice(0, MAXIMO_FOTOS - fotos.length)) fotos.push({ archivo, url: URL.createObjectURL(archivo), planta: adivinar(archivo.name) });
+    entradaFotos.value = '';
+    pintarFotos();
+    [...(listaFotos?.querySelectorAll('select') ?? [])].find((x) => !x.value)?.focus();
+  });
+  texto?.addEventListener('input', ajustar);
+  texto?.addEventListener('keydown', (e) => {
+    // Intro envía; Mayúsculas + Intro hace un salto de línea.
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      redactor?.requestSubmit();
+    }
+  });
+  document.addEventListener('click', (e) => {
+    const sugerencia = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-sugerencia]');
+    if (sugerencia && texto) {
+      texto.value = sugerencia.dataset.sugerencia ?? '';
+      ajustar();
+      texto.focus();
+    }
+  });
+  document.addEventListener('submit', (e) => {
+    const form = e.target as HTMLFormElement;
+    if (form.dataset.confirmar && !confirm(form.dataset.confirmar)) {
+      e.preventDefault();
+      return;
+    }
+    const boton = (e as SubmitEvent).submitter as HTMLButtonElement | null;
+    if (!form.closest('#conversacion') || !boton) return;
+    e.preventDefault();
+    const datos = new FormData(form);
+    datos.set('accion', boton.value);
+    enviar(form, datos);
+  });
+  window.scrollTo({ top: document.documentElement.scrollHeight });
 </script>
