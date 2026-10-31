@@ -8,11 +8,7 @@
   "webPublica": false,
   "idiomas": ["es"],
   "idiomaPorDefecto": "es",
-  "cloudflare": {
-    "worker": "creacionesturia",
-    "d1": "creacionesturia",
-    "wrangler": "wrangler.creacionesturia.jsonc"
-  },
+  "cloudflare": { "worker": "creacionesturia", "d1": "creacionesturia", "wrangler": "wrangler.creacionesturia.jsonc" },
   "modulos": {
     "catalogo": true,
     "presupuestosWeb": false,
@@ -44,10 +40,7 @@
   "ia": {
     "asistente": ["groq", "workers-ai", "local"],
     "simulador": "gemini",
-    "modelos": {
-      "groq": "openai/gpt-oss-120b",
-      "gemini": "gemini-3.1-flash-image"
-    },
+    "modelos": { "groq": "openai/gpt-oss-120b", "gemini": "gemini-3.1-flash-image-preview" },
     "simulacionesMes": 250
   }
 }
