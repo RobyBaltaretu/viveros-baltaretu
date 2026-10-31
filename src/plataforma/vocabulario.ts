@@ -12,6 +12,12 @@ export interface VocabularioPanel {
   /** Título de la pestaña del navegador y texto bajo el nombre en el logo. */
   tituloPanel: string;
   nombreAsistente: string;
+  /** Debajo del nombre en el chat, y de quién es el cupo de IA. */
+  asistenteDe: string;
+  /** Qué se le puede pedir (saludo del chat). */
+  asistentePuede: string;
+  /** Ejemplos para empezar. */
+  sugerencias: string[];
   /** Nombre y descripción de las zonas del menú que cambian con el sector. */
   zonas: { plantas: { texto: string; descripcion: string; icono: NombreIcono } };
   /** Dibujo del saludo del inicio (escena de `Ilustracion.astro`). */

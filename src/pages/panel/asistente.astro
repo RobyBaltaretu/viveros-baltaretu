@@ -5,20 +5,27 @@ import Icono from '../../components/panel/ui/Icono.astro';
 import type { Propuesta } from '../../server/data/tipos.ts';
 import { borrarConversacion, conversar, enviarFotos, modelosDe, responderPropuesta, usoDeHoy } from '../../server/asistente/agente.ts';
 import { HERRAMIENTA_FOTOS, MAXIMO_FOTOS_CHAT, miniaturas } from '../../server/asistente/fotos.ts';
-import { SUGERENCIAS, textoSeguro } from '../../server/asistente/formato.ts';
+import { textoSeguro } from '../../server/asistente/formato.ts';
 import { MAXIMO_TEXTO, type BindingAI } from '../../server/asistente/interprete.ts';
 import { hoy } from '../../server/gastos/gastos.ts';
 import { campo, sesionCon } from '../../server/panel/pagina.ts';
 import { puede } from '../../server/panel/permisos.ts';
 import type { EntornoPublicar } from '../../server/panel/publicar.ts';
+import { clienteActual } from '../../plataforma/actual.ts';
+import { iaDe } from '../../plataforma/configuracion.ts';
+import { vocabularioPanel } from '../../plataforma/vocabulario.ts';
 
 export const prerender = false;
 
-const NOMBRE = 'AgricolAI';
+// El nombre y los textos del asistente son los del sector del cliente (AgricolAI en el vivero).
+const vocabulario = vocabularioPanel();
+const NOMBRE = vocabulario.nombreAsistente;
+const vivero = clienteActual().sector === 'vivero';
 const s = sesionCon(Astro.locals, 'asistente');
 const entorno = env as EntornoPublicar & { AI?: BindingAI; GROQ_API_KEY?: string };
 const ctx = s ? { repos: s.repos, usuario: s.usuario, hoy: hoy(), env: entorno } : null;
-const conFotos = !!s && puede(s.usuario.rol, 'editar');
+// Las fotos del chat son para las plantas: solo en el vivero.
+const conFotos = vivero && !!s && puede(s.usuario.rol, 'editar');
 if (s && ctx && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const accion = campo(form, 'accion');
@@ -68,6 +75,11 @@ const iniciales =
     .join('') || 'Tú';
 const hora = (iso: string) => new Date(iso.includes('T') ? iso : `${iso.replace(' ', 'T')}Z`).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
 const conIA = Boolean(entorno.AI || entorno.GROQ_API_KEY);
+// Qué IA contesta (fuera del vivero, se enseña para saber que va el modelo del cliente).
+const ia = iaDe(clienteActual());
+const nombres = { groq: entorno.GROQ_API_KEY ? `Groq (${ia.modelos.groq.replace(/^openai\//, '')})` : '', 'workers-ai': entorno.AI ? 'Workers AI' : '', local: '' };
+const cadena = ia.asistente.map((p) => nombres[p]).filter(Boolean);
+const modeloActivo = cadena.length ? `IA: ${cadena[0]}${cadena.length > 1 ? `, con ${cadena.slice(1).join(' y ')} de respaldo` : ''}` : 'IA: sin configurar (modo básico)';
 const pct = (a: number, b: number) => Math.min(100, Math.round((a / Math.max(1, b)) * 100));
 const quedanMensajes = uso ? Math.max(0, uso.limiteMensajes - uso.mensajes) : 0;
 const iaGastada = uso ? pct(uso.neuronas, uso.limiteNeuronas) : 0;
@@ -84,8 +96,9 @@ const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
           <h1 class="titular-medio leading-tight">{NOMBRE}</h1>
           <p class="flex items-center gap-1.5 text-base text-gris">
             <span class:list={['punto-estado', conIA && !sinCupo ? 'punto-activo' : 'punto-basico']} aria-hidden="true"></span>
-            {conIA && !sinCupo ? 'Tu asistente del vivero' : 'Modo básico (sin IA)'}
+            {conIA && !sinCupo ? `Tu asistente ${vocabulario.asistenteDe}` : 'Modo básico (sin IA)'}
           </p>
+          {!vivero && <p class="text-sm text-gris" data-modelo-ia>{modeloActivo}</p>}
         </div>
       </div>
       <form method="post">
@@ -155,7 +168,7 @@ const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
               </div>
               <div class="uso-fila">
                 <p>
-                  <span class="font-semibold">IA gratuita del vivero hoy (para todos):</span> <span class="tabular">{iaGastada} %</span> usado
+                  <span class="font-semibold">IA gratuita {vocabulario.asistenteDe} hoy (para todos):</span> <span class="tabular">{iaGastada} %</span> usado
                   <span class="text-gris">
                     {' '}
                     ({miles(uso.neuronas)} de {miles(uso.limiteNeuronas)} neuronas)
@@ -183,10 +196,10 @@ const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
             </span>
             <h2 class="titular-medio">{primerNombre ? `Hola, ${primerNombre}. Soy ${NOMBRE}.` : `Hola, soy ${NOMBRE}.`}</h2>
             <p class="max-w-md text-gris">
-              Pregúntame por ventas, facturas, gastos o plantas, o pídeme cambios, también de muchas cosas a la vez. {conFotos ? 'Puedes enviarme fotos para tus plantas. ' : ''}Nada se cambia hasta que pulses «Sí».
+              Pregúntame por {vocabulario.asistentePuede}, o pídeme cambios, también de muchas cosas a la vez. {conFotos ? 'Puedes enviarme fotos para tus plantas. ' : ''}Nada se cambia hasta que pulses «Sí».
             </p>
             <ul class="mt-2 flex flex-wrap justify-center gap-2" role="list" aria-label="Sugerencias">
-              {SUGERENCIAS.map((t) => (
+              {vocabulario.sugerencias.map((t) => (
                 <li>
                   <button type="button" class="sugerencia" data-sugerencia={t}>
                     {t}
@@ -688,6 +701,31 @@ const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
     }
   }
 </style>
+
+{
+  // El script común del chat dice «AgricolAI» en lo que pinta al momento; se deja tal cual
+  // (cambiarlo cambiaría la línea base de Baltaretu) y fuera del vivero se pone el nombre del cliente.
+  NOMBRE !== 'AgricolAI' && (
+    <script is:inline data-nombre={NOMBRE}>
+      (() => {
+        const nombre = document.currentScript.dataset.nombre;
+        const zona = document.getElementById('conversacion');
+        if (!zona || !nombre) return;
+        const cambiar = (n) => {
+          if (n.nodeType === 3) {
+            if (n.nodeValue.includes('AgricolAI')) n.nodeValue = n.nodeValue.replaceAll('AgricolAI', nombre);
+            return;
+          }
+          if (n.nodeType !== 1) return;
+          const l = n.getAttribute('aria-label');
+          if (l && l.includes('AgricolAI')) n.setAttribute('aria-label', l.replaceAll('AgricolAI', nombre));
+          n.childNodes.forEach(cambiar);
+        };
+        new MutationObserver((cambios) => cambios.forEach((c) => (c.type === 'characterData' ? cambiar(c.target) : c.addedNodes.forEach(cambiar)))).observe(zona, { childList: true, subtree: true, characterData: true });
+      })();
+    </script>
+  )
+}
 
 <script>
   // Con JavaScript: el mensaje aparece al momento y la caja se vacía; «pensando…»
