@@ -1,72 +1,95 @@
-import { InferenceClient } from '@huggingface/inference';
 import type { RenovationConfig } from '../server/simulador/materiales.ts';
 import { buildRenovationPrompt } from './promptBuilder.ts';
 
-/** Solo Hugging Face: por decisión del propietario, ningún otro proveedor ni clave de IA. */
+/**
+ * Simulador de reformas con Gemini (solo en los clientes con `ia.simulador:
+ * "gemini"`). La clave es el secreto `GEMINI_API_KEY` del Worker: nunca llega
+ * del navegador. El tope mensual se controla antes, en la API (D1).
+ */
 export interface RenovationAiOptions {
-  hfToken?: string;
+  apiKey: string;
+  modelo: string;
+  /** Máscara opcional (PNG): blanco = lo que se cambia, negro = lo que se queda. */
+  mascara?: string;
+  fetch?: typeof fetch;
 }
 
 export interface RenovationAiResult {
   ok: boolean;
-  afterImage?: string; // base64 data URL e.g. "data:image/png;base64,..."
+  afterImage?: string; // data URL, p. ej. "data:image/png;base64,..."
   promptUsed?: string;
   provider?: string;
   error?: string;
+  /** Código HTTP de la respuesta del proveedor, si falló. */
+  estado?: number;
 }
 
-/**
- * Modelos de edición de imagen («image-to-image») de Hugging Face, por orden.
- * Se llaman con la librería oficial (@huggingface/inference) a través de
- * router.huggingface.co: ella elige el proveedor que sirve cada modelo
- * (`provider: 'auto'`) y lo cobra, si hace falta, del saldo de la cuenta de
- * Hugging Face. La API antigua (api-inference.huggingface.co) ya no existe.
- */
-export const MODELOS_HF = ['black-forest-labs/FLUX.1-Kontext-dev', 'Qwen/Qwen-Image-Edit'];
+export const URL_GEMINI = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-/** Mensaje claro para los errores de Hugging Face que tienen arreglo por parte del usuario. */
-export function explicarErrorHf(mensaje: string): string | null {
-  const m = mensaje.toLowerCase();
-  if (m.includes('sufficient permissions') || m.includes('inference providers on behalf'))
-    return 'Tu token de Hugging Face no tiene permiso para usar la IA. Crea uno nuevo en huggingface.co/settings/tokens de tipo «Fine-grained» y marca «Make calls to Inference Providers» (o usa un token de tipo «Read»), y pégalo en la configuración (⚙️).';
-  if (m.includes('invalid') && (m.includes('token') || m.includes('credentials')) || m.includes('401') || m.includes('unauthorized'))
-    return 'El token de Hugging Face no es válido: revísalo en la configuración (⚙️).';
-  if (m.includes('402') || m.includes('credits') || m.includes('payment required') || m.includes('exceeded'))
-    return 'Se ha acabado el saldo gratuito de este mes en Hugging Face. Vuelve a intentarlo cuando se renueve.';
-  return null;
+/** Mensajes para el usuario según el código de Gemini. */
+export const ERRORES_GEMINI: Record<number, string> = {
+  400: 'La IA no ha aceptado la foto o la petición. Prueba con otra foto (JPEG o WebP, sin recortes raros).',
+  401: 'La clave de Gemini no es válida. Avisa a quien lleva el panel.',
+  402: 'Límite del proveedor agotado.',
+  403: 'La clave de Gemini no tiene permiso para este modelo. Avisa a quien lleva el panel.',
+  404: 'El modelo de imágenes de Gemini configurado ya no existe. Avisa a quien lleva el panel.',
+  429: 'Demasiadas peticiones simultáneas, espera un momento.',
+};
+
+const datos = (dataUrl: string) => {
+  const m = dataUrl.match(/^data:(image\/[a-zA-Z+.-]+);base64,(.+)$/);
+  return m ? { mimeType: m[1]!, data: m[2]! } : null;
+};
+
+/** El texto de la petición: el de la configuración y, con máscara, cómo leerla. */
+export function promptGemini(config: RenovationConfig, conMascara: boolean): string {
+  const base = buildRenovationPrompt(config);
+  return conMascara
+    ? `${base}\n\n4. MASK:\n- The second image is a black and white mask with the same size as the photo. Change ONLY the areas that are white in the mask. Leave every black area exactly as it is in the photo.\n- Return a single image with exactly the same framing, size and aspect ratio as the photo.`
+    : `${base}\n\n- Return a single image with exactly the same framing, size and aspect ratio as the photo.`;
 }
 
-/**
- * Transformación fotorrealista de la foto del cliente con IA, solo con
- * Hugging Face. Sin token, o si ningún modelo responde, devuelve el error
- * explicado (nunca una imagen de relleno).
- */
-export async function generateRenovationImage(imageBase64: string, config: RenovationConfig, options: RenovationAiOptions = {}): Promise<RenovationAiResult> {
-  const prompt = buildRenovationPrompt(config);
-  const hfToken = options.hfToken || (typeof process !== 'undefined' ? process.env.HF_TOKEN || process.env.VITE_HF_TOKEN : undefined);
-  if (!hfToken) return { ok: false, error: 'No hay tokens o claves de IA configurados o activos. Introduce tu token gratuito de Hugging Face en la configuración (⚙️).' };
+export async function generateRenovationImage(imageBase64: string, config: RenovationConfig, options: RenovationAiOptions): Promise<RenovationAiResult> {
+  const foto = datos(imageBase64);
+  if (!foto) return { ok: false, error: 'La foto no tiene un formato válido.' };
+  const mascara = options.mascara ? datos(options.mascara) : null;
+  if (options.mascara && !mascara) return { ok: false, error: 'La zona marcada no tiene un formato válido.' };
+  const prompt = promptGemini(config, !!mascara);
+  const pedir = options.fetch ?? fetch;
 
-  const match = imageBase64.match(/^data:(image\/[a-zA-Z+.-]+);base64,(.+)$/);
-  const mimeType = match?.[1] ?? 'image/jpeg';
-  const bytes = Uint8Array.from(atob(match?.[2] ?? imageBase64), (c) => c.charCodeAt(0));
-  const foto = new Blob([bytes], { type: mimeType });
-
-  const cliente = new InferenceClient(hfToken);
-  const errores: string[] = [];
-  for (const model of MODELOS_HF) {
-    try {
-      console.log(`[RenovationAiService] Probando ${model} en Hugging Face...`);
-      const resultado = await cliente.imageToImage({ provider: 'auto', model, inputs: foto, parameters: { prompt } });
-      const b64 = btoa(Array.from(new Uint8Array(await resultado.arrayBuffer()), (b) => String.fromCharCode(b)).join(''));
-      return { ok: true, afterImage: `data:${resultado.type || 'image/png'};base64,${b64}`, promptUsed: prompt, provider: `huggingface:${model}` };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`[RenovationAiService] ${model}:`, msg);
-      // Un problema del token o del saldo es igual para todos los modelos: se explica y no se sigue.
-      const explicado = explicarErrorHf(msg);
-      if (explicado) return { ok: false, error: explicado };
-      errores.push(`${model}: ${msg.slice(0, 200)}`);
-    }
+  let respuesta: Response;
+  try {
+    respuesta = await pedir(`${URL_GEMINI}/${encodeURIComponent(options.modelo)}:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': options.apiKey },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }, { inlineData: foto }, ...(mascara ? [{ inlineData: mascara }] : [])] }],
+        generationConfig: { responseModalities: ['IMAGE'] },
+      }),
+    });
+  } catch {
+    return { ok: false, error: 'No se ha podido conectar con la IA. Revisa la conexión y vuelve a intentarlo.' };
   }
-  return { ok: false, error: `Hugging Face no ha podido generar la imagen. ${errores.join(' | ')}` };
+
+  if (!respuesta.ok) {
+    const cuerpo = await respuesta.text().catch(() => '');
+    console.warn(`[Simulador] Gemini ${respuesta.status}:`, cuerpo.slice(0, 300));
+    // Google indica el cupo o el saldo agotado con 429 RESOURCE_EXHAUSTED: si habla de facturación, es el límite del proveedor.
+    const sinSaldo = respuesta.status === 429 && /billing|prepay|credit|quota exceeded for/i.test(cuerpo);
+    const mensaje = sinSaldo ? ERRORES_GEMINI[402]! : (ERRORES_GEMINI[respuesta.status] ?? 'La IA no ha podido generar la imagen. Vuelve a intentarlo en un rato.');
+    return { ok: false, error: mensaje, estado: sinSaldo ? 402 : respuesta.status };
+  }
+
+  type Parte = { inlineData?: { mimeType?: string; data?: string }; inline_data?: { mime_type?: string; data?: string }; text?: string };
+  const json = (await respuesta.json().catch(() => null)) as { candidates?: { content?: { parts?: Parte[] }; finishReason?: string }[]; promptFeedback?: { blockReason?: string } } | null;
+  const partes = json?.candidates?.[0]?.content?.parts ?? [];
+  for (const p of partes) {
+    const d = p.inlineData?.data ?? p.inline_data?.data;
+    if (d) return { ok: true, afterImage: `data:${p.inlineData?.mimeType ?? p.inline_data?.mime_type ?? 'image/png'};base64,${d}`, promptUsed: prompt, provider: `gemini:${options.modelo}` };
+  }
+  const bloqueo = json?.promptFeedback?.blockReason ?? json?.candidates?.[0]?.finishReason;
+  return {
+    ok: false,
+    error: bloqueo && bloqueo !== 'STOP' ? 'La IA ha rechazado esta foto (sus filtros de seguridad). Prueba con otra foto de la estancia, sin personas.' : 'La IA no ha devuelto ninguna imagen. Vuelve a intentarlo.',
+  };
 }

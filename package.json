@@ -31,7 +31,6 @@
     "@astrojs/cloudflare": "^14.3.4",
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource-variable/dm-sans": "^5.3.0",
-    "@huggingface/inference": "^4.13.32",
     "@tailwindcss/vite": "^4.3.3",
     "ai": "^7.0.141",
     "astro": "^7.3.6",

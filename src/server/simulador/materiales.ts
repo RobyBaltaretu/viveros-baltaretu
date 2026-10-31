@@ -190,26 +190,29 @@ export const TIPOS_ESTANCIA = [
   { id: 'salon', nombre: 'Salón / Mueble TV' },
 ];
 
+/**
+ * La configuración que llega del navegador, rehecha solo con lo del catálogo:
+ * materiales, estilos y estancias por su id o nombre, y el resto como sí/no.
+ * Así ningún texto libre de la petición llega a la IA.
+ */
 export function resolveRenovationConfig(payload: RenovationRequestPayload | RenovationConfig): RenovationConfig {
-  if ('upperMaterial' in payload && payload.upperMaterial) {
-    return payload as RenovationConfig;
-  }
-  const p = payload as RenovationRequestPayload;
-  const upperMaterial = MATERIALES_MUEBLE.find((m) => m.id === p.upperMaterialId) || MATERIALES_MUEBLE[0]!;
-  const lowerMaterial = MATERIALES_MUEBLE.find((m) => m.id === p.lowerMaterialId) || MATERIALES_MUEBLE[0]!;
-  const countertopMaterial = MATERIALES_ENCIMERA.find((m) => m.id === p.countertopMaterialId) || MATERIALES_ENCIMERA[0]!;
-  const flooringMaterial = MATERIALES_SUELO.find((m) => m.id === p.flooringMaterialId) || MATERIALES_SUELO[0]!;
-
+  const p = (payload ?? {}) as Partial<RenovationRequestPayload> & Partial<Pick<RenovationConfig, 'upperMaterial' | 'lowerMaterial' | 'countertopMaterial' | 'flooringMaterial'>>;
+  const de = (lista: MaterialOption[], id: unknown, material?: MaterialOption) => lista.find((m) => m.id === id || m.id === material?.id) ?? lista[0]!;
+  const si = (v: unknown) => v === true;
+  const zonas = (p.zones ?? {}) as Partial<RenovationConfig['zones']>;
+  const luz = (p.lighting ?? {}) as Partial<RenovationConfig['lighting']>;
   return {
-    spaceType: p.spaceType,
-    cabinetStyle: p.cabinetStyle,
-    floorToCeiling: p.floorToCeiling,
-    zones: p.zones,
-    upperMaterial,
-    lowerMaterial,
-    countertopMaterial,
-    includeBacksplash: p.includeBacksplash,
-    flooringMaterial,
-    lighting: p.lighting,
+    spaceType: TIPOS_ESTANCIA.find((e) => e.nombre === p.spaceType || e.id === p.spaceType)?.nombre ?? TIPOS_ESTANCIA[0]!.nombre,
+    cabinetStyle: ESTILOS_MUEBLE.find((e) => e.nombre === p.cabinetStyle || e.id === p.cabinetStyle)?.nombre ?? ESTILOS_MUEBLE[0]!.nombre,
+    floorToCeiling: si(p.floorToCeiling),
+    zones: { cabinets: si(zonas.cabinets), countertop: si(zonas.countertop), flooring: si(zonas.flooring), lighting: si(zonas.lighting) },
+    upperMaterial: de(MATERIALES_MUEBLE, p.upperMaterialId, p.upperMaterial),
+    lowerMaterial: de(MATERIALES_MUEBLE, p.lowerMaterialId, p.lowerMaterial),
+    countertopMaterial: de(MATERIALES_ENCIMERA, p.countertopMaterialId, p.countertopMaterial),
+    includeBacksplash: si(p.includeBacksplash),
+    flooringMaterial: de(MATERIALES_SUELO, p.flooringMaterialId, p.flooringMaterial),
+    lighting: { underCabinetLed: si(luz.underCabinetLed), colorTemp: TEMPERATURAS_LED.includes(luz.colorTemp as never) ? luz.colorTemp! : TEMPERATURAS_LED[1] },
   };
 }
+
+export const TEMPERATURAS_LED = ['2700K warm white', '3000K neutral white'] as const;

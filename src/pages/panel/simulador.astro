@@ -10,8 +10,18 @@ import {
 } from '../../server/simulador/materiales.ts';
 // CSS propio, en línea (scripts/generar-css-simulador.mjs): el simulador está fuera del Tailwind de la web para que Baltaretu no cambie.
 import estilosSimulador from '../../panel-nuevo/simulador.css?raw';
+import { clienteActual } from '../../plataforma/actual.ts';
+import { iaDe } from '../../plataforma/configuracion.ts';
+import { sesionCon } from '../../server/panel/pagina.ts';
+import { AVISO_AGOTADA, estadoCuota, mesDe } from '../../server/simulador/cuota.ts';
 
 export const prerender = false;
+
+const s = sesionCon(Astro.locals, 'editar');
+const cliente = clienteActual();
+const ia = iaDe(cliente);
+const cuota = estadoCuota(s ? await s.repos.usoSimulador.usos(cliente.id, mesDe()) : 0, ia.simulacionesMes);
+const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · quedan ${c.quedan}`;
 ---
 
 <PaginaPanel titulo="Simulador de Reformas en Vivo (IA)" permiso="editar">
@@ -25,16 +35,35 @@ export const prerender = false;
           Sube la foto real de la estancia del cliente y aplica materiales fotorrealistas manteniendo intactas la geometría, iluminación y perspectiva.
         </p>
       </div>
-      <button
-        type="button"
-        id="btn-abrir-ajustes"
-        class="inline-flex items-center gap-2 rounded-xl border border-linea bg-papel px-4 py-2.5 text-sm font-semibold text-tinta shadow-xs hover:bg-crema"
-        title="Configurar Claves de IA Gratuita"
-      >
-        <Icono nombre="personas" clase="size-5 text-terracota" />
-        <span>Configuración IA (⚙️)</span>
-      </button>
     </div>
+
+    <!-- Simulaciones del mes: tope duro en D1 (aviso desde el 80 %, bloqueo al 100 %) -->
+    <section
+      id="cuota"
+      aria-labelledby="cuota-titulo"
+      data-aviso-agotada={AVISO_AGOTADA}
+      class:list={['rounded-2xl border bg-papel p-4', cuota.aviso ? 'border-[#b45309]' : 'border-linea']}
+    >
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="cuota-titulo" class="font-titular text-sm font-bold text-tinta">Simulaciones de este mes</h2>
+        <p id="cuota-texto" class="text-sm font-semibold text-tinta">{textoCuota(cuota)}</p>
+      </div>
+      <div
+        id="cuota-barra"
+        role="progressbar"
+        aria-labelledby="cuota-titulo"
+        aria-valuemin="0"
+        aria-valuemax={cuota.limite}
+        aria-valuenow={Math.min(cuota.usos, cuota.limite)}
+        aria-valuetext={textoCuota(cuota)}
+        class="mt-2 h-3 overflow-hidden rounded-full border border-gris bg-crema"
+      >
+        <div id="cuota-relleno" class:list={['h-full rounded-full', cuota.aviso ? 'bg-[#b45309]' : 'bg-oliva']} style={`width: ${cuota.porcentaje}%`}></div>
+      </div>
+      <p id="cuota-aviso" role="status" class:list={['mt-2 text-sm font-semibold text-[#92400e]', !cuota.aviso && 'hidden']}>
+        {cuota.agotada ? AVISO_AGOTADA : cuota.aviso ? `Te quedan ${cuota.quedan} simulaciones este mes.` : ''}
+      </p>
+    </section>
 
     <!-- Banner de Alerta de Error Visual -->
     <!-- Mismos estilos que los errores del panel (Mensajes.astro): sin clases nuevas que cambien el CSS de Baltaretu. -->
@@ -47,38 +76,6 @@ export const prerender = false;
         </div>
       </div>
     </div>
-
-    <!-- Modal / Panel de Configuración de Claves IA -->
-    <dialog id="dialogo-ajustes" class="m-auto w-full max-w-md rounded-2xl border border-linea bg-papel p-6 shadow-2xl backdrop:bg-tinta/50">
-      <div class="space-y-4">
-        <div class="flex items-center justify-between border-b border-linea pb-3">
-          <h3 class="font-titular text-lg font-bold text-tinta">Configuración de Proveedores IA</h3>
-          <button type="button" id="btn-cerrar-ajustes" class="rounded-lg p-1 text-gris hover:bg-crema">
-            <Icono nombre="cerrar" clase="size-5" />
-          </button>
-        </div>
-        <p class="text-xs text-gris">
-          Para generar la reforma hace falta un token gratuito de <strong>Hugging Face</strong> (código abierto). Es el único proveedor de IA: no se usa ningún servicio de pago.
-        </p>
-        <div>
-          <label for="hf-token-input" class="block text-xs font-bold text-tinta mb-1">
-            Token Gratuito de Hugging Face (VITE_HF_TOKEN)
-          </label>
-          <input
-            type="password"
-            id="hf-token-input"
-            placeholder="hf_..."
-            class="w-full rounded-xl border border-linea px-3 py-2 text-sm text-tinta focus:border-terracota focus:outline-hidden"
-          />
-          <span class="text-[11px] text-gris">Créalo gratis en <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener" class="underline text-terracota">huggingface.co/settings/tokens</a>: tipo «Fine-grained» con el permiso «Make calls to Inference Providers» (o un token de tipo «Read»).</span>
-        </div>
-        <div class="flex justify-end gap-2 pt-2">
-          <button type="button" id="btn-guardar-ajustes" class="rounded-xl bg-terracota px-4 py-2 text-sm font-semibold text-papel hover:opacity-90">
-            Guardar
-          </button>
-        </div>
-      </div>
-    </dialog>
 
     <!-- Layout Principal: Formulario y Vista Previa -->
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
@@ -94,7 +91,7 @@ export const prerender = false;
             id="drop-zone"
             class="group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-linea bg-crema/50 p-6 text-center transition-colors hover:border-terracota hover:bg-crema"
           >
-            <input type="file" id="foto-input" accept="image/*" class="absolute inset-0 z-10 cursor-pointer opacity-0" required />
+            <input type="file" id="foto-input" accept="image/*" aria-label="Foto actual de la estancia" class="absolute inset-0 z-10 cursor-pointer opacity-0" required />
             <div id="drop-zone-prompt" class="space-y-2">
               <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-papel shadow-xs">
                 <Icono nombre="camara" clase="size-6 text-terracota" />
@@ -102,10 +99,36 @@ export const prerender = false;
               <p class="text-sm font-semibold text-tinta">Arrastra la foto o pulsa para elegir</p>
               <p class="text-xs text-gris">Compatible con cámara de iPad/móvil y archivos JPEG/PNG</p>
             </div>
-            <!-- Miniatura previa de carga -->
-            <div id="preview-thumb-container" class="hidden w-full space-y-2">
-              <img id="preview-thumb" src="" alt="Vista previa de la foto actual" class="max-h-48 mx-auto rounded-lg object-contain shadow-xs" />
-              <p class="text-xs font-semibold text-terracota">Foto cargada y procesada (1536px max)</p>
+            <p id="foto-cargada" class="hidden text-xs font-semibold text-terracota">Foto cargada (1024 px como mucho). Pulsa otra vez para cambiarla.</p>
+          </div>
+          <!-- Zona a cambiar (opcional): pincel o rectángulo sobre la foto -->
+          <div id="editor-mascara" class="mt-4 hidden space-y-3">
+            <p id="ayuda-mascara" class="text-xs text-gris">
+              Opcional: pinta o enmarca lo que quieres cambiar (los muebles, el suelo…). Solo esa zona se sustituye en la foto; el resto queda como está. Sin marcar nada, la IA trabaja sobre toda la foto.
+            </p>
+            <div class="relative overflow-hidden rounded-xl border border-linea">
+              <img id="preview-thumb" alt="Foto actual de la estancia" class="block w-full" />
+              <canvas id="lienzo-mascara" class="absolute inset-0 size-full cursor-crosshair opacity-50" style="touch-action: none;" aria-describedby="ayuda-mascara" role="img" aria-label="Zona marcada para cambiar"></canvas>
+            </div>
+            <div class="flex flex-wrap items-end gap-3">
+              <fieldset class="flex gap-2">
+                <legend class="mb-1 text-xs font-semibold text-gris">Herramienta</legend>
+                <label class="cursor-pointer">
+                  <input type="radio" name="herramienta" value="pincel" checked class="peer sr-only" />
+                  <span class="inline-flex min-h-12 items-center rounded-xl border border-linea px-4 text-sm font-semibold text-tinta peer-checked:border-terracota peer-checked:bg-verdor peer-focus-visible:outline-2 peer-focus-visible:outline-terracota">Pincel</span>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="herramienta" value="rectangulo" class="peer sr-only" />
+                  <span class="inline-flex min-h-12 items-center rounded-xl border border-linea px-4 text-sm font-semibold text-tinta peer-checked:border-terracota peer-checked:bg-verdor peer-focus-visible:outline-2 peer-focus-visible:outline-terracota">Rectángulo</span>
+                </label>
+              </fieldset>
+              <label class="grid gap-1 text-xs font-semibold text-gris">
+                Grosor del pincel
+                <input type="range" id="grosor-pincel" min="10" max="120" value="40" class="min-h-12 accent-terracota" />
+              </label>
+              <button type="button" id="btn-borrar-mascara" class="inline-flex min-h-12 items-center rounded-xl border border-linea bg-papel px-4 text-sm font-semibold text-tinta hover:bg-crema">
+                Borrar lo marcado
+              </button>
             </div>
           </div>
         </div>
@@ -151,7 +174,7 @@ export const prerender = false;
             </label>
             <div id="sec-cabinets" class="space-y-3 pt-1">
               <div>
-                <span class="block text-xs font-semibold text-gris mb-1">Estilo & Apertura:</span>
+                <label for="cabinet-style" class="block text-xs font-semibold text-gris mb-1">Estilo & Apertura:</label>
                 <select id="cabinet-style" class="w-full rounded-xl border border-linea bg-papel p-2 text-xs text-tinta">
                   {ESTILOS_MUEBLE.map((s) => <option value={s.nombre}>{s.nombre} - {s.descripcion}</option>)}
                 </select>
@@ -270,7 +293,7 @@ export const prerender = false;
                 <input type="checkbox" id="under-cabinet-led" checked class="size-4 rounded-xs border-linea text-terracota" />
                 <span>Tira LED bajo muebles altos</span>
               </label>
-              <select id="led-temp" class="rounded-lg border border-linea bg-papel px-2 py-1 text-xs">
+              <select id="led-temp" aria-label="Temperatura de la luz LED" class="rounded-lg border border-linea bg-papel px-2 py-1 text-xs">
                 <option value="2700K warm white">2700K Cálida</option>
                 <option value="3000K neutral white" selected>3000K Neutra</option>
               </select>
@@ -282,6 +305,8 @@ export const prerender = false;
         <button
           type="submit"
           id="btn-generar"
+          disabled={cuota.agotada}
+          aria-describedby="cuota-aviso"
           class="w-full rounded-2xl bg-terracota py-4 text-center font-titular text-lg font-bold text-papel shadow-lg hover:opacity-95 disabled:opacity-50"
         >
           Generar Reforma en Vivo
@@ -370,102 +395,221 @@ export const prerender = false;
 
 <script is:inline>
   (() => {
-    // Referencias a elementos del DOM
-    const form = document.getElementById('simulador-form');
-    const fotoInput = document.getElementById('foto-input');
-    const previewThumbContainer = document.getElementById('preview-thumb-container');
-    const previewThumb = document.getElementById('preview-thumb');
-    const dropZonePrompt = document.getElementById('drop-zone-prompt');
+    const $ = (id) => document.getElementById(id);
+    const form = $('simulador-form');
+    const fotoInput = $('foto-input');
+    const fotoCargada = $('foto-cargada');
+    const previewThumb = $('preview-thumb');
+    const editorMascara = $('editor-mascara');
+    const lienzo = $('lienzo-mascara');
+    const grosor = $('grosor-pincel');
+    const btnGenerar = $('btn-generar');
 
-    const vacioContainer = document.getElementById('vacio-container');
-    const loadingContainer = document.getElementById('loading-container');
-    const loadingStatus = document.getElementById('loading-status');
-    const sliderWrapper = document.getElementById('slider-wrapper');
-    const accionesResultado = document.getElementById('acciones-resultado');
-    const errorBanner = document.getElementById('error-banner');
-    const errorMessage = document.getElementById('error-message');
+    const vacioContainer = $('vacio-container');
+    const loadingContainer = $('loading-container');
+    const loadingStatus = $('loading-status');
+    const sliderWrapper = $('slider-wrapper');
+    const accionesResultado = $('acciones-resultado');
+    const errorBanner = $('error-banner');
+    const errorMessage = $('error-message');
 
-    const comparatorContainer = document.getElementById('comparator-container');
-    const imgBefore = document.getElementById('img-before');
-    const imgAfter = document.getElementById('img-after');
-    const beforeClipLayer = document.getElementById('before-clip-layer');
-    const sliderHandle = document.getElementById('slider-handle');
-    const btnDescargar = document.getElementById('btn-descargar');
+    const comparatorContainer = $('comparator-container');
+    const imgBefore = $('img-before');
+    const imgAfter = $('img-after');
+    const beforeClipLayer = $('before-clip-layer');
+    const sliderHandle = $('slider-handle');
+    const btnDescargar = $('btn-descargar');
 
-    // Modal Ajustes
-    const btnAbrirAjustes = document.getElementById('btn-abrir-ajustes');
-    const btnCerrarAjustes = document.getElementById('btn-cerrar-ajustes');
-    const btnGuardarAjustes = document.getElementById('btn-guardar-ajustes');
-    const dialogoAjustes = document.getElementById('dialogo-ajustes');
-    const hfTokenInput = document.getElementById('hf-token-input');
-
-    // Cargar claves guardadas en localStorage
-    if (hfTokenInput) {
-      hfTokenInput.value = localStorage.getItem('simulador_hf_token') || '';
+    // Antes se guardaba aquí un token de IA: ya no se envía ninguna clave desde el navegador.
+    try {
+      localStorage.removeItem('simulador_hf_token');
+      localStorage.removeItem('simulador_gemini_key');
+    } catch {
+      // Sin almacenamiento (modo privado): no hay nada que borrar.
     }
-    // Ya no hay otros proveedores: se borra la clave de Gemini que hubiera guardada.
-    localStorage.removeItem('simulador_gemini_key');
 
-    btnAbrirAjustes?.addEventListener('click', () => dialogoAjustes?.showModal());
-    btnCerrarAjustes?.addEventListener('click', () => dialogoAjustes?.close());
-    btnGuardarAjustes?.addEventListener('click', () => {
-      localStorage.setItem('simulador_hf_token', hfTokenInput.value.trim());
-      dialogoAjustes?.close();
-    });
+    // ---- Simulaciones del mes ----
+    const cuota = $('cuota');
+    function pintarCuota(c) {
+      if (!c || !cuota) return;
+      const texto = `${c.usos} de ${c.limite} usadas · quedan ${c.quedan}`;
+      $('cuota-texto').textContent = texto;
+      const barra = $('cuota-barra');
+      barra.setAttribute('aria-valuemax', String(c.limite));
+      barra.setAttribute('aria-valuenow', String(Math.min(c.usos, c.limite)));
+      barra.setAttribute('aria-valuetext', texto);
+      const relleno = $('cuota-relleno');
+      relleno.style.width = `${c.porcentaje}%`;
+      relleno.classList.toggle('bg-[#b45309]', c.aviso);
+      relleno.classList.toggle('bg-oliva', !c.aviso);
+      cuota.classList.toggle('border-[#b45309]', c.aviso);
+      cuota.classList.toggle('border-linea', !c.aviso);
+      const aviso = $('cuota-aviso');
+      aviso.textContent = c.agotada ? cuota.dataset.avisoAgotada : c.aviso ? `Te quedan ${c.quedan} simulaciones este mes.` : '';
+      aviso.classList.toggle('hidden', !c.aviso);
+      if (btnGenerar) btnGenerar.disabled = c.agotada;
+    }
 
-    // Estado de imagen comprimida cliente
-    let currentProcessedBase64 = '';
-    let imageAspectRatio = 1.33; // Por defecto 4:3
+    // ---- Foto: a 1024 px como mucho por el lado largo ----
+    const MAXIMO = 1024;
+    let foto = ''; // data URL JPEG de la foto ya reducida
+    let ancho = 0;
+    let alto = 0;
 
-    // Preprocesado de imagen cliente (canvas max 1536px, JPEG 0.85)
     fotoInput?.addEventListener('change', async () => {
       const file = fotoInput.files?.[0];
       if (!file) return;
-
       try {
-        console.log('[Simulador UI] Preprocesando foto del cliente...');
         const bitmap = await createImageBitmap(file);
-        const maxDim = 1536;
-        let width = bitmap.width;
-        let height = bitmap.height;
-
-        imageAspectRatio = width / height;
-
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-
+        const escala = Math.min(1, MAXIMO / Math.max(bitmap.width, bitmap.height));
+        ancho = Math.round(bitmap.width * escala);
+        alto = Math.round(bitmap.height * escala);
         const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(bitmap, 0, 0, width, height);
-
-        currentProcessedBase64 = canvas.toDataURL('image/jpeg', 0.85);
-
-        if (previewThumb) previewThumb.src = currentProcessedBase64;
-        dropZonePrompt?.classList.add('hidden');
-        previewThumbContainer?.classList.remove('hidden');
+        canvas.width = ancho;
+        canvas.height = alto;
+        canvas.getContext('2d').drawImage(bitmap, 0, 0, ancho, alto);
+        bitmap.close?.();
+        foto = canvas.toDataURL('image/jpeg', 0.9);
+        previewThumb.src = foto;
+        lienzo.width = ancho;
+        lienzo.height = alto;
+        hayMascara = false;
+        fotoCargada?.classList.remove('hidden');
+        editorMascara?.classList.remove('hidden');
         errorBanner?.classList.add('hidden');
-        console.log('[Simulador UI] Foto comprimida exitosamente.');
       } catch {
-        console.error('[Simulador UI] Error preprocesando imagen');
+        showError('No se ha podido abrir la foto. Prueba con otra (JPEG, PNG o HEIC del móvil).');
       }
     });
 
-    // Animación de estado de carga
-    const loadingSteps = [
-      'Analizando geometría 3D y perspectiva de la habitación...',
-      'Aplicando texturas del catálogo...',
-      'Ajustando iluminación fotorrealista y sombras...',
-      'Generando resultado fotorrealista final...',
-    ];
+    // ---- Zona a cambiar: pincel o rectángulo ----
+    const pincel = lienzo?.getContext('2d');
+    const COLOR = '#0e6b87';
+    let hayMascara = false;
+    let pintando = false;
+    let inicio = null;
+    let antes = null;
+
+    const herramienta = () => form?.querySelector('input[name="herramienta"]:checked')?.value || 'pincel';
+    const punto = (e) => {
+      const r = lienzo.getBoundingClientRect();
+      return { x: ((e.clientX - r.left) / r.width) * lienzo.width, y: ((e.clientY - r.top) / r.height) * lienzo.height };
+    };
+    const escalaLienzo = () => lienzo.width / Math.max(1, lienzo.getBoundingClientRect().width);
+
+    lienzo?.addEventListener('pointerdown', (e) => {
+      if (!foto) return;
+      e.preventDefault();
+      lienzo.setPointerCapture(e.pointerId);
+      pintando = true;
+      inicio = punto(e);
+      pincel.fillStyle = COLOR;
+      pincel.strokeStyle = COLOR;
+      if (herramienta() === 'rectangulo') antes = pincel.getImageData(0, 0, lienzo.width, lienzo.height);
+      else {
+        pincel.lineWidth = Number(grosor?.value || 40) * escalaLienzo();
+        pincel.lineCap = 'round';
+        pincel.lineJoin = 'round';
+        pincel.beginPath();
+        pincel.moveTo(inicio.x, inicio.y);
+        pincel.lineTo(inicio.x + 0.1, inicio.y);
+        pincel.stroke();
+      }
+      hayMascara = true;
+    });
+    lienzo?.addEventListener('pointermove', (e) => {
+      if (!pintando) return;
+      const p = punto(e);
+      if (herramienta() === 'rectangulo') {
+        pincel.putImageData(antes, 0, 0);
+        pincel.fillRect(Math.min(inicio.x, p.x), Math.min(inicio.y, p.y), Math.abs(p.x - inicio.x), Math.abs(p.y - inicio.y));
+      } else {
+        pincel.lineTo(p.x, p.y);
+        pincel.stroke();
+      }
+    });
+    const soltar = () => {
+      pintando = false;
+      antes = null;
+    };
+    lienzo?.addEventListener('pointerup', soltar);
+    lienzo?.addEventListener('pointercancel', soltar);
+    $('btn-borrar-mascara')?.addEventListener('click', () => {
+      pincel?.clearRect(0, 0, lienzo.width, lienzo.height);
+      hayMascara = false;
+    });
+
+    const lienzoDe = (w, h) => {
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      return c;
+    };
+
+    /** Máscara para la IA: blanco lo marcado, negro el resto (PNG del mismo tamaño que la foto). */
+    function mascaraPng() {
+      const c = lienzoDe(ancho, alto);
+      const k = c.getContext('2d');
+      k.drawImage(lienzo, 0, 0);
+      k.globalCompositeOperation = 'source-in';
+      k.fillStyle = '#fff';
+      k.fillRect(0, 0, ancho, alto);
+      k.globalCompositeOperation = 'destination-over';
+      k.fillStyle = '#000';
+      k.fillRect(0, 0, ancho, alto);
+      return c.toDataURL('image/png');
+    }
+
+    /** Lo marcado con los bordes difuminados (se reduce y se vuelve a ampliar: funciona en todos los navegadores). */
+    function mascaraSuave() {
+      const pequeno = lienzoDe(Math.max(1, Math.round(ancho / 16)), Math.max(1, Math.round(alto / 16)));
+      const p = pequeno.getContext('2d');
+      p.imageSmoothingEnabled = true;
+      p.imageSmoothingQuality = 'high';
+      p.drawImage(lienzo, 0, 0, pequeno.width, pequeno.height);
+      const suave = lienzoDe(ancho, alto);
+      const k = suave.getContext('2d');
+      k.imageSmoothingEnabled = true;
+      k.imageSmoothingQuality = 'high';
+      // Lo pintado, nítido, y encima el halo difuminado: el centro queda entero y el borde se funde.
+      k.drawImage(pequeno, 0, 0, ancho, alto);
+      k.drawImage(lienzo, 0, 0);
+      return suave;
+    }
+
+    const cargar = (src) =>
+      new Promise((ok, mal) => {
+        const img = new Image();
+        img.onload = () => ok(img);
+        img.onerror = mal;
+        img.src = src;
+      });
+
+    /**
+     * Cosido: sobre la foto original solo se ponen los píxeles de la zona
+     * marcada del resultado, con el borde difuminado. Sin zona, el resultado
+     * entero al tamaño de la foto.
+     */
+    async function coser(resultado) {
+      const [original, nueva] = await Promise.all([cargar(foto), cargar(resultado)]);
+      const salida = lienzoDe(ancho, alto);
+      const k = salida.getContext('2d');
+      if (!hayMascara) {
+        k.drawImage(nueva, 0, 0, ancho, alto);
+        return salida.toDataURL('image/jpeg', 0.92);
+      }
+      k.drawImage(original, 0, 0, ancho, alto);
+      const capa = lienzoDe(ancho, alto);
+      const c = capa.getContext('2d');
+      c.drawImage(mascaraSuave(), 0, 0);
+      c.globalCompositeOperation = 'source-in';
+      c.drawImage(nueva, 0, 0, ancho, alto);
+      k.drawImage(capa, 0, 0);
+      return salida.toDataURL('image/jpeg', 0.92);
+    }
+
+    // ---- Estados ----
+    const loadingSteps = ['Analizando la geometría y la perspectiva...', 'Aplicando los materiales del catálogo...', 'Ajustando la luz y las sombras...', 'Preparando el resultado...'];
 
     function startLoadingAnimation() {
       vacioContainer?.classList.add('hidden');
@@ -473,128 +617,85 @@ export const prerender = false;
       errorBanner?.classList.add('hidden');
       loadingContainer?.classList.remove('hidden');
       loadingContainer?.classList.add('flex');
-
-      let stepIdx = 0;
-      if (loadingStatus) loadingStatus.textContent = loadingSteps[0] || 'Procesando...';
-      const interval = setInterval(() => {
-        stepIdx = (stepIdx + 1) % loadingSteps.length;
-        if (loadingStatus) loadingStatus.textContent = loadingSteps[stepIdx] || 'Procesando...';
+      let paso = 0;
+      if (loadingStatus) loadingStatus.textContent = loadingSteps[0];
+      const intervalo = setInterval(() => {
+        paso = (paso + 1) % loadingSteps.length;
+        if (loadingStatus) loadingStatus.textContent = loadingSteps[paso];
       }, 2500);
-
-      return () => clearInterval(interval);
+      return () => {
+        clearInterval(intervalo);
+        loadingContainer?.classList.add('hidden');
+        loadingContainer?.classList.remove('flex');
+      };
     }
 
     function showError(msg) {
-      console.error('[Simulador UI] Error en IA:', msg);
       if (errorMessage) errorMessage.textContent = msg;
       errorBanner?.classList.remove('hidden');
       vacioContainer?.classList.remove('hidden');
     }
 
-    // Envío del Formulario
+    const marcado = (id) => document.getElementById(id)?.checked === true;
+
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!currentProcessedBase64) {
-        alert('Por favor, sube primero una foto de la estancia.');
+      if (!foto) {
+        showError('Sube primero una foto de la estancia.');
+        fotoInput?.focus();
         return;
       }
-
-      const formData = new FormData(form);
-
-      const spaceType = formData.get('spaceType');
-      const cabinetStyle = document.getElementById('cabinet-style')?.value;
-      const floorToCeiling = document.getElementById('floor-to-ceiling')?.checked;
-
-      const zoneCabinets = document.getElementById('zone-cabinets')?.checked;
-      const zoneCountertop = document.getElementById('zone-countertop')?.checked;
-      const zoneFlooring = document.getElementById('zone-flooring')?.checked;
-      const zoneLighting = document.getElementById('zone-lighting')?.checked;
-
-      const upperMaterialId = formData.get('upperMaterial');
-      const lowerMaterialId = formData.get('lowerMaterial');
-      const countertopMaterialId = formData.get('countertopMaterial');
-      const flooringMaterialId = formData.get('flooringMaterial');
-
-      const includeBacksplash = document.getElementById('include-backsplash')?.checked;
-      const underCabinetLed = document.getElementById('under-cabinet-led')?.checked;
-      const ledTemp = document.getElementById('led-temp')?.value;
-
-      const payload = {
-        spaceType,
-        cabinetStyle,
-        floorToCeiling,
-        zones: {
-          cabinets: zoneCabinets,
-          countertop: zoneCountertop,
-          flooring: zoneFlooring,
-          lighting: zoneLighting,
-        },
-        upperMaterialId,
-        lowerMaterialId,
-        countertopMaterialId,
-        includeBacksplash,
-        flooringMaterialId,
-        lighting: {
-          underCabinetLed,
-          colorTemp: ledTemp,
-        },
+      if (btnGenerar?.disabled) return;
+      const datos = new FormData(form);
+      const config = {
+        spaceType: datos.get('spaceType'),
+        cabinetStyle: $('cabinet-style')?.value,
+        floorToCeiling: marcado('floor-to-ceiling'),
+        zones: { cabinets: marcado('zone-cabinets'), countertop: marcado('zone-countertop'), flooring: marcado('zone-flooring'), lighting: marcado('zone-lighting') },
+        upperMaterialId: datos.get('upperMaterial'),
+        lowerMaterialId: datos.get('lowerMaterial'),
+        countertopMaterialId: datos.get('countertopMaterial'),
+        includeBacksplash: marcado('include-backsplash'),
+        flooringMaterialId: datos.get('flooringMaterial'),
+        lighting: { underCabinetLed: marcado('under-cabinet-led'), colorTemp: $('led-temp')?.value },
       };
 
-      const stopAnimation = startLoadingAnimation();
-      console.log('[Simulador UI] Enviando petición a la API con la configuración seleccionada...');
-
+      const parar = startLoadingAnimation();
+      if (btnGenerar) btnGenerar.disabled = true;
       try {
-        const response = await fetch('/api/panel/simulador', {
+        const respuesta = await fetch('/api/panel/simulador', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            image: currentProcessedBase64,
-            config: payload,
-            options: {
-              hfToken: localStorage.getItem('simulador_hf_token') || undefined,
-            },
-          }),
+          body: JSON.stringify({ image: foto, mask: hayMascara ? mascaraPng() : undefined, config }),
         });
-
-        const resData = await response.json();
-        console.log('[Simulador UI] Respuesta recibida:', resData);
-
-        stopAnimation();
-        loadingContainer?.classList.add('hidden');
-        loadingContainer?.classList.remove('flex');
-
-        if (resData.ok && resData.afterImage) {
-          showComparator(currentProcessedBase64, resData.afterImage);
-        } else {
-          showError(resData.error || 'Error al generar la reforma con la IA. Revisa tus tokens configurados (⚙️).');
-        }
+        const r = await respuesta.json().catch(() => ({ ok: false }));
+        parar();
+        if (btnGenerar) btnGenerar.disabled = false;
+        pintarCuota(r.cuota);
+        if (r.ok && r.afterImage) showComparator(foto, await coser(r.afterImage));
+        else showError(r.error || 'La IA no ha podido generar la reforma. Vuelve a intentarlo en un rato.');
       } catch {
-        stopAnimation();
-        loadingContainer?.classList.add('hidden');
-        loadingContainer?.classList.remove('flex');
-        showError('Error de red o conexión al comunicarse con el servidor.');
+        parar();
+        if (btnGenerar) btnGenerar.disabled = cuota?.querySelector('#cuota-aviso')?.textContent === cuota?.dataset.avisoAgotada;
+        showError('Error de red o de conexión con el servidor.');
       }
     });
 
-    // Renderizado y control del Slider Comparador
-    function showComparator(beforeBase64, afterBase64) {
-      if (imgBefore) imgBefore.src = beforeBase64;
-      if (imgAfter) imgAfter.src = afterBase64;
-
-      if (comparatorContainer) comparatorContainer.style.aspectRatio = `${imageAspectRatio}`;
-
+    // ---- Comparador antes / después ----
+    function showComparator(antesUrl, despuesUrl) {
+      imgBefore.src = antesUrl;
+      imgAfter.src = despuesUrl;
+      if (comparatorContainer) comparatorContainer.style.aspectRatio = `${ancho / alto}`;
       sliderWrapper?.classList.remove('hidden');
       accionesResultado?.classList.remove('hidden');
       accionesResultado?.classList.add('flex');
-
       setSliderPosition(50);
     }
 
-    function setSliderPosition(percentage) {
-      const clamped = Math.max(0, Math.min(100, percentage));
-      if (beforeClipLayer) beforeClipLayer.style.width = `${clamped}%`;
-      if (sliderHandle) sliderHandle.style.left = `${clamped}%`;
-
+    function setSliderPosition(pct) {
+      const v = Math.max(0, Math.min(100, pct));
+      if (beforeClipLayer) beforeClipLayer.style.width = `${v}%`;
+      if (sliderHandle) sliderHandle.style.left = `${v}%`;
       if (comparatorContainer && imgBefore) {
         const rect = comparatorContainer.getBoundingClientRect();
         imgBefore.style.width = `${rect.width}px`;
@@ -602,44 +703,28 @@ export const prerender = false;
       }
     }
 
-    // Eventos de arrastre para el Slider
-    let isDragging = false;
-
-    function handleMove(clientX) {
-      if (!isDragging || !comparatorContainer) return;
+    let arrastrando = false;
+    const mover = (x) => {
+      if (!arrastrando || !comparatorContainer) return;
       const rect = comparatorContainer.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const pct = (x / rect.width) * 100;
-      setSliderPosition(pct);
-    }
-
+      setSliderPosition(((x - rect.left) / rect.width) * 100);
+    };
     comparatorContainer?.addEventListener('pointerdown', (e) => {
-      isDragging = true;
-      handleMove(e.clientX);
+      arrastrando = true;
+      mover(e.clientX);
     });
-
-    window.addEventListener('pointermove', (e) => {
-      if (isDragging) handleMove(e.clientX);
-    });
-
-    window.addEventListener('pointerup', () => {
-      isDragging = false;
-    });
-
+    window.addEventListener('pointermove', (e) => mover(e.clientX));
+    window.addEventListener('pointerup', () => (arrastrando = false));
     window.addEventListener('resize', () => {
-      if (sliderWrapper && !sliderWrapper.classList.contains('hidden') && beforeClipLayer) {
-        const currentPct = parseFloat(beforeClipLayer.style.width) || 50;
-        setSliderPosition(currentPct);
-      }
+      if (sliderWrapper && !sliderWrapper.classList.contains('hidden') && beforeClipLayer) setSliderPosition(parseFloat(beforeClipLayer.style.width) || 50);
     });
 
-    // Descarga de Imagen
     btnDescargar?.addEventListener('click', () => {
-      if (!imgAfter || !imgAfter.src) return;
-      const link = document.createElement('a');
-      link.download = `reforma-simulada-turia-${Date.now()}.png`;
-      link.href = imgAfter.src;
-      link.click();
+      if (!imgAfter?.src) return;
+      const a = document.createElement('a');
+      a.download = `reforma-simulada-${Date.now()}.jpg`;
+      a.href = imgAfter.src;
+      a.click();
     });
   })();
 </script>

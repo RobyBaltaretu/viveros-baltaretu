@@ -16,3 +16,7 @@ CONTENIDO_TOKEN=
 # Asistente (opcional): clave gratuita de Groq. En Baltaretu, respaldo de Workers AI; en Turia, el modelo principal (orden en cliente.config.json, `ia.asistente`).
 # Se crea en https://console.groq.com sin tarjeta. Sin ella, el asistente usa solo Workers AI y las reglas locales.
 GROQ_API_KEY=
+
+# Simulador de reformas (solo clientes con `ia.simulador: "gemini"`, hoy Creaciones Turia): clave de pago de Gemini
+# (Google AI Studio). Nunca se envía desde el navegador. Tope duro en D1: `ia.simulacionesMes` (250 ≈ 10 € al mes).
+GEMINI_API_KEY=
