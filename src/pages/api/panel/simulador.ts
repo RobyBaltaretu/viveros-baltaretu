@@ -1,46 +1,42 @@
 import type { APIRoute } from 'astro';
+import { env } from 'cloudflare:workers';
+import { clienteActual } from '../../../plataforma/actual.ts';
+import { iaDe } from '../../../plataforma/configuracion.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
-import { generateRenovationImage } from '../../../services/renovationAiService.ts';
+import { simular } from '../../../server/simulador/cuota.ts';
 import { resolveRenovationConfig, type RenovationConfig, type RenovationRequestPayload } from '../../../server/simulador/materiales.ts';
 
 export const prerender = false;
 
+const json = (estado: number, cuerpo: unknown) => new Response(JSON.stringify(cuerpo), { status: estado, headers: { 'Content-Type': 'application/json' } });
+
+/**
+ * Proxy del simulador: la foto, la zona marcada y la configuración llegan del
+ * navegador; la clave de Gemini se pone aquí (secreto del Worker). Cualquier
+ * clave que llegara en la petición se ignora.
+ */
 export const POST: APIRoute = async ({ locals, request }) => {
   const s = sesionCon(locals, 'editar');
-  if (!s) {
-    return new Response(JSON.stringify({ ok: false, error: 'Acceso no autorizado' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  if (!s) return json(403, { ok: false, error: 'Acceso no autorizado' });
 
+  let body: { image?: unknown; mask?: unknown; config?: RenovationConfig | RenovationRequestPayload } | null;
   try {
-    const body = (await request.json()) as {
-      image?: string;
-      config?: RenovationConfig | RenovationRequestPayload;
-      options?: { hfToken?: string };
-    };
-
-    if (!body || !body.image || !body.config) {
-      return new Response(JSON.stringify({ ok: false, error: 'Faltan parámetros requeridos (image, config)' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    const resolvedConfig = resolveRenovationConfig(body.config);
-    // Solo el token de Hugging Face: cualquier otra clave que llegue se ignora.
-    const result = await generateRenovationImage(body.image, resolvedConfig, { hfToken: body.options?.hfToken });
-
-    return new Response(JSON.stringify(result), {
-      status: result.ok ? 200 : 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Error interno al procesar el simulador';
-    return new Response(JSON.stringify({ ok: false, error: message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    body = await request.json();
+  } catch {
+    body = null;
   }
+  if (!body || typeof body.image !== 'string' || !body.config) return json(400, { ok: false, error: 'Faltan la foto o la configuración.' });
+
+  let config: RenovationConfig;
+  try {
+    config = resolveRenovationConfig(body.config);
+  } catch {
+    return json(400, { ok: false, error: 'La configuración de la reforma no es válida.' });
+  }
+  const cliente = clienteActual();
+  const r = await simular(
+    { cliente: cliente.id, ia: iaDe(cliente), apiKey: (env as { GEMINI_API_KEY?: string }).GEMINI_API_KEY, uso: s.repos.usoSimulador },
+    { image: body.image, mascara: typeof body.mask === 'string' && body.mask ? body.mask : undefined, config },
+  );
+  return json(r.estado, r.cuerpo);
 };
