@@ -1,7 +1,7 @@
 import { MockLanguageModelV4 } from 'ai/test';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { leerContenido } from '../../scripts/contenido/archivos.mjs';
-import { AVISO_CUPO, borrarConversacion, CLAVE_NEURONAS, conversar, enviarFotos, LIMITE_NEURONAS_DIA, LIMITE_MENSAJES_PERSONA, responderPropuesta, usoDeHoy, type ModeloAsistente } from '../../src/server/asistente/agente.ts';
+import { AVISO_CUPO, AVISO_LIMITE_GROQ, AVISO_SIN_MODELO, borrarConversacion, CLAVE_NEURONAS, conversar, enviarFotos, LIMITE_NEURONAS_DIA, LIMITE_MENSAJES_PERSONA, responderPropuesta, usoDeHoy, type ModeloAsistente } from '../../src/server/asistente/agente.ts';
 import { textoSeguro } from '../../src/server/asistente/formato.ts';
 import { herramientasDe, herramientasPara, type Contexto } from '../../src/server/asistente/herramientas.ts';
 import { accionRapida } from '../../src/server/panel/plantas.ts';
@@ -47,6 +47,24 @@ function modelo(llamada: { herramienta: string; argumentos: unknown } | null, te
 }
 
 describe('asistente completo', () => {
+  it('si Groq (principal) da 429 y nadie más responde, lo dice en el chat; otro fallo, el aviso de siempre', async () => {
+    const falla = (statusCode: number, avisoLimite?: string): ModeloAsistente => ({
+      nombre: 'groq simulado',
+      neuronas: { entrada: 0, salida: 0 },
+      avisoLimite,
+      modelo: new MockLanguageModelV4({
+        doGenerate: async () => {
+          throw Object.assign(new Error('fallo'), { statusCode });
+        },
+      }),
+    });
+    const r = await conversar(ctx(usuario('limite@example.com')), 'hola', [falla(429, AVISO_LIMITE_GROQ), falla(500)]);
+    expect(r.modelo).toBe('reglas locales');
+    expect(r.texto.startsWith(AVISO_LIMITE_GROQ)).toBe(true);
+    const otro = await conversar(ctx(usuario('limite2@example.com')), 'hola', [falla(500, AVISO_LIMITE_GROQ), falla(429)]);
+    expect(otro.texto.startsWith(AVISO_SIN_MODELO)).toBe(true);
+  });
+
   it('consulta con herramientas y contesta con los datos', async () => {
     const vistos: unknown[] = [];
     const r = await conversar(ctx(usuario('consulta@example.com')), '¿cuánto cuesta la yuca?', [modelo({ herramienta: 'buscar_plantas', argumentos: { texto: 'yuca' } }, 'La **Yuca** está desde 20 €.', vistos)]);

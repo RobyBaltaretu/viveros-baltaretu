@@ -173,6 +173,19 @@ export interface RepositorioUsoAsistente {
   obtener(email: string, dia: string): Promise<number>;
 }
 
+/** Simulaciones del mes con la IA de pago del simulador (tope duro por cliente). */
+export interface RepositorioUsoSimulador {
+  /** Las gastadas en ese mes («2026-10»). */
+  usos(cliente: string, mes: string): Promise<number>;
+  /**
+   * Aparta una simulación si quedan (en una sola sentencia, así dos peticiones a
+   * la vez no pasan del tope). false si ya se ha llegado a `limite`.
+   */
+  reservar(cliente: string, mes: string, limite: number): Promise<boolean>;
+  /** Devuelve una reservada que no llegó a hacerse (el proveedor falló). */
+  devolver(cliente: string, mes: string): Promise<void>;
+}
+
 /** Datos internos del panel que no salen en la web (por ejemplo, los de facturación). */
 export interface RepositorioAjustesPrivados {
   obtener<T = unknown>(clave: string): Promise<T | null>;
@@ -755,6 +768,7 @@ export interface Repositorios {
   publicaciones: RepositorioPublicaciones;
   presupuestos: RepositorioPresupuestos;
   usoAsistente: RepositorioUsoAsistente;
+  usoSimulador: RepositorioUsoSimulador;
   ajustesPrivados: RepositorioAjustesPrivados;
   clientes: RepositorioClientes;
   facturas: RepositorioFacturas;

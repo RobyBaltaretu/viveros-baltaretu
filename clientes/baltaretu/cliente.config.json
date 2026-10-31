@@ -35,5 +35,6 @@
     "gris": "#5e6450",
     "terracota": "#8a6240",
     "linea": "#d6c9b4"
-  }
+  },
+  "ia": { "asistente": ["workers-ai", "groq", "local"], "simulador": "none" }
 }

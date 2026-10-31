@@ -349,6 +349,19 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       `CREATE INDEX pedidos_proveedor_proveedor ON pedidos_proveedor (proveedor_id, fecha)`,
     ],
   },
+  {
+    version: 15,
+    nombre: 'uso mensual del simulador',
+    sql: [
+      // Simulaciones con IA de pago, por cliente y mes («2026-10»): el tope duro se comprueba aquí, antes de cada llamada.
+      `CREATE TABLE uso_simulador_mensual (
+        cliente_id TEXT NOT NULL,
+        mes TEXT NOT NULL,
+        usos INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (cliente_id, mes)
+      )`,
+    ],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

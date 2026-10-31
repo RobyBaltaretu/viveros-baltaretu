@@ -333,6 +333,25 @@ export function crearRepositoriosD1(db: BaseD1): Repositorios {
         return (await db.prepare('SELECT usos FROM asistente_uso WHERE email = ? AND dia = ?').bind(email, dia).first<{ usos: number }>())?.usos ?? 0;
       },
     },
+    usoSimulador: {
+      async usos(cliente, mes) {
+        return (await db.prepare('SELECT usos FROM uso_simulador_mensual WHERE cliente_id = ? AND mes = ?').bind(cliente, mes).first<{ usos: number }>())?.usos ?? 0;
+      },
+      async reservar(cliente, mes, limite) {
+        if (limite <= 0) return false;
+        const r = await db
+          .prepare(
+            `INSERT INTO uso_simulador_mensual (cliente_id, mes, usos) VALUES (?, ?, 1)
+             ON CONFLICT (cliente_id, mes) DO UPDATE SET usos = usos + 1 WHERE usos < ?`,
+          )
+          .bind(cliente, mes, limite)
+          .run();
+        return (r.meta?.changes ?? 0) > 0;
+      },
+      async devolver(cliente, mes) {
+        await db.prepare('UPDATE uso_simulador_mensual SET usos = usos - 1 WHERE cliente_id = ? AND mes = ? AND usos > 0').bind(cliente, mes).run();
+      },
+    },
     ...crearRepositoriosFacturacion(db),
     ...crearRepositoriosGastos(db),
     conversaciones: crearRepositorioConversaciones(db),
