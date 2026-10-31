@@ -32,6 +32,16 @@ export type Modulo = (typeof MODULOS)[number];
 
 export const SECTORES = ['vivero', 'carpinteria'] as const;
 export const IDIOMAS_POSIBLES = ['es', 'en'] as const;
+/** Proveedores del asistente que se pueden poner en `ia.asistente`. */
+export const PROVEEDORES_ASISTENTE = ['groq', 'workers-ai', 'local'] as const;
+export type ProveedorAsistente = (typeof PROVEEDORES_ASISTENTE)[number];
+
+/** Modelos por defecto. `openai/gpt-oss-120b` sustituye a llama-3.3-70b-versatile, retirado por Groq el 16-8-2026. */
+export const MODELOS_POR_DEFECTO = { groq: 'openai/gpt-oss-120b', gemini: 'gemini-3.1-flash-image-preview' } as const;
+
+/** Simulaciones al mes si el cliente no pone otra cifra: unos 10 € al mes con Gemini. */
+export const SIMULACIONES_MES_POR_DEFECTO = 250;
+
 /** Tokens de color del tema (los de `@theme` en `src/styles/global.css`). */
 export const TOKENS_COLOR = ['crema', 'papel', 'verdor', 'oliva', 'tinta', 'gris', 'terracota', 'linea'] as const;
 
@@ -70,6 +80,24 @@ export const esquemaCliente = z
     tema: z.record(z.enum(TOKENS_COLOR), color).optional(),
     /** Diseño del panel: «clasico» (el de siempre, por defecto) o «nuevo» (src/panel-nuevo/). */
     panel: z.object({ diseno: z.enum(['clasico', 'nuevo']) }).strict().optional(),
+    /** Proveedores de IA del cliente. Si falta, los del núcleo (IA_POR_DEFECTO, los de Baltaretu). */
+    ia: z
+      .object({
+        /** Modelos del asistente, por orden. «local» (las reglas sin IA) es siempre el último recurso. */
+        asistente: z
+          .array(z.enum(PROVEEDORES_ASISTENTE))
+          .min(1)
+          .refine((l) => new Set(l).size === l.length, 'Hay proveedores repetidos')
+          .refine((l) => !l.includes('local') || l.at(-1) === 'local', '«local» tiene que ir el último'),
+        /** IA de imágenes del simulador: «gemini» (de pago, con tope mensual) o «none». */
+        simulador: z.enum(['gemini', 'none']),
+        /** Modelos concretos (si faltan, los de MODELOS_POR_DEFECTO). */
+        modelos: z.object({ groq: z.string().min(1).optional(), gemini: z.string().min(1).optional() }).strict().optional(),
+        /** Tope duro de simulaciones al mes (contador en D1). */
+        simulacionesMes: z.number().int().min(0).max(5000).optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict()
   .refine((c) => c.idiomas.includes(c.idiomaPorDefecto), { message: 'El idioma por defecto tiene que estar en «idiomas»', path: ['idiomaPorDefecto'] });
@@ -83,5 +111,21 @@ export function validarCliente(id: string, datos: unknown): ConfiguracionCliente
   if (r.data.id !== id) throw new Error(`clientes/${id}/cliente.config.json: el id es «${r.data.id}» y tiene que ser «${id}»`);
   return r.data;
 }
+
+/** IA de un cliente sin `ia`: la de siempre (Workers AI, Groq si hay clave, y reglas locales; sin simulador). */
+export const IA_POR_DEFECTO = { asistente: ['workers-ai', 'groq', 'local'], simulador: 'none' } as const satisfies NonNullable<ConfiguracionCliente['ia']>;
+
+/** La IA del cliente con los valores por defecto ya puestos. */
+export function iaDe(c: ConfiguracionCliente) {
+  const ia = c.ia ?? IA_POR_DEFECTO;
+  return {
+    asistente: [...ia.asistente] as ProveedorAsistente[],
+    simulador: ia.simulador,
+    modelos: { ...MODELOS_POR_DEFECTO, ...c.ia?.modelos },
+    simulacionesMes: c.ia?.simulacionesMes ?? SIMULACIONES_MES_POR_DEFECTO,
+  };
+}
+
+export type IaCliente = ReturnType<typeof iaDe>;
 
 export const moduloActivo = (c: ConfiguracionCliente, m: Modulo) => c.modulos[m] === true;

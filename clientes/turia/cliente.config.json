@@ -36,5 +36,11 @@
     "terracota": "#0e6b87",
     "linea": "#e6e4df"
   },
-  "panel": { "diseno": "nuevo" }
+  "panel": { "diseno": "nuevo" },
+  "ia": {
+    "asistente": ["groq", "workers-ai", "local"],
+    "simulador": "gemini",
+    "modelos": { "groq": "openai/gpt-oss-120b", "gemini": "gemini-3.1-flash-image-preview" },
+    "simulacionesMes": 250
+  }
 }

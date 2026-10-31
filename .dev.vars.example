@@ -13,6 +13,6 @@ EMAIL_REMITENTE=
 # Genera uno con: node -e "console.log(crypto.randomUUID()+crypto.randomUUID())"
 CONTENIDO_TOKEN=
 
-# Asistente (opcional): clave gratuita de Groq como respaldo cuando se agota el cupo de Workers AI.
+# Asistente (opcional): clave gratuita de Groq. En Baltaretu, respaldo de Workers AI; en Turia, el modelo principal (orden en cliente.config.json, `ia.asistente`).
 # Se crea en https://console.groq.com sin tarjeta. Sin ella, el asistente usa solo Workers AI y las reglas locales.
 GROQ_API_KEY=

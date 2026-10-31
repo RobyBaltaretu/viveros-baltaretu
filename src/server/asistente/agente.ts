@@ -9,6 +9,8 @@ import { herramienta, herramientasDe, herramientasPara, type Cambio, type Consul
 import { instruccionesDe } from './instrucciones.ts';
 import { argumentosValidos, llamadasEnTexto, sinLlamadas, tieneLlamadas } from './llamadas.ts';
 import { MAXIMO_TEXTO, type BindingAI } from './interprete.ts';
+import { clienteActual } from '../../plataforma/actual.ts';
+import { iaDe, type IaCliente } from '../../plataforma/configuracion.ts';
 
 /**
  * El asistente completo: un modelo de lenguaje con las herramientas de
@@ -22,6 +24,8 @@ export interface ModeloAsistente {
   modelo: LanguageModel;
   /** Neuronas de Workers AI por millón de tokens (0 si no cuenta para el cupo). */
   neuronas: { entrada: number; salida: number };
+  /** Aviso para el chat si este modelo da 429 y ningún otro responde. */
+  avisoLimite?: string;
 }
 
 /** Cupo diario compartido del asistente (de las 10.000 neuronas gratuitas; el resto, para leer tickets). */
@@ -166,6 +170,7 @@ async function respaldoLocal(ctx: Contexto, conversacion: string, texto: string,
 }
 
 export const AVISO_SIN_MODELO = 'Ahora mismo trabajo en modo básico (sin inteligencia artificial): entiendo cambios de precio, disponibilidad, quitar plantas y contar presupuestos.';
+export const AVISO_LIMITE_GROQ = 'La inteligencia artificial está recibiendo demasiadas peticiones ahora mismo. Espera un minuto y vuelve a escribirme; mientras, trabajo en modo básico.';
 export const AVISO_CUPO = 'Hoy se ha agotado el cupo gratuito de inteligencia artificial: hasta mañana trabajo en modo básico (precios, disponibilidad, quitar plantas y presupuestos).';
 
 /** Atiende un mensaje: lo guarda, piensa con el modelo (o el respaldo) y guarda la respuesta. */
@@ -203,6 +208,7 @@ export async function conversar(ctx: Contexto, texto: string, modelos: ModeloAsi
   const mios = await repos.usoAsistente.sumar(usuario.email, dia(ahora));
   const conCupo = usadas < LIMITE_NEURONAS_DIA && mios <= LIMITE_MENSAJES_PERSONA;
 
+  let avisoLimite: string | undefined;
   if (modelos.length && conCupo) {
     for (const m of modelos) {
       const propuestas: Propuesta[] = [];
@@ -246,13 +252,14 @@ export async function conversar(ctx: Contexto, texto: string, modelos: ModeloAsi
         if (!final) throw new Error('respuesta vacía');
         respuesta = { texto: final, propuestas, modelo: m.nombre };
         break;
-      } catch {
+      } catch (error) {
+        if (m.avisoLimite && esLimite(error)) avisoLimite ??= m.avisoLimite;
         // Las propuestas de un intento fallido no se enseñan; se prueba el siguiente modelo.
         for (const p of propuestas) await repos.conversaciones.anotar(p.id, 'fallida', 'El asistente no terminó la respuesta.');
       }
     }
   }
-  respuesta ??= await respaldoLocal(ctx, conversacion, mensaje, !modelos.length ? AVISO_SIN_MODELO : conCupo ? AVISO_SIN_MODELO : AVISO_CUPO);
+  respuesta ??= await respaldoLocal(ctx, conversacion, mensaje, !modelos.length ? AVISO_SIN_MODELO : !conCupo ? AVISO_CUPO : (avisoLimite ?? AVISO_SIN_MODELO));
   await repos.conversaciones.anadir({ conversacion, rol: 'asistente', texto: respuesta.texto, propuestas: respuesta.propuestas.map((p) => p.id) });
   return respuesta;
 }
@@ -295,20 +302,40 @@ export async function responderPropuesta(ctx: Contexto, id: string, si: boolean)
   return resultado;
 }
 
-/** Modelos del entorno, en orden de preferencia (ver decisiones.md, punto 34). */
-export async function modelosDe(env: { AI?: BindingAI; GROQ_API_KEY?: string }): Promise<ModeloAsistente[]> {
+/** Modelos del entorno, en el orden de `ia.asistente` del cliente (ver decisiones.md, puntos 34 y 50). */
+export async function modelosDe(env: { AI?: BindingAI; GROQ_API_KEY?: string }, ia: Pick<IaCliente, 'asistente' | 'modelos'> = iaDe(clienteActual())): Promise<ModeloAsistente[]> {
   const modelos: ModeloAsistente[] = [];
-  if (env.AI) {
-    const { createWorkersAI } = await import('workers-ai-provider');
-    const workersai = createWorkersAI({ binding: env.AI as never });
-    modelos.push(
-      { nombre: 'glm-4.7-flash', modelo: workersai('@cf/zai-org/glm-4.7-flash', { reasoning_effort: null, chat_template_kwargs: { enable_thinking: false } } as never), neuronas: { entrada: 5500, salida: 36400 } },
-      { nombre: 'gemma-4-26b', modelo: workersai('@cf/google/gemma-4-26b-a4b-it' as never), neuronas: { entrada: 9091, salida: 27273 } },
-    );
-  }
-  if (env.GROQ_API_KEY) {
-    const { createGroq } = await import('@ai-sdk/groq');
-    modelos.push({ nombre: 'groq gpt-oss-120b', modelo: createGroq({ apiKey: env.GROQ_API_KEY })('openai/gpt-oss-120b'), neuronas: { entrada: 0, salida: 0 } });
+  for (const [i, proveedor] of ia.asistente.entries()) {
+    if (proveedor === 'workers-ai' && env.AI) {
+      const { createWorkersAI } = await import('workers-ai-provider');
+      const workersai = createWorkersAI({ binding: env.AI as never });
+      modelos.push(
+        { nombre: 'glm-4.7-flash', modelo: workersai('@cf/zai-org/glm-4.7-flash', { reasoning_effort: null, chat_template_kwargs: { enable_thinking: false } } as never), neuronas: { entrada: 5500, salida: 36400 } },
+        { nombre: 'gemma-4-26b', modelo: workersai('@cf/google/gemma-4-26b-a4b-it' as never), neuronas: { entrada: 9091, salida: 27273 } },
+      );
+    }
+    if (proveedor === 'groq' && env.GROQ_API_KEY) {
+      const { createGroq } = await import('@ai-sdk/groq');
+      const id = ia.modelos.groq;
+      modelos.push({
+        nombre: `groq ${id.replace(/^openai\//, '')}`,
+        modelo: createGroq({ apiKey: env.GROQ_API_KEY })(id),
+        neuronas: { entrada: 0, salida: 0 },
+        // Groq como principal: si da 429 y nadie más responde, se dice en el chat.
+        ...(i === 0 ? { avisoLimite: AVISO_LIMITE_GROQ } : {}),
+      });
+    }
+    // «local» no es un modelo: las reglas locales responden siempre que ninguno lo haga.
   }
   return modelos;
+}
+
+/** ¿El fallo es un 429 (demasiadas peticiones o límite del plan)? Mira también dentro de los reintentos del AI SDK. */
+export function esLimite(error: unknown): boolean {
+  for (let e = error, n = 0; e && typeof e === 'object' && n < 5; n++) {
+    const x = e as { statusCode?: number; status?: number; lastError?: unknown; cause?: unknown; errors?: unknown[] };
+    if (x.statusCode === 429 || x.status === 429) return true;
+    e = x.lastError ?? x.cause ?? x.errors?.at(-1);
+  }
+  return false;
 }
