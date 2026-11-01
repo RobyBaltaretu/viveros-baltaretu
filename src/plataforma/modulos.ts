@@ -76,12 +76,28 @@ const POR_PERMISO: Partial<Record<string, Modulo>> = {
 };
 const DEL_CATALOGO = new Set(['buscar_plantas', 'cambiar_planta', 'crear_planta', 'quitar_o_recuperar_planta', 'cambiar_plantas']);
 
+/** Herramientas de la carpintería (src/server/asistente/herramientas-carpinteria.ts) y su módulo. */
+const DE_LA_CARPINTERIA: Record<string, Modulo> = {
+  ver_presupuestos_cliente: 'presupuestosCliente',
+  crear_presupuesto_cliente: 'presupuestosCliente',
+  gestionar_presupuesto_cliente: 'presupuestosCliente',
+  buscar_catalogo: 'materiales',
+  cambiar_articulos: 'materiales',
+  ver_proveedores: 'proveedores',
+  guardar_proveedor: 'proveedores',
+  ver_pedidos: 'pedidosProveedor',
+  crear_pedido: 'pedidosProveedor',
+  gestionar_pedido: 'pedidosProveedor',
+};
+
 /** Módulo de una herramienta (además, todas dependen del módulo `asistente`). */
-export const moduloDeHerramienta = (h: { nombre: string; permiso: string }): Modulo | null => (DEL_CATALOGO.has(h.nombre) ? 'catalogo' : (POR_PERMISO[h.permiso] ?? null));
+export const moduloDeHerramienta = (h: { nombre: string; permiso: string }): Modulo | null =>
+  DE_LA_CARPINTERIA[h.nombre] ?? (DEL_CATALOGO.has(h.nombre) ? 'catalogo' : (POR_PERMISO[h.permiso] ?? null));
 
 /** Herramientas que leen o cambian la web pública (textos, publicar, deshacer cambios). */
 const DE_LA_WEB = new Set(['ver_textos_web', 'cambiar_texto_web', 'cambiar_textos_web', 'publicar_cambios', 'cambios_recientes', 'deshacer_cambio']);
 export const herramientaDeLaWeb = (h: { nombre: string }) => DE_LA_WEB.has(h.nombre);
 
 /** Las herramientas de plantas e inventario son del vivero. */
-export const sectorDeHerramienta = (h: { nombre: string; permiso: string }): Sector | null => (DEL_CATALOGO.has(h.nombre) || h.permiso === 'inventario' ? 'vivero' : null);
+export const sectorDeHerramienta = (h: { nombre: string; permiso: string }): Sector | null =>
+  h.nombre in DE_LA_CARPINTERIA ? 'carpinteria' : DEL_CATALOGO.has(h.nombre) || h.permiso === 'inventario' ? 'vivero' : null;

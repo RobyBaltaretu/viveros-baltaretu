@@ -15,6 +15,8 @@ import { guardarTextos, SECCIONES } from '../panel/textos.ts';
 import { inventarioCompleto, MOTIVOS, moverInventario, NOMBRE_TIPO } from '../panel/inventario.ts';
 import { TIPOS_MOVIMIENTO, type TipoMovimiento } from '../data/tipos.ts';
 import { buscarPlanta, normalizar } from './coincidencia.ts';
+import { HERRAMIENTAS_CARPINTERIA, TEMAS_CARPINTERIA } from './herramientas-carpinteria.ts';
+import { clienteActual } from '../../plataforma/actual.ts';
 
 /**
  * Herramientas del asistente: lo único que puede hacer el modelo.
@@ -1151,8 +1153,11 @@ HERRAMIENTAS.push(
 );
 
 /** Las del rol, de los módulos activos y del sector del cliente (sin el módulo «asistente», ninguna). */
-export const herramientasDe = (rol: Usuario['rol']) => HERRAMIENTAS.filter((h) => puede(rol, h.permiso) && herramientaDisponible(h));
-export const herramienta = (nombre: string) => HERRAMIENTAS.find((h) => h.nombre === nombre && herramientaDisponible(h));
+// Las de la carpintería (presupuestos a cliente, catálogo, proveedores y pedidos) van aparte: solo existen
+// con sus módulos, y así la lista del vivero (línea base de Baltaretu) no cambia.
+const TODAS: Herramienta[] = [...HERRAMIENTAS, ...HERRAMIENTAS_CARPINTERIA];
+export const herramientasDe = (rol: Usuario['rol']) => TODAS.filter((h) => puede(rol, h.permiso) && herramientaDisponible(h));
+export const herramienta = (nombre: string) => TODAS.find((h) => h.nombre === nombre && herramientaDisponible(h));
 
 /**
  * Grupos de herramientas por tema. En cada mensaje solo se mandan al modelo las
@@ -1182,6 +1187,8 @@ const TEMAS: { palabras: RegExp; herramientas: string[] }[] = [
 /** Herramientas para un texto (mensaje actual y los anteriores); `resumen_vivero` siempre. */
 export function herramientasPara(lista: Herramienta[], texto: string): Herramienta[] {
   const t = normalizar(texto);
-  const nombres = new Set(['resumen_vivero', ...TEMAS.filter((g) => g.palabras.test(t)).flatMap((g) => g.herramientas)]);
+  // Los temas de la carpintería solo cuentan en la carpintería: en el vivero, la elección es la de siempre.
+  const temas = clienteActual().sector === 'carpinteria' ? [...TEMAS, ...TEMAS_CARPINTERIA] : TEMAS;
+  const nombres = new Set(['resumen_vivero', ...temas.filter((g) => g.palabras.test(t)).flatMap((g) => g.herramientas)]);
   return nombres.size === 1 ? lista : lista.filter((h) => nombres.has(h.nombre));
 }
