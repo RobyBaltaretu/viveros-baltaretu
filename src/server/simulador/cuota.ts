@@ -32,6 +32,18 @@ export function estadoCuota(usos: number, limite: number): EstadoCuota {
   return { usos, limite, quedan, porcentaje, aviso: limite > 0 && usos >= Math.ceil(limite * AVISO_DESDE), agotada: usos >= limite };
 }
 
+/** Nombres del secreto de la clave de Google en el Worker, por orden: vale cualquiera de los dos. */
+export const SECRETOS_GEMINI = ['GOOGLE_API_KEY', 'GEMINI_API_KEY'] as const;
+
+/** La clave de Gemini del entorno del Worker (`GOOGLE_API_KEY` o `GEMINI_API_KEY`). */
+export function claveGemini(env: Record<string, unknown>): string | undefined {
+  for (const n of SECRETOS_GEMINI) {
+    const v = env[n];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return undefined;
+}
+
 export const AVISO_AGOTADA = 'Has llegado al tope de simulaciones de este mes. El servicio se reactiva el día 1 del mes que viene.';
 
 /** Tamaño máximo de cada imagen que llega (en base64): de sobra para 1024 px. */
@@ -50,7 +62,7 @@ export async function simular(
 ): Promise<Simulacion> {
   const { cliente, ia, uso } = entrada;
   if (ia.simulador !== 'gemini') return { estado: 404, cuerpo: { ok: false, error: 'El simulador no está activo.' } };
-  if (!entrada.apiKey) return { estado: 503, cuerpo: { ok: false, error: 'Falta configurar la IA del simulador (el secreto GEMINI_API_KEY del Worker). Avisa a quien lleva el panel.' } };
+  if (!entrada.apiKey) return { estado: 503, cuerpo: { ok: false, error: 'Falta configurar la IA del simulador (el secreto GOOGLE_API_KEY del Worker). Avisa a quien lleva el panel.' } };
   for (const img of [peticion.image, peticion.mascara]) {
     if (img !== undefined && (typeof img !== 'string' || img.length > MAXIMO_IMAGEN || !/^data:image\/(jpeg|webp|png);base64,/.test(img)))
       return { estado: 400, cuerpo: { ok: false, error: 'La foto tiene que ser JPEG, WebP o PNG y de 1024 px como mucho.' } };

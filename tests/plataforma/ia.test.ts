@@ -68,7 +68,7 @@ describe('IA por cliente: modelos del asistente', () => {
   it('el lector de tickets usa solo Workers AI, sea cual sea el cliente', () => {
     for (const f of ['src/server/gastos/lector.ts', 'src/pages/panel/gastos/nuevo.astro', 'src/server/panel/gastos.ts']) {
       const codigo = readFileSync(f, 'utf8');
-      expect(codigo, f).not.toMatch(/groq|gemini|GROQ_API_KEY|GEMINI_API_KEY|iaDe\(/i);
+      expect(codigo, f).not.toMatch(/groq|gemini|GROQ_API_KEY|GEMINI_API_KEY|GOOGLE_API_KEY|iaDe\(/i);
     }
     expect(readFileSync('src/pages/panel/gastos/nuevo.astro', 'utf8')).toContain('crearLectorWorkersAI');
   });

@@ -3,7 +3,7 @@ import { buildRenovationPrompt } from './promptBuilder.ts';
 
 /**
  * Simulador de reformas con Gemini (solo en los clientes con `ia.simulador:
- * "gemini"`). La clave es el secreto `GEMINI_API_KEY` del Worker: nunca llega
+ * "gemini"`). La clave es el secreto `GOOGLE_API_KEY` (o `GEMINI_API_KEY`) del Worker: nunca llega
  * del navegador. El tope mensual se controla antes, en la API (D1).
  */
 export interface RenovationAiOptions {
