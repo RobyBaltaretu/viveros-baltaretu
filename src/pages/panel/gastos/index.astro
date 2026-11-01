@@ -1,6 +1,5 @@
 ---
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
-import EstadoVacio from '../../../components/panel/ui/EstadoVacio.astro';
 import { CATEGORIAS, gastoVacio, hoy, nombreCategoria } from '../../../server/gastos/gastos.ts';
 import { dinero } from '../../../server/facturas/importes.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
@@ -77,36 +76,23 @@ const MENSAJES: Record<string, string> = { borrado: 'Gasto borrado.', guardado: 
       </ul>
     )
   }
-  {
-    delMes.length === 0 ? (
-      <div class="mt-6">
-        <EstadoVacio
-          icono="ticket"
-          titulo="No hay gastos en este mes"
-          descripcion="Sube fotos de tus tickets o introduce un gasto para mantener al día la contabilidad."
-          cta={{ href: '/panel/gastos/nuevo', texto: 'Añadir gasto o ticket' }}
-        />
-      </div>
-    ) : (
-      <ul class="mt-6 grid gap-3" role="list">
-        {
-          delMes.map((g) => (
-            <li>
-              <a href={`/panel/gastos/${g.id}`} class="group flex min-h-12 flex-wrap items-center justify-between gap-2 caja-panel tarjeta-accion p-4 no-underline">
-                <span class="flex flex-col">
-                  <span class="font-semibold text-tinta group-hover:underline">{g.proveedor}</span>
-                  <span class="text-gris">
-                    {fechaEs(g.fecha)} · {nombreCategoria(g.categoria)}
-                  </span>
-                </span>
-                <span class="font-semibold text-tinta">{dinero(g.total)}</span>
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-    )
-  }
+  <ul class="mt-6 grid gap-3" role="list">
+    {
+      delMes.map((g) => (
+        <li>
+          <a href={`/panel/gastos/${g.id}`} class="group flex min-h-12 flex-wrap items-center justify-between gap-2 caja-panel tarjeta-accion p-4 no-underline">
+            <span class="flex flex-col">
+              <span class="font-semibold text-tinta group-hover:underline">{g.proveedor}</span>
+              <span class="text-gris">
+                {fechaEs(g.fecha)} · {nombreCategoria(g.categoria)}
+              </span>
+            </span>
+            <span class="font-semibold text-tinta">{dinero(g.total)}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
   <h2 class="titular-medio mt-10">Para la gestoría</h2>
   <p class="mt-3 flex flex-wrap gap-3">
     <a class="boton-panel boton-panel-secundario" href={`/api/panel/gastos.csv?anio=${a}`} download>Descargar los gastos de {a}</a>
