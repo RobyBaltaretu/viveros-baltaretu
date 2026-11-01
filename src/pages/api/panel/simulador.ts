@@ -3,7 +3,7 @@ import { env } from 'cloudflare:workers';
 import { clienteActual } from '../../../plataforma/actual.ts';
 import { iaDe } from '../../../plataforma/configuracion.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
-import { simular } from '../../../server/simulador/cuota.ts';
+import { claveGemini, simular } from '../../../server/simulador/cuota.ts';
 import { resolveRenovationConfig, type RenovationConfig, type RenovationRequestPayload } from '../../../server/simulador/materiales.ts';
 
 export const prerender = false;
@@ -35,7 +35,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   }
   const cliente = clienteActual();
   const r = await simular(
-    { cliente: cliente.id, ia: iaDe(cliente), apiKey: (env as { GEMINI_API_KEY?: string }).GEMINI_API_KEY, uso: s.repos.usoSimulador },
+    { cliente: cliente.id, ia: iaDe(cliente), apiKey: claveGemini(env as Record<string, unknown>), uso: s.repos.usoSimulador },
     { image: body.image, mascara: typeof body.mask === 'string' && body.mask ? body.mask : undefined, config },
   );
   return json(r.estado, r.cuerpo);

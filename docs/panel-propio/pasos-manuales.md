@@ -88,7 +88,7 @@ El mismo repositorio construye el panel de Turia con la variable `CLIENTE_ID=tur
 6. **Simulador de reformas con Gemini (de pago, con tope).**
    - En https://aistudio.google.com crea una *API key* de un proyecto con facturación.
    - En ese proyecto, pon un **límite de gasto** o una alerta de presupuesto de 10 € al mes en Google Cloud (*Billing → Budgets & alerts*).
-   - En el Worker `creacionesturia`, *Settings → Variables and Secrets*, añade el **secreto** `GEMINI_API_KEY`.
+   - En el Worker `creacionesturia`, *Settings → Variables and Secrets*, añade el **secreto** `GOOGLE_API_KEY` (también vale `GEMINI_API_KEY`).
    - El panel no deja pasar de **250 simulaciones al mes** (contador en D1; avisa en naranja desde 200 y se bloquea en 250 hasta el día 1). Una simulación que falla no cuenta.
    - El modelo (`gemini-3.1-flash-image-preview`, unos 0,045 $ por imagen) y el tope se cambian en `clientes/turia/cliente.config.json` (`ia.modelos.gemini`, `ia.simulacionesMes`).
    - La clave nunca va en el navegador: la pone el Worker en cada petición.

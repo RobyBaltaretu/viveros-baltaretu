@@ -18,5 +18,5 @@ CONTENIDO_TOKEN=
 GROQ_API_KEY=
 
 # Simulador de reformas (solo clientes con `ia.simulador: "gemini"`, hoy Creaciones Turia): clave de pago de Gemini
-# (Google AI Studio). Nunca se envía desde el navegador. Tope duro en D1: `ia.simulacionesMes` (250 ≈ 10 € al mes).
-GEMINI_API_KEY=
+# (Google AI Studio), como GOOGLE_API_KEY (también vale GEMINI_API_KEY). Nunca se envía desde el navegador. Tope duro en D1: `ia.simulacionesMes` (250 ≈ 10 € al mes).
+GOOGLE_API_KEY=

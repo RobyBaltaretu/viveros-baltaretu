@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { aplicarMigraciones, crearRepositoriosD1, type Repositorios } from '../../src/server/data/index.ts';
-import { AVISO_AGOTADA, estadoCuota, MAXIMO_IMAGEN, mesDe, simular } from '../../src/server/simulador/cuota.ts';
+import { AVISO_AGOTADA, claveGemini, estadoCuota, MAXIMO_IMAGEN, mesDe, simular } from '../../src/server/simulador/cuota.ts';
 import { MATERIALES_ENCIMERA, MATERIALES_MUEBLE, MATERIALES_SUELO, resolveRenovationConfig, type RenovationConfig } from '../../src/server/simulador/materiales.ts';
 import { buildRenovationPrompt } from '../../src/services/promptBuilder.ts';
 import { generateRenovationImage, URL_GEMINI } from '../../src/services/renovationAiService.ts';
@@ -105,12 +105,20 @@ describe('Simulador de Reformas con IA', () => {
     expect(() => resolveRenovationConfig({} as never)).not.toThrow();
   });
 
+  test('la clave sale del secreto GOOGLE_API_KEY o, si no, de GEMINI_API_KEY', () => {
+    expect(claveGemini({ GOOGLE_API_KEY: 'g' })).toBe('g');
+    expect(claveGemini({ GEMINI_API_KEY: 'm' })).toBe('m');
+    expect(claveGemini({ GOOGLE_API_KEY: ' g ', GEMINI_API_KEY: 'm' })).toBe('g');
+    expect(claveGemini({ GOOGLE_API_KEY: '', GEMINI_API_KEY: 'm' })).toBe('m');
+    expect(claveGemini({})).toBeUndefined();
+  });
+
   test('nada del navegador lleva claves: ni la página ni la API las leen de la petición', () => {
     const pagina = readFileSync('src/pages/panel/simulador.astro', 'utf8');
     const api = readFileSync('src/pages/api/panel/simulador.ts', 'utf8');
     expect(pagina).not.toMatch(/hfToken|apiKey|GEMINI_API_KEY|options:\s*\{/);
     expect(api).not.toMatch(/body\.options|hfToken|apiKey:\s*body/);
-    expect(api).toContain('GEMINI_API_KEY');
+    expect(api).toContain('claveGemini(env');
   });
 });
 
