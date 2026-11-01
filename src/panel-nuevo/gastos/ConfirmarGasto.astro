@@ -1,0 +1,58 @@
+---
+/**
+ * Diseño nuevo (Turia): arriba de la revisión de un ticket leído, lo esencial
+ * (tienda, fecha, tipo y total) y un solo botón para guardarlo si está bien. Si
+ * algo no cuadra, se corrige en el formulario de debajo. Envía los mismos campos
+ * que el formulario, así se guarda con las mismas reglas.
+ */
+import Icono from '../../components/panel/ui/Icono.astro';
+import type { Gasto } from '../../server/data/tipos.ts';
+import { dinero } from '../../server/facturas/importes.ts';
+import { nombreCategoria } from '../../server/gastos/gastos.ts';
+
+interface Props {
+  gasto: Gasto;
+}
+const { gasto: g } = Astro.props;
+const cifra = (n: number | null) => (n === null ? '' : String(n).replace('.', ','));
+const fechaEs = (f: string) => f.split('-').reverse().join('/');
+---
+
+<section class="nv-tarjeta nv-seccion nv-arriba nv-confirmar" aria-labelledby="confirmar-gasto">
+  <h2 id="confirmar-gasto">¿Está bien?</h2>
+  <dl class="nv-filas-resumen">
+    <div><dt>Tienda</dt><dd>{g.proveedor}</dd></div>
+    <div><dt>Fecha</dt><dd>{fechaEs(g.fecha)}</dd></div>
+    <div><dt>Tipo</dt><dd>{nombreCategoria(g.categoria)}</dd></div>
+    <div><dt>Total</dt><dd><strong>{dinero(g.total)}</strong></dd></div>
+  </dl>
+  <form method="post">
+    <input type="hidden" name="proveedor" value={g.proveedor} />
+    <input type="hidden" name="fecha" value={g.fecha} />
+    <input type="hidden" name="categoria" value={g.categoria} />
+    <input type="hidden" name="lineas" value={g.lineas.length} />
+    {
+      g.lineas.map((l, i) => (
+        <>
+          <input type="hidden" name={`l${i}.concepto`} value={l.concepto} />
+          <input type="hidden" name={`l${i}.cantidad`} value={cifra(l.cantidad)} />
+          <input type="hidden" name={`l${i}.importe`} value={cifra(l.importe)} />
+        </>
+      ))
+    }
+    <input type="hidden" name="total" value={cifra(g.total)} />
+    <input type="hidden" name="base" value={cifra(g.base)} />
+    <input type="hidden" name="iva" value={cifra(g.iva)} />
+    <input type="hidden" name="formaPago" value={g.formaPago} />
+    <input type="hidden" name="nifProveedor" value={g.nifProveedor} />
+    <input type="hidden" name="notas" value={g.notas} />
+    <button name="accion" value="guardar" class="nv-boton nv-boton-ancho nv-confirmar-boton">
+      <Icono nombre="hecho" />
+      Sí, guardar el gasto
+    </button>
+  </form>
+  <p class="nv-nota nv-gris"><a href="#corregir" class="enlace-panel">Algo no está bien: corregirlo</a></p>
+</section>
+<style is:inline>
+  .nv-confirmar-boton { min-height: 4rem; font-size: 1.125rem; margin-top: 0.75rem; }
+</style>

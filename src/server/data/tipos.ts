@@ -366,6 +366,8 @@ export interface Gasto {
   /** Si los datos los leyó el lector de tickets (y qué avisó). */
   leidoAutomaticamente: boolean;
   avisos: string[];
+  /** Contacto del vendedor leído del ticket (carpintería), para darlo de alta como proveedor. */
+  contactoProveedor?: { direccion: string; poblacion: string; telefono: string; email: string; web: string };
   creado: string;
   creadoPor: string;
   actualizado: string;

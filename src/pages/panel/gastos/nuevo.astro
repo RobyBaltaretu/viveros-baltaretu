@@ -7,14 +7,19 @@ import { hoy } from '../../../server/gastos/gastos.ts';
 import { crearLectorWorkersAI } from '../../../server/gastos/lector.ts';
 import { gastoDesdeTicket } from '../../../server/panel/gastos.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
+import SubirTicket from '../../../panel-nuevo/gastos/SubirTicket.astro';
+import { clienteActual } from '../../../plataforma/actual.ts';
 
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'gastos');
+// Diseño nuevo (Turia): pantalla pensada para el móvil (cámara a un toque).
+const nuevo = clienteActual().panel?.diseno === 'nuevo';
 let error: string | undefined;
 if (s && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const archivo = form.get('ticket');
+  // La primera foto que llegue (el diseño nuevo tiene dos botones: cámara y galería).
+  const archivo = form.getAll('ticket').find((f) => f instanceof File && f.size > 0) ?? null;
   const bytes = archivo instanceof File ? new Uint8Array(await archivo.arrayBuffer()) : new Uint8Array();
   const ai = (env as { AI?: BindingAI }).AI;
   const r = await gastoDesdeTicket(s.repos, s.usuario.email, bytes, ai ? crearLectorWorkersAI(ai, hoy) : null);
@@ -25,6 +30,7 @@ if (s && Astro.request.method === 'POST') {
 ---
 
 <PaginaPanel titulo="Añadir un ticket" permiso="gastos" volver="/panel/gastos">
+  {nuevo ? <SubirTicket error={error} /> : <>
   <h1 class="titular-grande">Añadir un ticket</h1>
   <p class="mt-2">Haz una foto al ticket o a la factura de compra, o elige una que ya tengas. El panel lee la tienda, la fecha, lo comprado y el total, y tú lo revisas.</p>
   <Mensajes errores={error ? [{ campo: 'ticket', mensaje: error }] : []} />
@@ -39,6 +45,7 @@ if (s && Astro.request.method === 'POST') {
     <input type="hidden" name="accion" value="manual" />
     <button class="boton-panel boton-panel-secundario">No tengo ticket: escribirlo a mano</button>
   </form>
+  </>}
 </PaginaPanel>
 
 <script>

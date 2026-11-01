@@ -5,6 +5,10 @@ import type { Gasto } from '../../../server/data/tipos.ts';
 import { avisosDe, CATEGORIAS, FORMAS_PAGO_GASTO, leerGasto, type Error } from '../../../server/gastos/gastos.ts';
 import { campo, sesionCon } from '../../../server/panel/pagina.ts';
 import { MENSAJE_LECTURA } from '../../../server/panel/gastos.ts';
+import { proveedorPorGuardar } from '../../../server/gastos/proveedor-del-ticket.ts';
+import { clienteActual } from '../../../plataforma/actual.ts';
+import ConfirmarGasto from '../../../panel-nuevo/gastos/ConfirmarGasto.astro';
+import PreguntaProveedor from '../../../panel-nuevo/gastos/PreguntaProveedor.astro';
 
 export const prerender = false;
 
@@ -16,6 +20,15 @@ let errores: Error[] = [];
 let crudo: FormData | null = null;
 if (s && g && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
+  if (campo(form, 'accion') === 'guardar-proveedor') {
+    // Carpintería: el gasto ya está guardado; ahora, su tienda como proveedor (si aún no lo es).
+    const p = await proveedorPorGuardar(s.repos, g);
+    if (p) {
+      await s.repos.proveedores.guardar(p, s.usuario.email);
+      await s.repos.auditoria.registrar(s.usuario.email, 'proveedor desde ticket', p.nombre);
+    }
+    return Astro.redirect(`/panel/gastos?mes=${g.fecha.slice(0, 7)}&hecho=${p ? 'proveedor' : 'guardado'}`, 303);
+  }
   if (campo(form, 'accion') === 'borrar') {
     await s.repos.gastos.borrar(g.id);
     await s.repos.auditoria.registrar(s.usuario.email, 'gasto borrado', `${g.proveedor} ${g.total}`);
@@ -28,6 +41,8 @@ if (s && g && Astro.request.method === 'POST') {
     const confirmado: Gasto = { ...r.gasto, estado: 'confirmado', avisos: avisosDe(r.gasto) };
     await s.repos.gastos.guardar(confirmado);
     await s.repos.auditoria.registrar(s.usuario.email, 'gasto guardado', `${confirmado.proveedor} ${confirmado.total}`);
+    // Carpintería: si la tienda aún no es proveedor, se pregunta si se guarda también.
+    if (await proveedorPorGuardar(s.repos, confirmado)) return Astro.redirect(`/panel/gastos/${confirmado.id}?proveedor=preguntar`, 303);
     return Astro.redirect(`/panel/gastos?mes=${confirmado.fecha.slice(0, 7)}&hecho=guardado`, 303);
   } else {
     await s.repos.gastos.guardar(r.gasto);
@@ -40,11 +55,17 @@ const valor = (n: string, normal: string | number | null) => (crudo ? String(cru
 const error = (c: string) => errores.find((e) => e.campo === c)?.mensaje;
 const lineas = g?.lineas.length ? g.lineas : [{ concepto: '', cantidad: 1, importe: 0 }];
 const describe = (c: string) => (error(c) ? `${c}-error` : undefined);
+// Diseño nuevo (Turia): pregunta del proveedor y guardado de un toque.
+const nuevo = clienteActual().panel?.diseno === 'nuevo';
+const preguntar = s && g && g.estado === 'confirmado' && Astro.url.searchParams.get('proveedor') === 'preguntar' ? await proveedorPorGuardar(s.repos, g) : null;
+const rapido = nuevo && !!g && g.estado === 'revisar' && !errores.length && g.total > 0 && !!g.proveedor && !!g.categoria && /^\d{4}-\d{2}-\d{2}$/.test(g.fecha);
+const volverLista = g ? `/panel/gastos?mes=${g.fecha.slice(0, 7)}&hecho=guardado` : '/panel/gastos';
 ---
 
 <PaginaPanel titulo={g?.estado === 'revisar' ? 'Revisar el gasto' : 'Gasto'} permiso="gastos" volver="/panel/gastos">
+  {preguntar && <PreguntaProveedor proveedor={preguntar} volver={volverLista} />}
   {
-    g && (
+    g && !preguntar && (
       <>
         <h1 class="titular-grande">{g.estado === 'revisar' ? 'Revisar el gasto' : g.proveedor || 'Gasto'}</h1>
         <Mensajes hecho={leido ? MENSAJE_LECTURA[leido] : undefined} errores={errores} />
@@ -55,15 +76,16 @@ const describe = (c: string) => (error(c) ? `${c}-error` : undefined);
             ))}
           </ul>
         )}
+        {rapido && <ConfirmarGasto gasto={g} />}
         {g.ticketId && (
-          <details class="mt-6 caja-panel p-3" open={g.estado === 'revisar'}>
+          <details class="mt-6 caja-panel p-3" open={g.estado === 'revisar' && !rapido}>
             <summary class="flex min-h-12 cursor-pointer items-center font-semibold">Foto del ticket</summary>
             <a href={`/api/panel/ticket?id=${g.ticketId}`} class="mt-2 block">
               <img src={`/api/panel/ticket?id=${g.ticketId}`} alt="Foto del ticket de compra" class="max-h-[70vh] w-full rounded-tarjeta object-contain" />
             </a>
           </details>
         )}
-        <form method="post" class="mt-6 grid gap-6">
+        <form method="post" class="mt-6 grid gap-6" id={rapido ? 'corregir' : undefined}>
           <button name="accion" value="guardar" class="sr-only" tabindex="-1" aria-hidden="true">
             Guardar
           </button>
