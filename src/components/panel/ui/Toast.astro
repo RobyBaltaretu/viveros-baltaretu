@@ -1,0 +1,47 @@
+---
+/**
+ * Componente Toast / Notificación accesible para el panel de gestión.
+ */
+import Icono from './Icono.astro';
+
+interface Props {
+  mensaje: string;
+  tipo?: 'exito' | 'error' | 'aviso';
+  id?: string;
+}
+
+const { mensaje, tipo = 'exito', id = 'panel-toast' } = Astro.props;
+const icono = tipo === 'exito' ? 'hecho' : tipo === 'error' ? 'aviso' : 'aviso';
+const claseTono = tipo === 'exito' ? 'bg-verdor text-oliva' : tipo === 'error' ? 'bg-red-100 text-red-800' : 'bg-arena-prueba text-tinta';
+---
+
+<div
+  id={id}
+  role={tipo === 'error' ? 'alert' : 'status'}
+  class:list={[
+    'toast-panel fixed bottom-20 right-4 z-50 flex max-w-sm items-center gap-3 rounded-2xl p-4 shadow-lg transition-all duration-300 sm:bottom-6 sm:right-6',
+    claseTono,
+  ]}
+>
+  <Icono nombre={icono} clase="size-5 shrink-0" />
+  <span class="flex-1 text-base font-semibold">{mensaje}</span>
+  <button
+    type="button"
+    class="grid size-11 min-h-[44px] min-w-[44px] place-items-center rounded-xl hover:bg-black/5"
+    aria-label="Cerrar notificación"
+    onclick={`document.getElementById('${id}')?.remove()`}
+  >
+    <span aria-hidden="true" class="text-xl leading-none">×</span>
+  </button>
+</div>
+
+<script is:inline define:vars={{ id }}>
+  setTimeout(() => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(8px)';
+      setTimeout(() => el.remove(), 300);
+    }
+  }, 4000);
+</script>

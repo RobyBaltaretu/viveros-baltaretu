@@ -115,11 +115,38 @@ const DATOS = [
           <li class="grid gap-1 caja-panel p-4">
             <span class="text-gris">{k.nombre}</span>
             <span class="font-titular text-3xl font-bold">{k.valor}</span>
-            <span class="text-base text-gris">{k.nota}</span>
+            <span class:list={['text-base font-medium', k.nota?.includes('▲') ? 'text-green-700' : k.nota?.includes('▼') ? 'text-red-700' : 'text-gris']}>
+              {k.nota}
+            </span>
           </li>
         ))
       }
     </ul>
+
+    {
+      c.pendiente > 0 && (
+        <section class="mt-8 caja-panel p-5" aria-labelledby="salud-cobros">
+          <h2 id="salud-cobros" class="titular-medio">
+            Salud de cobros y vencimientos
+          </h2>
+          <p class="mt-1 text-sm text-gris">Control de liquidez y tramos de vencimiento de deuda.</p>
+          <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="rounded-xl border border-linea bg-papel p-3">
+              <span class="block text-xs font-semibold uppercase tracking-wider text-gris">En plazo</span>
+              <span class="font-titular text-xl font-bold text-green-700">{dinero(c.enPlazo)}</span>
+            </div>
+            <div class="rounded-xl border border-linea bg-papel p-3">
+              <span class="block text-xs font-semibold uppercase tracking-wider text-gris">Vencido ≤ 30 días</span>
+              <span class="font-titular text-xl font-bold text-orange-700">{dinero(c.vencido30)}</span>
+            </div>
+            <div class="rounded-xl border border-linea bg-papel p-3">
+              <span class="block text-xs font-semibold uppercase tracking-wider text-gris">Vencido &gt; 30 días</span>
+              <span class="font-titular text-xl font-bold text-red-700">{dinero(c.vencidoMas30)}</span>
+            </div>
+          </div>
+        </section>
+      )
+    }
 
     {
       frases.length > 0 && (

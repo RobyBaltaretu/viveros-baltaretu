@@ -397,6 +397,16 @@ const iniciales = (usuario?.nombre || usuario?.email || '?').trim().slice(0, 1).
     border: 2px solid color-mix(in oklab, var(--color-oliva) 55%, var(--color-linea));
     box-shadow: none;
   }
+  .boton-panel-peligro {
+    background: #fdecea;
+    color: #b42318;
+    border: 1px solid #fecdca;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .boton-panel-peligro:hover {
+      background: #fee4e2;
+    }
+  }
   .boton-panel-claro {
     background: var(--color-crema);
     color: var(--color-oliva);

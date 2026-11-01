@@ -1,5 +1,6 @@
 ---
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import EstadoVacio from '../../../components/panel/ui/EstadoVacio.astro';
 import { ESTADOS_FACTURA, type EstadoFactura } from '../../../server/data/tipos.ts';
 import { faltaEmisor, NOMBRE_ESTADO, vencida } from '../../../server/facturas/facturas.ts';
 import { dinero } from '../../../server/facturas/importes.ts';
@@ -82,7 +83,18 @@ const porFacturar = s && nuevo && moduloActivoAhora('presupuestosCliente') ? fac
       }
     </ul>
   </nav>
-  {lista.length === 0 && <p class="mt-6">No hay facturas aquí.</p>}
+  {
+    lista.length === 0 && (
+      <div class="mt-6">
+        <EstadoVacio
+          icono="facturas"
+          titulo="No hay facturas en esta sección"
+          descripcion={estado === 'emitida' ? 'No tienes facturas pendientes de cobro actualmente.' : 'Empieza creando una nueva factura para registrar cobros.'}
+          cta={{ href: cliente ? `/panel/facturas/nueva?cliente=${cliente.id}` : '/panel/facturas/nueva', texto: 'Crear factura' }}
+        />
+      </div>
+    )
+  }
   <ul class="mt-6 grid gap-3" role="list">
     {
       lista.map((f) => (
