@@ -1,0 +1,88 @@
+---
+/**
+ * Añadir un ticket con el diseño nuevo (Turia), pensado para el móvil: un botón
+ * grande abre la cámara y, al hacer la foto, se sube y se lee sola (sin otro
+ * toque). También se puede elegir de la galería o escribirlo a mano.
+ * Solo `<script is:inline>`: el script común de la página (Baltaretu) no se toca.
+ */
+import Icono from '../../components/panel/ui/Icono.astro';
+
+interface Props {
+  error?: string;
+}
+const { error } = Astro.props;
+---
+
+<div class="nv-titulo">
+  <div>
+    <h1>Añadir un ticket</h1>
+    <p>Haz una foto al ticket o a la factura. Leo la tienda, la fecha y el total, y tú solo lo compruebas.</p>
+  </div>
+</div>
+{error && <p role="alert" class="nv-caja-aviso nv-caja-error"><span>{error}</span></p>}
+<form method="post" enctype="multipart/form-data" class="nv-tarjeta nv-seccion nv-ticket" data-ticket-nuevo>
+  <label class="nv-boton nv-boton-ancho nv-ticket-camara">
+    <Icono nombre="camara" />
+    Hacer foto al ticket
+    <input type="file" name="ticket" accept="image/*" capture="environment" class="nv-ticket-archivo" />
+  </label>
+  <label class="nv-boton nv-boton-secundario nv-boton-ancho">
+    Elegir una foto de la galería
+    <input type="file" name="ticket" accept="image/*" class="nv-ticket-archivo" />
+  </label>
+  <p class="nv-nota nv-gris">Consejo: el ticket entero, recto y con luz. Sirve también una foto de una factura en papel.</p>
+  <noscript><button class="nv-boton nv-boton-ancho">Leer el ticket</button></noscript>
+  <p class="nv-ticket-estado" data-estado role="status" aria-live="polite"></p>
+</form>
+<form method="post" action="/panel/gastos" class="nv-arriba">
+  <input type="hidden" name="accion" value="manual" />
+  <button class="nv-boton nv-boton-secundario nv-boton-ancho">No tengo ticket: escribirlo a mano</button>
+</form>
+
+<style is:inline>
+  .nv-ticket { display: grid; gap: 0.75rem; }
+  .nv-ticket-camara { min-height: 4.5rem; font-size: 1.125rem; }
+  .nv-ticket label { position: relative; cursor: pointer; }
+  .nv-ticket-archivo { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .nv-ticket label:focus-within { outline: 3px solid var(--nv-acento); outline-offset: 2px; }
+  .nv-ticket-estado:empty { display: none; }
+  .nv-ticket-estado { font-weight: 600; }
+  .nv-ticket[aria-busy='true'] label { opacity: 0.6; pointer-events: none; }
+</style>
+
+<script is:inline>
+  (() => {
+    // Al elegir la foto se reduce (sin recortar: los tickets son largos) y se sube sola.
+    const form = document.querySelector('[data-ticket-nuevo]');
+    const estado = form?.querySelector('[data-estado]');
+    const decir = (t) => estado && (estado.textContent = t);
+    form?.querySelectorAll('input[type=file]').forEach((entrada) =>
+      entrada.addEventListener('change', async () => {
+        const archivo = entrada.files?.[0];
+        if (!archivo) return;
+        form.setAttribute('aria-busy', 'true');
+        decir('Preparando la foto…');
+        try {
+          const imagen = await createImageBitmap(archivo, { imageOrientation: 'from-image' });
+          const escala = Math.min(1, 2000 / Math.max(imagen.width, imagen.height));
+          const lienzo = document.createElement('canvas');
+          lienzo.width = Math.round(imagen.width * escala);
+          lienzo.height = Math.round(imagen.height * escala);
+          lienzo.getContext('2d').drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+          const blob = await new Promise((ok) => lienzo.toBlob(ok, 'image/jpeg', 0.8));
+          if (!blob) throw new Error('sin imagen');
+          const datos = new FormData();
+          datos.set('ticket', blob, 'ticket.jpg');
+          decir('Leyendo el ticket… unos segundos.');
+          const r = await fetch(location.pathname, { method: 'POST', body: datos });
+          if (r.redirected) return location.replace(r.url);
+          decir('No se ha podido subir la foto. Prueba otra vez o con otra foto.');
+        } catch {
+          decir('No se ha podido preparar la foto. Prueba otra vez o con otra foto.');
+        }
+        form.removeAttribute('aria-busy');
+        entrada.value = '';
+      }),
+    );
+  })();
+</script>

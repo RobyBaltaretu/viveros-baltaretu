@@ -42,6 +42,7 @@ export async function gastoDesdeTicket(repos: Repositorios, email: string, bytes
           formaPago: l.formaPago || gasto.formaPago,
           categoria: l.categoria,
           leidoAutomaticamente: true,
+          ...(l.contactoProveedor ? { contactoProveedor: l.contactoProveedor } : {}),
         });
         gasto.avisos = [...(l.fecha ? [] : ['No se ha podido leer la fecha: se ha puesto la de hoy.']), ...avisosDe(gasto)];
       }

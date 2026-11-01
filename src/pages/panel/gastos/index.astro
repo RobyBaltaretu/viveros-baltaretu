@@ -29,7 +29,7 @@ const porCategoria = CATEGORIAS.map((c) => ({ ...c, total: delMes.filter((g) => 
 const nombreMes = new Date(Date.UTC(a, m - 1, 15)).toLocaleDateString('es-ES', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const fechaEs = (iso: string) => iso.split('-').reverse().join('/');
 const hecho = Astro.url.searchParams.get('hecho');
-const MENSAJES: Record<string, string> = { borrado: 'Gasto borrado.', guardado: 'Gasto guardado.' };
+const MENSAJES: Record<string, string> = { borrado: 'Gasto borrado.', proveedor: 'Gasto y proveedor guardados.', guardado: 'Gasto guardado.' };
 ---
 
 <PaginaPanel titulo="Gastos" permiso="gastos">

@@ -1,0 +1,49 @@
+---
+/**
+ * Diseño nuevo (Turia): con el gasto ya guardado, si su tienda aún no es
+ * proveedor, se pregunta si se guarda también, con lo leído del ticket.
+ */
+import Icono from '../../components/panel/ui/Icono.astro';
+import type { Proveedor } from '../../server/data/tipos.ts';
+
+interface Props {
+  proveedor: Omit<Proveedor, 'actualizado'>;
+  volver: string;
+}
+const { proveedor: p, volver } = Astro.props;
+const datos = [
+  ['NIF', p.nif],
+  ['Dirección', [p.direccion, p.poblacion].filter(Boolean).join(', ')],
+  ['Teléfono', p.telefono],
+  ['Correo', p.email],
+  ['Web', p.web],
+].filter(([, v]) => v);
+---
+
+<p role="status" class="nv-caja-aviso nv-caja-bien"><span>Gasto guardado.</span></p>
+<section class="nv-tarjeta nv-seccion nv-arriba" aria-labelledby="pregunta-proveedor">
+  <h1 id="pregunta-proveedor">¿Guardo también «{p.nombre}» como proveedor?</h1>
+  <p class="nv-nota">Así lo tendrás a mano para hacerle pedidos y ver lo que le compras.</p>
+  {
+    datos.length > 0 ? (
+      <dl class="nv-filas-resumen">
+        {datos.map(([k, v]) => (
+          <div>
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))}
+      </dl>
+    ) : (
+      <p class="nv-nota nv-gris">En el ticket no salen más datos: podrás completarlos en su ficha.</p>
+    )
+  }
+  <form method="post" class="nv-arriba">
+    <input type="hidden" name="accion" value="guardar-proveedor" />
+    <button class="nv-boton nv-boton-ancho">
+      <Icono nombre="hecho" />
+      Sí, guardar el proveedor
+    </button>
+  </form>
+  <a href={volver} class="nv-boton nv-boton-secundario nv-boton-ancho nv-arriba">No, gracias</a>
+</section>
