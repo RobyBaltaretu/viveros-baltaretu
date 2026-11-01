@@ -166,16 +166,43 @@ export interface Cobros {
   facturas: number;
   vencido: number;
   vencidas: number;
+  /** Antigüedad de la deuda (aging) */
+  enPlazo: number;
+  vencido30: number;
+  vencidoMas30: number;
 }
 
 export function cobros(fs: Factura[], hoy: string): Cobros {
   const pendientes = fs.filter((f) => f.estado === 'emitida');
   const vencidas = pendientes.filter((f) => f.vencimiento < hoy);
+
+  const hoyDate = new Date(`${hoy}T12:00:00Z`).getTime();
+  const diaMs = 24 * 60 * 60 * 1000;
+
+  let enPlazo = 0;
+  let vencido30 = 0;
+  let vencidoMas30 = 0;
+
+  for (const f of pendientes) {
+    const fVenc = new Date(`${f.vencimiento}T12:00:00Z`).getTime();
+    const difDias = Math.floor((hoyDate - fVenc) / diaMs);
+    if (difDias <= 0) {
+      enPlazo += f.totales.total;
+    } else if (difDias <= 30) {
+      vencido30 += f.totales.total;
+    } else {
+      vencidoMas30 += f.totales.total;
+    }
+  }
+
   return {
     pendiente: r2(pendientes.reduce((t, f) => t + f.totales.total, 0)),
     facturas: pendientes.length,
     vencido: r2(vencidas.reduce((t, f) => t + f.totales.total, 0)),
     vencidas: vencidas.length,
+    enPlazo: r2(enPlazo),
+    vencido30: r2(vencido30),
+    vencidoMas30: r2(vencidoMas30),
   };
 }
 

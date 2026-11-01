@@ -1458,6 +1458,7 @@
 }
 .nv-toque {
   min-height: 3rem;
+  min-width: 3rem;
   border: 1px solid var(--nv-borde-fuerte);
   border-radius: 999px;
   background: var(--nv-superficie);
