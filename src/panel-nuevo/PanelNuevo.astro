@@ -213,7 +213,7 @@ const inicialUsuario = (usuario?.nombre || usuario?.email || '?').trim().slice(0
     }
     {
       pestanas.length > 0 && (
-        <nav aria-label={tp.menu} class="nv-inferior">
+        <nav aria-label="Navegación principal móvil" class="nv-inferior">
           <ul role="list">
             {pestanas.map((p) =>
               p.tipo === 'crear' ? (
