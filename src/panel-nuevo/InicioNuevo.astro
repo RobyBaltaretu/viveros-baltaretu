@@ -57,163 +57,93 @@ const fecha = ahora.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric
 const nombre = (s?.usuario.nombre || '').split(' ')[0];
 ---
 
-<div class="nv-inicio nv-inicio-taller">
-  <div class="nv-hero-taller">
-  <div class="nv-titulo">
-    <div>
-      <p class="nv-fecha">{fecha}</p>
-      <h1>{saludo(hora)}{nombre ? `, ${nombre}` : ''}</h1>
-      <p>{tareas.length ? `Tienes ${tareas.length === 1 ? '1 cosa' : `${tareas.length} cosas`} por hacer. Empieza por la primera.` : 'No tienes nada pendiente.'}</p>
-      <p class="nv-inicio-subtitulo">Del primer boceto al último acabado. Todo tu taller, en un lugar.</p>
+<div class="nv-inicio nv-inicio-taller nv-estudio">
+  <header class="nv-estudio-hero">
+    <div class="nv-estudio-bienvenida">
+      <p class="nv-estudio-saludo">{saludo(hora)}{nombre ? `, ${nombre}` : ''}</p>
+      <h1>Creaciones Turia</h1>
+      <p>Carpintería a medida y proyectos singulares</p>
     </div>
-  </div>
+    <div class="nv-estudio-madera" aria-hidden="true"></div>
+  </header>
 
-  <div class="nv-hero-acciones">
-    {ver.presupuestos && <a class="nv-hero-cta" href="/panel/presupuestos-cliente/nuevo"><Icono nombre="nuevo" /> Nuevo presupuesto</a>}
-    {ver.facturas && <a class="nv-hero-cta-secundaria" href="/panel/facturas">Ver facturas</a>}
-  </div>
-  </div>
-  <section class="nv-camino" aria-labelledby="nv-camino-titulo">
-    <div class="nv-camino-cabeza">
-      <span class="nv-camino-etiqueta">EL RECORRIDO DE CADA TRABAJO</span>
-      <h2 id="nv-camino-titulo">Del presupuesto al cobro</h2>
-      <p>Accede a cada etapa y continúa donde lo dejaste.</p>
-    </div>
-    <ol class="nv-camino-pasos">
-      {ver.presupuestos && <li><a href="/panel/presupuestos-cliente"><span class="nv-camino-num">01</span><strong>Presupuestos</strong><small>Preparar y aceptar</small></a></li>}
-      {ver.facturas && <li><a href="/panel/facturas"><span class="nv-camino-num">02</span><strong>Anticipos y facturas</strong><small>Emitir documentos</small></a></li>}
-      {ver.gastos && <li><a href="/panel/gastos"><span class="nv-camino-num">03</span><strong>Costes del trabajo</strong><small>Compras y tickets</small></a></li>}
-      {ver.facturas && <li><a href="/panel/facturas"><span class="nv-camino-num">04</span><strong>Cobros</strong><small>Revisar pendientes</small></a></li>}
-    </ol>
-  </section>
-  {
-    verSimulador && (
-      <section aria-labelledby="nv-simulador-banner">
-        <a href="/panel/simulador" class="nv-tarjeta nv-destacado">
-          <span class="nv-destacado-texto">
-            <span class="nv-destacado-etiqueta">Herramienta destacada con IA</span>
-            <strong id="nv-simulador-banner">Simulador de reformas en vivo</strong>
-            <small>Sube la foto del cliente y simula acabados de cocina, armarios o suelo con IA fotorrealista.</small>
-          </span>
-          <span class="nv-destacado-icono" aria-hidden="true">
-            <Icono nombre="camara" clase="size-6" />
-          </span>
-        </a>
-      </section>
-    )
-  }
+  {crear.length > 0 && (
+    <section class="nv-estudio-crear" aria-labelledby="nv-estudio-crear-titulo">
+      <h2 id="nv-estudio-crear-titulo" class="sr-only">Accesos rápidos</h2>
+      <ul role="list">
+        {crear.slice(0, 5).map((c) => (
+          <li>
+            <a href={c.href} class="nv-estudio-atajo">
+              <Icono nombre={c.icono} clase="size-6" />
+              <strong>{c.texto}</strong>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
 
-  {
-    cifras.length > 0 && (
-      <section aria-labelledby="nv-cifras">
-        <h2 id="nv-cifras" class="sr-only">
-          Cifras de {mes.etiqueta}
-        </h2>
-        <ul class="nv-kpis" role="list">
+  <div class="nv-estudio-grid">
+    <section class="nv-tarjeta nv-estudio-resumen" aria-labelledby="nv-estudio-resumen-titulo">
+      <div class="nv-cabeza-tarjeta">
+        <h2 id="nv-estudio-resumen-titulo">Resumen del negocio</h2>
+        <span class="nv-gris">{mes.etiqueta}</span>
+      </div>
+      {cifras.length ? (
+        <ul class="nv-estudio-metricas" role="list">
           {cifras.map((k) => (
             <li>
-              <a href={k.href} class="nv-kpi nv-tarjeta">
-                <span class="nv-kpi-nombre">{k.nombre}</span>
-                <span class="nv-kpi-valor nv-cifra">{valor(k)}</span>
-                <span class:list={['nv-kpi-nota', k.tono === 'aviso' && 'nv-aviso', k.tono === 'bien' && 'nv-bien']}>{k.nota}</span>
+              <a href={k.href} class="nv-estudio-metrica">
+                <span>{k.nombre}</span>
+                <strong class="nv-cifra">{valor(k)}</strong>
+                <small class:list={[k.tono === 'aviso' && 'nv-aviso', k.tono === 'bien' && 'nv-bien']}>{k.nota}</small>
               </a>
             </li>
           ))}
         </ul>
-      </section>
-    )
-  }
-
-  <div class="nv-inicio-columnas">
-    <section class="nv-tarjeta nv-por-hacer" aria-labelledby="nv-por-hacer">
-      <div class="nv-cabeza-tarjeta">
-        <h2 id="nv-por-hacer">Por hacer</h2>
-        {tareas.length > 0 && <span class="nv-chip">{tareas.length}</span>}
-      </div>
-      {
-        tareas.length === 0 ? (
-          <div class="nv-vacio">
-            <span class="nv-vacio-icono" aria-hidden="true">
-              <Icono nombre="hecho" />
-            </span>
-            <p>
-              <strong>Todo al día</strong>
-              <br />
-              Cuando algo necesite tu atención (un cobro, un presupuesto que caduca…), saldrá aquí.
-            </p>
+      ) : <p class="nv-gris">Aquí aparecerán los indicadores disponibles para tu cuenta.</p>}
+      {meses.length > 0 && (
+        <div class="nv-estudio-grafico">
+          <div class="nv-estudio-grafico-titulo">
+            <strong>Facturado sin IVA</strong>
+            <span>Últimos 6 meses</span>
           </div>
-        ) : (
-          <ul role="list">
-            {tareas.slice(0, VISIBLES).map((t) => (
-              <li class="nv-tarea">
-                <span class:list={['nv-punto', `nv-punto-${t.color}`]} aria-hidden="true" />
-                <span class="nv-tarea-texto">
-                  <strong>{t.titulo}</strong>
-                  <span>{t.detalle}</span>
+          <ol class="nv-barras" role="list">
+            {meses.map((m) => (
+              <li class:list={[m.actual && 'nv-barra-actual']} title={`${m.etiqueta}: ${eur(m.base)}`}>
+                <span class="nv-barra-valor nv-cifra">{m.actual || m.base === maximo ? eurCorto(m.base) : ''}</span>
+                <span class="nv-barra-hueco" aria-hidden="true">
+                  <span class="nv-barra" style={`height:${maximo > 0 ? Math.max(2, (m.base / maximo) * 100) : 2}%`} />
                 </span>
-                <a href={t.href} class="nv-boton nv-boton-secundario">
-                  {t.accion}
-                  <span class="sr-only">: {t.titulo}</span>
-                </a>
+                <span class="nv-barra-mes">{m.etiqueta}</span>
+                <span class="sr-only">{eur(m.base)}</span>
               </li>
             ))}
-          </ul>
-        )
-      }
-      {tareas.length > VISIBLES && <p class="nv-mas">Y {tareas.length - VISIBLES} más: resuelve estas primero.</p>}
+          </ol>
+          {ver.informes && <a href="/panel/informes" class="enlace-panel">Ver informes</a>}
+        </div>
+      )}
     </section>
 
-    <div class="nv-inicio-lado">
-      {
-        meses.length > 0 && (
-          <section class="nv-tarjeta nv-grafica" aria-labelledby="nv-grafica">
-            <div class="nv-cabeza-tarjeta">
-              <h2 id="nv-grafica">Facturado sin IVA</h2>
-              <span class="nv-gris">Últimos 6 meses</span>
-            </div>
-            <ol class="nv-barras" role="list">
-              {meses.map((m) => (
-                <li class:list={[m.actual && 'nv-barra-actual']} title={`${m.etiqueta}: ${eur(m.base)}`}>
-                  <span class="nv-barra-valor nv-cifra">{m.actual || m.base === maximo ? eurCorto(m.base) : ''}</span>
-                  <span class="nv-barra-hueco" aria-hidden="true">
-                    <span class="nv-barra" style={`height:${maximo > 0 ? Math.max(2, (m.base / maximo) * 100) : 2}%`} />
-                  </span>
-                  <span class="nv-barra-mes">{m.etiqueta}</span>
-                  <span class="sr-only">{eur(m.base)}</span>
-                </li>
-              ))}
-            </ol>
-            {ver.informes && (
-              <a href="/panel/informes" class="enlace-panel">
-                Ver informes
-              </a>
-            )}
-          </section>
-        )
-      }
-
-      {
-        crear.length > 0 && (
-          <section class="nv-atajos" aria-labelledby="nv-atajos">
-            <h2 id="nv-atajos">Crear</h2>
-            <ul role="list">
-              {crear.slice(0, 4).map((c) => (
-                <li>
-                  <a href={c.href} class="nv-atajo nv-tarjeta">
-                    <span class="nv-atajo-icono" aria-hidden="true">
-                      <Icono nombre={c.icono} clase="size-5" />
-                    </span>
-                    <span>
-                      <strong>{c.texto}</strong>
-                      <small>{c.descripcion}</small>
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )
-      }
-    </div>
+    <section class="nv-tarjeta nv-estudio-pendientes" aria-labelledby="nv-estudio-pendientes-titulo">
+      <div class="nv-cabeza-tarjeta">
+        <h2 id="nv-estudio-pendientes-titulo">Necesita tu atención</h2>
+        {tareas.length > 0 && <span class="nv-chip">{tareas.length}</span>}
+      </div>
+      {tareas.length ? (
+        <ul role="list" class="nv-estudio-lista">
+          {tareas.slice(0, 4).map((t) => (
+            <li><a href={t.href}><span class:list={['nv-punto', `nv-punto-${t.color}`]} aria-hidden="true" /><span><strong>{t.titulo}</strong><small>{t.detalle}</small></span><span class="nv-estudio-ir" aria-hidden="true">›</span></a></li>
+          ))}
+        </ul>
+      ) : <p class="nv-gris">Todo al día. No hay acciones pendientes.</p>}
+      {tareas.length > 4 && <p class="nv-gris">Hay {tareas.length - 4} asuntos más pendientes.</p>}
+      {ver.presupuestos && <a class="nv-estudio-enlace" href="/panel/presupuestos-cliente">Ver presupuestos</a>}
+    </section>
   </div>
+  {verSimulador && (
+    <a href="/panel/simulador" class="nv-estudio-simulador">
+      <Icono nombre="camara" /><span><strong>Simulador de reformas con IA</strong><small>Explora acabados a partir de una foto.</small></span><span aria-hidden="true">›</span>
+    </a>
+  )}
 </div>
