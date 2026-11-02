@@ -2598,6 +2598,10 @@
  .nv-taller .nv-estudio-mas-metricas {display:block;order:3;border-top:1px solid var(--nv-borde)}
  .nv-taller .nv-estudio-mas-metricas summary {display:flex;align-items:center;min-height:48px;cursor:pointer;color:var(--nv-acento)}
  .nv-taller .nv-estudio-mas-metricas ul {display:grid;gap:.5rem;list-style:none;margin:.4rem 0;padding:0}
+ .nv-taller .nv-estudio-meses-movil {padding:.8rem 0;border-top:1px solid var(--nv-borde)}
+ .nv-taller .nv-estudio-meses-movil ul {display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;margin:.5rem 0;font-size:.82rem}
+ .nv-taller .nv-estudio-informes-movil {display:inline-flex;align-items:center;min-height:48px}
+ .nv-taller .nv-estudio-grafico details,.nv-taller .nv-estudio-grafico .enlace-panel {display:none}
 }
 @media(min-width:48rem) and (max-width:80rem){.nv-taller .nv-estudio-metricas {grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(min-width:48rem) and (max-width:70rem){.nv-taller .nv-estudio-crear ul {grid-template-columns:repeat(5,minmax(0,1fr))}.nv-taller .nv-estudio-atajo {padding:.85rem;font-size:.88rem}}

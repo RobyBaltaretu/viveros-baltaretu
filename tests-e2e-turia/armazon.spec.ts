@@ -39,8 +39,11 @@ test('inicio: accesos reales, cifras, proyectos y evolución accesible', async (
   await expect(page.getByRole('heading', { name: 'Proyectos en curso' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Por hacer' })).toBeVisible();
   await expect(page.getByText('Facturado sin IVA')).toBeVisible();
-  await page.getByText('Valores por mes').click();
-  await expect(page.locator('.nv-estudio-grafico details li')).toHaveCount(6);
+  if (isMobile) await expect(page.locator('.nv-estudio-meses-movil li')).toHaveCount(6);
+  else {
+    await page.getByText('Valores por mes').click();
+    await expect(page.locator('.nv-estudio-grafico details li')).toHaveCount(6);
+  }
   if (isMobile) await expect(atajos.locator('li').nth(4)).toBeHidden();
   await auditar(page);
   await controlesGrandes(page);
