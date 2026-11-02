@@ -7,11 +7,12 @@
  */
 import Mensajes from '../../components/panel/Mensajes.astro';
 import Icono from '../../components/panel/ui/Icono.astro';
-import type { EstadoPresupuestoCliente, PresupuestoCliente } from '../../server/data/tipos.ts';
+import type { EstadoPresupuestoCliente, Factura, PresupuestoCliente } from '../../server/data/tipos.ts';
 import { dinero } from '../../server/facturas/importes.ts';
 import { NOMBRE_ESTADO, pasosDesde } from '../../server/presupuestos-cliente/presupuestos.ts';
 import { recorrido, siguientePaso, TONO_ESTADO } from './pasos.ts';
 import { moduloActivoAhora } from '../../plataforma/actual.ts';
+import { resumenCobros, nombreEstadoTramo } from '../../server/presupuestos-cliente/resumen-cobros.ts';
 
 interface Props {
   p: PresupuestoCliente;
@@ -21,8 +22,11 @@ interface Props {
   error: string;
   correo: string | null;
   whatsapp: string;
+  facturaAnticipo: Factura | null;
+  facturaFinal: Factura | null;
 }
-const { p, efectivo, hoy, hecho, error, correo, whatsapp } = Astro.props;
+const { p, efectivo, hoy, hecho, error, correo, whatsapp, facturaAnticipo, facturaFinal } = Astro.props;
+const tramos = resumenCobros(p, facturaAnticipo, facturaFinal);
 const fecha = (iso: string | null) => (iso ? iso.split('-').reverse().join('/') : '');
 const BOTON_ESTADO: Partial<Record<EstadoPresupuestoCliente, string>> = { enviado: 'Marcar como enviado', aceptado: 'El cliente lo acepta', rechazado: 'El cliente lo rechaza', borrador: 'Volver a borrador para cambiarlo' };
 const lineas = p.lineas.filter((l) => !l.extra);
@@ -212,6 +216,15 @@ const principalEstado = (e: EstadoPresupuestoCliente) => e === 'enviado' || e ==
       p.estado === 'aceptado' && (
         <section class="nv-tarjeta nv-seccion" aria-labelledby="cobros">
           <h2 id="cobros">Facturas y cobros</h2>
+          <p class="nv-gris">La aceptación, la emisión de una factura y el dinero recibido son pasos distintos. Revisa cada tramo antes de registrar el cobro.</p>
+          <dl class="nv-filas-resumen" aria-label="Situación de las facturas y los cobros">
+            {(['anticipo', 'resto'] as const).filter((parte) => parte === 'resto' || p.totales.anticipo > 0).map((parte) => (
+              <div>
+                <dt>{parte === 'anticipo' ? 'Anticipo' : 'Importe restante'} · {nombreEstadoTramo[tramos[parte].estado]}</dt>
+                <dd>{dinero(tramos[parte].importe)}</dd>
+              </div>
+            ))}
+          </dl>
           <div class="nv-botones-columna">
             {p.facturaAnticipoId && (
               <a href={`/panel/facturas/${p.facturaAnticipoId}`} class="enlace-panel">
@@ -235,7 +248,7 @@ const principalEstado = (e: EstadoPresupuestoCliente) => e === 'enviado' || e ==
               <form method="post" class="nv-cobro">
                 <label class="nv-campo">
                   {parte === 'anticipo' ? `Anticipo cobrado el (${dinero(p.totales.anticipo)})` : `Resto cobrado el (${dinero(p.totales.restante)})`}
-                  <input type="date" name="fecha" class="campo-panel" value={(parte === 'anticipo' ? p.cobroAnticipo : p.cobroResto) ?? hoy} />
+                  <input type="date" name="fecha" class="campo-panel" max={hoy} value={(parte === 'anticipo' ? p.cobroAnticipo : p.cobroResto) ?? hoy} />
                 </label>
                 <button name="accion" value={`cobro:${parte}`} class="nv-boton nv-boton-secundario">
                   Guardar la fecha
