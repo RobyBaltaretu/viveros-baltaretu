@@ -3,9 +3,6 @@ import PaginaPanel from '../../components/panel/PaginaPanel.astro';
 import Icono from '../../components/panel/ui/Icono.astro';
 import {
   ESTILOS_MUEBLE,
-  MATERIALES_ENCIMERA,
-  MATERIALES_MUEBLE,
-  MATERIALES_SUELO,
   TIPOS_ESTANCIA,
 } from '../../server/simulador/materiales.ts';
 // CSS propio, en línea (scripts/generar-css-simulador.mjs): el simulador está fuera del Tailwind de la web para que Baltaretu no cambie.
@@ -15,9 +12,14 @@ import { iaDe } from '../../plataforma/configuracion.ts';
 import { sesionCon } from '../../server/panel/pagina.ts';
 import { AVISO_AGOTADA, estadoCuota, limitePresupuestado, mesDe } from '../../server/simulador/cuota.ts';
 
+import { materialesDelTaller, DISTRIBUCIONES, APERTURAS, ACABADOS, VETAS } from '../../server/simulador/catalogo';
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'editar');
+const materiales = materialesDelTaller(s ? await s.repos.catalogo.articulos() : []);
+const MATERIALES_MUEBLE = materiales.filter(m=>m.categoria==='mueble');
+const MATERIALES_ENCIMERA = materiales.filter(m=>m.categoria==='encimera');
+const MATERIALES_SUELO = materiales.filter(m=>m.categoria==='suelo');
 const cliente = clienteActual();
 const ia = iaDe(cliente);
 const cuota = estadoCuota(s ? await s.repos.usoSimulador.usos(cliente.id, mesDe()) : 0, limitePresupuestado(ia.simulacionesMes));
@@ -32,7 +34,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
       <div>
         <h1 class="font-titular text-2xl font-bold text-tinta sm:text-3xl">Simulador de Reformas en Vivo con IA</h1>
         <p class="text-sm text-gris">
-          Sube la foto real de la estancia del cliente y aplica materiales fotorrealistas manteniendo intactas la geometría, iluminación y perspectiva.
+          Sube la foto real de la estancia del cliente y aplica materiales fotorrealistas tomando como referencia la geometría, iluminación y perspectiva. Propuesta orientativa: revisa medidas, viabilidad y muestras físicas antes de fabricar.
         </p>
       </div>
     </div>
@@ -143,7 +145,12 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
           </div>
         </div>
 
-        <!-- 2. Tipo de Estancia -->
+        <section class="rounded-2xl border border-linea bg-papel p-5 space-y-3"><h2>Definición del proyecto</h2><p>Medidas en cm aportadas por el taller; no se deducen de la foto. Deja vacío lo que desconozcas.</p>
+{['ancho','alto','fondo','puertas','cajones'].map(k=><label class="block">{k}<input name={k} type="number" min="0" max={k==='ancho'?3000:k==='alto'?1000:k==='fondo'?300:k==='puertas'?30:50} step={['puertas','cajones'].includes(k)?'1':'0.1'} class="campo-panel"/></label>)}
+{[['distribucion',DISTRIBUCIONES],['apertura',APERTURAS],['acabado',ACABADOS],['veta',VETAS]].map(([k,opciones])=><label class="block">{k}<select name={k as string} class="campo-panel">{(opciones as readonly string[]).map(o=><option>{o}</option>)}</select></label>)}
+<p>Los colores son orientativos, no fotografías del fabricante. Artículo activo no significa stock confirmado. Comprueba humedad, espesores, herrajes, instalaciones y holguras en la visita técnica.</p><a href="/panel/catalogo">Gestionar materiales del catálogo</a>
+{!materiales.length && <p role="status">Añade materiales al catálogo para seleccionar acabados reales del taller.</p>}</section>
+<!-- 2. Tipo de Estancia -->
         <div class="rounded-2xl border border-linea bg-papel p-5 shadow-xs">
           <h2 class="font-titular text-base font-bold text-tinta mb-3 flex items-center gap-2">
             <span class="flex size-6 items-center justify-center rounded-full bg-verdor text-xs text-terracota">2</span>
@@ -180,7 +187,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
           <div class="space-y-3 border-b border-linea pb-4">
             <label class="flex items-center justify-between font-bold text-sm text-tinta cursor-pointer">
               <span>Mobiliario / Muebles</span>
-              <input type="checkbox" id="zone-cabinets" checked class="size-4 rounded-xs border-linea text-terracota focus:ring-terracota" />
+              <input type="checkbox" id="zone-cabinets" checked={MATERIALES_MUEBLE.length > 0} class="size-4 rounded-xs border-linea text-terracota focus:ring-terracota" />
             </label>
             <div id="sec-cabinets" class="space-y-3 pt-1">
               <div>
@@ -240,7 +247,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
           <div class="space-y-3 border-b border-linea pb-4">
             <label class="flex items-center justify-between font-bold text-sm text-tinta cursor-pointer">
               <span>Encimera & Frontal</span>
-              <input type="checkbox" id="zone-countertop" checked class="size-4 rounded-xs border-linea text-terracota" />
+              <input type="checkbox" id="zone-countertop" checked={MATERIALES_ENCIMERA.length > 0} class="size-4 rounded-xs border-linea text-terracota" />
             </label>
             <div id="sec-countertop" class="space-y-3 pt-1">
               <label class="flex items-center gap-2 text-xs text-tinta cursor-pointer">
@@ -669,6 +676,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
       const datos = new FormData(form);
       const config = {
         spaceType: datos.get('spaceType'),
+        proyecto: Object.fromEntries(['ancho','alto','fondo','puertas','cajones','distribucion','apertura','acabado','veta'].map(k=>[k,['ancho','alto','fondo','puertas','cajones'].includes(k) ? (datos.get(k) ? Number(datos.get(k)) : null) : datos.get(k)])),
         cabinetStyle: $('cabinet-style')?.value,
         floorToCeiling: marcado('floor-to-ceiling'),
         zones: { cabinets: marcado('zone-cabinets'), countertop: marcado('zone-countertop'), flooring: marcado('zone-flooring'), lighting: marcado('zone-lighting') },
