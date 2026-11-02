@@ -2405,3 +2405,52 @@
   .nv-contenido :is(button, select, summary):not([hidden]) { min-height: 3rem; }
   .nv-contenido :is(h1,h2,dd,strong) { overflow-wrap: anywhere; }
 }
+
+
+/* Fase 3: carácter de taller mediterráneo, conservando accesibilidad y fluidez. */
+.nv {
+  --nv-radio: 12px;
+  --nv-radio-control: 9px;
+  --nv-sombra: 0 1px 3px rgb(35 38 29 / .07);
+  --nv-sombra-alta: 0 12px 30px -12px rgb(35 38 29 / .19);
+  accent-color: var(--nv-acento-oscuro);
+}
+.nv :where(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--nv-acento-oscuro);
+  outline-offset: 3px;
+}
+.nv :where(input, select, textarea) {
+  scroll-margin-block: 6rem;
+}
+.nv :where(.nv-tarjeta, .nv-siguiente) {
+  overflow-wrap: anywhere;
+}
+.nv :where(.nv-cifra, .nv-total, .nv-filas-resumen dd) {
+  font-variant-numeric: tabular-nums;
+}
+.nv :where(.nv-tabla-caja) {
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+}
+.nv :where(.nv-tabla-caja):focus-visible {
+  outline-offset: -3px;
+}
+@media (max-width: 47.99rem) {
+  .nv :where(.nv-ficha, .nv-ficha-lado, .nv-tarjeta) {
+    min-width: 0;
+  }
+  .nv :where(.nv-botones-columna > a, .nv-botones-columna > button, .nv-botones-columna > form > button) {
+    min-height: 48px;
+  }
+  .nv :where(.nv-cobro input[type="date"]) {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nv *, .nv *::before, .nv *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
