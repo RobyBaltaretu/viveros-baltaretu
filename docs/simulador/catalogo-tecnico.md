@@ -24,3 +24,7 @@ Se guardó una ampliación del borrador de red para www.egger.com, egger.com, ww
 4. Verificar en navegador el filtrado de aplicaciones y acabados y realizar la prueba fotorrealista con credenciales y consumo autorizados.
 
 Este trabajo no se considera un simulador terminado ni un catálogo real verificado.
+
+## Escenario local actualizado
+
+El escenario reemplaza los datos identificados como pruebas por clientes y proyectos ficticios del taller, presupuestos, facturas, gastos y pedidos vinculados. Los 30 materiales de muestra incluyen una ficha visual de demostración y un color digital aproximado; no son referencias ni texturas verificadas de fabricante. Se cargó en la D1 local de Turia mediante la interfaz «Datos de prueba». El escenario se puede volver a cargar o eliminar desde esa pantalla y no requiere llamar a Gemini.
