@@ -95,6 +95,7 @@ describe('presupuestos a cliente', () => {
     expect(await apuntarCobro(repos, id, 'anticipo', '2026-11-02', yo)).toMatchObject({ ok: false });
     expect((await cambiarEstado(repos, id, 'aceptado', yo, '2026-11-01')).ok).toBe(true);
     expect(await apuntarCobro(repos, id, 'anticipo', '2026-11-02', yo)).toMatchObject({ ok: true, presupuesto: { cobroAnticipo: '2026-11-02', cobroResto: null } });
+    expect(await apuntarCobro(repos, id, 'anticipo', '2099-01-01', yo)).toMatchObject({ ok: false });
     expect(await cambiarEstado(repos, id, 'borrador', yo, '2026-11-03')).toMatchObject({ ok: false });
   });
 
