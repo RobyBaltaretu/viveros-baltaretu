@@ -26,3 +26,23 @@ Las cifras de Cloudflare están **por confirmar** ([discrepancias D-02, D-12 y D
 | **~9–10** | Límite de **10 bases de D1 por cuenta** en el plan gratuito: se decide en [P-01](preguntas.md). La copia diaria pasa a matriz (5.2). |
 | **20** | Despliegue por oleadas con una matriz de GitHub Actions. Fotos en R2 si las bases se acercan al 70 % de los 5 GB de la cuenta. |
 | **50** | Varias cuentas o Workers Paid (P-01). Altas y bajas con el comando 5.1 y el estado operativo con 5.3. |
+
+## Plan de mejora continua 2026 · Dos clientes
+
+Complementa F0–F5 sin sustituir sus hitos. Cada fase se desarrolla en un PR independiente, y nunca se despliega implícitamente el otro cliente.
+
+| Orden | Fase | Objetivo | Criterio de cierre |
+| --- | --- | --- | --- |
+| **1A · P0** | Seguridad y fiabilidad | Autorización por rol y endpoint, tratamiento de adjuntos, CSRF, CSP, facturación transaccional e idempotente. | CI y E2E de ambos clientes, pruebas de permisos y revisión de riesgos. |
+| **1B · P1** | Infraestructura | Protección de main, checks obligatorios, vistas previas protegidas con Access, builds, Workers y D1 independientes, alertas de IA y costes. | Configuración verificada en GitHub y Cloudflare, despliegue y rollback ensayados por cliente. |
+| **1C · P1** | Recuperación | Copias cifradas e independientes de ambas D1, retención documentada, privilegios mínimos y restauración periódica. | Restaurar de prueba cada cliente con factura, presupuesto, ticket y enlaces; nunca guardar copias o secretos en Git. |
+| **2 · P1** | Flujo comercial Turia | Presupuesto, envío confirmado, aceptación, anticipo, compras, factura final y cobros. | Transiciones explícitas, sin doble emisión, E2E móvil/escritorio. |
+| **3 · P1** | Flujo compras Turia | Proveedor, pedido, recepción parcial o total, documento, gasto conciliado y coste por trabajo. | Sin duplicados, soportar gastos sin pedido y varias entregas. |
+| **4 · P2** | UX/UI Turia | Formularios, tablas, acciones contextuales, accesibilidad y responsive. | Axe, teclado y recorridos reales de escritorio y móvil. |
+| **5 · P2** | BI accionable | Conversión, vencimientos, deuda, margen con costes atribuidos y gastos sin conciliar. | KPIs trazables con cálculos y definiciones probados. |
+
+**Criterio de arquitectura:** mantener un repositorio, configuración por cliente, Worker y D1 independientes. No introducir microservicios, R2 o una nueva base sin métricas que justifiquen coste y complejidad. Los cambios compartidos siempre pasan pruebas de no regresión de Baltaretu.
+
+**Configuración externa pendiente:** reglas de protección de main, Access en previews, alertas de costes y copias automáticas requieren revisión y acciones en GitHub/Cloudflare; documentarlas no equivale a activarlas.
+
+**Estado:** fase 1A iniciada en [PR #104](https://github.com/RobyBaltaretu/viveros-baltaretu/pull/104). No fusionar hasta validar CI, compatibilidad y permisos.
