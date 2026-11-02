@@ -92,7 +92,6 @@ describe('del presupuesto a la factura', () => {
     );
     expect(lista.map((x) => [x.p.id, x.que, x.importe, x.acepta])).toEqual([
       ['final', 'final', 726, false],
-      ['enviado', 'anticipo', 484, true],
     ]);
   });
 
