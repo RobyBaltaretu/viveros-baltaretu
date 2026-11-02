@@ -13,9 +13,9 @@ describe('siguiente paso de un presupuesto', () => {
     expect(siguientePaso(p({ estado: 'enviado', validez: '2026-11-01' }), hoy)).toEqual({ texto: 'Caduca en 3 días: llamar al cliente', urgente: true });
     expect(siguientePaso(p({ estado: 'enviado', validez: '2026-10-20' }), hoy).texto).toBe('Caducado: llamar o rehacerlo');
     expect(siguientePaso(p({ estado: 'aceptado' }), hoy)).toEqual({ texto: 'Facturar el anticipo (484,00 €)', urgente: true });
-    expect(siguientePaso(p({ estado: 'aceptado', facturaAnticipoId: 'f1' }), hoy).texto).toBe('Cobrar el anticipo (484,00 €)');
+    expect(siguientePaso(p({ estado: 'aceptado', facturaAnticipoId: 'f1' }), hoy).texto).toBe('Revisar la factura de anticipo y registrar el cobro (484,00 €)');
     expect(siguientePaso(p({ estado: 'aceptado', facturaAnticipoId: 'f1', cobroAnticipo: '2026-10-20' }), hoy).texto).toBe('Al terminar, factura final (726,00 €)');
-    expect(siguientePaso(p({ estado: 'aceptado', facturaAnticipoId: 'f1', cobroAnticipo: '2026-10-20', facturaId: 'f2' }), hoy).texto).toBe('Cobrar el resto (726,00 €)');
+    expect(siguientePaso(p({ estado: 'aceptado', facturaAnticipoId: 'f1', cobroAnticipo: '2026-10-20', facturaId: 'f2' }), hoy).texto).toBe('Revisar la factura final y registrar el cobro (726,00 €)');
     expect(siguientePaso(p({ estado: 'aceptado', facturaAnticipoId: 'f1', cobroAnticipo: '2026-10-20', facturaId: 'f2', cobroResto: '2026-10-28' }), hoy).texto).toBe('Terminado y cobrado');
     expect(siguientePaso(p({ estado: 'aceptado', totales: { total: 100, anticipo: 0, restante: 100 } as PresupuestoCliente['totales'] }), hoy).texto).toBe('Al terminar, hacer la factura');
   });

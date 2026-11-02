@@ -30,6 +30,7 @@ describe('red de seguridad: web', () => {
     expect(compararBaseline(base, huella({ robots: 'User-agent: *\nDisallow: /\n' }))).toEqual(['robots.txt distinto']);
     // Las imágenes cuentan por su nombre, no por sus bytes (varían entre máquinas).
     expect(compararBaseline(base, huella({ archivos: { '_astro/foto.webp': 'otros-bytes' } }))).toEqual([]);
+    expect(compararBaseline(base, huella({ archivos: { 'marca-turia.svg': 'logo', 'turia-roble.webp': 'imagen' } }))).toEqual([]);
   });
 
   it('la línea base guardada cubre las páginas clave en los dos idiomas', () => {

@@ -55,6 +55,8 @@ describe('del presupuesto a la factura', () => {
     expect(a.factura).toMatchObject({ estado: 'borrador', clienteId: 'cli-f', totales: { base: 572, total: 692.12 } });
     expect(a.factura.lineas[0].concepto).toContain('Anticipo del 40 % del presupuesto P2026-0001');
     expect(await repos.facturas.borrarBorrador(a.factura.id)).toBe(false);
+    expect((await repos.presupuestosCliente.porFactura(a.factura.id))?.id).toBe(id);
+    expect(await repos.presupuestosCliente.porFactura('sin-factura')).toBeNull();
     // Pulsar otra vez no crea otra.
     const otra = await facturarPresupuesto(repos, id, 'anticipo', yo, AJUSTES_VACIOS);
     expect(otra.ok && otra.factura.id).toBe(a.factura.id);
@@ -71,6 +73,13 @@ describe('del presupuesto a la factura', () => {
     // Lo que queda por facturar es el restante del presupuesto (al céntimo).
     expect(f.factura.totales.total).toBe(r.presupuesto.totales.restante);
     expect(await repos.presupuestosCliente.obtener(id)).toMatchObject({ facturaAnticipoId: a.factura.id, facturaId: f.factura.id });
+    // Cobrar desde la factura mantiene sincronizada la ficha del presupuesto.
+    await repos.facturas.emitir(f.factura.id, { serie: 'TEST', fecha: f.factura.fecha, emisor: AJUSTES_VACIOS, cliente: f.factura.cliente, huellaAnterior: null, codigo: n => 'TEST-' + n, huella: async () => 'huella-final' });
+    expect(await repos.facturas.marcarCobrada(f.factura.id, '2026-10-30')).toBe(true);
+    expect((await repos.presupuestosCliente.obtener(id))?.cobroResto).toBe('2026-10-30');
+    expect((await repos.facturas.obtener(f.factura.id))?.estado).toBe('cobrada');
+    expect(await repos.facturas.marcarCobrada(f.factura.id, null)).toBe(true);
+    expect((await repos.presupuestosCliente.obtener(id))?.cobroResto).toBeNull();
   });
 
   it('qué toca facturar y la lista de facturables (aceptados y enviados vigentes)', () => {
@@ -92,17 +101,19 @@ describe('del presupuesto a la factura', () => {
     );
     expect(lista.map((x) => [x.p.id, x.que, x.importe, x.acepta])).toEqual([
       ['final', 'final', 726, false],
-      ['enviado', 'anticipo', 484, true],
     ]);
   });
 
-  it('facturar lo que toca: un enviado se da por aceptado; después la final; uno caducado, no', async () => {
+  it('facturar lo que toca: exige aceptación explícita, después crea el anticipo y la final', async () => {
     const r = await crearPresupuesto(repos, { clienteId: 'cli-f', concepto: 'Puerta', fecha: '2026-10-29', validez: '2026-11-28', lineas: [{ concepto: 'Puerta', cantidad: 1, precio: 500, material: '', extra: false }], iva: 21, anticipoPct: 30 }, yo, 21);
     if (!r.ok) throw new Error(r.error);
     const id = r.presupuesto.id;
     expect(await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-10-30')).toMatchObject({ ok: false });
     await cambiarEstado(repos, id, 'enviado', yo, '2026-10-30');
-    expect(await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-12-01')).toMatchObject({ ok: false, error: expect.stringContaining('caducado') });
+    expect(await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-12-01')).toMatchObject({ ok: false, error: expect.stringContaining('aceptado') });
+    expect(await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-10-30')).toMatchObject({ ok: false, error: expect.stringContaining('aceptado') });
+    expect((await repos.presupuestosCliente.obtener(id))?.estado).toBe('enviado');
+    await cambiarEstado(repos, id, 'aceptado', yo, '2026-10-30');
     const a = await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-10-30');
     if (!a.ok) throw new Error(a.error);
     expect(a.factura.totales.total).toBe(181.5);

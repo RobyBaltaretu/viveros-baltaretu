@@ -113,7 +113,7 @@ export async function cambiarPresupuesto(repos: Repositorios, id: string, entrad
   if (!cliente) return fallo('Ese cliente no existe.');
   // La serie y el número no cambian aunque cambie la fecha.
   const presupuesto: PresupuestoCliente = { ...previo, ...p.datos, cliente };
-  await repos.presupuestosCliente.guardar(presupuesto, email);
+  if (!(await repos.presupuestosCliente.actualizarBorrador(previo, presupuesto, email))) return fallo('El presupuesto ha cambiado. Recarga para evitar sobrescribir cambios.');
   return { ok: true, presupuesto };
 }
 
@@ -121,9 +121,8 @@ export async function cambiarEstado(repos: Repositorios, id: string, nuevo: Esta
   const p = await repos.presupuestosCliente.obtener(id);
   if (!p) return fallo('Ese presupuesto no existe.');
   if (!pasosDesde(estadoEfectivo(p, hoy)).includes(nuevo)) return fallo(`Un presupuesto ${NOMBRE_ESTADO[estadoEfectivo(p, hoy)].toLowerCase()} no puede pasar a ${NOMBRE_ESTADO[nuevo].toLowerCase()}.`);
-  const presupuesto = { ...p, estado: nuevo };
-  await repos.presupuestosCliente.guardar(presupuesto, email);
-  return { ok: true, presupuesto };
+  if (!(await repos.presupuestosCliente.transicionarEstado(p, nuevo, email))) return fallo('El presupuesto ha cambiado. Actualiza la página e inténtalo de nuevo.');
+  return { ok: true, presupuesto: { ...p, estado: nuevo } };
 }
 
 /** Apunta cuándo se cobró el anticipo o el resto (solo de un presupuesto aceptado). */
@@ -132,6 +131,7 @@ export async function apuntarCobro(repos: Repositorios, id: string, parte: 'anti
   if (!p) return fallo('Ese presupuesto no existe.');
   if (p.estado !== 'aceptado') return fallo('Los cobros se apuntan en un presupuesto aceptado.');
   if (dia !== null && !fecha.safeParse(dia).success) return fallo('Escribe la fecha como 2026-10-31.');
+  if (dia !== null && dia > new Date().toISOString().slice(0, 10)) return fallo('La fecha del cobro no puede ser futura.');
   if (!(await repos.presupuestosCliente.registrarCobro(id, parte, dia, email))) return fallo('El presupuesto ha cambiado.');
   return { ok: true, presupuesto: (await repos.presupuestosCliente.obtener(id))! };
 }

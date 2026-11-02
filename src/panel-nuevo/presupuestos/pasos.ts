@@ -31,9 +31,9 @@ export function siguientePaso(p: PresupuestoCliente, hoy: string): Paso {
   if (e === 'caducado') return { texto: 'Caducado: llamar o rehacerlo', urgente: false };
   if (e === 'rechazado') return { texto: '—', urgente: false };
   if (p.totales.anticipo > 0 && !p.facturaAnticipoId) return { texto: `Facturar el anticipo (${dinero(p.totales.anticipo)})`, urgente: true };
-  if (p.facturaAnticipoId && !p.cobroAnticipo) return { texto: `Cobrar el anticipo (${dinero(p.totales.anticipo)})`, urgente: true };
+  if (p.facturaAnticipoId && !p.cobroAnticipo) return { texto: `Revisar la factura de anticipo y registrar el cobro (${dinero(p.totales.anticipo)})`, urgente: true };
   if (!p.facturaId) return { texto: p.facturaAnticipoId ? `Al terminar, factura final (${dinero(p.totales.restante)})` : 'Al terminar, hacer la factura', urgente: false };
-  if (!p.cobroResto) return { texto: `Cobrar el resto (${dinero(p.totales.restante)})`, urgente: true };
+  if (!p.cobroResto) return { texto: `Revisar la factura final y registrar el cobro (${dinero(p.totales.restante)})`, urgente: true };
   return { texto: 'Terminado y cobrado', urgente: false };
 }
 
