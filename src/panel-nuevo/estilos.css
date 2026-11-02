@@ -2491,3 +2491,31 @@
   .nv { --nv-borde: var(--nv-tinta); }
   .nv :where(.nv-boton, .nv-chip) { border: 1px solid currentColor; }
 }
+
+
+/* Accesibilidad y adaptación final: sin desplazamiento lateral del armazón. */
+.nv-armazon, .nv-armazon > div, .nv-contenido { min-width: 0; }
+.nv-contenido { overflow-wrap: break-word; }
+.nv-contenido :where(img, video, canvas, svg) { max-width: 100%; }
+.nv-contenido :where(input, select, textarea) { min-width: 0; }
+.nv-contenido :where(button, a) { touch-action: manipulation; }
+.nv-contenido :where(p, li, dd, td) { overflow-wrap: anywhere; }
+.nv :where(.nv-boton, .nv-pestana, .nv-enlace):focus-visible {
+  outline: 3px solid var(--nv-acento-oscuro);
+  outline-offset: 2px;
+}
+@media (max-width: 47.99rem) {
+  .nv-contenido { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+  .nv-contenido :where(.nv-ficha, .nv-inicio-columnas, .nv-inicio-lado) { min-width: 0; }
+  .nv-contenido :where(.nv-pareja) { grid-template-columns: minmax(0, 1fr); }
+  .nv-contenido :where(.nv-desde-importe) { margin-inline-start: 0; }
+}
+@media (forced-colors: active) {
+  .nv :where(.nv-chip, .nv-boton, .nv-tarjeta, .nv-pestana) { border: 1px solid CanvasText; }
+  .nv :focus-visible { outline: 3px solid Highlight; }
+}
+@media print {
+  .nv-lateral, .nv-cabecera, .nv-inferior, .nv-menu { display: none !important; }
+  .nv-armazon { display: block; }
+  .nv-contenido { padding: 0; max-width: none; }
+}
