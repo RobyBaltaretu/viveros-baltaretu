@@ -14,7 +14,7 @@ interface Props {
   factura: Factura;
   presupuestoId: string | null;
 }
-const { factura: f } = Astro.props;
+const { factura: f, presupuestoId } = Astro.props;
 const fecha = (iso: string) => iso.split('-').reverse().join('/');
 const pdf = `/api/panel/factura-pdf?id=${f.id}`;
 const [tono, estado] = f.estado === 'cobrada' ? ['verde', 'Cobrada'] : vencida(f) ? ['rojo', 'Vencida'] : ['azul', 'Por cobrar'];
