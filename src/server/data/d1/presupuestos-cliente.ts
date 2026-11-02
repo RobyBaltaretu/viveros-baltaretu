@@ -73,6 +73,11 @@ export function crearRepositorioPresupuestosCliente(db: BaseD1): Pick<Repositori
         const fila = await db.prepare("SELECT * FROM presupuestos_cliente WHERE json_extract(datos, '$.facturaAnticipoId') = ? OR json_extract(datos, '$.facturaId') = ? LIMIT 1").bind(id, id).first<Fila>();
         return fila ? aPresupuesto(fila) : null;
       },
+      async transicionarEstado(previo, nuevo, email) {
+        const r = await db.prepare('UPDATE presupuestos_cliente SET estado = ?, actualizado = ?, actualizado_por = ? WHERE id = ? AND estado = ? AND actualizado = ?')
+          .bind(nuevo, ahora(), email, previo.id, previo.estado, previo.actualizado).run();
+        return (r.meta?.changes ?? 0) === 1;
+      },
       async registrarCobro(id, parte, fecha, email) {
         const campo = parte === 'anticipo' ? '$.cobroAnticipo' : '$.cobroResto';
         const enlace = parte === 'anticipo' ? '$.facturaAnticipoId' : '$.facturaId';
