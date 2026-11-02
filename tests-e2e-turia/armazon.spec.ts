@@ -32,7 +32,7 @@ test('inicio: accesos reales, cifras, proyectos y evolución accesible', async (
   await expect(page.getByRole('heading', { level: 1, name: 'Creaciones Turia' })).toBeVisible();
   if (isMobile) await page.getByText('Ver los otros indicadores').click();
   const indicadores = page.locator(isMobile ? '.nv-estudio-mas-metricas' : '.nv-estudio-metricas');
-  for (const k of (isMobile ? ['Por cobrar', 'Presupuestos en juego', 'Aceptación (90 días)'] : ['Facturado en', 'Por cobrar', 'Presupuestos en juego', 'Aceptación (90 días)'])) await expect(indicadores.getByText(k)).toBeVisible();
+  for (const k of (isMobile ? ['Presupuestos en juego', 'Gastos', 'Por cobrar'] : ['Facturado en', 'Presupuestos en juego', 'Gastos', 'Por cobrar'])) await expect(indicadores.getByText(k)).toBeVisible();
   const atajos = page.getByRole('region', { name: 'Accesos rápidos' });
   await expect(atajos.getByRole('link', { name: /presupuesto/i })).toHaveAttribute('href', '/panel/presupuestos-cliente/nuevo');
   await expect(atajos.getByRole('link', { name: /factura/i })).toHaveAttribute('href', '/panel/facturas/nueva');

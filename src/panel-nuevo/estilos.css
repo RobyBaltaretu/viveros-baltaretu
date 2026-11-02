@@ -2570,7 +2570,8 @@
 .nv-taller .nv-estudio-simulador {display:flex;align-items:center;gap:.8rem;min-height:64px;padding:.85rem 1rem;border:1px solid var(--nv-borde);border-radius:16px;background:#fff;color:inherit;text-decoration:none}
 .nv-taller .nv-estudio-simulador span:nth-child(2) {display:grid;flex:1}
 .nv-taller .nv-estudio-simulador small {color:var(--nv-gris)}
-.nv-taller .chat-agricolai .burbuja-usuario {background:#344d3b;color:#fff}
+.nv-taller .chat-agricolai .burbuja.burbuja-usuario {background:#344d3b !important;color:#fff !important}
+.nv-taller .chat-agricolai .burbuja-usuario .whitespace-pre-line {color:#fff !important}
 @media(max-width:70rem){.nv-taller .nv-estudio-grid {grid-template-columns:1fr}}
 @media(max-width:47.99rem){
  .nv-taller .nv-estudio {gap:1rem}
@@ -2599,4 +2600,5 @@
  .nv-taller .nv-estudio-mas-metricas ul {display:grid;gap:.5rem;list-style:none;margin:.4rem 0;padding:0}
 }
 @media(min-width:48rem) and (max-width:80rem){.nv-taller .nv-estudio-metricas {grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:48rem) and (max-width:70rem){.nv-taller .nv-estudio-crear ul {grid-template-columns:repeat(5,minmax(0,1fr))}.nv-taller .nv-estudio-atajo {padding:.85rem;font-size:.88rem}}
 @media(prefers-reduced-motion:reduce){.nv-taller .nv-estudio-atajo:hover,.nv-taller .nv-estudio-metrica:hover {transform:none}}
