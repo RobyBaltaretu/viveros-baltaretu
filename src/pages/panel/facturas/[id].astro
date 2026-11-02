@@ -125,7 +125,7 @@ const titulo = !f ? 'Factura' : f.estado === 'borrador' ? (f.tipo === 'rectifica
             <EditorFactura factura={f} plantas={plantas} errores={errores} crudo={crudo} />
           )
         ) : (
-          nuevo ? <VistaFacturaNueva factura={f} /> : <VistaFactura factura={f} />
+          nuevo ? <VistaFacturaNueva factura={f} presupuestoId={presupuestoVinculado?.id ?? null} /> : <VistaFactura factura={f} />
         )}
       </>
     )
