@@ -39,7 +39,7 @@ const queEs = (x: Props['presupuestos'][number]) => (x.que === 'anticipo' ? `Ant
     {
       presupuestos.length === 0 ? (
         <p class="nv-gris nv-relleno">
-          No hay presupuestos aceptados ni enviados pendientes de facturar{elegido && ' para este cliente'}. <a href="/panel/presupuestos-cliente" class="enlace-panel">Ver los presupuestos</a>
+          No hay presupuestos aceptados pendientes de facturar{elegido && ' para este cliente'}. <a href="/panel/presupuestos-cliente" class="enlace-panel">Ver los presupuestos</a>
         </p>
       ) : (
         <ul class="nv-desde" role="list">
