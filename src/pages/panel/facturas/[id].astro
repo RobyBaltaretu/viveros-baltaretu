@@ -103,6 +103,9 @@ const titulo = !f ? 'Factura' : f.estado === 'borrador' ? (f.tipo === 'rectifica
             {f.estado !== "borrador" && <p class="mt-1 text-gris">{f.cliente.nombre}</p>}
           </>
         )}
+        {nuevo && presupuestoVinculado && f.estado === 'borrador' && (
+          <p class="mt-3"><a href={`/panel/presupuestos-cliente/${presupuestoVinculado.id}`} class="enlace-panel">Volver al presupuesto de origen</a></p>
+        )}
         <Mensajes hecho={hecho ? MENSAJES[hecho] : undefined} errores={errores} />
         {confirmar ? (
           <section class="mt-6 grid gap-4 rounded-panel border-2 border-oliva bg-papel p-5" aria-labelledby="confirmar-titulo">
