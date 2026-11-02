@@ -69,14 +69,28 @@ export function crearRepositorioPresupuestosCliente(db: BaseD1): Pick<Repositori
         ).results.map(aPresupuesto);
       },
       obtener,
+      async registrarCobro(id, parte, fecha, email) {
+        const campo = parte === 'anticipo' ? '$.cobroAnticipo' : '$.cobroResto';
+        const enlace = parte === 'anticipo' ? '$.facturaAnticipoId' : '$.facturaId';
+        const t = ahora();
+        const [r] = await db.batch([
+          db.prepare("UPDATE presupuestos_cliente SET datos = json_set(datos, ?, ?), actualizado = ?, actualizado_por = ? WHERE id = ? AND estado = 'aceptado'")
+            .bind(campo, fecha, t, email, id),
+          db.prepare(`UPDATE facturas SET estado = ?, cobrada_el = ?, actualizada = ? WHERE estado IN ('emitida','cobrada')
+            AND id = (SELECT json_extract(datos, ?) FROM presupuestos_cliente WHERE id = ? AND estado = 'aceptado')`).bind(fecha ? 'cobrada' : 'emitida', fecha, t, enlace, id),
+        ]);
+        return r.meta?.changes === 1;
+      },
       async indicadores(desde, hasta, hoy) {
         const fila = await db.prepare(`SELECT
           COUNT(CASE WHEN fecha BETWEEN ?1 AND ?2 AND estado = 'aceptado' THEN 1 END) AS aceptados,
           COUNT(CASE WHEN fecha BETWEEN ?1 AND ?2 AND estado IN ('aceptado','rechazado') THEN 1 END) AS decididos,
           COUNT(CASE WHEN estado = 'enviado' AND (validez IS NULL OR validez >= ?3) THEN 1 END) AS pendientes,
-          COALESCE(SUM(CASE WHEN estado = 'enviado' AND (validez IS NULL OR validez >= ?3) THEN ROUND(total * 100) ELSE 0 END), 0) / 100.0 AS cartera
-          FROM presupuestos_cliente`).bind(desde, hasta, hoy).first<{ aceptados: number; decididos: number; pendientes: number; cartera: number }>();
-        return fila ?? { aceptados: 0, decididos: 0, pendientes: 0, cartera: 0 };
+          COALESCE(SUM(CASE WHEN estado = 'enviado' AND (validez IS NULL OR validez >= ?3) THEN ROUND(total * 100) ELSE 0 END), 0) / 100.0 AS cartera,
+          COUNT(CASE WHEN estado = 'enviado' AND validez BETWEEN ?3 AND date(?3,'+6 days') THEN 1 END) AS caducan,
+          COALESCE(SUM(CASE WHEN estado = 'enviado' AND validez BETWEEN ?3 AND date(?3,'+6 days') THEN ROUND(total * 100) ELSE 0 END), 0) / 100.0 AS valorCaduca
+          FROM presupuestos_cliente`).bind(desde, hasta, hoy).first<{ aceptados: number; decididos: number; pendientes: number; cartera: number; caducan: number; valorCaduca: number }>();
+        return fila ?? { aceptados: 0, decididos: 0, pendientes: 0, cartera: 0, caducan: 0, valorCaduca: 0 };
       },
       async enlazarFactura(p, tipo, f, email) {
         const ruta = tipo === 'anticipo' ? '$.facturaAnticipoId' : '$.facturaId';

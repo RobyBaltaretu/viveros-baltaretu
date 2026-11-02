@@ -6,8 +6,7 @@ import type { RenovationConfig } from './materiales.ts';
 
 /**
  * Tope mensual del simulador: cada simulación se aparta en D1 antes de llamar
- * a la IA (de pago) y se devuelve si falla, así el gasto nunca pasa del tope
- * aunque haya peticiones a la vez.
+ * a la IA de pago. Un fallo con consumo incierto conserva su reserva.
  */
 
 /** Mes de España («2026-10»): el contador se renueva el día 1 a medianoche. */
@@ -48,6 +47,9 @@ export function claveGemini(env: Record<string, unknown>): string | undefined {
 export const AVISO_AGOTADA = 'Has llegado al tope de simulaciones de este mes. El servicio se reactiva el día 1 del mes que viene.';
 
 /** Tamaño máximo de cada imagen que llega (en base64): de sobra para 1024 px. */
+export const CENTIMOS_RESERVADOS = 20;
+export const limitePresupuestado = (limite: number) => Math.min(limite, Math.floor(1000 / CENTIMOS_RESERVADOS));
+
 export const MAXIMO_IMAGEN = 3_000_000;
 
 function imagenValida(img: string): boolean {
@@ -81,7 +83,7 @@ export async function simular(
       return { estado: 400, cuerpo: { ok: false, error: 'La foto tiene que ser JPEG, WebP o PNG y de 1024 px como mucho.' } };
   }
   const mes = mesDe(entrada.ahora);
-  const limite = ia.simulacionesMes;
+  const limite = limitePresupuestado(ia.simulacionesMes);
   if (!(await uso.reservar(cliente, mes, limite))) return { estado: 403, cuerpo: { ok: false, error: AVISO_AGOTADA, cuota: estadoCuota(await uso.usos(cliente, mes), limite) } };
 
   let r: RenovationAiResult;

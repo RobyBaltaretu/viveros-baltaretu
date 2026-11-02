@@ -45,13 +45,16 @@ describe('del presupuesto a la factura', () => {
     const id = r.presupuesto.id;
     expect(await facturarPresupuesto(repos, id, 'anticipo', yo, AJUSTES_VACIOS)).toMatchObject({ ok: false });
     await cambiarEstado(repos, id, 'enviado', yo, '2026-10-30');
+    expect(await repos.presupuestosCliente.indicadores('2026-10-01', '2026-10-31', '2026-10-30')).toMatchObject({ aceptados: 0, pendientes: 1, cartera: r.presupuesto.totales.total });
     await cambiarEstado(repos, id, 'aceptado', yo, '2026-10-30');
+    expect(await repos.presupuestosCliente.indicadores('2026-10-01', '2026-10-31', '2026-10-30')).toMatchObject({ aceptados: 1, decididos: 1, pendientes: 0 });
 
     const [a, simultanea] = await Promise.all([1, 2].map(() => facturarPresupuesto(repos, id, 'anticipo', yo, AJUSTES_VACIOS)));
     expect(simultanea.ok && simultanea.factura.id).toBe(a.ok && a.factura.id);
     if (!a.ok) throw new Error(a.error);
     expect(a.factura).toMatchObject({ estado: 'borrador', clienteId: 'cli-f', totales: { base: 572, total: 692.12 } });
     expect(a.factura.lineas[0].concepto).toContain('Anticipo del 40 % del presupuesto P2026-0001');
+    expect(await repos.facturas.borrarBorrador(a.factura.id)).toBe(false);
     // Pulsar otra vez no crea otra.
     const otra = await facturarPresupuesto(repos, id, 'anticipo', yo, AJUSTES_VACIOS);
     expect(otra.ok && otra.factura.id).toBe(a.factura.id);

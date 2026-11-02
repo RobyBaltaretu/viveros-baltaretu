@@ -13,14 +13,14 @@ import estilosSimulador from '../../panel-nuevo/simulador.css?raw';
 import { clienteActual } from '../../plataforma/actual.ts';
 import { iaDe } from '../../plataforma/configuracion.ts';
 import { sesionCon } from '../../server/panel/pagina.ts';
-import { AVISO_AGOTADA, estadoCuota, mesDe } from '../../server/simulador/cuota.ts';
+import { AVISO_AGOTADA, estadoCuota, limitePresupuestado, mesDe } from '../../server/simulador/cuota.ts';
 
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'editar');
 const cliente = clienteActual();
 const ia = iaDe(cliente);
-const cuota = estadoCuota(s ? await s.repos.usoSimulador.usos(cliente.id, mesDe()) : 0, ia.simulacionesMes);
+const cuota = estadoCuota(s ? await s.repos.usoSimulador.usos(cliente.id, mesDe()) : 0, limitePresupuestado(ia.simulacionesMes));
 const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · quedan ${c.quedan}`;
 ---
 

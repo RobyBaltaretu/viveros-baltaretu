@@ -42,7 +42,7 @@ export const sumarDias = (fecha: string, dias: number) => {
   d.setUTCDate(d.getUTCDate() + dias);
   return d.toISOString().slice(0, 10);
 };
-const fechaValida = (f: string) => /^\d{4}-\d{2}-\d{2}$/.test(f) && !Number.isNaN(Date.parse(`${f}T12:00:00Z`));
+export const fechaValida = (f: string) => /^\d{4}-\d{2}-\d{2}$/.test(f) && Number.isFinite(Date.parse(f)) && new Date(f).toISOString().startsWith(f);
 
 /* ---------- Emisor ---------- */
 
@@ -241,7 +241,7 @@ export function leerBorrador(form: FormData, previa: Factura, plantas: Planta[],
     const planta = plantas.some((p) => p.slug === slug) ? slug : null;
     const textos = [v(`l${i}.cantidad`), v(`l${i}.precio`), v(`l${i}.descuento`)];
     if (!concepto && textos.every((t) => !t || t === '0' || t === '1')) {
-      lineas.push({ ...lineaVacia(), cantidad: leerNumero(textos[0]) ?? 1 });
+      lineas.push({ ...lineaVacia(), iva: ivaFijo ?? IVA_POR_DEFECTO, cantidad: leerNumero(textos[0]) ?? 1 });
       continue;
     }
     const [cantidad, precio, descuento] = textos.map(leerNumero);
@@ -274,7 +274,7 @@ export function leerBorrador(form: FormData, previa: Factura, plantas: Planta[],
   else if (boton.startsWith('quitar:')) accion = { tipo: 'quitar', indice: Number(boton.slice(7)) };
   else if (boton === 'planta') accion = { tipo: 'planta', slug: v('planta') };
 
-  if (accion.tipo === 'agregar') lineas.push(lineaVacia());
+  if (accion.tipo === 'agregar') lineas.push({ ...lineaVacia(), iva: ivaFijo ?? IVA_POR_DEFECTO });
   if (accion.tipo === 'quitar' && lineas[accion.indice]) {
     lineas.splice(accion.indice, 1);
     // Los errores de la línea quitada ya no cuentan.

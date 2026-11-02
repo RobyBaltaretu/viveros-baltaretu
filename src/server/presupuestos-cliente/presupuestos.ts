@@ -45,7 +45,7 @@ const PASOS: Record<EstadoPresupuestoCliente, EstadoPresupuestoCliente[]> = {
 };
 export const pasosDesde = (e: EstadoPresupuestoCliente) => PASOS[e];
 
-const fecha = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Escribe la fecha como 2026-10-31.');
+const fecha = z.iso.date().regex(/^\d{4}-\d{2}-\d{2}$/, 'Escribe la fecha como 2026-10-31.');
 const texto = (max: number) => z.string().trim().max(max, `Como mucho ${max} letras.`);
 const linea = z.object({
   concepto: texto(200).min(1, 'Cada línea necesita un concepto.'),
@@ -131,8 +131,7 @@ export async function apuntarCobro(repos: Repositorios, id: string, parte: 'anti
   const p = await repos.presupuestosCliente.obtener(id);
   if (!p) return fallo('Ese presupuesto no existe.');
   if (p.estado !== 'aceptado') return fallo('Los cobros se apuntan en un presupuesto aceptado.');
-  if (dia !== null && !/^\d{4}-\d{2}-\d{2}$/.test(dia)) return fallo('Escribe la fecha como 2026-10-31.');
-  const presupuesto = { ...p, ...(parte === 'anticipo' ? { cobroAnticipo: dia } : { cobroResto: dia }) };
-  await repos.presupuestosCliente.guardar(presupuesto, email);
-  return { ok: true, presupuesto };
+  if (dia !== null && !fecha.safeParse(dia).success) return fallo('Escribe la fecha como 2026-10-31.');
+  if (!(await repos.presupuestosCliente.registrarCobro(id, parte, dia, email))) return fallo('El presupuesto ha cambiado.');
+  return { ok: true, presupuesto: (await repos.presupuestosCliente.obtener(id))! };
 }

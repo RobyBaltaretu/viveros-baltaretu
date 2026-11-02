@@ -13,6 +13,7 @@ export interface EntornoPanel {
   PROPIETARIO_EMAIL?: string;
   /** Solo en el entorno `desarrollo` y en localhost: entra sin Access con este email. */
   PANEL_PRUEBA_EMAIL?: string;
+  PANEL_ENTORNO?: string;
 }
 
 export type SesionPanel =
@@ -28,7 +29,7 @@ const claves = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 /** Email verificado por Cloudflare Access, o `null`. */
 export async function emailDeAccess(request: Request, env: EntornoPanel): Promise<string | null> {
   const url = new URL(request.url);
-  if (env.PANEL_PRUEBA_EMAIL && LOCALES.has(url.hostname)) return env.PANEL_PRUEBA_EMAIL.toLowerCase();
+  if (env.PANEL_ENTORNO === 'desarrollo' && env.PANEL_PRUEBA_EMAIL && LOCALES.has(url.hostname)) return env.PANEL_PRUEBA_EMAIL.toLowerCase();
   const token = request.headers.get('Cf-Access-Jwt-Assertion');
   if (!token || !env.ACCESS_EQUIPO || !env.ACCESS_AUD) return null;
   const emisor = `https://${env.ACCESS_EQUIPO}.cloudflareaccess.com`;
@@ -38,7 +39,7 @@ export async function emailDeAccess(request: Request, env: EntornoPanel): Promis
     claves.set(emisor, jwks);
   }
   try {
-    const { payload } = await jwtVerify(token, jwks, { issuer: emisor, audience: env.ACCESS_AUD, algorithms: ['RS256'] });
+    const { payload } = await jwtVerify(token, jwks, { issuer: emisor, audience: env.ACCESS_AUD, algorithms: ['RS256'], requiredClaims: ['exp', 'iat', 'email'] });
     return typeof payload.email === 'string' ? payload.email.toLowerCase() : null;
   } catch {
     return null;
@@ -46,7 +47,7 @@ export async function emailDeAccess(request: Request, env: EntornoPanel): Promis
 }
 
 /** El panel solo existe si hay base de datos y (fuera de pruebas locales) Access configurado. */
-export const panelActivado = (env: EntornoPanel) => Boolean(env.DB && ((env.ACCESS_EQUIPO && env.ACCESS_AUD) || env.PANEL_PRUEBA_EMAIL));
+export const panelActivado = (env: EntornoPanel) => Boolean(env.DB && ((env.ACCESS_EQUIPO && env.ACCESS_AUD) || (env.PANEL_ENTORNO === 'desarrollo' && env.PANEL_PRUEBA_EMAIL)));
 
 /**
  * Quién es la persona que entra. Hoy solo existe Cloudflare Access; otro

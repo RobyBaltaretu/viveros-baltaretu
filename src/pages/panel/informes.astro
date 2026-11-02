@@ -3,6 +3,7 @@ import { clienteActual } from '../../plataforma/actual.ts';
 import Barras from '../../components/panel/graficos/Barras.astro';
 import Reparto from '../../components/panel/graficos/Reparto.astro';
 import PaginaPanel from '../../components/panel/PaginaPanel.astro';
+import { fechaValida } from '../../server/facturas/facturas.ts';
 import { dinero } from '../../server/facturas/importes.ts';
 import { hoy } from '../../server/gastos/gastos.ts';
 import {
@@ -30,7 +31,7 @@ const pedidoTipo = Astro.url.searchParams.get('periodo');
 const tipo: TipoPeriodo = pedidoTipo === 'trimestre' || pedidoTipo === 'anio' ? pedidoTipo : 'mes';
 const esTuria = clienteActual().sector === 'carpinteria';
 const pedidaFecha = Astro.url.searchParams.get('fecha') ?? '';
-const periodo = periodoDe(tipo, /^\d{4}-\d{2}-\d{2}$/.test(pedidaFecha) && Number.isFinite(Date.parse(pedidaFecha)) && new Date(pedidaFecha).toISOString().startsWith(pedidaFecha) && pedidaFecha >= '1900-01-01' && pedidaFecha <= dia ? pedidaFecha : dia);
+const periodo = periodoDe(tipo, fechaValida(pedidaFecha) && pedidaFecha >= '1900-01-01' && pedidaFecha <= dia ? pedidaFecha : dia);
 const taller = esTuria && s ? await s.repos.presupuestosCliente.indicadores(periodo.desde, periodo.hasta, dia) : null;
 const anterior = periodoAnterior(periodo);
 const siguiente = periodoSiguiente(periodo);
@@ -88,6 +89,7 @@ const DATOS = [
   ...(taller ? [
     { nombre: 'Presupuestos aceptados', valor: String(taller.aceptados), nota: 'De los presupuestos fechados en este periodo' },
     { nombre: 'Tasa de aceptación', valor: taller.decididos ? `${Math.round(100 * taller.aceptados / taller.decididos)} %` : '—', nota: `${taller.decididos} presupuestos aceptados o rechazados del periodo` },
+    { nombre: 'Caducan en los próximos 7 días', valor: dinero(taller.valorCaduca), nota: `${taller.caducan} presupuestos por responder, contando hoy. IVA incluido.` },
     { nombre: 'Pendiente de respuesta hoy', valor: dinero(taller.cartera), nota: `${taller.pendientes} presupuestos enviados y vigentes, IVA incluido` },
   ] : [{ nombre: 'Presupuestos recibidos', valor: String(conv.recibidos), nota: conv.tasa !== null ? `${conv.tasa} % ya facturados` : '' }]),
   { nombre: 'IVA cobrado − IVA pagado', valor: dinero(a.ivaRepercutido - a.ivaSoportado), nota: `${dinero(a.ivaRepercutido)} − ${dinero(a.ivaSoportado)}` },

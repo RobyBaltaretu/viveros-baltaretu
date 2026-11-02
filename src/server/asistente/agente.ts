@@ -287,30 +287,32 @@ export async function responderPropuesta(ctx: Contexto, id: string, si: boolean)
     if (!(await repos.conversaciones.resolver(id, 'rechazada', 'Sin cambios.'))) return { ok: false, texto: 'Esa propuesta ya estaba resuelta.' };
     if (p.herramienta === HERRAMIENTA_FOTOS) await descartarFotos(repos, p);
     resultado = { ok: true, texto: p.herramienta === HERRAMIENTA_FOTOS ? 'Vale, no he añadido las fotos.' : 'Vale, no he cambiado nada.' };
-  } else if (!(await repos.conversaciones.resolver(id, 'aplicada', 'Aplicando…'))) {
+  } else if (!(await repos.conversaciones.resolver(id, 'fallida', 'Operación iniciada. Si no aparece el resultado, revisa el registro antes de repetirla.'))) {
     return { ok: false, texto: 'Esa propuesta ya estaba resuelta.' };
-  } else try {
-    if (p.herramienta === HERRAMIENTA_FOTOS) {
-    resultado = await aplicarFotos(repos, usuario, p);
-  } else if (p.herramienta === '__basica') {
-    resultado = await aplicarAccion(repos, usuario.rol, usuario.email, p.argumentos as unknown as AccionBasica);
   } else {
-    const h = herramienta(p.herramienta);
-    if (!h || h.tipo !== 'cambio') resultado = { ok: false, texto: 'Esa acción ya no existe.' };
-    else {
-      const cambio = h as Cambio<unknown>;
-      if (!puede(usuario.rol, cambio.permiso)) resultado = { ok: false, texto: 'Tu usuario no puede hacer eso.' };
-      else {
-        const otraVez = await cambio.preparar(ctx, p.argumentos);
-        if (!otraVez.ok) resultado = { ok: false, texto: otraVez.error };
-        else if (clienteActual().sector === 'carpinteria' && otraVez.resumen !== p.resumen)
-          resultado = { ok: false, texto: 'Los datos han cambiado. Pide una nueva propuesta para revisar el cambio.' };
-        else resultado = await cambio.aplicar(ctx, otraVez.argumentos);
+    try {
+      if (p.herramienta === HERRAMIENTA_FOTOS) {
+        resultado = await aplicarFotos(repos, usuario, p);
+      } else if (p.herramienta === '__basica') {
+        resultado = await aplicarAccion(repos, usuario.rol, usuario.email, p.argumentos as unknown as AccionBasica);
+      } else {
+        const h = herramienta(p.herramienta);
+        if (!h || h.tipo !== 'cambio') resultado = { ok: false, texto: 'Esa acción ya no existe.' };
+        else {
+          const cambio = h as Cambio<unknown>;
+          if (!puede(usuario.rol, cambio.permiso)) resultado = { ok: false, texto: 'Tu usuario no puede hacer eso.' };
+          else {
+            const otraVez = await cambio.preparar(ctx, p.argumentos);
+            if (!otraVez.ok) resultado = { ok: false, texto: otraVez.error };
+            else if (clienteActual().sector === 'carpinteria' && (otraVez.resumen !== p.resumen || JSON.stringify(otraVez.argumentos) !== JSON.stringify(p.argumentos)))
+              resultado = { ok: false, texto: 'Los datos han cambiado. Pide una nueva propuesta para revisar el cambio.' };
+            else resultado = await cambio.aplicar(ctx, otraVez.argumentos);
+          }
+        }
       }
+    } catch {
+      resultado = { ok: false, texto: 'La operación se ha interrumpido. Revisa el registro antes de repetirla.' };
     }
-  }
-  } catch {
-    resultado = { ok: false, texto: 'La operación se ha interrumpido. Revisa el registro antes de repetirla.' };
   }
   if (si) await repos.conversaciones.anotar(id, resultado.ok ? 'aplicada' : 'fallida', resultado.texto);
   if (si && resultado.ok) await repos.auditoria.registrar(usuario.email, 'asistente', `${p.herramienta}: ${p.resumen}`.slice(0, 300));

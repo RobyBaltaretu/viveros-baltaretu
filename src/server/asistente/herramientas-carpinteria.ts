@@ -23,8 +23,8 @@ import type { Cambio, Consulta, Herramienta } from './herramientas.ts';
 const consulta = <A>(h: Omit<Consulta<A>, 'tipo'>) => ({ ...h, tipo: 'consulta' as const }) as unknown as Herramienta;
 const cambio = <A>(h: Omit<Cambio<A>, 'tipo'>) => ({ ...h, tipo: 'cambio' as const }) as unknown as Herramienta;
 const opcional = <T extends z.ZodType>(t: T) => t.optional().nullable();
-const fecha = z
-  .string()
+const fecha = z.iso
+  .date()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .describe('AAAA-MM-DD');
 const contiene = (t: string, q?: string | null) => !q || normalizar(t).includes(normalizar(q));
@@ -233,7 +233,7 @@ export const HERRAMIENTAS_CARPINTERIA: Herramienta[] = [
         .min(1)
         .max(100),
     }),
-    async preparar({ repos }, a: { cambios: { articulo?: string | null; nuevo?: { categoria: string; nombre: string; unidad: string } | null; coste?: number | null; margen?: number | null; precioFijo?: number | null }[] }) {
+    async preparar({ repos }, a: { cambios: { articulo?: string | null; nuevo?: { categoria: string; nombre: string; unidad: string } | null; coste?: number | null; margen?: number | null; precioFijo?: number | null; referencia?: string | null; proveedor?: string | null }[] }) {
       const lista = await repos.catalogo.articulos({ incluirArchivados: true });
       const lineas: string[] = [];
       const cambios = [];
@@ -246,11 +246,11 @@ export const HERRAMIENTAS_CARPINTERIA: Herramienta[] = [
         if (!c.articulo) return { ok: false, error: 'Falta qué artículo cambiar (o «nuevo» para crearlo).' };
         const r = unArticulo(lista, c.articulo);
         if (!r.ok) return r;
-        const que = [c.coste != null && `coste ${dinero(c.coste)}`, c.margen != null && `margen ${c.margen} %`, c.precioFijo != null && `precio ${dinero(c.precioFijo)}`].filter(Boolean).join(', ');
+        const que = [c.coste != null && `coste ${dinero(c.coste)}`, c.margen != null && `margen ${c.margen} %`, c.precioFijo != null && `precio ${dinero(c.precioFijo)}`, c.proveedor != null && `proveedor «${c.proveedor}»`, c.referencia != null && `referencia «${c.referencia}»`].filter(Boolean).join(', ');
         lineas.push(`${r.uno.nombre}${que ? `: ${que}` : ''}`);
         cambios.push({ ...c, articulo: r.uno.id });
       }
-      return { ok: true, resumen: `Catálogo (${cambios.length}): ${lineas.slice(0, 10).join('; ')}${lineas.length > 10 ? '…' : ''}.`, argumentos: { cambios } };
+      return { ok: true, resumen: `Catálogo (${cambios.length}): ${lineas.join('; ')}.`, argumentos: { cambios } };
     },
     async aplicar(ctx, a: { cambios: { articulo?: string | null; nuevo?: { categoria: string; nombre: string; unidad: string } | null; coste?: number | null; margen?: number | null; precioFijo?: number | null; proveedor?: string | null; referencia?: string | null }[] }) {
       const errores: string[] = [];
@@ -320,7 +320,7 @@ export const HERRAMIENTAS_CARPINTERIA: Herramienta[] = [
       const r = await unProveedor(repos, a.proveedor);
       if (!r.ok) return r;
       const campos = Object.keys(a).filter((k) => k !== 'proveedor' && a[k] !== undefined && a[k] !== null);
-      return { ok: true, resumen: `Cambiar ${campos.join(', ') || 'nada'} del proveedor ${r.uno.nombre}.`, argumentos: { ...a, proveedor: r.uno.id } };
+      return { ok: true, resumen: `Cambiar ${campos.map(k => `${k} a «${String(a[k])}»`).join(', ') || 'nada'} del proveedor ${r.uno.nombre}.`, argumentos: { ...a, proveedor: r.uno.id } };
     },
     async aplicar(ctx, a: Record<string, unknown> & { proveedor?: string | null }) {
       const previo = a.proveedor ? await ctx.repos.proveedores.obtener(a.proveedor) : null;

@@ -28,7 +28,7 @@ if (s && Astro.request.method === 'POST') {
     error = r.error;
     Astro.response.status = 400;
   }
-  const presupuesto = campo(form, 'presupuesto') ? await s.repos.presupuestos.obtener(campo(form, 'presupuesto')) : null;
+  const presupuesto = moduloActivoAhora('presupuestosWeb') && campo(form, 'presupuesto') ? await s.repos.presupuestos.obtener(campo(form, 'presupuesto')) : null;
   let cliente = campo(form, 'cliente') ? await s.repos.clientes.obtener(campo(form, 'cliente')) : null;
   if (presupuesto && !cliente) {
     // Si ya existe un cliente con ese correo, se usa; si no, se crea con lo que dejó en la web.

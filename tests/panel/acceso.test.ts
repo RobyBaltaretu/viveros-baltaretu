@@ -42,7 +42,8 @@ describe('acceso con Cloudflare Access', () => {
     expect(await emailDeAccess(peticion('basura'), env)).toBeNull();
   });
   it('el modo de prueba solo vale en localhost', async () => {
-    const prueba = { ...env, PANEL_PRUEBA_EMAIL: 'p@example.com' };
+    expect(await emailDeAccess(peticion(undefined, 'localhost:4321'), { ...env, PANEL_PRUEBA_EMAIL: 'p@example.com' })).toBeNull();
+    const prueba = { ...env, PANEL_ENTORNO: 'desarrollo', PANEL_PRUEBA_EMAIL: 'p@example.com' };
     expect(await emailDeAccess(peticion(undefined, 'localhost:4321'), prueba)).toBe('p@example.com');
     expect(await emailDeAccess(peticion(), prueba)).toBeNull();
   });

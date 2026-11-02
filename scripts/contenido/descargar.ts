@@ -14,7 +14,9 @@ import { MARCA_DESCARGA } from './desplegar-comun.ts';
 const token = process.env.CONTENIDO_TOKEN;
 const url = process.env.CONTENIDO_URL || process.env.SITE_URL;
 
-if (!token) {
+if (process.env.CLIENTE_ID === 'turia') {
+  console.log('[contenido] El taller solo construye el panel.');
+} else if (!token) {
   console.log('[contenido] Sin CONTENIDO_TOKEN: se construye con los archivos del repositorio.');
 } else {
   if (!url) throw new Error('[contenido] Falta CONTENIDO_URL o SITE_URL para descargar el contenido.');

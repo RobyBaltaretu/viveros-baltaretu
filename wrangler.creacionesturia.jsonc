@@ -36,7 +36,7 @@
     "desarrollo": {
       "send_email": [{ "name": "EMAIL" }],
       // Entrar al panel sin Access, solo desde localhost (ver src/server/panel/acceso.ts).
-      "vars": { "PANEL_PRUEBA_EMAIL": "propietario@example.com", "PROPIETARIO_EMAIL": "propietario@example.com" },
+      "vars": { "PANEL_ENTORNO": "desarrollo", "PANEL_PRUEBA_EMAIL": "propietario@example.com", "PROPIETARIO_EMAIL": "propietario@example.com" },
       "d1_databases": [{ "binding": "DB", "database_name": "creacionesturia-local", "database_id": "00000000-0000-0000-0000-000000000000" }]
     }
   }

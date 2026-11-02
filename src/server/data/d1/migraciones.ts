@@ -390,8 +390,8 @@ export async function aplicarMigraciones(db: BaseD1): Promise<number> {
     // En lote: si una sentencia falla, D1 deshace toda la migración.
     try {
       await db.batch([
-      ...m.sql.map((s) => db.prepare(s)),
-      db.prepare('INSERT INTO esquema_version (version, aplicada) VALUES (?, ?)').bind(m.version, new Date().toISOString()),
+        ...m.sql.map((s) => db.prepare(s)),
+        db.prepare('INSERT INTO esquema_version (version, aplicada) VALUES (?, ?)').bind(m.version, new Date().toISOString()),
       ]);
       aplicadas++;
     } catch (error) {
