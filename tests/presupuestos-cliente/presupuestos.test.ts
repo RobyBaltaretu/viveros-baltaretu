@@ -109,6 +109,16 @@ describe('presupuestos a cliente', () => {
     expect((await repos.presupuestosCliente.obtener(previo.id))?.estado).toBe('aceptado');
   });
 
+  it('un borrador obsoleto no puede sobrescribir una edición más reciente', async () => {
+    const r = await crearPresupuesto(repos, base, yo, 21);
+    if (!r.ok) throw new Error(r.error);
+    const original = (await repos.presupuestosCliente.obtener(r.presupuesto.id))!;
+    const editado = { ...original, concepto: 'Edición vigente' };
+    expect(await repos.presupuestosCliente.actualizarBorrador(original, editado, yo)).toBe(true);
+    expect(await repos.presupuestosCliente.actualizarBorrador(original, { ...original, concepto: 'Edición obsoleta' }, yo)).toBe(false);
+    expect((await repos.presupuestosCliente.obtener(original.id))?.concepto).toBe('Edición vigente');
+  });
+
   it('en borrador se cambian los datos y se recalcula; la serie y el número se quedan', async () => {
     const r = await crearPresupuesto(repos, base, yo, 21);
     if (!r.ok) throw new Error(r.error);
