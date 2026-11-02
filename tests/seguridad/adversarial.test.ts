@@ -7,13 +7,13 @@ import { respuestaImagenPrivada } from '../../src/server/panel/imagen-privada.ts
 describe('red team: peticiones CSRF y acceso', () => {
   const post = (headers: Record<string, string>) => new Request('https://panel.example.test/api/panel/simulador', { method: 'POST', headers });
   it('rechaza origen externo, null, ausencia de contexto y cross-site', () => {
-    for (const headers of [
+    for (const headers of ([ 
       { Origin: 'https://evil.example.test' },
       { Origin: 'null' },
       {},
       { 'Sec-Fetch-Site': 'cross-site' },
       { 'Sec-Fetch-Site': 'same-site' },
-    ]) expect(mismoOrigen(post(headers))).toBe(false);
+    ] as Record<string, string>[])) expect(mismoOrigen(post(headers))).toBe(false);
   });
   it('permite origen exacto o same-origin, pero no un subdominio', () => {
     expect(mismoOrigen(post({ Origin: 'https://panel.example.test' }))).toBe(true);
