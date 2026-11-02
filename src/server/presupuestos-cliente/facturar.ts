@@ -81,11 +81,7 @@ export function porFacturar(p: Pick<PresupuestoCliente, 'totales' | 'facturaAnti
 /** Importe con IVA de esa factura: el anticipo, o lo que queda (el total si no hubo anticipo). */
 export const importeAFacturar = (p: Pick<PresupuestoCliente, 'totales' | 'facturaAnticipoId'>, que: 'anticipo' | 'final') => (que === 'anticipo' ? p.totales.anticipo : p.facturaAnticipoId ? p.totales.restante : p.totales.total);
 
-/**
- * Presupuestos que se pueden facturar ya: los aceptados con algo por facturar
- * y los enviados aún vigentes (al facturarlos, se dan por aceptados). Primero
- * los aceptados; dentro de cada grupo, los más recientes.
- */
+/** Presupuestos facturables: solo aceptados. La aceptación comercial es una acción explícita. */
 export function facturables(ps: PresupuestoCliente[], hoy: string): { p: PresupuestoCliente; que: 'anticipo' | 'final'; importe: number; acepta: boolean }[] {
   return ps
     .filter((p) => p.estado === 'aceptado' || (p.estado === 'enviado' && !(p.validez && p.validez < hoy)))
