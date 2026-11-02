@@ -84,12 +84,19 @@ const principalEstado = (e: EstadoPresupuestoCliente) => e === 'enviado' || e ==
       )
     }
     {
-      p.estado === 'aceptado' && (p.facturaAnticipoId || p.totales.anticipo <= 0) && !p.facturaId && (
+      p.estado === 'aceptado' && (p.facturaAnticipoId || p.totales.anticipo <= 0) && !p.facturaId && (!p.facturaAnticipoId || (facturaAnticipo && facturaAnticipo.estado !== 'borrador')) && (
         <form method="post">
           <button name="accion" value="facturar:final" class="nv-boton">
             {p.facturaAnticipoId ? 'Hacer la factura final (descuenta el anticipo)' : 'Hacer la factura'}
           </button>
         </form>
+      )
+    }
+    {
+      p.estado === 'aceptado' && p.facturaAnticipoId && facturaAnticipo?.estado === 'borrador' && !p.facturaId && (
+        <a href={`/panel/facturas/${p.facturaAnticipoId}`} class="nv-boton nv-boton-secundario">
+          Revisar y emitir el anticipo antes de la factura final
+        </a>
       )
     }
     {
