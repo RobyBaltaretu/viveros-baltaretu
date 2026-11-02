@@ -218,7 +218,7 @@ const inicialUsuario = (usuario?.nombre || usuario?.email || '?').trim().slice(0
             {pestanas.map((p) =>
               p.tipo === 'crear' ? (
                 <li>
-                  <button type="button" class="nv-pestana" popovertarget="nv-menu-crear">
+                  <button type="button" class="nv-pestana" popovertarget="nv-menu-crear" aria-label="Abrir menú de creación">
                     <span class="nv-pestana-crear">
                       <Icono nombre="nuevo" />
                     </span>
