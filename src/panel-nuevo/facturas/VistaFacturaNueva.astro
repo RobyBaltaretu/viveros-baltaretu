@@ -25,6 +25,13 @@ const lineas = f.lineas.filter((l) => l.concepto);
   <span class={`nv-chip nv-chip-${tono}`}>{estado}</span>
   {f.cliente.nombre} · del {fecha(f.fecha)}{f.rectificaCodigo && ` · rectifica a ${f.rectificaCodigo}`}
 </p>
+{presupuestoId && (
+  <p class="nv-fecha">
+    <a class="enlace-panel" href={`/panel/presupuestos-cliente/${presupuestoId}`}>
+      Volver al presupuesto de origen
+    </a>
+  </p>
+)}
 
 {
   f.estado === 'emitida' ? (
