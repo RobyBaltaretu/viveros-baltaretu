@@ -73,6 +73,13 @@ describe('del presupuesto a la factura', () => {
     // Lo que queda por facturar es el restante del presupuesto (al céntimo).
     expect(f.factura.totales.total).toBe(r.presupuesto.totales.restante);
     expect(await repos.presupuestosCliente.obtener(id)).toMatchObject({ facturaAnticipoId: a.factura.id, facturaId: f.factura.id });
+    // Cobrar desde la factura mantiene sincronizada la ficha del presupuesto.
+    await repos.facturas.emitir(f.factura.id, { serie: 'TEST', fecha: f.factura.fecha, emisor: AJUSTES_VACIOS, cliente: f.factura.cliente, huellaAnterior: null, codigo: n => 'TEST-' + n, huella: async () => 'huella-final' });
+    expect(await repos.facturas.marcarCobrada(f.factura.id, '2026-10-30')).toBe(true);
+    expect((await repos.presupuestosCliente.obtener(id))?.cobroResto).toBe('2026-10-30');
+    expect((await repos.facturas.obtener(f.factura.id))?.estado).toBe('cobrada');
+    expect(await repos.facturas.marcarCobrada(f.factura.id, null)).toBe(true);
+    expect((await repos.presupuestosCliente.obtener(id))?.cobroResto).toBeNull();
   });
 
   it('qué toca facturar y la lista de facturables (aceptados y enviados vigentes)', () => {
