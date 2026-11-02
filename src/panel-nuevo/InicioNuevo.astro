@@ -57,16 +57,35 @@ const fecha = ahora.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric
 const nombre = (s?.usuario.nombre || '').split(' ')[0];
 ---
 
-<div class="nv-inicio">
+<div class="nv-inicio nv-inicio-taller">
+  <div class="nv-hero-taller">
   <div class="nv-titulo">
     <div>
       <p class="nv-fecha">{fecha}</p>
       <h1>{saludo(hora)}{nombre ? `, ${nombre}` : ''}</h1>
       <p>{tareas.length ? `Tienes ${tareas.length === 1 ? '1 cosa' : `${tareas.length} cosas`} por hacer. Empieza por la primera.` : 'No tienes nada pendiente.'}</p>
-      <p class="nv-inicio-subtitulo">Tu taller, de la primera idea al último acabado.</p>
+      <p class="nv-inicio-subtitulo">Del primer boceto al último acabado. Todo tu taller, en un lugar.</p>
     </div>
   </div>
 
+  <div class="nv-hero-acciones">
+    {ver.presupuestos && <a class="nv-hero-cta" href="/panel/presupuestos-cliente/nuevo"><Icono nombre="nuevo" /> Nuevo presupuesto</a>}
+    {ver.facturas && <a class="nv-hero-cta-secundaria" href="/panel/facturas">Ver facturas</a>}
+  </div>
+  </div>
+  <section class="nv-camino" aria-labelledby="nv-camino-titulo">
+    <div class="nv-camino-cabeza">
+      <span class="nv-camino-etiqueta">EL RECORRIDO DE CADA TRABAJO</span>
+      <h2 id="nv-camino-titulo">Del presupuesto al cobro</h2>
+      <p>Accede a cada etapa y continúa donde lo dejaste.</p>
+    </div>
+    <ol class="nv-camino-pasos">
+      {ver.presupuestos && <li><a href="/panel/presupuestos-cliente"><span class="nv-camino-num">01</span><strong>Presupuestos</strong><small>Preparar y aceptar</small></a></li>}
+      {ver.facturas && <li><a href="/panel/facturas"><span class="nv-camino-num">02</span><strong>Anticipos y facturas</strong><small>Emitir documentos</small></a></li>}
+      {ver.gastos && <li><a href="/panel/gastos"><span class="nv-camino-num">03</span><strong>Costes del trabajo</strong><small>Compras y tickets</small></a></li>}
+      {ver.facturas && <li><a href="/panel/facturas"><span class="nv-camino-num">04</span><strong>Cobros</strong><small>Revisar pendientes</small></a></li>}
+    </ol>
+  </section>
   {
     verSimulador && (
       <section aria-labelledby="nv-simulador-banner">
