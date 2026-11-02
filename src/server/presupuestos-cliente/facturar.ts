@@ -84,7 +84,7 @@ export const importeAFacturar = (p: Pick<PresupuestoCliente, 'totales' | 'factur
 /** Presupuestos facturables: solo aceptados. La aceptación comercial es una acción explícita. */
 export function facturables(ps: PresupuestoCliente[], hoy: string): { p: PresupuestoCliente; que: 'anticipo' | 'final'; importe: number; acepta: boolean }[] {
   return ps
-    .filter((p) => p.estado === 'aceptado' || (p.estado === 'enviado' && !(p.validez && p.validez < hoy)))
+    .filter((p) => p.estado === 'aceptado')
     .flatMap((p) => {
       const que = porFacturar(p);
       return que ? [{ p, que, importe: importeAFacturar(p, que), acepta: p.estado === 'enviado' }] : [];
