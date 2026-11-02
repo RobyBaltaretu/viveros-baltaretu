@@ -74,10 +74,10 @@ test('factura desde un presupuesto: primero aceptación explícita y después la
   await page.getByRole('button', { name: 'Guardar el presupuesto' }).click();
   await page.getByRole('button', { name: 'Marcar como enviado' }).click();
   await expect(page.getByRole('button', { name: 'El cliente lo acepta' })).toBeVisible();
+  const urlPresupuesto = page.url();
   await page.goto('/panel/facturas/nueva');
-  await expect(page.getByText('No hay presupuestos aceptados pendientes de facturar')).toBeVisible();
-  await page.goto('/panel/presupuestos-cliente');
-  await page.getByRole('link', { name: new RegExp(`Cocina ${p}`) }).first().click();
+  await expect(page.getByRole('button', { name: new RegExp(`^Facturar Cocina ${p},`) })).toHaveCount(0);
+  await page.goto(urlPresupuesto);
   await page.getByRole('button', { name: 'El cliente lo acepta' }).click();
 
   await page.goto('/panel/facturas/nueva');
