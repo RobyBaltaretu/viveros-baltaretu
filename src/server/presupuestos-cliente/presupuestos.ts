@@ -121,9 +121,8 @@ export async function cambiarEstado(repos: Repositorios, id: string, nuevo: Esta
   const p = await repos.presupuestosCliente.obtener(id);
   if (!p) return fallo('Ese presupuesto no existe.');
   if (!pasosDesde(estadoEfectivo(p, hoy)).includes(nuevo)) return fallo(`Un presupuesto ${NOMBRE_ESTADO[estadoEfectivo(p, hoy)].toLowerCase()} no puede pasar a ${NOMBRE_ESTADO[nuevo].toLowerCase()}.`);
-  const presupuesto = { ...p, estado: nuevo };
-  await repos.presupuestosCliente.guardar(presupuesto, email);
-  return { ok: true, presupuesto };
+  if (!(await repos.presupuestosCliente.transicionarEstado(p, nuevo, email))) return fallo('El presupuesto ha cambiado. Actualiza la página e inténtalo de nuevo.');
+  return { ok: true, presupuesto: { ...p, estado: nuevo } };
 }
 
 /** Apunta cuándo se cobró el anticipo o el resto (solo de un presupuesto aceptado). */
