@@ -20,5 +20,6 @@ describe('imágenes privadas del panel', () => {
 
   it('permite caché privada únicamente para las fotos de ruta inmutable', () => {
     expect(respuestaImagenPrivada(jpg, 'foto').headers.get('Cache-Control')).toBe('private, max-age=31536000, immutable');
+    expect(respuestaImagenPrivada(jpg, 'portafolio').headers.get('Cache-Control')).toBe('private, max-age=3600');
   });
 });
