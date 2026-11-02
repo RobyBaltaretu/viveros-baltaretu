@@ -62,6 +62,7 @@ test('presupuestos: alta con extra, anticipo, envío, aceptación y factura de a
   await expect(page.locator('[name="l0.concepto"]')).toHaveValue(/^Anticipo del 40 % del presupuesto P\d{4}-\d{4}/);
   await page.goto(urlPresupuesto);
   await expect(page.getByText('Anticipo · Factura en borrador')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Revisar y emitir el anticipo antes de la factura final' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Ver la factura de anticipo' })).toBeVisible();
 });
 
