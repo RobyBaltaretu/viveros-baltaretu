@@ -192,6 +192,8 @@ const principalEstado = (e: EstadoPresupuestoCliente) => e === 'enviado' || e ==
     <section class="nv-tarjeta nv-seccion" aria-labelledby="enviar">
       <h2 id="enviar">Enviar al cliente</h2>
       <p class="nv-gris">Guárdalo en PDF (en la pantalla para imprimir, «Guardar como PDF») y envíalo con el PDF adjunto.</p>
+      {p.estado === 'borrador' && <p class="nv-gris">Después de enviarlo realmente, pulsa «Marcar como enviado». Abrir WhatsApp o el correo no cambia el estado ni confirma la entrega.</p>}
+      {p.estado === 'enviado' && <p class="nv-gris">Envío marcado manualmente. Registra la aceptación solo cuando el cliente la confirme.</p>}
       <div class="nv-botones-columna">
         <a href={`/panel/presupuestos-cliente/${p.id}/imprimir`} class="nv-boton nv-boton-secundario">
           <Icono nombre="descargar" />
