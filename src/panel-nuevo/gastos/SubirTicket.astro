@@ -59,7 +59,8 @@ const { error } = Astro.props;
     form?.querySelectorAll('input[type=file]').forEach((entrada) =>
       entrada.addEventListener('change', async () => {
         const archivo = entrada.files?.[0];
-        if (!archivo) return;
+        if (!archivo || form.getAttribute('aria-busy') === 'true') return;
+        let envioIniciado = false;
         form.setAttribute('aria-busy', 'true');
         decir('Preparando la foto…');
         try {
@@ -74,11 +75,17 @@ const { error } = Astro.props;
           const datos = new FormData();
           datos.set('ticket', blob, 'ticket.jpg');
           decir('Leyendo el ticket… unos segundos.');
+          envioIniciado = true;
           const r = await fetch(location.pathname, { method: 'POST', body: datos });
           if (r.redirected) return location.replace(r.url);
           decir('No se ha podido subir la foto. Prueba otra vez o con otra foto.');
         } catch {
-          decir('No se ha podido preparar la foto. Prueba otra vez o con otra foto.');
+          if (!envioIniciado && archivo.size <= 1900000) {
+            decir('Enviando la foto original…');
+            form.submit();
+            return;
+          }
+          decir(envioIniciado ? 'Se ha cortado la conexión. Comprueba en Gastos si el ticket ya llegó antes de repetirlo.' : 'No se ha podido reducir la foto. Elige una de menos de 1,9 MB o escribe el gasto a mano.');
         }
         form.removeAttribute('aria-busy');
         entrada.value = '';

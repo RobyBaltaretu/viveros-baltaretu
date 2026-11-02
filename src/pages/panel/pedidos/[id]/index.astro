@@ -14,7 +14,7 @@ export const prerender = false;
 const s = sesionCon(Astro.locals, 'facturas');
 const id = Astro.params.id ?? '';
 const dia = hoy();
-const conGastos = moduloActivoAhora('gastos');
+const conGastos = moduloActivoAhora('gastos') && !!sesionCon(Astro.locals, 'gastos');
 let error = '';
 if (s && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
@@ -36,9 +36,9 @@ if (s && Astro.request.method === 'POST') {
     else if (p.gastoId && (await s.repos.gastos.obtener(p.gastoId))) return Astro.redirect(`/panel/gastos/${p.gastoId}`, 303);
     else {
       const g = gastoDePedido(p, await s.repos.catalogo.articulos({ incluirArchivados: true }), s.usuario.email, dia);
-      await s.repos.gastos.guardar(g);
-      await s.repos.pedidosProveedor.guardar({ ...p, gastoId: g.id }, s.usuario.email);
-      return Astro.redirect(`/panel/gastos/${g.id}`, 303);
+      const gastoId = await s.repos.pedidosProveedor.crearGasto(p, g, s.usuario.email);
+      if (gastoId) return Astro.redirect(`/panel/gastos/${gastoId}`, 303);
+      error = 'El pedido ha cambiado. Vuelve a abrirlo antes de crear el gasto.';
     }
   } else error = 'No se ha entendido la acción.';
   Astro.response.status = 400;

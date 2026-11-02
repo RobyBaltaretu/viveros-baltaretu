@@ -110,3 +110,9 @@ Peticiones del propietario: publicación automática, facturas, control de gasto
 - Gubia, el asistente de Turia: nombre propio (AgricolAI queda solo para Baltaretu), instrucciones de la carpintería y la IA que contesta a la vista en el chat.
 - Gubia lleva el panel de Turia: presupuestos a cliente, catálogo, proveedores y pedidos además de facturas, clientes y gastos. Consulta sin pedir nada y cambia con «Sí». Sin internet (decisión del propietario).
 - Tickets de Turia en el móvil: foto a un toque que se lee sola, guardar con un botón si está bien y, al guardar, la tienda como proveedor si se quiere (con NIF, dirección y teléfono del ticket). El lector sigue con Workers AI.
+
+## Rama de revisión de Creaciones Turia
+
+Los informes del taller calculan la aceptación sobre presupuestos aceptados o rechazados del periodo, y la cartera pendiente sobre los enviados que siguen vigentes hoy. Se calculan en D1. El taller confirma cada propuesta de Gubia con su botón. La factura final exige emitir primero cualquier anticipo enlazado.
+
+En Workers Builds de creacionesturia, usar `npm run build:turia` también para ramas de prueba. El despliegue lee la configuración generada y usa `wrangler versions upload` sin `-c`. Antes de publicar, verificar Access en el dominio y las vistas previas, las pruebas de móvil y la equivalencia de Baltaretu. El formulario web de Baltaretu requiere el secreto de Turnstile en producción.

@@ -21,7 +21,10 @@ if (token && url && existsSync(MARCA_DESCARGA)) {
   else console.warn(`[desplegar] No se pudo consultar las publicaciones (${r.status}); se sube como versión.`);
 }
 
-const modo = modoDespliegue(pendientes, process.env.PUBLICAR_SIEMPRE);
+const generado = JSON.parse(readFileSync('dist/server/wrangler.json', 'utf8')) as { name: string };
+const turia = generado.name === 'creacionesturia';
+if (process.env.CLIENTE_ID === 'turia' && !turia) throw new Error('El Worker construido no corresponde a Creaciones Turia.');
+const modo = turia ? 'version' : modoDespliegue(pendientes, process.env.PUBLICAR_SIEMPRE);
 console.log(modo === 'desplegar' ? `[desplegar] ${pendientes} publicaciones del panel: se publica en la web.` : '[desplegar] Sin publicaciones del panel: se sube una versión para aprobarla en Cloudflare.');
 // Sin `-c`: el build deja en .wrangler/deploy/config.json la configuración del cliente
 // (Turia: Worker y D1 `creacionesturia`). Pasar wrangler.creacionesturia.jsonc rompe el

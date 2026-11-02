@@ -672,7 +672,8 @@ export const HERRAMIENTAS: Herramienta[] = [
     async preparar({ repos }, a: { cliente: string; lineas: z.infer<typeof LINEA>[]; notas?: string | null; presupuestoId?: string | null }) {
       const c = await unCliente(repos, a.cliente);
       if (!c.ok) return c;
-      const lineas = a.lineas.map((l) => ({ ...lineaVacia(), ...l, iva: l.iva ?? IVA_POR_DEFECTO, descuento: l.descuento ?? 0 }));
+      const politica = clienteActual().iva;
+      const lineas = a.lineas.map((l) => ({ ...lineaVacia(), ...l, iva: politica.fijo ? politica.general : (l.iva ?? IVA_POR_DEFECTO), descuento: l.descuento ?? 0 }));
       const t = calcularTotales(lineas, c.cliente.recargo);
       return {
         ok: true,
@@ -686,7 +687,8 @@ export const HERRAMIENTAS: Herramienta[] = [
       const f = nuevaFactura(c, ctx.usuario.email, await ajustesFacturacion(ctx.repos));
       // Las líneas cuyo concepto es el nombre de una planta descuentan del inventario al emitir.
       const catalogo = await plantas(ctx.repos, true);
-      f.lineas = a.lineas.map((l) => ({ ...lineaVacia(), ...l, iva: l.iva ?? IVA_POR_DEFECTO, descuento: l.descuento ?? 0, planta: catalogo.find((p) => p.nombres.some((n) => normalizar(n) === normalizar(l.concepto)))?.id ?? null }));
+      const politica = clienteActual().iva;
+      f.lineas = a.lineas.map((l) => ({ ...lineaVacia(), ...l, iva: politica.fijo ? politica.general : (l.iva ?? IVA_POR_DEFECTO), descuento: l.descuento ?? 0, planta: catalogo.find((p) => p.nombres.some((n) => normalizar(n) === normalizar(l.concepto)))?.id ?? null }));
       f.totales = calcularTotales(f.lineas, c.recargo);
       f.notas = a.notas ?? '';
       f.presupuestoId = a.presupuestoId ?? null;

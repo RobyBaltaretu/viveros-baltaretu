@@ -50,6 +50,7 @@ export const POST: APIRoute = async ({ request, url, redirect }) => {
     return json({ ok: false, codigo: 'datos-invalidos' }, 400);
   }
 
+  if (!cuerpo || typeof cuerpo !== 'object' || Array.isArray(cuerpo)) return json({ ok: false, codigo: 'datos-invalidos' }, 400);
   const entorno = env as unknown as EntornoPresupuesto;
   const secreto = entorno.TURNSTILE_SECRET_KEY || (import.meta.env.DEV ? TURNSTILE_PRUEBA.claveSecreta : undefined);
   const { EMAIL_DESTINO: destino, EMAIL_REMITENTE: remitente, EMAIL: binding } = entorno;
@@ -60,7 +61,7 @@ export const POST: APIRoute = async ({ request, url, redirect }) => {
     console.error('Faltan EMAIL_DESTINO, EMAIL_REMITENTE o el binding EMAIL, y no hay base DB');
     return json({ ok: false, codigo: 'configuracion' }, 500);
   }
-  if (!secreto) console.warn('Sin TURNSTILE_SECRET_KEY: el formulario solo tiene el campo trampa como anti-spam');
+  if (!secreto) return json({ ok: false, codigo: 'configuracion' }, 503);
   if (!conCorreo) console.warn('Sin correo configurado: los presupuestos quedan solo en el panel');
 
   const especies = new Map(

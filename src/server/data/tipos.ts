@@ -580,6 +580,8 @@ export interface PresupuestoCliente {
 }
 
 export interface RepositorioPresupuestosCliente {
+  enlazarFactura(p: PresupuestoCliente, tipo: 'anticipo' | 'final', factura: Factura, email: string): Promise<boolean>;
+  indicadores(desde: string, hasta: string, hoy: string): Promise<{ aceptados: number; decididos: number; pendientes: number; cartera: number }>;
   listar(filtro?: { estado?: EstadoPresupuestoCliente; clienteId?: string; limite?: number }): Promise<PresupuestoCliente[]>;
   obtener(id: string): Promise<PresupuestoCliente | null>;
   /** Alta con el número siguiente de la serie (correlativo, sin huecos ni repetidos). */
@@ -752,6 +754,7 @@ export interface PedidoProveedor {
 }
 
 export interface RepositorioPedidosProveedor {
+  crearGasto(p: PedidoProveedor, gasto: Gasto, email: string): Promise<string | null>;
   listar(filtro?: { estado?: EstadoPedido; proveedorId?: string; presupuestoClienteId?: string; limite?: number }): Promise<PedidoProveedor[]>;
   obtener(id: string): Promise<PedidoProveedor | null>;
   /** Alta con el código siguiente del año (correlativo, sin repetidos). */

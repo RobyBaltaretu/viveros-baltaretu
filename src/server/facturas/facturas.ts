@@ -230,7 +230,7 @@ export function rectificativaDe(f: Factura, email: string, ajustes: AjustesFactu
 export type AccionBorrador = { tipo: 'guardar' } | { tipo: 'emitir' } | { tipo: 'agregar' } | { tipo: 'quitar'; indice: number } | { tipo: 'planta'; slug: string };
 
 /** Lee el formulario del borrador. Las líneas vienen como `l0.concepto`, `l0.cantidad`… */
-export function leerBorrador(form: FormData, previa: Factura, plantas: Planta[]): { factura: Factura; errores: Error[]; accion: AccionBorrador } {
+export function leerBorrador(form: FormData, previa: Factura, plantas: Planta[], ivaFijo: number | null = null): { factura: Factura; errores: Error[]; accion: AccionBorrador } {
   const v = (n: string) => String(form.get(n) ?? '').trim();
   const errores: Error[] = [];
   const lineas: LineaFactura[] = [];
@@ -250,6 +250,7 @@ export function leerBorrador(form: FormData, previa: Factura, plantas: Planta[])
     if (cantidad === null || Number.isNaN(cantidad) || cantidad === 0) errores.push({ campo: `l${i}.cantidad`, mensaje: `Línea ${linea}: la cantidad debe ser un número distinto de 0.` });
     if (precio === null || Number.isNaN(precio) || precio < 0) errores.push({ campo: `l${i}.precio`, mensaje: `Línea ${linea}: el precio debe ser un número (0 o más).` });
     if (descuento !== null && (Number.isNaN(descuento) || descuento < 0 || descuento > 100)) errores.push({ campo: `l${i}.descuento`, mensaje: `Línea ${linea}: el descuento va de 0 a 100.` });
+    if (ivaFijo !== null && iva !== ivaFijo) errores.push({ campo: `l${i}.iva`, mensaje: `El IVA de este trabajo debe ser del ${ivaFijo} %.` });
     if (!(TIPOS_IVA as readonly number[]).includes(iva)) errores.push({ campo: `l${i}.iva`, mensaje: `Línea ${linea}: elige el IVA.` });
     lineas.push({
       concepto,

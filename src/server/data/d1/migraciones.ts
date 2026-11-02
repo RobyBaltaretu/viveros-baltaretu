@@ -388,11 +388,16 @@ export async function aplicarMigraciones(db: BaseD1): Promise<number> {
   for (const m of MIGRACIONES) {
     if (m.version <= actual) continue;
     // En lote: si una sentencia falla, D1 deshace toda la migración.
-    await db.batch([
+    try {
+      await db.batch([
       ...m.sql.map((s) => db.prepare(s)),
       db.prepare('INSERT INTO esquema_version (version, aplicada) VALUES (?, ?)').bind(m.version, new Date().toISOString()),
-    ]);
-    aplicadas++;
+      ]);
+      aplicadas++;
+    } catch (error) {
+      // Otro Worker puede haber completado el mismo lote atómico.
+      if (!(await db.prepare('SELECT version FROM esquema_version WHERE version = ?').bind(m.version).first())) throw error;
+    }
   }
   return aplicadas;
 }

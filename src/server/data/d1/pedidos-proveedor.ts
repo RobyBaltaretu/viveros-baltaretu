@@ -91,10 +91,22 @@ export function crearRepositorioPedidosProveedor(db: BaseD1): Pick<Repositorios,
         }
         throw new Error('No se ha podido numerar el pedido. Prueba otra vez.');
       },
+      async crearGasto(p, g, email) {
+        const t = ahora();
+        await db.batch([
+          db.prepare(`UPDATE pedidos_proveedor SET datos = json_set(datos, '$.gastoId', ?), actualizado = ?, actualizado_por = ?
+            WHERE id = ? AND estado = 'recibido' AND actualizado = ?
+            AND NOT EXISTS (SELECT 1 FROM gastos WHERE id = json_extract(pedidos_proveedor.datos, '$.gastoId'))`).bind(g.id, t, email, p.id, p.actualizado),
+          db.prepare(`INSERT INTO gastos (id,estado,fecha,proveedor,categoria,total,ticket_id,datos,creado,creado_por,actualizado)
+            SELECT ?,?,?,?,?,?,?,?,?,?,? WHERE EXISTS (SELECT 1 FROM pedidos_proveedor WHERE id = ? AND json_extract(datos,'$.gastoId') = ?)`)
+            .bind(g.id, g.estado, g.fecha, g.proveedor, g.categoria, g.total, g.ticketId, JSON.stringify(g), g.creado, g.creadoPor, t, p.id, g.id),
+        ]);
+        return (await obtener(p.id))?.gastoId ?? null;
+      },
       async guardar(p, email) {
         await db
           .prepare(
-            `UPDATE pedidos_proveedor SET estado = ?, proveedor_id = ?, presupuesto_cliente_id = ?, fecha = ?, coste = ?, datos = ?, actualizado = ?, actualizado_por = ?
+            `UPDATE pedidos_proveedor SET estado = ?, proveedor_id = ?, presupuesto_cliente_id = ?, fecha = ?, coste = ?, datos = json_set(?, '$.gastoId', json_extract(datos, '$.gastoId')), actualizado = ?, actualizado_por = ?
              WHERE id = ?`,
           )
           .bind(p.estado, p.proveedorId, p.presupuestoClienteId, p.fecha, p.coste, datosDe(p), ahora(), email, p.id)

@@ -1,3 +1,4 @@
+import { clienteActual } from '../../plataforma/actual.ts';
 import { descontarFactura } from './inventario.ts';
 import type { DatosEmisor, Factura, Repositorios } from '../data/tipos.ts';
 import {
@@ -114,6 +115,8 @@ export async function emitirFactura(repos: Repositorios, borrador: Factura, emai
   const ajustes = await ajustesFacturacion(repos);
   const fa = await borradorAlDia(repos, borrador);
   const errores = await comprobarEmision(repos, fa, ajustes);
+  const { iva } = clienteActual();
+  if (iva.fijo && fa.lineas.some((l) => l.iva !== iva.general)) errores.push({ campo: 'iva', mensaje: `Revisa las líneas. El IVA debe ser del ${iva.general} %.` });
   if (errores.length) return { ok: false, errores };
   const { prueba, serie, emisor } = await destinoEmision(repos, fa, ajustes);
   await repos.facturas.guardarBorrador({ ...fa, prueba });

@@ -1,3 +1,4 @@
+import { tipoDeImagen } from '../panel/fotos.ts';
 import type { IaCliente } from '../../plataforma/configuracion.ts';
 import type { RepositorioUsoSimulador } from '../data/tipos.ts';
 import { generateRenovationImage, type RenovationAiResult } from '../../services/renovationAiService.ts';
@@ -49,6 +50,18 @@ export const AVISO_AGOTADA = 'Has llegado al tope de simulaciones de este mes. E
 /** Tamaño máximo de cada imagen que llega (en base64): de sobra para 1024 px. */
 export const MAXIMO_IMAGEN = 3_000_000;
 
+function imagenValida(img: string): boolean {
+  if (img.length > MAXIMO_IMAGEN) return false;
+  const inicio = /^data:(image\/(?:jpeg|png|webp));base64,/.exec(img);
+  if (!inicio) return false;
+  try {
+    const bytes = Uint8Array.from(atob(img.slice(inicio[0].length)), c => c.charCodeAt(0));
+    return tipoDeImagen(bytes)?.tipo === inicio[1];
+  } catch {
+    return false;
+  }
+}
+
 export interface Simulacion {
   estado: number;
   cuerpo: RenovationAiResult & { cuota?: EstadoCuota };
@@ -64,7 +77,7 @@ export async function simular(
   if (ia.simulador !== 'gemini') return { estado: 404, cuerpo: { ok: false, error: 'El simulador no está activo.' } };
   if (!entrada.apiKey) return { estado: 503, cuerpo: { ok: false, error: 'Falta configurar la IA del simulador (el secreto GOOGLE_API_KEY del Worker). Avisa a quien lleva el panel.' } };
   for (const img of [peticion.image, peticion.mascara]) {
-    if (img !== undefined && (typeof img !== 'string' || img.length > MAXIMO_IMAGEN || !/^data:image\/(jpeg|webp|png);base64,/.test(img)))
+    if (img !== undefined && (typeof img !== 'string' || !imagenValida(img)))
       return { estado: 400, cuerpo: { ok: false, error: 'La foto tiene que ser JPEG, WebP o PNG y de 1024 px como mucho.' } };
   }
   const mes = mesDe(entrada.ahora);
@@ -77,8 +90,8 @@ export async function simular(
   } catch {
     r = { ok: false, error: 'La IA no ha podido generar la imagen. Vuelve a intentarlo en un rato.' };
   }
-  // Si no hay imagen no se cobra al cliente: la simulación vuelve al cupo.
-  if (!r.ok) await uso.devolver(cliente, mes);
+  // Solo se devuelve una reserva cuando el proveedor rechaza la petición antes de generar.
+  if (!r.ok && (r.estado === 429 || r.estado === 402 || r.estado === 400 || r.estado === 403)) await uso.devolver(cliente, mes);
   const cuota = estadoCuota(await uso.usos(cliente, mes), limite);
   const estado = r.ok ? 200 : r.estado === 429 || r.estado === 402 ? r.estado : 502;
   return { estado, cuerpo: { ...r, estado: undefined, promptUsed: undefined, cuota } };

@@ -116,7 +116,7 @@ const LINEA_PEDIDO = z.object({
   articulo: opcional(z.string()).describe('Id o nombre del artículo del catálogo, si sale de él'),
   detalle: opcional(z.string().max(200)).describe('Medidas, acabado…'),
 });
-type LineaPe = z.infer<typeof LINEA_PEDIDO>;
+type LineaPe = z.infer<typeof LINEA_PEDIDO> & { articuloId?: string | null };
 
 export const HERRAMIENTAS_CARPINTERIA: Herramienta[] = [
   consulta({
@@ -363,7 +363,8 @@ export const HERRAMIENTAS_CARPINTERIA: Herramienta[] = [
       const articulos = await repos.catalogo.articulos();
       const lineas = [];
       for (const l of a.lineas) {
-        const art = l.articulo ? unArticulo(articulos, l.articulo) : null;
+        const referencia = l.articuloId ?? l.articulo;
+        const art = referencia ? unArticulo(articulos, referencia) : null;
         if (art && !art.ok) return art;
         const x = art?.ok ? art.uno : null;
         lineas.push({ articuloId: x?.id ?? null, concepto: l.concepto, referencia: x?.referencia ?? '', detalle: l.detalle ?? '', cantidad: l.cantidad, unidad: l.unidad || x?.unidad || 'ud', coste: l.coste ?? (x && x.coste > 0 ? x.coste : 0) });

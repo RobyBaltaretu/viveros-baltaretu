@@ -134,7 +134,7 @@ describe('simulador: tope mensual', () => {
   afterAll(() => cerrar());
 
   const ia = (simulacionesMes = 3) => ({ simulador: 'gemini' as const, modelos: { groq: 'g', gemini: 'gemini-x' }, simulacionesMes });
-  const pide = { image: 'data:image/jpeg;base64,aGVsbG8=', config: resolveRenovationConfig({} as never) };
+  const pide = { image: 'data:image/jpeg;base64,/9j/AAAAAAAAAAAAAAAA', config: resolveRenovationConfig({} as never) };
   const bien = (async () => ({ ok: true, afterImage: 'data:image/png;base64,QQ==' })) as never;
   const mal = (estado: number) => (async () => ({ ok: false, error: 'x', estado })) as never;
 
@@ -146,7 +146,7 @@ describe('simulador: tope mensual', () => {
     expect(estadoCuota(250, 250)).toMatchObject({ aviso: true, agotada: true, quedan: 0, porcentaje: 100 });
   });
 
-  test('cuenta las que salen bien, devuelve las que fallan y al llegar al tope da 403 sin llamar a la IA', async () => {
+  test('cuenta las que salen bien, conserva los intentos inciertos y al llegar al tope da 403 sin llamar a la IA', async () => {
     const uso = repos.usoSimulador;
     const ahora = new Date('2026-10-15T10:00:00Z');
     const e = { cliente: 'turia', ia: ia(), apiKey: 'k', uso, ahora };
@@ -156,7 +156,7 @@ describe('simulador: tope mensual', () => {
     expect(fallo.cuerpo.cuota?.usos).toBe(1);
     expect((await simular(e, pide, mal(402))).estado).toBe(402);
     expect((await simular(e, pide, mal(500))).estado).toBe(502);
-    expect((await simular(e, pide, (async () => { throw new Error('x'); }) as never)).cuerpo.cuota?.usos).toBe(1);
+    expect((await simular(e, pide, (async () => { throw new Error('x'); }) as never)).cuerpo.cuota?.usos).toBe(3);
     await simular(e, pide, bien);
     await simular(e, pide, bien);
     let llamadas = 0;

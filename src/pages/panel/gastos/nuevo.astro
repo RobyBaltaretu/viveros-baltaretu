@@ -10,6 +10,8 @@ import { sesionCon } from '../../../server/panel/pagina.ts';
 import SubirTicket from '../../../panel-nuevo/gastos/SubirTicket.astro';
 import { clienteActual } from '../../../plataforma/actual.ts';
 
+import { cuerpoLimitado } from '../../../server/panel/cuerpo.ts';
+import { MAXIMO_FOTO } from '../../../server/panel/fotos.ts';
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'gastos');
@@ -17,7 +19,9 @@ const s = sesionCon(Astro.locals, 'gastos');
 const nuevo = clienteActual().panel?.diseno === 'nuevo';
 let error: string | undefined;
 if (s && Astro.request.method === 'POST') {
-  const form = await Astro.request.formData();
+  const cuerpo = nuevo ? await cuerpoLimitado(Astro.request, MAXIMO_FOTO + 32768) : Astro.request;
+  if (!cuerpo) return new Response('La foto es demasiado grande. Elige otra de menos de 1,9 MB.', { status: 413 });
+  const form = await cuerpo.formData().catch(() => new FormData());
   // La primera foto que llegue (el diseño nuevo tiene dos botones: cámara y galería).
   const archivo = form.getAll('ticket').find((f) => f instanceof File && f.size > 0) ?? null;
   const bytes = archivo instanceof File ? new Uint8Array(await archivo.arrayBuffer()) : new Uint8Array();
