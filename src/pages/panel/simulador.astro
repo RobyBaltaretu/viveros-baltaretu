@@ -14,6 +14,7 @@ import { sesionCon } from '../../server/panel/pagina.ts';
 import { AVISO_AGOTADA, estadoCuota, limitePresupuestado, mesDe } from '../../server/simulador/cuota.ts';
 
 import { materialesDelTaller, DISTRIBUCIONES, APERTURAS, ACABADOS, VETAS } from '../../server/simulador/catalogo';
+import {PERFILES} from '../../server/simulador/perfiles';
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'editar');
@@ -143,6 +144,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
 {[['distribucion',DISTRIBUCIONES],['apertura',APERTURAS],['acabado',ACABADOS],['veta',VETAS]].map(([k,opciones])=><label class="block">{k}<select name={k as string} class="campo-panel">{(opciones as readonly string[]).map(o=><option>{o}</option>)}</select></label>)}
 <p>Los colores son orientativos, no fotografías del fabricante. Artículo activo no significa stock confirmado. Comprueba humedad, espesores, herrajes, instalaciones y holguras en la visita técnica.</p><a href="/panel/catalogo">Gestionar materiales del catálogo</a>
 {!materiales.length && <p role="status">Añade materiales al catálogo para seleccionar acabados reales del taller.</p>}</section>
+<section id="studio-perfil" class="space-y-3" data-perfiles={JSON.stringify(PERFILES)}><h2>Decisiones para tu reforma</h2><div id="studio-perfil-campos"></div><p id="studio-perfil-revision"></p></section>
 <!-- 2. Tipo de Estancia -->
         <div class="rounded-2xl border border-linea bg-papel p-5 shadow-xs">
           <h2 class="font-titular text-base font-bold text-tinta mb-3 flex items-center gap-2">
@@ -156,7 +158,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
                   <input
                     type="radio"
                     name="spaceType"
-                    value={e.nombre}
+                    value={e.id}
                     checked={idx === 0}
                     class="peer sr-only"
                   />
@@ -669,6 +671,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
       const datos = new FormData(form);
       const config = {
         spaceType: datos.get('spaceType'),
+        perfil: {opciones:Object.fromEntries([...form.querySelectorAll('[data-perfil-campo]')].map(e=>[e.dataset.perfilCampo,e.value]))},
         proyecto: Object.fromEntries(['ancho','alto','fondo','puertas','cajones','distribucion','apertura','acabado','veta'].map(k=>[k,['ancho','alto','fondo','puertas','cajones'].includes(k) ? (datos.get(k) ? Number(datos.get(k)) : null) : datos.get(k)])),
         cabinetStyle: $('cabinet-style')?.value,
         floorToCeiling: marcado('floor-to-ceiling'),
@@ -762,14 +765,14 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
  const children=[...form.children];
  const panels=[document.createElement('section'),document.createElement('section'),document.createElement('section'),document.createElement('section')];
  panels.forEach((p,i)=>{p.dataset.studioPanel=i;p.setAttribute('aria-label',['Espacio','Diseño','Materiales','Revisar'][i]);form.insertBefore(p,children[0]);});
- panels[0].append(children[0],children[2]);panels[1].append(children[1]);panels[2].append(children[3]);
+ panels[0].append(children[0],children[3]);panels[1].append(children[1],children[2]);panels[2].append(children[4]);
  const search=document.createElement('input');search.placeholder='Buscar material, acabado o referencia…';search.setAttribute('aria-label','Buscar materiales del catálogo');search.className='studio-material-search';panels[2].prepend(search);
  search.addEventListener('input',()=>{panels[2].querySelectorAll('label:has(input[type=radio])').forEach(l=>l.hidden=!l.textContent.toLocaleLowerCase('es').includes(search.value.toLocaleLowerCase('es')));});
  const review=document.createElement('div');review.className='studio-review';panels[3].append(review);
  const budget=document.createElement('a');budget.href='/panel/presupuestos-cliente/nuevo';budget.className='enlace-panel';budget.textContent='Preparar presupuesto con el catálogo';panels[3].append(budget);
  const notice=document.createElement('p');notice.textContent='La imagen no es un plano ni un precio calculado. El presupuesto se prepara con mediciones y partidas verificadas.';panels[3].append(notice);
  const footer=document.createElement('div');footer.className='studio-footer';const prev=document.createElement('button'),next=document.createElement('button');prev.type=next.type='button';prev.className=next.className='studio-button';prev.textContent='← Anterior';next.textContent='Continuar →';footer.append(prev,next);form.insertBefore(footer,document.getElementById('btn-generar'));
- let step=0;const show=(i)=>{step=i;panels.forEach((p,j)=>p.hidden=j!==i);document.querySelectorAll('[data-studio-step]').forEach((b,j)=>{if(i===j)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');});prev.disabled=i===0;next.hidden=i===3;review.textContent=[...form.querySelectorAll('select,input[type=number],input[type=radio]:checked')].map(e=>{const key=e.name||e.id;const labels={spaceType:'Espacio',ancho:'Ancho (cm)',alto:'Alto (cm)',fondo:'Fondo (cm)',puertas:'Puertas',cajones:'Cajones',distribucion:'Distribución',apertura:'Apertura',acabado:'Acabado',veta:'Veta','cabinet-style':'Frentes y tiradores',upperMaterial:'Módulos superiores',lowerMaterial:'Módulos inferiores',countertopMaterial:'Encimera',flooringMaterial:'Suelo','led-temp':'Iluminación'};const name=labels[key];if(!name)return '';const value=e.tagName==='SELECT'?e.selectedOptions[0]?.textContent:e.type==='radio'?e.closest('label')?.textContent.trim():e.value;return value?name+': '+value:'';}).filter(Boolean).join('\n');};
+ let step=0;const show=(i)=>{step=i;panels.forEach((p,j)=>p.hidden=j!==i);document.querySelectorAll('[data-studio-step]').forEach((b,j)=>{if(i===j)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');});prev.disabled=i===0;next.hidden=i===3;review.textContent=[...form.querySelectorAll('select,input[type=number],input[type=radio]:checked')].map(e=>{if(e.closest('label')?.hidden)return '';const key=e.name||e.id;const labels={spaceType:'Espacio',ancho:'Ancho (cm)',alto:'Alto (cm)',fondo:'Fondo (cm)',puertas:'Puertas',cajones:'Cajones',distribucion:'Distribución',apertura:'Apertura',acabado:'Acabado',veta:'Veta','cabinet-style':'Frentes y tiradores',upperMaterial:'Módulos superiores',lowerMaterial:'Módulos inferiores',countertopMaterial:'Encimera',flooringMaterial:'Suelo','led-temp':'Iluminación'};const name=labels[key];if(!name)return '';const value=e.tagName==='SELECT'?e.selectedOptions[0]?.textContent:e.type==='radio'?e.closest('label')?.textContent.trim():e.value;return value?name+': '+value:'';}).filter(Boolean).join('\n');};
  document.querySelectorAll('[data-studio-step]').forEach(b=>b.addEventListener('click',()=>show(Number(b.dataset.studioStep))));prev.onclick=()=>show(Math.max(0,step-1));next.onclick=()=>{if(step===0&&!document.getElementById('foto-input').files.length){document.getElementById('foto-input').reportValidity();return;}show(Math.min(3,step+1));};form.addEventListener('invalid',e=>{const panel=e.target.closest('[data-studio-panel]');if(panel)show(Number(panel.dataset.studioPanel));},true);
  form.addEventListener('change',()=>{if(document.getElementById('img-after').getAttribute('src'))document.getElementById('studio-status').textContent='El diseño ha cambiado. Genera otra visualización para actualizar el resultado.';});
  const key='turia:studio:draft:v1';const status=document.getElementById('studio-status');
@@ -778,5 +781,14 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
  document.getElementById('studio-reset').onclick=()=>{if(confirm('¿Descartar el borrador y empezar otro diseño?')){localStorage.removeItem(key);location.reload();}};
  const mirror=document.createElement('img');mirror.className='studio-original';mirror.alt='Foto de referencia del proyecto';document.getElementById('vacio-container').append(mirror);const source=document.getElementById('preview-thumb');new MutationObserver(()=>{if(source.src)mirror.src=source.src;}).observe(source,{attributes:true,attributeFilter:['src']});
  show(0);
+})();
+</script>
+
+<script is:inline>
+(()=>{
+ const host=document.getElementById('studio-perfil');if(!host)return;const perfiles=JSON.parse(host.dataset.perfiles);const tipo=document.querySelector('[name=spaceType]')?.closest('fieldset') || document.getElementById('simulador-form');
+ function update(){const seleccionado=document.querySelector('[name=spaceType]:checked')?.value;const par=Object.entries(perfiles).find(([k,p])=>k===seleccionado||p.nombre===seleccionado);if(!par)return;const [key,p]=par;const campos=document.getElementById('studio-perfil-campos');campos.replaceChildren();Object.entries(p.campos).forEach(([nombre,opciones])=>{const label=document.createElement('label');label.textContent=nombre[0].toUpperCase()+nombre.slice(1);label.className='block';const select=document.createElement('select');select.className='campo-panel';select.name='perfil-'+nombre;select.dataset.perfilCampo=nombre;opciones.forEach(o=>{const option=document.createElement('option');option.textContent=o;select.append(option);});try{const saved=JSON.parse(localStorage.getItem('turia:studio:draft:v1')||'[]');const previous=saved.find(v=>v.key===select.name);if(previous&&opciones.includes(previous.value))select.value=previous.value;}catch{/* No bloquea el diseño. */}label.append(select);campos.append(label);});for(const name of ['distribucion','apertura']){const control=document.querySelector('[name='+name+']');if(control)control.closest('label').hidden=true;}
+ document.getElementById('studio-perfil-revision').textContent=p.revision;for(const [id,zona] of [['zone-countertop','encimera'],['zone-flooring','suelo']]){const e=document.getElementById(id);const compatible=p.zonas.includes(zona);if(!compatible)e.checked=false;e.disabled=!compatible;e.closest('label').title=compatible?'':'No corresponde a este tipo de reforma';e.dispatchEvent(new Event('change'));}host.dataset.tipo=key;}
+ tipo?.addEventListener('change',e=>{if(e.target.name==='spaceType')update();});update();
 })();
 </script>

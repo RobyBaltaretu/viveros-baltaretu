@@ -594,6 +594,7 @@ export interface RepositorioPresupuestosCliente {
 
 /** Artículo del catálogo de la carpintería: un material, herraje, acabado, hora de trabajo o servicio. */
 export interface ArticuloCatalogo {
+  visual?: import('../catalogo/visual').DatosVisuales;
   id: string;
   /** Categoría (src/server/catalogo/catalogo.ts): tableros, cantos, herrajes, mano-obra… */
   categoria: string;

@@ -1,3 +1,4 @@
+import {resolverPerfil} from './perfiles';
 import { detallesProyecto, type DetallesProyecto } from './catalogo';
 export interface MaterialOption {
   id: string;
@@ -11,6 +12,7 @@ export interface MaterialOption {
 }
 
 export interface RenovationConfig {
+  perfil?: ReturnType<typeof resolverPerfil>;
   proyecto?: DetallesProyecto;
   spaceType: string;
   cabinetStyle?: string;
@@ -34,6 +36,7 @@ export interface RenovationConfig {
 }
 
 export interface RenovationRequestPayload {
+  perfil?: {opciones?: Record<string,string>};
   proyecto?: DetallesProyecto;
   spaceType: string;
   cabinetStyle?: string;
@@ -215,6 +218,7 @@ export function resolveRenovationConfig(payload: RenovationRequestPayload | Reno
   const zonas = (p.zones ?? {}) as Partial<RenovationConfig['zones']>;
   const luz = (p.lighting ?? {}) as Partial<RenovationConfig['lighting']>;
   return {
+    perfil: resolverPerfil(TIPOS_ESTANCIA.find(e=>e.id===p.spaceType||e.nombre===p.spaceType)?.id ?? 'cocina', p.perfil?.opciones),
     proyecto: p.proyecto === undefined ? undefined : detallesProyecto(p.proyecto),
     spaceType: TIPOS_ESTANCIA.find((e) => e.nombre === p.spaceType || e.id === p.spaceType)?.nombre ?? TIPOS_ESTANCIA[0]!.nombre,
     cabinetStyle: ESTILOS_MUEBLE.find((e) => e.nombre === p.cabinetStyle || e.id === p.cabinetStyle)?.nombre ?? ESTILOS_MUEBLE[0]!.nombre,
