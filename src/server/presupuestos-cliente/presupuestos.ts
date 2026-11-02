@@ -113,7 +113,7 @@ export async function cambiarPresupuesto(repos: Repositorios, id: string, entrad
   if (!cliente) return fallo('Ese cliente no existe.');
   // La serie y el número no cambian aunque cambie la fecha.
   const presupuesto: PresupuestoCliente = { ...previo, ...p.datos, cliente };
-  await repos.presupuestosCliente.guardar(presupuesto, email);
+  if (!(await repos.presupuestosCliente.actualizarBorrador(previo, presupuesto, email))) return fallo('El presupuesto ha cambiado. Recarga para evitar sobrescribir cambios.');
   return { ok: true, presupuesto };
 }
 
