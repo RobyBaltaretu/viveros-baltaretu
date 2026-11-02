@@ -56,7 +56,7 @@ const extras = p?.lineas.filter((l) => l.extra) ?? [];
 ---
 
 <PaginaPanel titulo={p ? `Presupuesto ${p.codigo}` : 'Presupuesto'} permiso="facturas" volver="/panel/presupuestos-cliente" ancho={nuevo ? 'amplio' : 'normal'}>
-  {nuevo && p && <FichaPresupuesto p={p} efectivo={efectivo} hoy={dia} hecho={hecho} error={error} correo={p.cliente.email ? enlaceCorreo(p, empresa) : null} whatsapp={enlaceWhatsapp(p, empresa)} />}
+  {nuevo && p && <FichaPresupuesto p={p} efectivo={efectivo} hoy={dia} hecho={hecho} error={error} correo={p.cliente.email ? enlaceCorreo(p, empresa) : null} whatsapp={enlaceWhatsapp(p, empresa)} facturaAnticipo={facturaAnticipo} facturaFinal={facturaFinal} />}
   {
     !nuevo && p && (
       <>
