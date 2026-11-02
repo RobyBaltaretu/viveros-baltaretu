@@ -69,6 +69,10 @@ export function crearRepositorioPresupuestosCliente(db: BaseD1): Pick<Repositori
         ).results.map(aPresupuesto);
       },
       obtener,
+      async porFactura(id) {
+        const fila = await db.prepare("SELECT * FROM presupuestos_cliente WHERE json_extract(datos, '$.facturaAnticipoId') = ? OR json_extract(datos, '$.facturaId') = ? LIMIT 1").bind(id, id).first<Fila>();
+        return fila ? aPresupuesto(fila) : null;
+      },
       async registrarCobro(id, parte, fecha, email) {
         const campo = parte === 'anticipo' ? '$.cobroAnticipo' : '$.cobroResto';
         const enlace = parte === 'anticipo' ? '$.facturaAnticipoId' : '$.facturaId';
