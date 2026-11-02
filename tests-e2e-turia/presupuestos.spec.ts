@@ -56,9 +56,13 @@ test('presupuestos: alta con extra, anticipo, envío, aceptación y factura de a
   await expect(page.locator('.nv-titulo .nv-chip')).toHaveText('Enviado');
   await page.getByRole('button', { name: 'El cliente lo acepta' }).click();
   await expect(page.getByText('Anticipo · Sin factura')).toBeVisible();
+  const urlPresupuesto = page.url();
   await page.getByRole('button', { name: 'Hacer la factura de anticipo' }).click();
   await expect(page).toHaveURL(/\/panel\/facturas\/[^/]+$/);
   await expect(page.locator('[name="l0.concepto"]')).toHaveValue(/^Anticipo del 40 % del presupuesto P\d{4}-\d{4}/);
+  await page.goto(urlPresupuesto);
+  await expect(page.getByText('Anticipo · Factura en borrador')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Ver la factura de anticipo' })).toBeVisible();
 });
 
 test('factura desde un presupuesto: primero aceptación explícita y después la final', async ({ page }) => {
