@@ -11,6 +11,8 @@ type Sector = (typeof SECTORES)[number];
  * los clientes de ese sector.
  */
 const RUTAS: [prefijo: string, modulo: Modulo, sector?: Sector][] = [
+  ['/panel/proyectos', 'presupuestosCliente', 'carpinteria'],
+  ['/panel/buscar', 'presupuestosCliente', 'carpinteria'],
   ['/panel/presupuestos', 'presupuestosWeb'],
   ['/api/panel/presupuestos.csv', 'presupuestosWeb'],
   ['/api/presupuesto', 'presupuestosWeb'],

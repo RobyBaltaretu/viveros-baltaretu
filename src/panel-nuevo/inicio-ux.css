@@ -1,0 +1,192 @@
+/* Identidad cálida de Turia. Este CSS solo se carga en el armazón nuevo. */
+.ux-turia {
+  --nv-fondo: #f8f7f5;
+  --nv-superficie: #fffefd;
+  --nv-borde: #e9e5df;
+  --nv-acento: #795331;
+  --nv-acento-oscuro: #604022;
+  --nv-acento-suave: #ede5dc;
+  --nv-hover: #f0ece7;
+  --nv-gris: #68615a;
+  --nv-radio: 20px;
+  --nv-sombra: 0 2px 9px rgb(66 45 24 / .04), 0 1px 2px rgb(66 45 24 / .03);
+  --color-terracota: #795331;
+  --color-oliva: #604022;
+  --color-verdor: #ede5dc;
+  --color-gris: #68615a;
+  --color-crema: #f8f7f5;
+  --color-linea: #e9e5df;
+  --color-papel: #fffefd;
+  --color-tinta: #282520;
+  color: #282520;
+}
+.ux-turia :focus-visible { outline-color: #795331; }
+.ux-turia .nv-lateral { padding: 2rem 1rem 1rem; background: linear-gradient(155deg,#f4f0ec,#faf8f6); border-right: 1px solid #eee9e3; }
+.ux-turia .nv-armazon { grid-template-columns: 232px minmax(0,1fr); }
+.ux-turia .nv-marca { padding: 0 .5rem; margin-bottom: 1.4rem; }
+.ux-turia .nv-monograma { background: transparent; color: #856747; font-family: Georgia,serif; font-size: 1.7rem; font-weight: 400; width: 2.6rem; height: 2.6rem; }
+.ux-turia .nv-marca-texto strong { max-width: 9rem; line-height: 1.15; font-size: 1.1rem; }
+.ux-turia .nv-marca-texto > span { display: none; }
+.ux-turia .nv-enlace { min-height: 48px; font-size: .86rem; padding: 0 .8rem; gap: .75rem; border-radius: 10px; }
+.ux-turia .nv-enlace[aria-current='page'] { color: #604022; background: #eae2d9; }
+.ux-turia .nv-grupo { margin-top: 1.2rem; }
+.ux-turia .nv-lateral .nv-lista + .nv-lista { border-top: 1px solid #e5dfd7; margin-top: 1rem; padding-top: .8rem; }
+.ux-turia .nv-cuenta { border-top: 1px solid #e5dfd7; background: transparent; }
+.ux-turia .nv-avatar { background: #a58b6b; color: white; }
+.ux-turia .nv-cabecera { border: 0; background: #f8f7f5ed; padding-inline: 1.5rem; min-height: 76px; gap: .7rem; }
+.ux-turia .nv-cabecera .nv-marca { margin-bottom: 0; }
+.ux-turia .nv-cabecera .nv-crear { display:none; }
+.ux-turia .nv-cabecera:not(:has(+ main .ux-inicio)) .nv-crear { display:inline-flex; }
+.ux-turia .nv-migas:has([aria-current='page']:first-child) { visibility: hidden; }
+.ux-turia .nv-contenido { max-width: 1480px; padding: .3rem 1.5rem 3rem; }
+.ux-turia .nv-contenido-normal { max-width: 960px; }
+.ux-buscador { display:flex; align-items:center; gap:.5rem; border:1px solid #ded8d1; border-radius:999px; padding:0 .8rem; background:#fffefd; width: min(340px,35vw); min-height:48px; box-shadow:inset 0 1px 3px #6e56300a; }
+.ux-buscador input { width:100%; min-width:0; border:0; background:transparent; outline:none; font-size:.86rem; }
+.ux-buscador:focus-within { outline:2px solid #795331; outline-offset:2px; }
+.ux-buscador button { min-width:30px; min-height:44px; cursor:pointer; color:#68615a; }
+.ux-buscador kbd { white-space:nowrap; color:#68615a; font: .75rem inherit; }
+.ux-campana { position:relative; flex:none; }
+.ux-punto-aviso { position:absolute; width:8px; height:8px; border-radius:50%; background:#b4332b; right:10px; top:8px; border:2px solid #f8f7f5; }
+.ux-cuenta-boton { flex:none; }
+.ux-turia .boton-icono { width:48px; height:48px; display:inline-grid; place-items:center; border-radius:50%; color:#51483d; }
+.ux-turia .boton-icono svg { width:21px; height:21px; }
+.ux-inicio { display:grid; gap:22px; }
+.ux-hero { position:relative; isolation:isolate; min-height:240px; display:flex; align-items:center; overflow:hidden; border-radius:22px; background:#68513b; color:white; }
+.ux-hero::after { content:''; position:absolute; inset:0; z-index:-1; background:linear-gradient(90deg,#2b2119c7,#2b211975 48%,transparent 80%); }
+.ux-hero-foto { position:absolute; inset:0; z-index:-2; width:100%; height:100%; object-fit:cover; object-position:center 55%; }
+.ux-saludo { padding:2.5rem 3.5rem; }
+.ux-saludo p { margin:0; font-size:1.25rem; }
+.ux-saludo h1 { font:500 clamp(1.7rem,3.3vw,3rem)/1.12 var(--font-sans); letter-spacing:-.045em; margin:.15rem 0 .45rem; }
+.ux-saludo .ux-lema { font-size:1rem; color:#f1e9de; }
+.ux-acciones { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:18px; }
+.ux-accion { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:9px; min-height:114px; border:1px solid #ebe7e1; border-radius:19px; padding:1.1rem 1.6rem; background:linear-gradient(130deg,#fcfbfa,#f1efec); color:#282520; text-decoration:none; font-size:.94rem; font-weight:500; line-height:1.2; box-shadow:0 2px 8px #38281203; }
+.ux-accion svg { width:28px; height:28px; stroke-width:1.5; }
+.ux-accion-principal { background:linear-gradient(120deg,#f0e6db,#e9ddcf); border-color:#e8ddd0; color:#604022; }
+.ux-accion-larga { max-width:7rem; }
+.ux-accion-corta { display:none; }
+.ux-accion:hover { border-color:#a58b6b; background:#ede5dc; }
+.ux-cuadricula { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:20px; align-items:stretch; }
+.ux-card { background:linear-gradient(130deg,#fffefd,#fcfbfa); border:1px solid #ece8e3; border-radius:20px; box-shadow:var(--nv-sombra); padding:20px; min-width:0; }
+.ux-card-cabecera { display:flex; gap:12px; align-items:center; justify-content:space-between; }
+.ux-card h2 { font-size:1rem; font-weight:650; letter-spacing:-.025em; margin:0; }
+.ux-card-cabecera > a { min-height:48px; display:inline-flex; align-items:center; white-space:nowrap; color:#51483d; font-size:.78rem; text-decoration:none; gap:3px; }
+.ux-card-cabecera form { display:flex; align-items:center; gap:4px; }
+.ux-card select { border:1px solid #e6e0d8; border-radius:999px; background:#fff; min-height:48px; padding:0 10px; font-size:.78rem; color:#51483d; max-width:130px; }
+.ux-aplicar { min-height:48px; padding:0 8px; font-size:.8rem; text-decoration:underline; }
+.ux-periodo { font-size:.72rem; color:#68615a; margin:0 0 12px; }
+.ux-metricas { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); list-style:none; padding:0; margin:0; gap:9px; }
+.ux-metricas a { display:flex; flex-direction:column; min-height:96px; gap:4px; padding:10px; background:linear-gradient(140deg,#fff,#f3f1ed); border:1px solid #eeeae5; border-radius:13px; color:#282520; text-decoration:none; }
+.ux-metricas a:hover { border-color:#a58b6b; }
+.ux-metricas a > span { font-size:.7rem; color:#51483d; }
+.ux-metricas strong { font-size:clamp(.9rem,1.55vw,1.6rem); letter-spacing:-.04em; white-space:nowrap; line-height:1.2; }
+.ux-metricas small { font-size:.65rem; color:#68615a; line-height:1.2; margin-top:2px; }
+.ux-metricas small.ux-positivo { color:#3e7228; }
+.ux-metricas small.ux-negativo { color:#b3382a; }
+.ux-grafica { margin:20px 0 0; }
+.ux-grafica svg { width:100%; height:84px; overflow:visible; }
+.ux-grafica figcaption { display:flex; align-items:center; justify-content:space-between; font-size:.7rem; color:#68615a; }
+.ux-grafica figcaption a { display:inline-flex; min-height:48px; align-items:center; color:#604022; }
+.ux-proyectos ul { padding:0; list-style:none; margin:0; }
+.ux-proyecto { display:flex; align-items:center; gap:12px; padding:10px 0; text-decoration:none; color:#282520; min-height:74px; }
+.ux-proyecto:hover strong { text-decoration:underline; }
+.ux-proyecto-icono { display:grid; place-items:center; width:52px; height:56px; border-radius:9px; flex:none; background:linear-gradient(135deg,#ede0cf,#b69c78); color:#604022; }
+.ux-proyecto-datos { display:flex; flex-direction:column; gap:5px; flex:1; min-width:0; }
+.ux-proyecto-datos strong { font-size:.82rem; font-weight:550; line-height:1.3; overflow:hidden; text-overflow:ellipsis; }
+.ux-proyecto-datos small { font-size:.7rem; color:#68615a; }
+.ux-progreso { display:flex; align-items:center; gap:12px; font-size:.7rem; white-space:nowrap; }
+.ux-progreso progress { appearance:none; width:100%; height:7px; border:0; border-radius:999px; overflow:hidden; background:#e8e5e1; accent-color:#718f51; }
+.ux-progreso progress::-webkit-progress-bar { background:#e8e5e1; border-radius:999px; }
+.ux-progreso progress::-webkit-progress-value { background:linear-gradient(90deg,#567c38,#a5b18c); border-radius:999px; }
+.ux-progreso progress::-moz-progress-bar { background:#718f51; border-radius:999px; }
+.ux-vacio { display:flex; flex-direction:column; align-items:flex-start; gap:14px; padding:20px 0; color:#68615a; }
+.ux-vacio > svg { width:32px; height:32px; color:#937956; }
+.ux-vacio p { margin:0; display:grid; gap:5px; font-size:.86rem; }
+.ux-vacio strong { color:#51483d; font-weight:550; }
+.ux-pendientes { scroll-margin-top:90px; }
+.ux-pendientes ul { padding:0; list-style:none; }
+.ux-todo-dia { display:flex; align-items:center; gap:12px; font-size:.86rem; color:#68615a; padding:16px 0; }
+.ux-todo-dia svg { color:#567c38; flex:none; }
+.ux-asistente-enlace { display:flex; align-items:center; gap:14px; padding:14px 20px; border-radius:16px; background:#f0ece6; color:#604022; text-decoration:none; }
+.ux-asistente-enlace > span { flex:1; display:grid; gap:2px; font-size:.85rem; }
+.ux-asistente-enlace > span > span { color:#68615a; font-size:.78rem; }
+.ux-lista-proyectos { display:grid; gap:16px; padding:0; list-style:none; margin-top:20px; }
+.ux-paso-proyecto { display:grid; gap:20px; }
+.ux-avisos { max-height:80dvh; overflow:auto; }
+.ux-turia .nv-inferior { background:#fffefdf2; border-color:#e9e5df; }
+.ux-turia .nv-pestana-crear { background:linear-gradient(135deg,#976e43,#704c2c); box-shadow:0 4px 12px #79533130; }
+@media (min-width:1400px) { .ux-hero { min-height:280px; } .ux-turia .nv-contenido { padding-inline:2.5rem; } }
+@media (max-width:1200px) and (min-width:1024px) { .ux-turia .nv-armazon { grid-template-columns:210px minmax(0,1fr); } .ux-cuadricula { grid-template-columns:1fr; } .ux-accion { padding:1rem; } }
+@media (max-width:1023px) {
+ .ux-turia .nv-armazon { display:block; }
+ .ux-turia .nv-contenido { padding:8px 20px 110px; }
+ .ux-turia .nv-cabecera { padding:12px 20px; }
+ .ux-turia .nv-cabecera .nv-marca { margin:0; }
+ .ux-turia .nv-cabecera .nv-monograma { width:30px; font-size:1.4rem; }
+ .ux-turia .nv-cabecera .nv-marca-texto strong { font-size:.95rem; max-width:7rem; }
+ .ux-buscador, .ux-cuenta-boton, .ux-turia .nv-cabecera .nv-crear { display:none !important; }
+ .ux-turia .nv-cabecera .nv-marca { padding:0; }
+ .ux-turia .nv-cabecera .nv-etiqueta-pruebas { font-size:.7rem; }
+ .ux-hero { min-height:210px; }
+ .ux-cuadricula { grid-template-columns:1fr 1fr; }
+ .ux-acciones { gap:10px; }
+ .ux-accion { padding:14px; }
+}
+@media (max-width:700px) {
+ .ux-inicio { gap:16px; }
+ .ux-turia .nv-contenido { padding-inline:16px; }
+ .ux-turia .nv-cabecera { padding:8px 16px; min-height:68px; }
+ .ux-hero { display:block; background:transparent; color:#282520; border-radius:0; padding-top:0; }
+ .ux-hero::after { display:none; }
+ .ux-hero-foto { position:relative; display:block; height:118px; object-position:65% 55%; border-radius:17px; margin-top:12px; z-index:0; }
+ .ux-saludo { padding:0 5px; }
+ .ux-saludo p { font-size:.9rem; }
+ .ux-saludo h1 { font-size:1.5rem; font-weight:650; margin:1px 0; letter-spacing:-.04em; }
+ .ux-saludo .ux-lema { display:none; }
+ .ux-acciones { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+ .ux-accion { min-height:64px; flex-direction:row; justify-content:flex-start; align-items:center; gap:12px; padding:12px 20px; border-radius:16px; font-size:.84rem; }
+ .ux-accion svg { width:24px; height:24px; flex:none; }
+ .ux-accion:last-child { display:none; }
+ .ux-accion-larga { display:none; }
+ .ux-accion-corta { display:inline; }
+ .ux-cuadricula { grid-template-columns:1fr; gap:16px; }
+ .ux-card { padding:14px; border-radius:18px; }
+ .ux-card h2 { font-size:.92rem; }
+ .ux-card-cabecera { gap:8px; }
+ .ux-card select { max-width:106px; }
+ .ux-card-cabecera > a { font-size:.7rem; }
+ .ux-periodo { font-size:.65rem; margin-bottom:8px; }
+ .ux-metricas { gap:6px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .ux-metricas a { padding:10px; min-height:85px; }
+ .ux-metricas strong { font-size:1.35rem; }
+ .ux-metricas small { font-size:.67rem; }
+ .ux-grafica { margin-top:14px; }
+ .ux-grafica svg { height:65px; }
+ .ux-proyecto-datos strong { font-size:.8rem; }
+ .ux-pendientes .nv-tarea { flex-wrap:wrap; }
+ .ux-pendientes .nv-tarea-texto { min-width:160px; }
+ .ux-pendientes .nv-tarea .nv-boton { margin-left:auto; }
+}
+.ux-expandir-cifras, .ux-turia .ux-buscar-movil { display:none; }
+@media (max-width:1023px) { .ux-turia .ux-buscar-movil { display:inline-grid; font-size:1.7rem; } }
+@media (max-width:700px) {
+ .ux-resumen { display:grid; grid-template-columns:1fr 1fr; column-gap:14px; }
+ .ux-resumen .ux-card-cabecera, .ux-resumen > .ux-periodo, .ux-expandir-cifras { grid-column:1 / -1; }
+ .ux-resumen .ux-metricas { display:block; }
+ .ux-resumen:not(.ux-cifras-abiertas) .ux-metricas li:not(:nth-child(2)) { display:none; }
+ .ux-resumen .ux-metricas a { border:0; padding:0; background:none; min-height:70px; }
+ .ux-resumen .ux-metricas strong { font-size:1.6rem; }
+ .ux-resumen .ux-grafica { margin:8px 0 0; }
+ .ux-resumen .ux-grafica figcaption { display:none; }
+ .ux-expandir-cifras { display:inline-flex; align-items:center; min-height:48px; font-size:.75rem; color:#604022; text-decoration:underline; }
+ .ux-cifras-abiertas .ux-metricas { display:grid; grid-template-columns:1fr 1fr; gap:10px; grid-column:1 / -1; }
+ .ux-cifras-abiertas .ux-grafica { grid-column:1 / -1; }
+ .sin-js .ux-resumen .ux-metricas li { display:block !important; }
+ .sin-js .ux-resumen .ux-metricas { display:grid; grid-column:1 / -1; grid-template-columns:1fr 1fr; }
+ .sin-js .ux-expandir-cifras { display:none; }
+}
+.ux-turia .nv-lateral nav { flex:1; min-height:0; overflow-y:auto; scrollbar-width:thin; }
+.ux-turia .nv-lateral > .nv-marca, .ux-turia .nv-cuenta { flex-shrink:0; }
+.ux-turia #ux-avisos .nv-cerrar-menu, .ux-turia #ux-cuenta .nv-cerrar-menu { display:flex; width:100%; min-height:48px; justify-content:center; align-items:center; border:1px solid var(--nv-borde); border-radius:10px; margin-top:8px; }
+.ux-avisos a > span:first-child { width:auto; height:auto; display:block; flex:1; background:transparent; color:inherit; }
+.ux-avisos a small { margin-top:3px; }
+@media (max-width:700px) { .ux-hero { min-height:0; } }

@@ -1,0 +1,15 @@
+---
+import Icono from '../components/panel/ui/Icono.astro';
+import { sesionCon } from '../server/panel/pagina';
+import { puede } from '../server/panel/permisos';
+import { rutaDisponible } from '../plataforma/actual';
+import { hoy } from '../server/gastos/gastos';
+import { porHacer } from './inicio';
+const s = sesionCon(Astro.locals);
+const rol = s?.usuario.rol ?? 'editor';
+const ver = { facturas: puede(rol,'facturas') && rutaDisponible('/panel/facturas'), presupuestos: puede(rol,'facturas') && rutaDisponible('/panel/presupuestos-cliente'), gastos: puede(rol,'gastos') && rutaDisponible('/panel/gastos'), informes: puede(rol,'informes') && rutaDisponible('/panel/informes') };
+const [facturas, presupuestos, tickets] = s ? await Promise.all([ver.facturas ? s.repos.facturas.listar() : [], ver.presupuestos ? s.repos.presupuestosCliente.listar() : [], ver.gastos ? s.repos.gastos.listar({estado:'revisar'}) : []]) : [[],[],[]];
+const tareas = porHacer({hoy:hoy(), facturas, presupuestos, ticketsPorRevisar:tickets.length, gastosMes:[],ver});
+---
+<button type="button" class="boton-icono ux-campana" aria-label={`Notificaciones${tareas.length ? `: ${tareas.length} pendientes` : ': todo al día'}`} popovertarget="ux-avisos"><Icono nombre="campana"/>{tareas.length > 0 && <span class="ux-punto-aviso"/>}</button>
+<div id="ux-avisos" popover class="nv-menu ux-avisos" role="dialog" aria-labelledby="ux-avisos-titulo"><h2 id="ux-avisos-titulo">Notificaciones</h2>{tareas.length ? <ul role="list">{tareas.slice(0,6).map(t => <li><a href={t.href}><span><strong>{t.titulo}</strong><small>{t.detalle}</small></span><Icono nombre="siguiente"/></a></li>)}</ul> : <p class="ux-todo-dia"><Icono nombre="hecho"/>Todo al día</p>}<a class="enlace-panel" href="/panel#nv-por-hacer">Ver todas las tareas</a><button class="nv-cerrar-menu" popovertarget="ux-avisos" popovertargetaction="hide">Cerrar</button></div>

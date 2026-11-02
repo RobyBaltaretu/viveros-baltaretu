@@ -61,3 +61,7 @@ Prioridad del propietario para Turia: **KPIs, catálogo, presupuestos y facturas
 - Decisiones del propietario del 29-10-2026 en `preguntas.md` («Respuestas»): pasar a Workers Paid más adelante, cupo de IA pensado sobre todo para Turia, datos de Baltaretu en D1 desechables, Turia = `creacionesturia` y no fusionar la PR 61.
 - `developers.cloudflare.com` no se puede abrir desde la sesión. Las cifras van «por confirmar» ([P-07](preguntas.md)).
 - Prettier no tiene configuración en el repositorio. **No se pasa a archivos existentes**: reformatea todo ([D-15](discrepancias.md)).
+
+### Revisión UX del inicio de Turia · 2 de noviembre de 2026
+
+Inicio y armazón nuevo adaptados a la referencia del propietario en `feat/turia-inicio-ux`: accesos a presupuesto/factura/gasto/pedido/proyecto, resumen comparativo, búsqueda con permisos, notificaciones y cuenta. «Proyectos» ofrece una vista de los presupuestos aceptados y su avance administrativo, sin tablas ni migraciones nuevas. No sustituye al seguimiento físico independiente pendiente en 3.7. Baltaretu conserva su armazón y tema.

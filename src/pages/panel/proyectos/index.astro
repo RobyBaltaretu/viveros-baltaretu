@@ -1,0 +1,21 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import Icono from '../../../components/panel/ui/Icono.astro';
+import { sesionCon } from '../../../server/panel/pagina';
+import { estadoEfectivo } from '../../../server/presupuestos-cliente/presupuestos';
+import { hoy } from '../../../server/gastos/gastos';
+import { proyectosDe } from '../../../panel-nuevo/resumen';
+export const prerender = false;
+const s = sesionCon(Astro.locals, 'facturas');
+const presupuestos = s ? await s.repos.presupuestosCliente.listar() : [];
+const todos = proyectosDe(presupuestos);
+const filtro = ['pendientes', 'finalizados'].includes(Astro.url.searchParams.get('ver') ?? '') ? Astro.url.searchParams.get('ver')! : 'curso';
+const pendientes = presupuestos.filter(p => ['borrador', 'enviado'].includes(estadoEfectivo(p, hoy())));
+const lista = filtro === 'pendientes' ? [] : todos.filter(p => filtro === 'finalizados' ? p.terminado : !p.terminado);
+---
+<PaginaPanel titulo="Proyectos" permiso="facturas" ancho="amplio">
+  <div class="nv-titulo"><div><h1>Proyectos</h1><p>Del presupuesto aceptado al último cobro. El avance representa los hitos administrativos, no la ejecución de obra.</p></div><a class="nv-boton" href="/panel/proyectos/nuevo"><Icono nombre="nuevo"/>Crear proyecto</a></div>
+  <nav class="nv-pestanas" aria-label="Estado de los proyectos">{[['curso','En curso'],['pendientes','Pendientes'],['finalizados','Finalizados']].map(([k,t]) => <a href={`/panel/proyectos?ver=${k}`} aria-current={filtro === k ? 'page' : undefined}>{t}</a>)}</nav>
+  {filtro === 'pendientes' ? <ul class="ux-lista-proyectos" role="list">{pendientes.map(p => <li class="ux-card"><a class="ux-proyecto" href={`/panel/presupuestos-cliente/${p.id}`}><Icono nombre="presupuestos"/><span class="ux-proyecto-datos"><strong>{p.concepto}</strong><span>{p.cliente.nombre} · {p.estado === 'borrador' ? 'Presupuesto por preparar' : 'Pendiente de aceptación'}</span></span><Icono nombre="siguiente"/></a></li>)}</ul> : <ul class="ux-lista-proyectos" role="list">{lista.map(p => <li class="ux-card"><a class="ux-proyecto" href={`/panel/presupuestos-cliente/${p.id}`}><span class="ux-proyecto-icono"><Icono nombre="inventario"/></span><span class="ux-proyecto-datos"><strong>{p.concepto} · {p.cliente.nombre}</strong><span class="ux-progreso"><progress max="100" value={p.avance} aria-label={`Avance administrativo: ${p.concepto}`}/><span>{p.avance} %</span></span><small>{p.etapa}</small></span><Icono nombre="siguiente"/></a></li>)}</ul>}
+  {(filtro === 'pendientes' ? pendientes.length === 0 : lista.length === 0) && <div class="ux-card ux-vacio"><Icono nombre="inventario"/><p><strong>No hay proyectos {filtro === 'curso' ? 'en curso' : filtro}.</strong><span>Empieza con un presupuesto. Al aceptarlo, aparecerá en curso.</span></p><a href="/panel/proyectos/nuevo" class="nv-boton">Crear proyecto</a></div>}
+</PaginaPanel>
