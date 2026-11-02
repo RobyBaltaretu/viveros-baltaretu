@@ -2519,3 +2519,142 @@
   .nv-armazon { display: block; }
   .nv-contenido { padding: 0; max-width: none; }
 }
+
+
+/* === CREACIONES TURIA · dirección de arte 2026 ===
+   Aplicado solo al panel nuevo del cliente Turia; no afecta a Baltaretu. */
+.nv-taller {
+  --nv-madera: #a96c3b;
+  --nv-roble: #d3a778;
+  --nv-oliva: #5d7136;
+  --nv-noche: #25221e;
+  --nv-lino: #fbf6ee;
+  --nv-fondo: #f7f2eb;
+  --nv-superficie: #fffdf9;
+  --nv-acento: #536b36;
+  --nv-acento-oscuro: #394e2a;
+  --nv-acento-suave: #edf0e4;
+  --nv-borde: #e7ded1;
+  --nv-tinta: #2b2a26;
+  --nv-gris: #69675e;
+  background:var(--nv-fondo);
+}
+.nv-taller .nv-lateral {
+  background:linear-gradient(156deg,#29251f 0%,#32291f 64%,#252921 100%);
+  border-right:1px solid #50402e;
+  color:#f8f0e4;
+}
+.nv-taller .nv-lateral .nv-marca {
+  min-height:5rem;
+  margin:.25rem .2rem 1.25rem;
+  padding:.6rem;
+  border:1px solid #67513a;
+  border-radius:13px;
+  background:rgb(255 255 255 / .035);
+  color:#f9ecdb;
+}
+.nv-taller .nv-monograma {
+  width:2.75rem;
+  height:2.75rem;
+  border-radius:12px;
+  overflow:hidden;
+  background:#332a21;
+}
+.nv-taller .nv-monograma img {width:100%;height:100%;object-fit:contain}
+.nv-taller .nv-lateral .nv-marca-texto strong {color:#fff4e5;font-family:Georgia,serif;font-size:1.16rem;letter-spacing:.01em}
+.nv-taller .nv-lateral .nv-marca-texto span {color:#c8b8a3;font-size:.72rem;letter-spacing:.06em}
+.nv-taller .nv-lateral .nv-grupo {color:#b7a58e;letter-spacing:.14em;font-size:.7rem}
+.nv-taller .nv-lateral .nv-enlace {color:#eee2d1;border-radius:10px;min-height:44px}
+.nv-taller .nv-lateral .nv-enlace:hover {background:rgb(255 255 255 / .095);color:#fff}
+.nv-taller .nv-lateral .nv-enlace[aria-current="page"] {background:linear-gradient(110deg,#627839,#485c2c);color:#fff;border:1px solid #899b65;font-weight:700}
+.nv-taller .nv-lateral .nv-cuenta {border-top:1px solid #554434}
+.nv-taller .nv-lateral .nv-cuenta-texto {color:#e8dacc}
+.nv-taller .nv-cabecera {background:rgb(255 253 249 / .95);border-bottom:1px solid var(--nv-borde);backdrop-filter:blur(12px)}
+.nv-taller .nv-contenido {padding-top:1.1rem}
+.nv-taller .nv-contexto-taller {font-size:.66rem;letter-spacing:.19em;font-weight:700;color:#826c51;margin-bottom:1rem}
+.nv-taller .nv-titulo h1 {font-family:Georgia,"Times New Roman",serif;font-weight:700;letter-spacing:-.035em;line-height:1.15}
+.nv-taller .nv-hero-taller {
+  position:relative;
+  isolation:isolate;
+  border-radius:22px;
+  padding:clamp(1.25rem,3vw,2.5rem);
+  margin-bottom:1.2rem;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  overflow:hidden;
+  background:linear-gradient(105deg,#f4e7d6 0%,#f8f1e7 55%,#e9d3b7 100%);
+  border:1px solid #dccbb5;
+  box-shadow:0 8px 25px -18px #5e4328;
+}
+.nv-taller .nv-hero-taller::after {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:min(46%,24rem);
+  height:140%;
+  right:-3%;
+  top:-18%;
+  opacity:.24;
+  transform:rotate(-19deg);
+  background:repeating-linear-gradient(92deg,#9a6237 0px,#ceaa7e 2px,#ead0aa 4px,#9a6237 5px,#eed9bc 14px);
+  border-radius:48%;
+  pointer-events:none;
+}
+.nv-taller .nv-hero-taller .nv-titulo {margin:0;flex:1 1 19rem}
+.nv-taller .nv-hero-taller h1 {font-size:clamp(1.8rem,3.2vw,3.1rem)}
+.nv-taller .nv-hero-taller .nv-fecha {color:#725639}
+.nv-taller .nv-inicio-subtitulo {color:#664f37;font-size:.94rem}
+.nv-taller .nv-hero-acciones {display:flex;flex-wrap:wrap;align-items:center;gap:.65rem}
+.nv-taller .nv-hero-cta,.nv-taller .nv-hero-cta-secundaria {
+  min-height:48px;display:inline-flex;align-items:center;justify-content:center;
+  gap:.5rem;border-radius:11px;text-decoration:none;font-weight:700;padding:.75rem 1.1rem;
+}
+.nv-taller .nv-hero-cta {background:#536a31;border:1px solid #415426;color:#fff;box-shadow:0 3px 0 #31421b}
+.nv-taller .nv-hero-cta:hover {background:#3b5224}
+.nv-taller .nv-hero-cta-secundaria {background:#fffaf3;border:1px solid #d5c3ae;color:#443e35}
+.nv-taller .nv-camino {
+  background:var(--nv-superficie);border:1px solid var(--nv-borde);
+  padding:1.3rem;border-radius:18px;margin-bottom:1.5rem;
+  box-shadow:var(--nv-sombra);
+}
+.nv-taller .nv-camino-etiqueta {display:block;color:#6b7d45;font-size:.7rem;font-weight:800;letter-spacing:.13em;margin-bottom:.3rem}
+.nv-taller .nv-camino h2 {font-family:Georgia,serif;font-size:clamp(1.2rem,2vw,1.55rem);margin:0}
+.nv-taller .nv-camino p {margin:.15rem 0 1rem;color:var(--nv-gris);font-size:.875rem}
+.nv-taller .nv-camino-pasos {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.65rem;padding:0;margin:0;list-style:none}
+.nv-taller .nv-camino-pasos li {min-width:0}
+.nv-taller .nv-camino-pasos a {
+  display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:.6rem;row-gap:.14rem;
+  align-items:center;min-height:86px;text-decoration:none;
+  padding:.85rem;border-radius:12px;background:#faf5ec;
+  border:1px solid #e9dece;color:var(--nv-tinta);
+}
+.nv-taller .nv-camino-pasos a:hover {border-color:#869766;background:#f0f2e9}
+.nv-taller .nv-camino-num {
+  grid-row:span 2;width:2rem;height:2rem;display:grid;place-items:center;
+  border-radius:50%;background:#e6e5d5;color:#506432;font-size:.82rem;font-weight:800;
+}
+.nv-taller .nv-camino-pasos strong {font-size:.85rem;line-height:1.25}
+.nv-taller .nv-camino-pasos small {color:var(--nv-gris);font-size:.75rem}
+.nv-taller .nv-tarjeta {box-shadow:0 2px 14px -12px #5b4935}
+.nv-taller .nv-kpi {border-top:3px solid #a5875f}
+.nv-taller .nv-kpi-valor {font-family:Georgia,serif;letter-spacing:-.025em}
+@media(max-width:64rem) {
+  .nv-taller .nv-camino-pasos {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:40rem) {
+  .nv-taller .nv-hero-taller {border-radius:15px;padding:1.25rem;gap:.8rem}
+  .nv-taller .nv-hero-taller::after {width:40%;opacity:.12}
+  .nv-taller .nv-hero-acciones {width:100%}
+  .nv-taller .nv-hero-cta {flex:1}
+  .nv-taller .nv-camino {padding:.9rem;border-radius:14px}
+  .nv-taller .nv-camino-pasos {gap:.4rem}
+  .nv-taller .nv-camino-pasos a {grid-template-columns:1fr;min-height:95px;padding:.7rem}
+  .nv-taller .nv-camino-num {grid-row:auto;width:1.8rem;height:1.8rem}
+  .nv-taller .nv-camino-pasos strong {font-size:.79rem}
+  .nv-taller .nv-camino-pasos small {font-size:.7rem}
+  .nv-taller .nv-contexto-taller {font-size:.6rem}
+}
+@media(prefers-reduced-motion:reduce){.nv-taller .nv-hero-cta{box-shadow:none}}
