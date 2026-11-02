@@ -12,6 +12,7 @@ import { dinero, importeLinea } from '../../server/facturas/importes.ts';
 
 interface Props {
   factura: Factura;
+  presupuestoId: string | null;
 }
 const { factura: f } = Astro.props;
 const fecha = (iso: string) => iso.split('-').reverse().join('/');
