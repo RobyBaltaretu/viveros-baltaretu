@@ -42,7 +42,6 @@ const todas = [...facturas, ...emitidas.filter(f => !idsFacturas.has(f.id))];
 const datos: DatosInicio = { hoy: dia, facturas: todas, gastosMes, ticketsPorRevisar: revisar, presupuestos, ver };
 const cifras = kpis(datos);
 const tareas = porHacer(datos);
-const VISIBLES = 8;
 const meses = ver.facturas ? evolucion(datos) : [];
 const maximo = Math.max(...meses.map((m) => m.base), 0);
 const crear = accionesCrear(s ? menuDe(rol) : []);
@@ -53,7 +52,6 @@ const eurCorto = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000).toLocaleS
 const valor = (k: (typeof cifras)[number]) => (k.valor === null ? '—' : k.formato === 'euros' ? eur(k.valor) : `${k.valor}\u00a0%`);
 const ahora = new Date();
 const hora = Number(ahora.toLocaleString('es-ES', { hour: 'numeric', hour12: false, timeZone: 'Europe/Madrid' }));
-const fecha = ahora.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Madrid' });
 const nombre = (s?.usuario.nombre || '').split(' ')[0];
 ---
 
