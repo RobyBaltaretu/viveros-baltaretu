@@ -74,7 +74,8 @@ export function crearRepositorioPresupuestosCliente(db: BaseD1): Pick<Repositori
         return fila ? aPresupuesto(fila) : null;
       },
       async actualizarBorrador(previo, nuevo, email) {
-        const t = ahora();
+        const reloj = ahora();
+        const t = reloj > previo.actualizado ? reloj : new Date(Date.parse(previo.actualizado) + 1).toISOString();
         const r = await db.prepare(`UPDATE presupuestos_cliente
           SET fecha = ?, validez = ?, cliente_id = ?, obra_id = ?, anticipo_pct = ?, total = ?,
               datos = json_set(?, '$.facturaId', json_extract(datos, '$.facturaId'), '$.facturaAnticipoId', json_extract(datos, '$.facturaAnticipoId')),
