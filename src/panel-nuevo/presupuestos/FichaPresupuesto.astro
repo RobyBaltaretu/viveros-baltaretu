@@ -91,8 +91,8 @@ const principalEstado = (e: EstadoPresupuestoCliente) => e === 'enviado' || e ==
     {
       efectivo === 'enviado' && (
         <form method="post">
-          <button name="accion" value="facturar:toca" class="nv-boton">
-            El cliente ha aceptado: hacer la factura{p.totales.anticipo > 0 && ' de anticipo'}
+          <button name="accion" value="estado:aceptado" class="nv-boton">
+            Registrar aceptación del cliente
           </button>
         </form>
       )
