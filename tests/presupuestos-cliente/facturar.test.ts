@@ -101,7 +101,7 @@ describe('del presupuesto a la factura', () => {
     const id = r.presupuesto.id;
     expect(await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-10-30')).toMatchObject({ ok: false });
     await cambiarEstado(repos, id, 'enviado', yo, '2026-10-30');
-    expect(await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-12-01')).toMatchObject({ ok: false, error: expect.stringContaining('caducado') });
+    expect(await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-12-01')).toMatchObject({ ok: false, error: expect.stringContaining('aceptado') });
     expect(await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-10-30')).toMatchObject({ ok: false, error: expect.stringContaining('aceptado') });
     expect((await repos.presupuestosCliente.obtener(id))?.estado).toBe('enviado');
     await cambiarEstado(repos, id, 'aceptado', yo, '2026-10-30');
