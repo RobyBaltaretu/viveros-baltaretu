@@ -2,22 +2,13 @@
   "id": "turia",
   "nombre": "Creaciones Turia",
   "sector": "carpinteria",
-  "marca": {
-    "nombreCorto": "Creaciones Turia",
-    "monograma": "/marca-turia.svg"
-  },
+  "marca": { "nombreCorto": "Creaciones Turia", "monograma": null },
   "plan": "completo",
   "dominio": null,
   "webPublica": false,
-  "idiomas": [
-    "es"
-  ],
+  "idiomas": ["es"],
   "idiomaPorDefecto": "es",
-  "cloudflare": {
-    "worker": "creacionesturia",
-    "d1": "creacionesturia",
-    "wrangler": "wrangler.creacionesturia.jsonc"
-  },
+  "cloudflare": { "worker": "creacionesturia", "d1": "creacionesturia", "wrangler": "wrangler.creacionesturia.jsonc" },
   "modulos": {
     "catalogo": true,
     "presupuestosWeb": false,
@@ -34,34 +25,22 @@
     "simulador": true,
     "whatsapp": true
   },
-  "iva": {
-    "general": 21,
-    "fijo": true
-  },
+  "iva": { "general": 21, "fijo": true },
   "tema": {
-    "crema": "#F5F1EA",
-    "papel": "#FFFEFB",
-    "verdor": "#E9EDE4",
-    "oliva": "#3D5744",
-    "tinta": "#282C27",
-    "gris": "#636B62",
-    "terracota": "#94633E",
-    "linea": "#DADDD4"
+    "crema": "#f6f6f4",
+    "papel": "#ffffff",
+    "verdor": "#e4f0f3",
+    "oliva": "#0b5063",
+    "tinta": "#1a1a19",
+    "gris": "#5f5e5a",
+    "terracota": "#0e6b87",
+    "linea": "#e6e4df"
   },
-  "panel": {
-    "diseno": "nuevo"
-  },
+  "panel": { "diseno": "nuevo" },
   "ia": {
-    "asistente": [
-      "groq",
-      "workers-ai",
-      "local"
-    ],
+    "asistente": ["groq", "workers-ai", "local"],
     "simulador": "gemini",
-    "modelos": {
-      "groq": "openai/gpt-oss-120b",
-      "gemini": "gemini-3.1-flash-image-preview"
-    },
+    "modelos": { "groq": "openai/gpt-oss-120b", "gemini": "gemini-3.1-flash-image-preview" },
     "simulacionesMes": 250
   }
 }

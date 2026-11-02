@@ -56,10 +56,7 @@ const TEXTO = /\.(css|js|mjs|json|xml|txt|svg|webmanifest)$|(^|\/)(_headers|_red
  * origen), porque su codificación puede variar entre máquinas.
  */
 export function resumenBaseline(h) {
-  // Los recursos del panel de Turia no forman parte de la web pública de
-  // Baltaretu. compararHuellas sigue comprobando sus bytes entre los builds.
-  const turia = new Set(['marca-turia.svg', 'turia-roble.webp']);
-  const rutas = Object.keys(h.archivos).filter((r) => !turia.has(r)).sort();
+  const rutas = Object.keys(h.archivos).sort();
   return {
     rutas,
     paginas: h.paginas,

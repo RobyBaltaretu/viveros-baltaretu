@@ -69,7 +69,6 @@ describe('tema por cliente', () => {
 
   it('un cliente con otros colores los sobrescribe todos', () => {
     const css = cssDelTema(cargarCliente('turia'));
-    expect(css).toContain('--color-crema:#F5F1EA');
-    expect(css).toContain('--color-linea:#DADDD4');
+    expect(css).toMatch(/^html:root\{--color-crema:#f6f6f4;.*--color-linea:#e6e4df\}$/);
   });
 });
