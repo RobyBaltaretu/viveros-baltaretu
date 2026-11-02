@@ -82,7 +82,7 @@ export function porFacturar(p: Pick<PresupuestoCliente, 'totales' | 'facturaAnti
 export const importeAFacturar = (p: Pick<PresupuestoCliente, 'totales' | 'facturaAnticipoId'>, que: 'anticipo' | 'final') => (que === 'anticipo' ? p.totales.anticipo : p.facturaAnticipoId ? p.totales.restante : p.totales.total);
 
 /** Presupuestos facturables: solo aceptados. La aceptación comercial es una acción explícita. */
-export function facturables(ps: PresupuestoCliente[], hoy: string): { p: PresupuestoCliente; que: 'anticipo' | 'final'; importe: number; acepta: boolean }[] {
+export function facturables(ps: PresupuestoCliente[], _hoy: string): { p: PresupuestoCliente; que: 'anticipo' | 'final'; importe: number; acepta: boolean }[] {
   return ps
     .filter((p) => p.estado === 'aceptado')
     .flatMap((p) => {
