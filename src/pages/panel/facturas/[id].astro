@@ -83,6 +83,7 @@ const MENSAJES: Record<string, string> = {
 };
 const [articulos, plantillas] = s && nuevo && f?.estado === 'borrador' && rutaDisponible('/panel/catalogo') ? await Promise.all([s.repos.catalogo.articulos(), s.repos.catalogo.plantillas()]) : [[], []];
 const confirmar = f?.estado === 'borrador' && Astro.url.searchParams.has('confirmar') && !errores.length;
+const presupuestoVinculado = s && nuevo && f ? await s.repos.presupuestosCliente.porFactura(f.id) : null;
 const titulo = !f ? 'Factura' : f.estado === 'borrador' ? (f.tipo === 'rectificativa' ? 'Rectificativa (borrador)' : 'Factura (borrador)') : `Factura ${f.codigo}`;
 ---
 
