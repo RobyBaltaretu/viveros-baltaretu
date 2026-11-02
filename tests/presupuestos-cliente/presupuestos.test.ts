@@ -99,6 +99,16 @@ describe('presupuestos a cliente', () => {
     expect(await cambiarEstado(repos, id, 'borrador', yo, '2026-11-03')).toMatchObject({ ok: false });
   });
 
+  it('una transición concurrente no puede sobrescribir una decisión ya tomada', async () => {
+    const r = await crearPresupuesto(repos, base, yo, 21);
+    if (!r.ok) throw new Error(r.error);
+    await cambiarEstado(repos, r.presupuesto.id, 'enviado', yo, '2026-10-30');
+    const previo = (await repos.presupuestosCliente.obtener(r.presupuesto.id))!;
+    expect(await repos.presupuestosCliente.transicionarEstado(previo, 'aceptado', yo)).toBe(true);
+    expect(await repos.presupuestosCliente.transicionarEstado(previo, 'rechazado', yo)).toBe(false);
+    expect((await repos.presupuestosCliente.obtener(previo.id))?.estado).toBe('aceptado');
+  });
+
   it('en borrador se cambian los datos y se recalcula; la serie y el número se quedan', async () => {
     const r = await crearPresupuesto(repos, base, yo, 21);
     if (!r.ok) throw new Error(r.error);
