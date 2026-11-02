@@ -83,6 +83,7 @@ export const importeAFacturar = (p: Pick<PresupuestoCliente, 'totales' | 'factur
 
 /** Presupuestos facturables: solo aceptados. La aceptación comercial es una acción explícita. */
 export function facturables(ps: PresupuestoCliente[], _hoy: string): { p: PresupuestoCliente; que: 'anticipo' | 'final'; importe: number; acepta: boolean }[] {
+  void _hoy;
   return ps
     .filter((p) => p.estado === 'aceptado')
     .flatMap((p) => {
@@ -94,6 +95,7 @@ export function facturables(ps: PresupuestoCliente[], _hoy: string): { p: Presup
 
 /** Factura lo que toca sin cambiar nunca el estado comercial del presupuesto. */
 export async function facturarLoQueToca(repos: Repositorios, id: string, email: string, ajustes: AjustesFacturacion, _hoy: string): Promise<Resultado> {
+  void _hoy;
   const p = await repos.presupuestosCliente.obtener(id);
   if (!p) return { ok: false, error: 'Ese presupuesto no existe.' };
   if (p.estado !== 'aceptado') return { ok: false, error: 'Primero registra que el cliente ha aceptado el presupuesto antes de facturarlo.' };
