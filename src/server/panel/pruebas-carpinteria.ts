@@ -12,13 +12,15 @@ import { calcularPresupuesto } from '../presupuestos-cliente/presupuestos.ts';
 type DatosCliente = Omit<Cliente, 'id' | 'archivado' | 'notas' | 'pais'>;
 
 export function clientesCarpinteria(cif: (l: 'A' | 'B', n: number) => string, dni: (n: number) => string): DatosCliente[] {
-  return [
+  const base: DatosCliente[] = [
     { nombre: 'Lucía Prueba Martínez', nif: dni(23456781), direccion: 'Calle de Prueba 12, 3.º', codigoPostal: '46005', poblacion: 'Valencia', provincia: 'Valencia', email: 'prueba1@example.com', telefono: '+34 600 000 001', recargo: false, direccionObra: 'Calle de Prueba 12, 3.º (la misma)', formaPago: 'Bizum' },
     { nombre: 'Reformas Albufera SL (prueba)', nif: cif('B', 4698765), direccion: 'Polígono de Prueba, nave 7', codigoPostal: '46470', poblacion: 'Catarroja', provincia: 'Valencia', email: 'prueba2@example.com', telefono: '+34 600 000 002', recargo: false, contacto: 'Andrés Prueba (jefe de obra)', direccionObra: 'Obra de prueba: Calle Mayor de Prueba 5, Alfafar', formaPago: 'Transferencia a 30 días' },
     { nombre: 'Estudio de Interiorismo Patraix SL (prueba)', nif: cif('B', 4611223), direccion: 'Avenida de Prueba 40', codigoPostal: '46018', poblacion: 'Valencia', provincia: 'Valencia', email: 'prueba3@example.com', telefono: '+34 600 000 003', recargo: false, contacto: 'Marta Prueba (interiorista)', formaPago: 'Transferencia' },
     { nombre: 'Javier Prueba Gómez', nif: dni(34567812), direccion: 'Plaza de Prueba 3', codigoPostal: '46980', poblacion: 'Paterna', provincia: 'Valencia', email: 'prueba4@example.com', telefono: '+34 600 000 004', recargo: false },
     { nombre: 'Inmobiliaria Ruzafa SL (prueba)', nif: cif('B', 4655443), direccion: 'Calle de Prueba 88', codigoPostal: '46006', poblacion: 'Valencia', provincia: 'Valencia', email: 'prueba5@example.com', telefono: '+34 600 000 005', recargo: false },
   ];
+  return [...base, ...Array.from({length:10},(_,i)=>({...base[i%base.length]!,nombre:['Ático del Carmen','Casa del Mar','Estudio Alameda','Reformas Campanar','Oficinas del Puerto','Apartamento Benimaclet','Vivienda La Eliana','Local del Mercado','Casa de la Huerta','Estudio Centro'][i]+' (prueba)',email:`cliente${i+6}@example.com`,telefono:`+34 600 000 ${String(i+6).padStart(3,'0')}`,nif:dni(40000000+i),direccion:`Calle de Ensayo ${i+1}`,contacto:'Contacto de pruebas'}))];
+
 }
 
 /** Facturas: [cliente, días atrás, días para pagar, líneas (concepto, cantidad, precio, IVA), cobrada a los N días o null, borrador]. */
@@ -52,7 +54,7 @@ const PRESUPUESTOS: { cliente: number; dias: number; validez: number; estado: Pr
 export async function cargarPresupuestosCarpinteria(repos: Repositorios, clientes: Cliente[], email: string, hoy: string): Promise<number> {
   await repos.presupuestosCliente.borrarPruebas();
   let n = 0;
-  for (const [i, p] of PRESUPUESTOS.entries()) {
+  for (const [i, p] of [...PRESUPUESTOS, ...Array.from({length:15},(_,i)=>({...PRESUPUESTOS[i%5]!,cliente:(i+5)%clientes.length,dias:5+i*9,concepto:['Cocina con isla','Vestidor abierto','Librería de roble','Mueble de lavadero','Puertas correderas'][i%5]+' · proyecto '+(i+6)}))].entries()) {
     const fecha = sumarDias(hoy, -p.dias);
     const totales = calcularPresupuesto(p.lineas, 21, p.anticipo);
     await repos.presupuestosCliente.crear(
@@ -105,3 +107,19 @@ export async function cargarProveedoresCarpinteria(repos: Repositorios, email: s
     }
   return PROVEEDORES_CARPINTERIA.length;
 }
+
+/** Ampliación idempotente: todos los registros son prueba- y se eliminan con el limpiador existente. */
+export async function cargarEscenarioCompleto(repos: Repositorios,email:string,hoy:string) {
+ const colores=[['Roble natural','#b89772'],['Nogal americano','#70523d'],['Blanco mate','#efeee8'],['Verde oliva','#708238'],['Gris grafito','#444743'],['Arena satinada','#d6c6ae']];
+ for(let i=0;i<30;i++) {
+ const [nombre]=colores[i%6];const categoria=['tableros','macizos','chapas','encimeras','tiradores'][Math.floor(i/6)];
+ await repos.catalogo.guardarArticulo({id:`prueba-studio-material-${i}`,nombre:`${categoria==='tiradores'?'Tirador':categoria==='encimeras'?'Encimera':categoria==='macizos'?'Tarima':'Panel'} ${nombre} (prueba)`,categoria,unidad:categoria==='tiradores'?'ud':'m²',coste:18+i*3.5,merma:10,margen:35,precioFijo:null,referencia:`DEMO-${String(i+1).padStart(3,'0')}`,proveedor:PROVEEDORES_CARPINTERIA[i%3].nombre,espesor:categoria==='tiradores'?null:19,acabado:nombre,notas:'Material sintético para pruebas; comprobar siempre la muestra física.'},email);
+ }
+ await repos.pedidosProveedor.borrarPruebas();
+ const proveedores=await repos.proveedores.listar();const presupuestos=await repos.presupuestosCliente.listar();
+ for(let i=0;i<8;i++) {const p=proveedores.find(p=>p.id===`prueba-proveedor-${i%3+1}`);if(!p)continue;await repos.pedidosProveedor.crear({id:`prueba-pedido-demo-${i}`,estado:i%2?'enviado':'borrador',proveedorId:p.id,proveedor:p,presupuestoClienteId:presupuestos[i%presupuestos.length]?.id??null,fecha:sumarDias(hoy,-i*3),entrega:sumarDias(hoy,7-i),lineas:[{articuloId:'prueba-studio-material-0',concepto:'Panel roble 19 mm (prueba)',referencia:'DEMO-001',detalle:'Corte según medición de prueba',cantidad:4+i,unidad:'m²',coste:35}],notas:'Entrega concertada en taller (prueba)',notasInternas:'Pedido de demostración',coste:(4+i)*35,enviadoEl:i%2?hoy:null,recibidoEl:null,gastoId:null},email);}
+}
+
+// Histórico de seis meses: importes y clientes variados, sin facturas reales.
+for(let i=0;i<36;i++) FACTURAS_CARPINTERIA.push([i%15,3+i*5,30,[[['Cocina a medida','Montaje de armario','Mueble de baño','Puertas interiores','Librería de salón','Vestidor'][i%6]+' (prueba)',1,480+(i%9)*310,21]],i%4===0?null:10,i%11===0]);
+for(let i=0;i<24;i++) {const base=75+(i%8)*85;GASTOS_CARPINTERIA.push({dias:i*7,proveedor:PROVEEDORES_CARPINTERIA[i%3].nombre,categoria:['tableros','herrajes','acabados'][i%3],total:Math.round(base*121)/100,base,iva:Math.round(base*21)/100,concepto:'Suministro de taller · lote '+(i+1)+' (prueba)',estado:i%7===0?'revisar':'confirmado',formaPago:'Transferencia'});}
