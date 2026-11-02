@@ -95,7 +95,7 @@ describe('del presupuesto a la factura', () => {
     ]);
   });
 
-  it('facturar lo que toca: un enviado se da por aceptado; después la final; uno caducado, no', async () => {
+  it('facturar lo que toca: exige aceptación explícita, después crea el anticipo y la final', async () => {
     const r = await crearPresupuesto(repos, { clienteId: 'cli-f', concepto: 'Puerta', fecha: '2026-10-29', validez: '2026-11-28', lineas: [{ concepto: 'Puerta', cantidad: 1, precio: 500, material: '', extra: false }], iva: 21, anticipoPct: 30 }, yo, 21);
     if (!r.ok) throw new Error(r.error);
     const id = r.presupuesto.id;
