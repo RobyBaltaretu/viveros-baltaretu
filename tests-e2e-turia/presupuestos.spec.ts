@@ -60,7 +60,7 @@ test('presupuestos: alta con extra, anticipo, envío, aceptación y factura de a
   await expect(page.locator('[name="l0.concepto"]')).toHaveValue(/^Anticipo del 40 % del presupuesto P\d{4}-\d{4}/);
 });
 
-test('factura desde un presupuesto: desde «Nueva factura» (el enviado se da por aceptado) y después la final', async ({ page }) => {
+test('factura desde un presupuesto: primero aceptación explícita y después la final', async ({ page }) => {
   test.setTimeout(90_000);
   const p = `${test.info().project.name} ${Date.now()}`;
   await page.goto('/panel/facturas/clientes/nuevo');
@@ -73,11 +73,16 @@ test('factura desde un presupuesto: desde «Nueva factura» (el enviado se da po
   await page.getByLabel('Precio por unidad de la línea 1, en euros sin IVA').fill('1000');
   await page.getByRole('button', { name: 'Guardar el presupuesto' }).click();
   await page.getByRole('button', { name: 'Marcar como enviado' }).click();
-  await expect(page.getByRole('button', { name: 'Aceptado: hacer la factura de anticipo' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'El cliente lo acepta' })).toBeVisible();
+  await page.goto('/panel/facturas/nueva');
+  await expect(page.getByText('No hay presupuestos aceptados pendientes de facturar')).toBeVisible();
+  await page.goto('/panel/presupuestos-cliente');
+  await page.getByRole('link', { name: new RegExp(`Cocina ${p}`) }).first().click();
+  await page.getByRole('button', { name: 'El cliente lo acepta' }).click();
 
   await page.goto('/panel/facturas/nueva');
   await expect(page.getByRole('heading', { name: 'Desde un presupuesto' })).toBeVisible();
-  const boton = page.getByRole('button', { name: new RegExp(`^Facturar Cocina ${p}, de Cliente desde ${p}: anticipo del 40 %, 484,00.€\\. Se dará por aceptado$`) });
+  const boton = page.getByRole('button', { name: new RegExp(`^Facturar Cocina ${p}, de Cliente desde ${p}: anticipo del 40 %, 484,00`) });
   await expect(boton).toBeVisible();
   await auditar(page);
   await controlesGrandes(page);
