@@ -2521,196 +2521,66 @@
 }
 
 
-/* === CREACIONES TURIA · dirección de arte 2026 ===
-   Aplicado solo al panel nuevo del cliente Turia; no afecta a Baltaretu. */
-.nv-taller {
-  --nv-madera: #a96c3b;
-  --nv-roble: #d3a778;
-  --nv-oliva: #5d7136;
-  --nv-noche: #25221e;
-  --nv-lino: #fbf6ee;
-  --nv-fondo: #f7f2eb;
-  --nv-superficie: #fffdf9;
-  --nv-acento: #536b36;
-  --nv-acento-oscuro: #394e2a;
-  --nv-acento-suave: #edf0e4;
-  --nv-borde: #e7ded1;
-  --nv-tinta: #2b2a26;
-  --nv-gris: #69675e;
-  background:var(--nv-fondo);
-}
-.nv-taller .nv-lateral {
-  background:linear-gradient(156deg,#29251f 0%,#32291f 64%,#252921 100%);
-  border-right:1px solid #50402e;
-  color:#f8f0e4;
-}
-.nv-taller .nv-lateral .nv-marca {
-  min-height:5rem;
-  margin:.25rem .2rem 1.25rem;
-  padding:.6rem;
-  border:1px solid #67513a;
-  border-radius:13px;
-  background:rgb(255 255 255 / .035);
-  color:#f9ecdb;
-}
-.nv-taller .nv-monograma {
-  width:2.75rem;
-  height:2.75rem;
-  border-radius:12px;
-  overflow:hidden;
-  background:#332a21;
-}
-.nv-taller .nv-monograma img {width:100%;height:100%;object-fit:contain}
-.nv-taller .nv-lateral .nv-marca-texto strong {color:#fff4e5;font-family:Georgia,serif;font-size:1.16rem;letter-spacing:.01em}
-.nv-taller .nv-lateral .nv-marca-texto span {color:#c8b8a3;font-size:.72rem;letter-spacing:.06em}
-.nv-taller .nv-lateral .nv-grupo {color:#b7a58e;letter-spacing:.14em;font-size:.7rem}
-.nv-taller .nv-lateral .nv-enlace {color:#eee2d1;border-radius:10px;min-height:44px}
-.nv-taller .nv-lateral .nv-enlace:hover {background:rgb(255 255 255 / .095);color:#fff}
-.nv-taller .nv-lateral .nv-enlace[aria-current="page"] {background:linear-gradient(110deg,#627839,#485c2c);color:#fff;border:1px solid #899b65;font-weight:700}
-.nv-taller .nv-lateral .nv-cuenta {border-top:1px solid #554434}
-.nv-taller .nv-lateral .nv-cuenta-texto {color:#e8dacc}
-.nv-taller .nv-cabecera {background:rgb(255 253 249 / .95);border-bottom:1px solid var(--nv-borde);backdrop-filter:blur(12px)}
-.nv-taller .nv-contenido {padding-top:1.1rem}
-.nv-taller .nv-contexto-taller {font-size:.66rem;letter-spacing:.19em;font-weight:700;color:#826c51;margin-bottom:1rem}
-.nv-taller .nv-titulo h1 {font-family:Georgia,"Times New Roman",serif;font-weight:700;letter-spacing:-.035em;line-height:1.15}
-.nv-taller .nv-hero-taller {
-  position:relative;
-  isolation:isolate;
-  border-radius:22px;
-  padding:clamp(1.25rem,3vw,2.5rem);
-  margin-bottom:1.2rem;
-  display:flex;
-  flex-wrap:wrap;
-  align-items:center;
-  justify-content:space-between;
-  gap:1rem;
-  overflow:hidden;
-  background:linear-gradient(105deg,#f4e7d6 0%,#f8f1e7 55%,#e9d3b7 100%);
-  border:1px solid #dccbb5;
-  box-shadow:0 8px 25px -18px #5e4328;
-}
-.nv-taller .nv-hero-taller::after {
-  content:"";
-  position:absolute;
-  z-index:-1;
-  width:min(46%,24rem);
-  height:140%;
-  right:-3%;
-  top:-18%;
-  opacity:.24;
-  transform:rotate(-19deg);
-  background:repeating-linear-gradient(92deg,#9a6237 0px,#ceaa7e 2px,#ead0aa 4px,#9a6237 5px,#eed9bc 14px);
-  border-radius:48%;
-  pointer-events:none;
-}
-.nv-taller .nv-hero-taller .nv-titulo {margin:0;flex:1 1 19rem}
-.nv-taller .nv-hero-taller h1 {font-size:clamp(1.8rem,3.2vw,3.1rem)}
-.nv-taller .nv-hero-taller .nv-fecha {color:#725639}
-.nv-taller .nv-inicio-subtitulo {color:#664f37;font-size:.94rem}
-.nv-taller .nv-hero-acciones {display:flex;flex-wrap:wrap;align-items:center;gap:.65rem}
-.nv-taller .nv-hero-cta,.nv-taller .nv-hero-cta-secundaria {
-  min-height:48px;display:inline-flex;align-items:center;justify-content:center;
-  gap:.5rem;border-radius:11px;text-decoration:none;font-weight:700;padding:.75rem 1.1rem;
-}
-.nv-taller .nv-hero-cta {background:#536a31;border:1px solid #415426;color:#fff;box-shadow:0 3px 0 #31421b}
-.nv-taller .nv-hero-cta:hover {background:#3b5224}
-.nv-taller .nv-hero-cta-secundaria {background:#fffaf3;border:1px solid #d5c3ae;color:#443e35}
-.nv-taller .nv-camino {
-  background:var(--nv-superficie);border:1px solid var(--nv-borde);
-  padding:1.3rem;border-radius:18px;margin-bottom:1.5rem;
-  box-shadow:var(--nv-sombra);
-}
-.nv-taller .nv-camino-etiqueta {display:block;color:#6b7d45;font-size:.7rem;font-weight:800;letter-spacing:.13em;margin-bottom:.3rem}
-.nv-taller .nv-camino h2 {font-family:Georgia,serif;font-size:clamp(1.2rem,2vw,1.55rem);margin:0}
-.nv-taller .nv-camino p {margin:.15rem 0 1rem;color:var(--nv-gris);font-size:.875rem}
-.nv-taller .nv-camino-pasos {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.65rem;padding:0;margin:0;list-style:none}
-.nv-taller .nv-camino-pasos li {min-width:0}
-.nv-taller .nv-camino-pasos a {
-  display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:.6rem;row-gap:.14rem;
-  align-items:center;min-height:86px;text-decoration:none;
-  padding:.85rem;border-radius:12px;background:#faf5ec;
-  border:1px solid #e9dece;color:var(--nv-tinta);
-}
-.nv-taller .nv-camino-pasos a:hover {border-color:#869766;background:#f0f2e9}
-.nv-taller .nv-camino-num {
-  grid-row:span 2;width:2rem;height:2rem;display:grid;place-items:center;
-  border-radius:50%;background:#e6e5d5;color:#506432;font-size:.82rem;font-weight:800;
-}
-.nv-taller .nv-camino-pasos strong {font-size:.85rem;line-height:1.25}
-.nv-taller .nv-camino-pasos small {color:var(--nv-gris);font-size:.75rem}
-.nv-taller .nv-tarjeta {box-shadow:0 2px 14px -12px #5b4935}
-.nv-taller .nv-kpi {border-top:3px solid #a5875f}
-.nv-taller .nv-kpi-valor {font-family:Georgia,serif;letter-spacing:-.025em}
-@media(max-width:64rem) {
-  .nv-taller .nv-camino-pasos {grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media(max-width:40rem) {
-  .nv-taller .nv-hero-taller {border-radius:15px;padding:1.25rem;gap:.8rem}
-  .nv-taller .nv-hero-taller::after {width:40%;opacity:.12}
-  .nv-taller .nv-hero-acciones {width:100%}
-  .nv-taller .nv-hero-cta {flex:1}
-  .nv-taller .nv-camino {padding:.9rem;border-radius:14px}
-  .nv-taller .nv-camino-pasos {gap:.4rem}
-  .nv-taller .nv-camino-pasos a {grid-template-columns:1fr;min-height:95px;padding:.7rem}
-  .nv-taller .nv-camino-num {grid-row:auto;width:1.8rem;height:1.8rem}
-  .nv-taller .nv-camino-pasos strong {font-size:.79rem}
-  .nv-taller .nv-camino-pasos small {font-size:.7rem}
-  .nv-taller .nv-contexto-taller {font-size:.6rem}
-}
-@media(prefers-reduced-motion:reduce){.nv-taller .nv-hero-cta{box-shadow:none}}
-
-
-/* TURIA · inicio ligero aprobado: sin datos inventados ni interfaz simulada */
-.nv-taller {--nv-fondo:#f8f7f5;--nv-superficie:#fff;--nv-borde:#e8e5df;--nv-acento:#536b36;--nv-acento-oscuro:#3d5744;--nv-gris:#666761;--nv-sombra:0 4px 24px -17px rgb(40 37 32 / .2);}
-.nv-taller .nv-lateral {background:#fbfaf8;color:#292925;border-right:1px solid #e9e5df;}
-.nv-taller .nv-lateral .nv-marca {background:transparent;border:0;color:#292925;margin-bottom:1.5rem}
-.nv-taller .nv-lateral .nv-marca-texto strong {color:#252522;font-family:inherit;font-size:1.08rem;letter-spacing:-.025em}
-.nv-taller .nv-lateral .nv-marca-texto span {color:#76716a;letter-spacing:0}
-.nv-taller .nv-lateral .nv-grupo {color:#76716a;letter-spacing:.06em}
-.nv-taller .nv-lateral .nv-enlace {color:#373732}
-.nv-taller .nv-lateral .nv-enlace:hover {background:#f2ede7;color:#262521}
-.nv-taller .nv-lateral .nv-enlace[aria-current="page"] {background:#f0e9e2;color:#4c3829;border:0}
-.nv-taller .nv-lateral .nv-cuenta {border-top:1px solid #e7e2dc}
-.nv-taller .nv-lateral .nv-cuenta-texto {color:#45413d}
-.nv-taller .nv-cabecera {background:#fbfaf9;border-bottom:1px solid #eae6e1}
-.nv-taller .nv-contexto-taller {display:none}
-.nv-taller .nv-contenido {padding-top:1.4rem}
-.nv-taller .nv-estudio {display:grid;gap:1.3rem}
-.nv-taller .nv-estudio-hero {display:flex;align-items:center;overflow:hidden;min-height:210px;position:relative;border-radius:22px;background:linear-gradient(100deg,#55483c 0%,#7d6954 48%,#c49d71 100%);color:white}
-.nv-taller .nv-estudio-bienvenida {position:relative;z-index:1;padding:clamp(1.3rem,4vw,3rem);width:70%;text-shadow:0 1px 4px #39291b55}
+/* Inicio de Creaciones Turia. El resto del panel conserva sus controles existentes. */
+.nv-taller {--nv-fondo:#f8f7f5;--nv-superficie:#fff;--nv-borde:#e9e5df;--nv-acento:#795b40;--nv-acento-oscuro:#435b3b;--nv-sombra:0 4px 24px -17px rgb(40 37 32 / .2)}
+.nv-taller .nv-lateral {background:#fbfaf8;border-right:1px solid var(--nv-borde)}
+.nv-taller .nv-lateral .nv-enlace[aria-current="page"] {background:#f0e9e2;color:#4c3829}
+.nv-taller .nv-cabecera {background:#fbfaf9;border-bottom:1px solid var(--nv-borde)}
+.nv-taller .nv-estudio-movil-titulo {display:none}
+.nv-taller .nv-estudio {display:grid;gap:1.25rem;max-width:95rem;margin:auto}
+.nv-taller .nv-estudio-hero {position:relative;display:flex;align-items:center;min-height:205px;overflow:hidden;border-radius:22px;background:#473b31 url('/turia-roble.webp') center/cover no-repeat;color:#fff}
+.nv-taller .nv-estudio-hero::before {content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(27,23,20,.70),rgba(27,23,20,.28) 48%,transparent 85%)}
+.nv-taller .nv-estudio-bienvenida {position:relative;z-index:1;padding:clamp(1.4rem,4vw,3rem)}
 .nv-taller .nv-estudio-saludo {margin:0;font-size:clamp(1rem,1.8vw,1.25rem)}
-.nv-taller .nv-estudio-hero h1 {font:600 clamp(1.85rem,3.5vw,3rem)/1.12 var(--font-sans);letter-spacing:-.035em;margin:.25rem 0 .7rem;color:#fff}
-.nv-taller .nv-estudio-hero p:last-child {font-size:clamp(.85rem,1.4vw,1.05rem);margin:0}
-.nv-taller .nv-estudio-madera {position:absolute;inset:0 0 0 54%;background:repeating-linear-gradient(90deg,rgba(88,48,19,.38) 0 8px,rgba(255,227,184,.3) 11px 25px,rgba(119,74,37,.25) 28px 32px),linear-gradient(20deg,#9d6739,#e4bd88);mask-image:linear-gradient(90deg,transparent,#000 35%)}
-.nv-taller .nv-estudio-crear ul {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1rem;list-style:none;padding:0;margin:0}
-.nv-taller .nv-estudio-atajo {display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:.7rem;min-height:112px;padding:1.2rem;text-decoration:none;color:#292722;background:#fff;border:1px solid #eae6e1;border-radius:18px;box-shadow:var(--nv-sombra)}
-.nv-taller .nv-estudio-crear li:first-child .nv-estudio-atajo {background:#f4e9de;border-color:#eee0d3;color:#4b3223}
-.nv-taller .nv-estudio-atajo:hover {background:#f4f1ed;transform:translateY(-1px)}
-.nv-taller .nv-estudio-atajo strong {font-size:.95rem;line-height:1.3}
-.nv-taller .nv-estudio-grid {display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:1rem;align-items:start}
-.nv-taller .nv-estudio-grid > section {min-width:0;border-radius:20px;padding:1.35rem;background:#fff}
-.nv-taller .nv-estudio-grid h2 {font-size:1.15rem;letter-spacing:-.02em}
-.nv-taller .nv-estudio-metricas {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;list-style:none;padding:0;margin:1.1rem 0}
-.nv-taller .nv-estudio-metrica {display:flex;flex-direction:column;gap:.12rem;border:1px solid #eeeae6;border-radius:13px;padding:.85rem;text-decoration:none;color:#282822;min-width:0}
-.nv-taller .nv-estudio-metrica:hover {background:#f9f7f4;border-color:#d1c8bd}
-.nv-taller .nv-estudio-metrica span {font-size:.8rem}
-.nv-taller .nv-estudio-metrica strong {font-size:clamp(1.15rem,1.9vw,1.55rem);font-weight:750}
-.nv-taller .nv-estudio-metrica small {font-size:.75rem}
-.nv-taller .nv-estudio-grafico {margin-top:1.35rem}
-.nv-taller .nv-estudio-grafico-titulo {display:flex;justify-content:space-between;gap:.8rem;align-items:center;font-size:.85rem;color:#54564e}
-.nv-taller .nv-estudio-grafico-titulo span {color:var(--nv-gris);font-size:.76rem}
-.nv-taller .nv-estudio-grafico .nv-barras {margin-top:.65rem}
-.nv-taller .nv-estudio-lista {list-style:none;margin:0;padding:0}
-.nv-taller .nv-estudio-lista li+li {border-top:1px solid #eeece8}
-.nv-taller .nv-estudio-lista a {display:flex;align-items:center;gap:.9rem;min-height:66px;padding:.6rem .2rem;color:inherit;text-decoration:none}
+.nv-taller .nv-estudio-hero h1 {font-size:clamp(1.85rem,3.5vw,3rem);letter-spacing:-.035em;line-height:1.1;margin:.3rem 0 .6rem;color:#fff}
+.nv-taller .nv-estudio-hero p:last-child {margin:0;font-size:clamp(.9rem,1.5vw,1.05rem)}
+.nv-taller .nv-estudio-crear ul {display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;list-style:none;padding:0;margin:0}
+.nv-taller .nv-estudio-atajo {display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:.7rem;min-height:108px;padding:1.2rem;border:1px solid #eae6e1;border-radius:18px;background:#fff;color:#292722;text-decoration:none;box-shadow:var(--nv-sombra)}
+.nv-taller .nv-estudio-crear li:first-child .nv-estudio-atajo {background:#f2e9df;color:#4b3223}
+.nv-taller .nv-estudio-atajo:hover,.nv-taller .nv-estudio-metrica:hover {background:#f8f5f1;transform:translateY(-1px)}
+.nv-taller .nv-estudio-grid {display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:1rem;align-items:stretch}
+.nv-taller .nv-estudio :is(.nv-estudio-grid > section,.nv-estudio-pendientes) {min-width:0;padding:1.3rem;border:1px solid #eae6e1;border-radius:20px;background:#fff;box-shadow:var(--nv-sombra)}
+.nv-taller .nv-estudio h2 {margin:0;font-size:1.1rem;letter-spacing:-.025em}
+.nv-taller .nv-cabeza-tarjeta {display:flex;justify-content:space-between;align-items:center;gap:.7rem}
+.nv-taller .nv-estudio-periodo {font-size:.8rem;color:var(--nv-gris);text-transform:capitalize}
+.nv-taller .nv-estudio-metricas {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.65rem;list-style:none;padding:0;margin:1.1rem 0}
+.nv-taller .nv-estudio-metrica {display:flex;flex-direction:column;gap:.15rem;min-width:0;min-height:96px;padding:.75rem;border:1px solid #eeeae6;border-radius:13px;color:inherit;text-decoration:none}
+.nv-taller .nv-estudio-metrica span {font-size:.78rem}
+.nv-taller .nv-estudio-metrica strong {font-size:clamp(1.05rem,1.7vw,1.45rem);line-height:1.2;white-space:normal;overflow-wrap:anywhere}
+.nv-taller .nv-estudio-metrica small {font-size:.72rem;color:var(--nv-gris);line-height:1.25}
+.nv-taller .nv-estudio-grafico {margin-top:1.1rem}
+.nv-taller .nv-estudio-grafico-titulo {display:flex;justify-content:space-between;gap:.6rem;font-size:.82rem;color:#57594f}
+.nv-taller .nv-estudio-linea {display:block;width:100%;height:100px;margin:.5rem 0}
+.nv-taller .nv-estudio-grafico details {font-size:.8rem;color:var(--nv-gris)}
+.nv-taller .nv-estudio-grafico .enlace-panel {display:inline-block;margin-top:.4rem}
+.nv-taller .nv-estudio-lista {list-style:none;padding:0;margin:.7rem 0 0}
+.nv-taller .nv-estudio-lista li+li {border-top:1px solid #eeeae6}
+.nv-taller .nv-estudio-lista a {display:flex;align-items:center;gap:.8rem;min-height:66px;padding:.5rem 0;color:inherit;text-decoration:none}
 .nv-taller .nv-estudio-lista a:hover {background:#faf8f5}
-.nv-taller .nv-estudio-lista a > span:nth-child(2) {min-width:0;display:grid;gap:.12rem;flex:1}
+.nv-taller .nv-estudio-lista a > span:nth-child(2) {display:grid;flex:1;min-width:0;gap:.15rem}
 .nv-taller .nv-estudio-lista small {font-size:.78rem;color:var(--nv-gris)}
-.nv-taller .nv-estudio-ir {font-size:1.6rem;color:#756c61}
-.nv-taller .nv-estudio-enlace {display:inline-block;margin-top:.7rem;color:#3d5744;font-weight:650}
-.nv-taller .nv-estudio-simulador {display:flex;gap:.85rem;align-items:center;min-height:68px;border:1px solid #e8e3dc;border-radius:17px;padding:1rem 1.3rem;text-decoration:none;color:#2a2926;background:#fff}
+.nv-taller .nv-estudio-proyecto-icono {display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:12px;background:#f0eae3;color:#725638}
+.nv-taller .nv-estudio-proyectos .nv-cabeza-tarjeta a {font-size:.8rem}
+.nv-taller .nv-estudio-vacio {margin:1.5rem 0;color:var(--nv-gris)}
+.nv-taller .nv-estudio-simulador {display:flex;align-items:center;gap:.8rem;min-height:64px;padding:.85rem 1rem;border:1px solid var(--nv-borde);border-radius:16px;background:#fff;color:inherit;text-decoration:none}
 .nv-taller .nv-estudio-simulador span:nth-child(2) {display:grid;flex:1}
 .nv-taller .nv-estudio-simulador small {color:var(--nv-gris)}
-@media(max-width:68rem){.nv-taller .nv-estudio-crear ul {grid-template-columns:repeat(3,minmax(0,1fr))}.nv-taller .nv-estudio-grid {grid-template-columns:1fr}}
-@media(max-width:47.99rem){.nv-taller .nv-estudio {gap:1rem}.nv-taller .nv-estudio-hero {min-height:190px;border-radius:16px}.nv-taller .nv-estudio-bienvenida {width:100%;padding:1.2rem}.nv-taller .nv-estudio-hero h1 {font-size:1.9rem}.nv-taller .nv-estudio-madera {inset:0 0 0 52%;opacity:.45}.nv-taller .nv-estudio-crear ul {grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}.nv-taller .nv-estudio-atajo {min-height:78px;padding:.85rem;gap:.35rem;border-radius:14px;flex-direction:row;align-items:center}.nv-taller .nv-estudio-atajo strong {font-size:.86rem}.nv-taller .nv-estudio-grid > section {padding:1rem;border-radius:15px}.nv-taller .nv-estudio-metricas {gap:.45rem}.nv-taller .nv-estudio-metrica {padding:.7rem}.nv-taller .nv-estudio-metrica strong {font-size:1.15rem}}
-@media(prefers-reduced-motion:reduce){.nv-taller .nv-estudio-atajo:hover {transform:none}}
+@media(max-width:70rem){.nv-taller .nv-estudio-grid {grid-template-columns:1fr}}
+@media(max-width:47.99rem){
+ .nv-taller .nv-estudio {gap:1rem}
+ .nv-taller .nv-estudio-movil-titulo {display:block}
+ .nv-taller .nv-estudio-movil-titulo p {margin:0;font-size:.9rem}
+ .nv-taller .nv-estudio-movil-titulo h1 {margin:.15rem 0 0;font-size:1.65rem;letter-spacing:-.04em}
+ .nv-taller .nv-estudio-hero {min-height:105px;background-position:58% center;border-radius:16px}
+ .nv-taller .nv-estudio-hero::before {background:none}
+ .nv-taller .nv-estudio-bienvenida {display:none}
+ .nv-taller .nv-estudio-crear ul {grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+ .nv-taller .nv-estudio-crear li:nth-child(n+5) {display:none}
+ .nv-taller .nv-estudio-atajo {flex-direction:row;align-items:center;justify-content:flex-start;gap:.55rem;min-height:62px;padding:.7rem;border-radius:14px}
+ .nv-taller .nv-estudio-atajo strong {font-size:.83rem}
+ .nv-taller .nv-estudio :is(.nv-estudio-grid > section,.nv-estudio-pendientes) {padding:1rem;border-radius:16px}
+ .nv-taller .nv-estudio-metricas {grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
+ .nv-taller .nv-estudio-metrica {min-height:80px}
+}
+@media(min-width:48rem) and (max-width:80rem){.nv-taller .nv-estudio-metricas {grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.nv-taller .nv-estudio-atajo:hover,.nv-taller .nv-estudio-metrica:hover {transform:none}}

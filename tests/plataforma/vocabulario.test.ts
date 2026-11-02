@@ -22,7 +22,7 @@ describe('vocabulario y marca por sector', () => {
   it('Turia (carpintería): su nombre, sin las pantallas ni las herramientas de plantas', () => {
     comoCliente('turia');
     expect(vocabularioPanel()).toMatchObject({ tituloPanel: 'Panel de la carpintería', nombreAsistente: 'Gubia' });
-    expect(clienteActual().marca).toEqual({ nombreCorto: 'Creaciones Turia', monograma: null });
+    expect(clienteActual().marca).toEqual({ nombreCorto: 'Creaciones Turia', monograma: '/marca-turia.svg' });
     for (const r of ['/panel/plantas', '/panel/inventario', '/panel/fotos', '/api/panel/foto']) expect(rutaDisponible(r), r).toBe(false);
     expect(rutaDisponible('/panel/facturas')).toBe(true);
     // La zona del sector es el taller: el catálogo con precios y el portafolio privado.
