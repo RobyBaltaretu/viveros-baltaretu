@@ -132,6 +132,7 @@ export async function apuntarCobro(repos: Repositorios, id: string, parte: 'anti
   if (!p) return fallo('Ese presupuesto no existe.');
   if (p.estado !== 'aceptado') return fallo('Los cobros se apuntan en un presupuesto aceptado.');
   if (dia !== null && !fecha.safeParse(dia).success) return fallo('Escribe la fecha como 2026-10-31.');
+  if (dia !== null && dia > new Date().toISOString().slice(0, 10)) return fallo('La fecha del cobro no puede ser futura.');
   if (!(await repos.presupuestosCliente.registrarCobro(id, parte, dia, email))) return fallo('El presupuesto ha cambiado.');
   return { ok: true, presupuesto: (await repos.presupuestosCliente.obtener(id))! };
 }
