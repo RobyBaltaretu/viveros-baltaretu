@@ -4,7 +4,7 @@ import { auditar, controlesGrandes } from '../tests-e2e/ayudas';
 // Diseño nuevo del panel: barra lateral (ordenador) o barra de abajo (móvil) y «Crear».
 test('«Crear» abre el menú y lleva a un presupuesto nuevo', async ({ page, isMobile }) => {
   await page.goto('/panel/facturas');
-  const crear = isMobile ? page.locator('.nv-inferior').getByRole('button', { name: 'Crear' }) : page.locator('header').getByRole('button', { name: 'Crear' });
+  const crear = isMobile ? page.locator('.nv-inferior').getByRole('button', { name: 'Abrir menú de creación' }) : page.locator('header').getByRole('button', { name: 'Abrir menú de creación' });
   await crear.click();
   const menu = page.getByRole('dialog', { name: '¿Qué quieres crear?' });
   await expect(menu).toBeVisible();
@@ -30,7 +30,9 @@ test('la sección actual se marca y todas están a mano', async ({ page, isMobil
 test('inicio: accesos reales, cifras, proyectos y evolución accesible', async ({ page, isMobile }) => {
   await page.goto('/panel');
   await expect(page.getByRole('heading', { level: 1, name: 'Creaciones Turia' })).toBeVisible();
-  for (const k of ['Facturado en', 'Por cobrar', 'Presupuestos en juego', 'Aceptación (90 días)']) await expect(page.locator('.nv-estudio-metricas').getByText(k)).toBeVisible();
+  if (isMobile) await page.getByText('Ver los otros indicadores').click();
+  const indicadores = page.locator(isMobile ? '.nv-estudio-mas-metricas' : '.nv-estudio-metricas');
+  for (const k of (isMobile ? ['Por cobrar', 'Presupuestos en juego', 'Aceptación (90 días)'] : ['Facturado en', 'Por cobrar', 'Presupuestos en juego', 'Aceptación (90 días)'])) await expect(indicadores.getByText(k)).toBeVisible();
   const atajos = page.getByRole('region', { name: 'Accesos rápidos' });
   await expect(atajos.getByRole('link', { name: /presupuesto/i })).toHaveAttribute('href', '/panel/presupuestos-cliente/nuevo');
   await expect(atajos.getByRole('link', { name: /factura/i })).toHaveAttribute('href', '/panel/facturas/nueva');
