@@ -27,12 +27,19 @@ test('la sección actual se marca y todas están a mano', async ({ page, isMobil
   await controlesGrandes(page);
 });
 
-test('inicio: cifras del mes, «Por hacer» y lo facturado en seis meses', async ({ page }) => {
+test('inicio: accesos reales, cifras, proyectos y evolución accesible', async ({ page, isMobile }) => {
   await page.goto('/panel');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^(Buenos días|Buenas tardes|Buenas noches)/);
-  for (const k of ['Facturado en', 'Por cobrar', 'Presupuestos en juego', 'Aceptación (90 días)']) await expect(page.locator('.nv-kpis').getByText(k)).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Creaciones Turia' })).toBeVisible();
+  for (const k of ['Facturado en', 'Por cobrar', 'Presupuestos en juego', 'Aceptación (90 días)']) await expect(page.locator('.nv-estudio-metricas').getByText(k)).toBeVisible();
+  const atajos = page.getByRole('region', { name: 'Accesos rápidos' });
+  await expect(atajos.getByRole('link', { name: /presupuesto/i })).toHaveAttribute('href', '/panel/presupuestos-cliente/nuevo');
+  await expect(atajos.getByRole('link', { name: /factura/i })).toHaveAttribute('href', '/panel/facturas/nueva');
+  await expect(page.getByRole('heading', { name: 'Proyectos en curso' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Por hacer' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Facturado sin IVA' })).toBeVisible();
+  await expect(page.getByText('Facturado sin IVA')).toBeVisible();
+  await page.getByText('Valores por mes').click();
+  await expect(page.locator('.nv-estudio-grafico details li')).toHaveCount(6);
+  if (isMobile) await expect(atajos.locator('li').nth(4)).toBeHidden();
   await auditar(page);
   await controlesGrandes(page);
 });

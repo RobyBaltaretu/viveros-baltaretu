@@ -79,6 +79,14 @@ jobs:
         env:
           ASTRO_TELEMETRY_DISABLED: '1'
 
+      - name: Capturas reales del inicio de Turia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: inicio-turia-responsive
+          path: test-results/**/inicio-*.png
+          if-no-files-found: warn
+
   equivalencia:
     name: Build desde D1 igual al actual
     runs-on: ubuntu-latest
