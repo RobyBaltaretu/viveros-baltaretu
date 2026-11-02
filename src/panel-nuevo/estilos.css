@@ -2454,3 +2454,40 @@
     transition-duration: .01ms !important;
   }
 }
+
+/* Fase 3: jerarquía clara y áreas táctiles en dispositivos pequeños. */
+.nv .nv-inicio-subtitulo {
+  margin-top: .375rem;
+  color: var(--nv-acento-oscuro);
+  font-size: .875rem;
+  letter-spacing: .01em;
+}
+.nv .nv-titulo h1 { text-wrap: balance; }
+.nv :where(.nv-tarjeta, .nv-kpi) {
+  border-color: var(--nv-borde);
+}
+.nv :where(.nv-kpi, .nv-atajo, .nv-desde-boton):focus-visible {
+  outline: 3px solid var(--nv-acento-oscuro);
+  outline-offset: 3px;
+}
+@media (max-width: 48rem) {
+  .nv .nv-titulo { gap: .75rem; }
+  .nv .nv-titulo h1 { font-size: clamp(1.55rem, 6vw, 2rem); line-height: 1.2; }
+  .nv .nv-por-hacer .nv-tarea { min-width: 0; }
+  .nv .nv-inferior {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nv .nv-tabla-caja {
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nv .nv-cobro { min-width: 0; }
+  .nv .nv-cobro .nv-boton { width: 100%; }
+}
+@media (min-width: 64rem) {
+  .nv .nv-contenido { max-width: 100rem; margin-inline: auto; }
+}
+@media (prefers-contrast: more) {
+  .nv { --nv-borde: var(--nv-tinta); }
+  .nv :where(.nv-boton, .nv-chip) { border: 1px solid currentColor; }
+}
