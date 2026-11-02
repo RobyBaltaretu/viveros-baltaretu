@@ -145,6 +145,10 @@ function herramientasModelo(ctx: Contexto, conversacion: string, propuestas: Pro
 
 /** Respaldo sin modelo: las reglas locales del asistente básico. */
 async function respaldoLocal(ctx: Contexto, conversacion: string, texto: string, aviso: string): Promise<Respuesta> {
+  if (clienteActual().sector === 'carpinteria') {
+    const texto = 'Gubia no tiene IA disponible ahora. Puedes preparar el trabajo desde Presupuestos, Pedidos o Catálogo y volver al chat más tarde.';
+    return { texto, propuestas: [], modelo: 'reglas locales' };
+  }
   const r = await atenderMensaje(ctx.repos, ctx.usuario, texto);
   const propuestas: Propuesta[] = [];
   let respuesta: string;
@@ -191,6 +195,11 @@ export async function conversar(ctx: Contexto, texto: string, modelos: ModeloAsi
       : null;
   if (confirmacion) {
     const pendientes = [...conocidas.values()].filter((p) => p.estado === 'pendiente');
+    if (pendientes.length && clienteActual().sector === 'carpinteria') {
+      const texto = 'Pulsa «Sí» o «No» en la propuesta concreta que quieres resolver.';
+      await repos.conversaciones.anadir({ conversacion, rol: 'asistente', texto, propuestas: [] });
+      return { texto, propuestas: [], modelo: 'confirmación' };
+    }
     if (pendientes.length) {
       const resultados = [];
       for (const p of pendientes) resultados.push(await responderPropuesta(ctx, p.id, confirmacion === 'si'));
@@ -278,22 +287,31 @@ export async function responderPropuesta(ctx: Contexto, id: string, si: boolean)
     if (!(await repos.conversaciones.resolver(id, 'rechazada', 'Sin cambios.'))) return { ok: false, texto: 'Esa propuesta ya estaba resuelta.' };
     if (p.herramienta === HERRAMIENTA_FOTOS) await descartarFotos(repos, p);
     resultado = { ok: true, texto: p.herramienta === HERRAMIENTA_FOTOS ? 'Vale, no he añadido las fotos.' : 'Vale, no he cambiado nada.' };
-  } else if (!(await repos.conversaciones.resolver(id, 'aplicada', 'Aplicando…'))) {
+  } else if (!(await repos.conversaciones.resolver(id, 'fallida', 'Operación iniciada. Si no aparece el resultado, revisa el registro antes de repetirla.'))) {
     return { ok: false, texto: 'Esa propuesta ya estaba resuelta.' };
-  } else if (p.herramienta === HERRAMIENTA_FOTOS) {
-    resultado = await aplicarFotos(repos, usuario, p);
-  } else if (p.herramienta === '__basica') {
-    resultado = await aplicarAccion(repos, usuario.rol, usuario.email, p.argumentos as unknown as AccionBasica);
   } else {
-    const h = herramienta(p.herramienta);
-    if (!h || h.tipo !== 'cambio') resultado = { ok: false, texto: 'Esa acción ya no existe.' };
-    else {
-      const cambio = h as Cambio<unknown>;
-      if (!puede(usuario.rol, cambio.permiso)) resultado = { ok: false, texto: 'Tu usuario no puede hacer eso.' };
-      else {
-        const otraVez = await cambio.preparar(ctx, p.argumentos);
-        resultado = otraVez.ok ? await cambio.aplicar(ctx, otraVez.argumentos) : { ok: false, texto: otraVez.error };
+    try {
+      if (p.herramienta === HERRAMIENTA_FOTOS) {
+        resultado = await aplicarFotos(repos, usuario, p);
+      } else if (p.herramienta === '__basica') {
+        resultado = await aplicarAccion(repos, usuario.rol, usuario.email, p.argumentos as unknown as AccionBasica);
+      } else {
+        const h = herramienta(p.herramienta);
+        if (!h || h.tipo !== 'cambio') resultado = { ok: false, texto: 'Esa acción ya no existe.' };
+        else {
+          const cambio = h as Cambio<unknown>;
+          if (!puede(usuario.rol, cambio.permiso)) resultado = { ok: false, texto: 'Tu usuario no puede hacer eso.' };
+          else {
+            const otraVez = await cambio.preparar(ctx, p.argumentos);
+            if (!otraVez.ok) resultado = { ok: false, texto: otraVez.error };
+            else if (clienteActual().sector === 'carpinteria' && (otraVez.resumen !== p.resumen || JSON.stringify(otraVez.argumentos) !== JSON.stringify(p.argumentos)))
+              resultado = { ok: false, texto: 'Los datos han cambiado. Pide una nueva propuesta para revisar el cambio.' };
+            else resultado = await cambio.aplicar(ctx, otraVez.argumentos);
+          }
+        }
       }
+    } catch {
+      resultado = { ok: false, texto: 'La operación se ha interrumpido. Revisa el registro antes de repetirla.' };
     }
   }
   if (si) await repos.conversaciones.anotar(id, resultado.ok ? 'aplicada' : 'fallida', resultado.texto);

@@ -42,15 +42,14 @@ if (s && f && ajustes && Astro.request.method === 'POST') {
   }
   if (f.estado === 'borrador') {
     if (accion === 'borrar') {
-      await s.repos.facturas.borrarBorrador(f.id);
-      return Astro.redirect('/panel/facturas?hecho=borrada', 303);
-    }
-    if (accion === 'confirmar-emision') {
+      if (await s.repos.facturas.borrarBorrador(f.id)) return Astro.redirect('/panel/facturas?hecho=borrada', 303);
+      errores = [{ campo: 'estado', mensaje: 'No se puede borrar una factura enlazada a un presupuesto o ya emitida.' }];
+    } else if (accion === 'confirmar-emision') {
       const r = await emitirFactura(s.repos, f, s.usuario.email);
       if (r.ok) return Astro.redirect(`/panel/facturas/${f.id}?hecho=emitida`, 303);
       errores = r.errores;
     } else {
-      const r = leerBorrador(form, f, plantas);
+      const r = leerBorrador(form, f, plantas, ivaFijo);
       errores = r.errores;
       if (errores.length) crudo = form;
       else {
@@ -64,7 +63,7 @@ if (s && f && ajustes && Astro.request.method === 'POST') {
       }
     }
   } else {
-    if (accion === 'cobrada') await s.repos.facturas.marcarCobrada(f.id, campo(form, 'fechaCobro') || hoy());
+    if (accion === 'cobrada' && !(await s.repos.facturas.marcarCobrada(f.id, campo(form, 'fechaCobro') || hoy()))) return new Response('Revisa la fecha de cobro. Debe ser un día válido hasta hoy.', { status: 400 });
     if (accion === 'pendiente') await s.repos.facturas.marcarCobrada(f.id, null);
     if (accion === 'rectificar') {
       const r = rectificativaDe(f, s.usuario.email, ajustes);

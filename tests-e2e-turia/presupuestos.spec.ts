@@ -91,10 +91,6 @@ test('factura desde un presupuesto: desde «Nueva factura» (el enviado se da po
   await expect(page.getByText(/presupuestos? aceptados? por facturar/)).toBeVisible();
   await page.getByRole('link', { name: 'Facturarlos' }).click();
   await page.getByRole('button', { name: new RegExp(`^Facturar Cocina ${p}, .*factura final \\(descuenta el anticipo\\), 726,00`) }).click();
-  await expect(page.locator('[name="l0.concepto"]')).toHaveValue('Muebles de cocina');
-  await expect(page.locator('[name="l1.concepto"]')).toHaveValue(/^Anticipo ya facturado/);
-  await expect(page.locator('[data-total]').first()).toHaveText(/^726,00/);
-  // Ya no queda nada de este presupuesto por facturar.
-  await page.goto('/panel/facturas/nueva');
-  await expect(page.getByRole('button', { name: new RegExp(`^Facturar Cocina ${p},`) })).toHaveCount(0);
+  await expect(page.getByText('Emite primero la factura de anticipo antes de descontarla en la final.')).toBeVisible();
+  await expect(page.locator('[name="l1.concepto"]')).toHaveCount(0);
 });

@@ -45,22 +45,28 @@ describe('del presupuesto a la factura', () => {
     const id = r.presupuesto.id;
     expect(await facturarPresupuesto(repos, id, 'anticipo', yo, AJUSTES_VACIOS)).toMatchObject({ ok: false });
     await cambiarEstado(repos, id, 'enviado', yo, '2026-10-30');
+    expect(await repos.presupuestosCliente.indicadores('2026-10-01', '2026-10-31', '2026-10-30')).toMatchObject({ aceptados: 0, pendientes: 1, cartera: r.presupuesto.totales.total });
     await cambiarEstado(repos, id, 'aceptado', yo, '2026-10-30');
+    expect(await repos.presupuestosCliente.indicadores('2026-10-01', '2026-10-31', '2026-10-30')).toMatchObject({ aceptados: 1, decididos: 1, pendientes: 0 });
 
-    const a = await facturarPresupuesto(repos, id, 'anticipo', yo, AJUSTES_VACIOS);
+    const [a, simultanea] = await Promise.all([1, 2].map(() => facturarPresupuesto(repos, id, 'anticipo', yo, AJUSTES_VACIOS)));
+    expect(simultanea.ok && simultanea.factura.id).toBe(a.ok && a.factura.id);
     if (!a.ok) throw new Error(a.error);
     expect(a.factura).toMatchObject({ estado: 'borrador', clienteId: 'cli-f', totales: { base: 572, total: 692.12 } });
     expect(a.factura.lineas[0].concepto).toContain('Anticipo del 40 % del presupuesto P2026-0001');
+    expect(await repos.facturas.borrarBorrador(a.factura.id)).toBe(false);
     // Pulsar otra vez no crea otra.
     const otra = await facturarPresupuesto(repos, id, 'anticipo', yo, AJUSTES_VACIOS);
     expect(otra.ok && otra.factura.id).toBe(a.factura.id);
 
+    expect(await facturarPresupuesto(repos, id, 'final', yo, AJUSTES_VACIOS)).toMatchObject({ ok: false, error: expect.stringContaining('Emite primero') });
+    await repos.facturas.emitir(a.factura.id, { serie: 'TEST', fecha: a.factura.fecha, emisor: AJUSTES_VACIOS, cliente: a.factura.cliente, huellaAnterior: null, codigo: n => 'TEST-' + n, huella: async () => 'huella-test' });
     const f = await facturarPresupuesto(repos, id, 'final', yo, AJUSTES_VACIOS);
     if (!f.ok) throw new Error(f.error);
     expect(f.factura.lineas.map((l) => [l.concepto, l.cantidad, l.precio, l.iva])).toEqual([
       ['Armario (Melamina)', 1, 1250, 21],
       ['Montaje', 1, 180, 21],
-      ['Anticipo ya facturado', -1, 572, 21],
+      ['Anticipo ya facturado en la factura TEST-1', -1, 572, 21],
     ]);
     // Lo que queda por facturar es el restante del presupuesto (al céntimo).
     expect(f.factura.totales.total).toBe(r.presupuesto.totales.restante);
@@ -101,6 +107,8 @@ describe('del presupuesto a la factura', () => {
     if (!a.ok) throw new Error(a.error);
     expect(a.factura.totales.total).toBe(181.5);
     expect((await repos.presupuestosCliente.obtener(id))?.estado).toBe('aceptado');
+    expect(await facturarPresupuesto(repos, id, 'final', yo, AJUSTES_VACIOS)).toMatchObject({ ok: false, error: expect.stringContaining('Emite primero') });
+    await repos.facturas.emitir(a.factura.id, { serie: 'TEST', fecha: a.factura.fecha, emisor: AJUSTES_VACIOS, cliente: a.factura.cliente, huellaAnterior: null, codigo: n => 'TEST-' + n, huella: async () => 'huella-test' });
     const f = await facturarLoQueToca(repos, id, yo, AJUSTES_VACIOS, '2026-10-30');
     if (!f.ok) throw new Error(f.error);
     expect(f.factura.id).not.toBe(a.factura.id);

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "wrangler types --include-runtime=false && astro dev",
+    "build:turia": "CLIENTE_ID=turia npm run build",
     "build": "tsx scripts/contenido/descargar.ts && astro build",
     "preview": "astro preview",
     "types": "wrangler types --include-runtime=false",

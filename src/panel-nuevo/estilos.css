@@ -2397,3 +2397,11 @@
   background: var(--nv-acento);
   color: #fff;
 }
+
+/* Mantener el campo enfocado por encima de la navegación fija al usar teclado o móvil. */
+@media (max-width: 48rem) {
+  html:has(.nv) { scroll-padding-block: 5rem calc(6rem + env(safe-area-inset-bottom)); }
+  .nv-contenido :is(input, select, textarea):not([type='checkbox'], [type='radio'], [type='hidden']) { font-size: 1rem; }
+  .nv-contenido :is(button, select, summary):not([hidden]) { min-height: 3rem; }
+  .nv-contenido :is(h1,h2,dd,strong) { overflow-wrap: anywhere; }
+}

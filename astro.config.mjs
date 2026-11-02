@@ -11,7 +11,7 @@ const cliente = cargarCliente(process.env.CLIENTE_ID);
 
 // URL pública para canonical y hreflang. En Workers Builds es obligatoria
 // (variable de build SITE_URL): mientras no haya dominio propio, la URL *.workers.dev.
-if (process.env.WORKERS_CI && !process.env.SITE_URL) {
+if (process.env.WORKERS_CI && cliente.webPublica && !process.env.SITE_URL) {
   throw new Error('Falta la variable de build SITE_URL (URL pública con https://, sin barra final).');
 }
 const site = process.env.SITE_URL || 'http://localhost:4321';

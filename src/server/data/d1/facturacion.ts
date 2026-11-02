@@ -1,3 +1,4 @@
+import { fechaValida, hoy } from '../../facturas/facturas.ts';
 import type { Cliente, Factura, Repositorios } from '../tipos.ts';
 import type { BaseD1 } from './base.ts';
 
@@ -17,6 +18,7 @@ interface FilaFactura {
 }
 
 // Las columnas mandan sobre la copia en JSON (estado, número, fechas): son las que cambian al emitir o cobrar.
+const consultaCabeza = "SELECT huella FROM facturas WHERE huella IS NOT NULL AND serie NOT LIKE 'PRUEBA-%' ORDER BY json_extract(datos, '$.emitidaEl') DESC, rowid DESC LIMIT 1";
 const aFactura = (f: FilaFactura): Factura => ({
   ...(JSON.parse(f.datos) as Factura),
   estado: f.estado,
@@ -107,7 +109,7 @@ export function crearRepositoriosFacturacion(db: BaseD1): Pick<Repositorios, 'aj
         const previa = await filaFactura(fa.id);
         if (previa && previa.estado !== 'borrador') return false;
         const t = ahora();
-        await db
+        const guardada = await db
           .prepare(
             `INSERT INTO facturas (id, tipo, estado, fecha, cliente_id, total, datos, creada, creada_por, actualizada) VALUES (?, ?, 'borrador', ?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT (id) DO UPDATE SET fecha = excluded.fecha, cliente_id = excluded.cliente_id, total = excluded.total,
@@ -115,10 +117,10 @@ export function crearRepositoriosFacturacion(db: BaseD1): Pick<Repositorios, 'aj
           )
           .bind(fa.id, fa.tipo, fa.fecha, fa.clienteId, fa.totales.total, JSON.stringify({ ...fa, actualizada: t }), fa.creada, fa.creadaPor, t)
           .run();
-        return true;
+        return (guardada.meta?.changes ?? 0) === 1;
       },
       async borrarBorrador(id) {
-        const r = await db.prepare("DELETE FROM facturas WHERE id = ? AND estado = 'borrador'").bind(id).run();
+        const r = await db.prepare("DELETE FROM facturas WHERE id = ?1 AND estado = 'borrador' AND NOT EXISTS (SELECT 1 FROM presupuestos_cliente WHERE json_extract(datos,'$.facturaAnticipoId') = ?1 OR json_extract(datos,'$.facturaId') = ?1)").bind(id).run();
         return (r.meta?.changes ?? 0) > 0;
       },
       async ultimaEmitida(serie) {
@@ -126,21 +128,25 @@ export function crearRepositoriosFacturacion(db: BaseD1): Pick<Repositorios, 'aj
         return f ? aFactura(f) : null;
       },
       async ultimaHuella() {
-        const f = await db.prepare("SELECT huella FROM facturas WHERE huella IS NOT NULL AND serie NOT LIKE 'PRUEBA-%' ORDER BY json_extract(datos, '$.emitidaEl') DESC, rowid DESC LIMIT 1").first<{ huella: string }>();
+        const f = await db.prepare(consultaCabeza).first<{ huella: string }>();
         return f?.huella ?? null;
       },
       async emitir(id, d) {
         const previa = await filaFactura(id);
-        if (!previa || previa.estado !== 'borrador') return null;
+        if (!previa || previa.estado !== 'borrador' || (d.validado && previa.actualizada !== d.validado.version)) return null;
         // Dos intentos: si otra persona emite a la vez, el número choca (UNIQUE) y se toma el siguiente.
         for (let intento = 0; intento < 2; intento++) {
           const ultima = await db.prepare('SELECT MAX(numero) AS n FROM facturas WHERE serie = ?').bind(d.serie).first<{ n: number | null }>();
           const numero = (ultima?.n ?? 0) + 1;
           const codigo = d.codigo(numero);
           const huella = await d.huella(numero, codigo);
-          const t = ahora();
+          let t = ahora();
+          if (d.validado && d.huellaAnterior) {
+            const anterior = await db.prepare("SELECT json_extract(datos,'$.emitidaEl') AS fecha FROM facturas WHERE huella = ?").bind(d.huellaAnterior).first<{ fecha: string }>();
+            if (anterior?.fecha && t <= anterior.fecha) t = new Date(Date.parse(anterior.fecha) + 1).toISOString();
+          }
           const datos: Factura = {
-            ...(JSON.parse(previa.datos) as Factura),
+            ...(d.validado?.factura ?? (JSON.parse(previa.datos) as Factura)),
             estado: 'emitida',
             serie: d.serie,
             numero,
@@ -153,16 +159,26 @@ export function crearRepositoriosFacturacion(db: BaseD1): Pick<Repositorios, 'aj
             actualizada: t,
           };
           try {
+            const control = d.validado ? ` AND datos = ? AND actualizada = ?
+              AND NOT EXISTS (SELECT 1 FROM facturas WHERE serie = ? AND numero IS NOT NULL AND fecha > ?)
+              AND (? OR ((${consultaCabeza}) IS ? AND NOT EXISTS (
+                SELECT 1 FROM facturas WHERE huella IS NOT NULL AND serie NOT LIKE 'PRUEBA-%' AND json_extract(datos,'$.huellaAnterior') IS ?
+              )))` : '';
+            const parametros = d.validado ? [previa.datos, previa.actualizada, d.serie, d.fecha, d.validado.factura.prueba ? 1 : 0, d.huellaAnterior, d.huellaAnterior] : [];
+            const pago = d.validado ? `(SELECT CASE WHEN json_extract(p.datos,'$.facturaAnticipoId') = facturas.id THEN json_extract(p.datos,'$.cobroAnticipo') ELSE json_extract(p.datos,'$.cobroResto') END
+              FROM presupuestos_cliente p WHERE json_extract(p.datos,'$.facturaAnticipoId') = facturas.id OR json_extract(p.datos,'$.facturaId') = facturas.id LIMIT 1)` : 'NULL';
             const r = await db
               .prepare(
-                `UPDATE facturas SET estado = 'emitida', serie = ?, numero = ?, codigo = ?, fecha = ?, huella = ?, datos = ?, actualizada = ?
-                 WHERE id = ? AND estado = 'borrador'`,
+                `UPDATE facturas SET estado = CASE WHEN ${pago} IS NULL THEN 'emitida' ELSE 'cobrada' END, cobrada_el = ${pago}, serie = ?, numero = ?, codigo = ?, fecha = ?, huella = ?, datos = ?, total = ?, actualizada = ?
+                 WHERE id = ? AND estado = 'borrador'${control}`,
               )
-              .bind(d.serie, numero, codigo, d.fecha, huella, JSON.stringify({ ...datos, emitidaEl: t }), t, id)
+              .bind(d.serie, numero, codigo, d.fecha, huella, JSON.stringify({ ...datos, emitidaEl: t }), datos.totales.total, t, id, ...parametros)
               .run();
-            return (r.meta?.changes ?? 0) > 0 ? datos : null;
+            if (!r.meta?.changes) return null;
+            return aFactura((await filaFactura(id))!);
           } catch (error) {
-            if (intento === 1 || !/UNIQUE/i.test(String(error))) throw error;
+            if (!/UNIQUE/i.test(String(error))) throw error;
+            if (d.validado || intento === 1) return null;
           }
         }
         return null;
@@ -172,10 +188,15 @@ export function crearRepositoriosFacturacion(db: BaseD1): Pick<Repositorios, 'aj
         return r.meta?.changes ?? 0;
       },
       async marcarCobrada(id, fecha) {
-        const r = await db
-          .prepare(`UPDATE facturas SET estado = ?, cobrada_el = ?, actualizada = ? WHERE id = ? AND estado IN ('emitida', 'cobrada')`)
-          .bind(fecha ? 'cobrada' : 'emitida', fecha, ahora(), id)
-          .run();
+        if (fecha && (!fechaValida(fecha) || fecha > hoy())) return false;
+        const t = ahora();
+        const [r] = await db.batch([
+          db.prepare("UPDATE facturas SET estado = ?, cobrada_el = ?, actualizada = ? WHERE id = ? AND estado IN ('emitida', 'cobrada')").bind(fecha ? 'cobrada' : 'emitida', fecha, t, id),
+          db.prepare(`UPDATE presupuestos_cliente SET datos = json_set(datos,
+            CASE WHEN json_extract(datos,'$.facturaAnticipoId') = ?1 THEN '$.cobroAnticipo' ELSE '$.cobroResto' END, ?2), actualizado = ?3
+            WHERE (json_extract(datos,'$.facturaAnticipoId') = ?1 OR json_extract(datos,'$.facturaId') = ?1)
+            AND EXISTS (SELECT 1 FROM facturas WHERE id = ?1 AND estado IN ('emitida','cobrada'))`).bind(id, fecha, t),
+        ]);
         return (r.meta?.changes ?? 0) > 0;
       },
     },

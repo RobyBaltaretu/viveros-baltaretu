@@ -61,9 +61,14 @@ export async function facturarPresupuesto(repos: Repositorios, id: string, tipo:
   if (tipo === 'anticipo' && p.totales.anticipo <= 0) return { ok: false, error: 'Este presupuesto no tiene anticipo.' };
   const cliente = (await repos.clientes.obtener(p.clienteId)) ?? p.cliente;
   const anticipo = tipo === 'final' && p.facturaAnticipoId ? await repos.facturas.obtener(p.facturaAnticipoId) : null;
+  if (tipo === 'final' && p.facturaAnticipoId && (!anticipo || anticipo.estado === 'borrador')) return { ok: false, error: 'Emite primero la factura de anticipo antes de descontarla en la final.' };
   const factura = tipo === 'anticipo' ? facturaDeAnticipo(p, cliente, email, ajustes) : facturaFinal(p, cliente, email, ajustes, anticipo);
-  await repos.facturas.guardarBorrador(factura);
-  await repos.presupuestosCliente.guardar({ ...p, ...(tipo === 'anticipo' ? { facturaAnticipoId: factura.id } : { facturaId: factura.id }) }, email);
+  if (!(await repos.presupuestosCliente.enlazarFactura(p, tipo, factura, email))) {
+    const actual = await repos.presupuestosCliente.obtener(id);
+    const enlace = tipo === 'anticipo' ? actual?.facturaAnticipoId : actual?.facturaId;
+    const existente = enlace ? await repos.facturas.obtener(enlace) : null;
+    return existente ? { ok: true, factura: existente } : { ok: false, error: 'El presupuesto ha cambiado. Vuelve a abrirlo antes de facturar.' };
+  }
   return { ok: true, factura };
 }
 

@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { conversar, responderPropuesta } from '../../src/server/asistente/agente.ts';
 import { herramienta, herramientasDe, herramientasPara, type Cambio, type Consulta, type Contexto } from '../../src/server/asistente/herramientas.ts';
 import { NOMBRES_CARPINTERIA } from '../../src/server/asistente/herramientas-carpinteria.ts';
 import { aplicarMigraciones, crearRepositoriosD1, type Repositorios } from '../../src/server/data/index.ts';
@@ -25,7 +26,16 @@ async function conSi(nombre: string, argumentos: unknown) {
   const h = herramienta(nombre) as unknown as Cambio<unknown>;
   const p = await h.preparar(ctx(), h.esquema.parse(argumentos));
   if (!p.ok) throw new Error(p.error);
-  return { resumen: p.resumen, ...(await h.aplicar(ctx(), p.argumentos)) };
+  const usuario = ctx().usuario;
+  const conversacion = await repos.conversaciones.actual(usuario.email);
+  const id = crypto.randomUUID();
+  await repos.conversaciones.guardarPropuesta({ id, email: usuario.email, conversacion, herramienta: nombre, argumentos: p.argumentos as Record<string, unknown>, resumen: p.resumen, estado: 'pendiente', resultado: '', creada: new Date().toISOString() });
+  await repos.conversaciones.anadir({ conversacion, rol: 'asistente', texto: p.resumen, propuestas: [id] });
+  if (nombre === 'crear_pedido') {
+    await conversar(ctx(), 'perfecto', []);
+    expect((await repos.conversaciones.propuesta(id))?.estado).toBe('pendiente');
+  }
+  return { resumen: p.resumen, ...(await responderPropuesta(ctx(), id, true)) };
 }
 const consultar = async (nombre: string, a: unknown) => {
   const h = herramienta(nombre) as unknown as Consulta<unknown>;

@@ -37,7 +37,8 @@ const [facturas, gastosMes, revisar, presupuestos] = s
   : [[], [], 0, []];
 // Las vencidas pueden ser de hace más de seis meses: se piden aparte.
 const emitidas = ver.facturas && s ? await s.repos.facturas.listar({ estado: 'emitida' }) : [];
-const todas = [...facturas, ...emitidas.filter((f) => !facturas.some((x) => x.id === f.id))];
+const idsFacturas = new Set(facturas.map(f => f.id));
+const todas = [...facturas, ...emitidas.filter(f => !idsFacturas.has(f.id))];
 const datos: DatosInicio = { hoy: dia, facturas: todas, gastosMes, ticketsPorRevisar: revisar, presupuestos, ver };
 const cifras = kpis(datos);
 const tareas = porHacer(datos);

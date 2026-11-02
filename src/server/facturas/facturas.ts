@@ -42,7 +42,7 @@ export const sumarDias = (fecha: string, dias: number) => {
   d.setUTCDate(d.getUTCDate() + dias);
   return d.toISOString().slice(0, 10);
 };
-const fechaValida = (f: string) => /^\d{4}-\d{2}-\d{2}$/.test(f) && !Number.isNaN(Date.parse(`${f}T12:00:00Z`));
+export const fechaValida = (f: string) => /^\d{4}-\d{2}-\d{2}$/.test(f) && Number.isFinite(Date.parse(f)) && new Date(f).toISOString().startsWith(f);
 
 /* ---------- Emisor ---------- */
 
@@ -230,7 +230,7 @@ export function rectificativaDe(f: Factura, email: string, ajustes: AjustesFactu
 export type AccionBorrador = { tipo: 'guardar' } | { tipo: 'emitir' } | { tipo: 'agregar' } | { tipo: 'quitar'; indice: number } | { tipo: 'planta'; slug: string };
 
 /** Lee el formulario del borrador. Las líneas vienen como `l0.concepto`, `l0.cantidad`… */
-export function leerBorrador(form: FormData, previa: Factura, plantas: Planta[]): { factura: Factura; errores: Error[]; accion: AccionBorrador } {
+export function leerBorrador(form: FormData, previa: Factura, plantas: Planta[], ivaFijo: number | null = null): { factura: Factura; errores: Error[]; accion: AccionBorrador } {
   const v = (n: string) => String(form.get(n) ?? '').trim();
   const errores: Error[] = [];
   const lineas: LineaFactura[] = [];
@@ -241,7 +241,7 @@ export function leerBorrador(form: FormData, previa: Factura, plantas: Planta[])
     const planta = plantas.some((p) => p.slug === slug) ? slug : null;
     const textos = [v(`l${i}.cantidad`), v(`l${i}.precio`), v(`l${i}.descuento`)];
     if (!concepto && textos.every((t) => !t || t === '0' || t === '1')) {
-      lineas.push({ ...lineaVacia(), cantidad: leerNumero(textos[0]) ?? 1 });
+      lineas.push({ ...lineaVacia(), iva: ivaFijo ?? IVA_POR_DEFECTO, cantidad: leerNumero(textos[0]) ?? 1 });
       continue;
     }
     const [cantidad, precio, descuento] = textos.map(leerNumero);
@@ -250,6 +250,7 @@ export function leerBorrador(form: FormData, previa: Factura, plantas: Planta[])
     if (cantidad === null || Number.isNaN(cantidad) || cantidad === 0) errores.push({ campo: `l${i}.cantidad`, mensaje: `Línea ${linea}: la cantidad debe ser un número distinto de 0.` });
     if (precio === null || Number.isNaN(precio) || precio < 0) errores.push({ campo: `l${i}.precio`, mensaje: `Línea ${linea}: el precio debe ser un número (0 o más).` });
     if (descuento !== null && (Number.isNaN(descuento) || descuento < 0 || descuento > 100)) errores.push({ campo: `l${i}.descuento`, mensaje: `Línea ${linea}: el descuento va de 0 a 100.` });
+    if (ivaFijo !== null && iva !== ivaFijo) errores.push({ campo: `l${i}.iva`, mensaje: `El IVA de este trabajo debe ser del ${ivaFijo} %.` });
     if (!(TIPOS_IVA as readonly number[]).includes(iva)) errores.push({ campo: `l${i}.iva`, mensaje: `Línea ${linea}: elige el IVA.` });
     lineas.push({
       concepto,
@@ -273,7 +274,7 @@ export function leerBorrador(form: FormData, previa: Factura, plantas: Planta[])
   else if (boton.startsWith('quitar:')) accion = { tipo: 'quitar', indice: Number(boton.slice(7)) };
   else if (boton === 'planta') accion = { tipo: 'planta', slug: v('planta') };
 
-  if (accion.tipo === 'agregar') lineas.push(lineaVacia());
+  if (accion.tipo === 'agregar') lineas.push({ ...lineaVacia(), iva: ivaFijo ?? IVA_POR_DEFECTO });
   if (accion.tipo === 'quitar' && lineas[accion.indice]) {
     lineas.splice(accion.indice, 1);
     // Los errores de la línea quitada ya no cuentan.

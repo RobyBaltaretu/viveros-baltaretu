@@ -64,7 +64,7 @@ export async function generateRenovationImage(imageBase64: string, config: Renov
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': options.apiKey },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }, { inlineData: foto }, ...(mascara ? [{ inlineData: mascara }] : [])] }],
-        generationConfig: { responseModalities: ['IMAGE'] },
+        generationConfig: { responseModalities: ['IMAGE'], imageConfig: { imageSize: '1K' } },
       }),
     });
   } catch {
@@ -73,7 +73,7 @@ export async function generateRenovationImage(imageBase64: string, config: Renov
 
   if (!respuesta.ok) {
     const cuerpo = await respuesta.text().catch(() => '');
-    console.warn(`[Simulador] Gemini ${respuesta.status}:`, cuerpo.slice(0, 300));
+    console.warn(`[Simulador] Gemini HTTP ${respuesta.status}`);
     // Google indica el cupo o el saldo agotado con 429 RESOURCE_EXHAUSTED: si habla de facturación, es el límite del proveedor.
     const sinSaldo = respuesta.status === 429 && /billing|prepay|credit|quota exceeded for/i.test(cuerpo);
     const mensaje = sinSaldo ? ERRORES_GEMINI[402]! : (ERRORES_GEMINI[respuesta.status] ?? 'La IA no ha podido generar la imagen. Vuelve a intentarlo en un rato.');

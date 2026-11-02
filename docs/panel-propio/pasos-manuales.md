@@ -92,3 +92,9 @@ El mismo repositorio construye el panel de Turia con la variable `CLIENTE_ID=tur
    - El panel no deja pasar de **250 simulaciones al mes** (contador en D1; avisa en naranja desde 200 y se bloquea en 250 hasta el día 1). Una simulación que falla no cuenta.
    - El modelo (`gemini-3.1-flash-image-preview`, unos 0,045 $ por imagen) y el tope se cambian en `clientes/turia/cliente.config.json` (`ia.modelos.gemini`, `ia.simulacionesMes`).
    - La clave nunca va en el navegador: la pone el Worker en cada petición.
+
+### Antes de activar la revisión de Turia
+
+- En Workers Builds del taller, elegir `npm run build:turia` tanto en producción como para las ramas. Proteger con Access el dominio del Worker y los alias de vista previa. En el Worker de producción deben faltar `PANEL_ENTORNO=desarrollo` y `PANEL_PRUEBA_EMAIL`.
+- El simulador reserva 20 céntimos del presupuesto interno por intento y admite hasta 50 intentos por mes natural de Madrid. La reserva incluye respuestas de coste desconocido. Antes de activar la clave, verificar que el máximo facturable por intento de 1K, con entradas, cambio e impuestos, cabe en esos 20 céntimos. Contrastar también el consumo previo del mes y utilizar un proyecto de Google dedicado. La reserva interna no impone un límite en la cuenta del proveedor.
+- Para una copia íntegra, exportar la D1 de Turia desde un equipo de confianza con `npx wrangler d1 export creacionesturia --remote --config wrangler.creacionesturia.jsonc --output copia-turia.sql`. Cifrar la copia fuera del repositorio y comprobar la restauración en una base local vacía con `npx wrangler d1 execute creacionesturia --local --config wrangler.creacionesturia.jsonc --file copia-turia.sql`. Revisar una factura, su presupuesto y un ticket restaurado antes de retirar la copia anterior.

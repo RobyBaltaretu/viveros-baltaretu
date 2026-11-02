@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { auditar } from '../tests-e2e/ayudas';
 
 // Simulador de Turia: la IA (Gemini, de pago) nunca se llama en las pruebas: la API se simula.
-const cuota = (usos: number, limite = 250) => {
+const cuota = (usos: number, limite = 50) => {
   const quedan = Math.max(0, limite - usos);
   return { usos, limite, quedan, porcentaje: Math.min(100, Math.round((usos / limite) * 100)), aviso: usos >= limite * 0.8, agotada: usos >= limite };
 };
@@ -26,7 +26,7 @@ async function subirFoto(page: Page) {
 
 test('simulador: barra del mes, zona marcada y resultado cosido, sin claves en el navegador', async ({ page }) => {
   await page.goto('/panel/simulador');
-  await expect(page.getByRole('progressbar', { name: 'Simulaciones de este mes' })).toHaveAttribute('aria-valuetext', '0 de 250 usadas · quedan 250');
+  await expect(page.getByRole('progressbar', { name: 'Simulaciones de este mes' })).toHaveAttribute('aria-valuetext', '0 de 50 usadas · quedan 50');
   await expect(page.getByRole('button', { name: /Configuración IA/ })).toHaveCount(0);
   await auditar(page);
 
@@ -51,7 +51,7 @@ test('simulador: barra del mes, zona marcada y resultado cosido, sin claves en e
       k.fillRect(0, 0, 1024, 768);
       return c.toDataURL('image/png');
     });
-    await ruta.fulfill({ json: { ok: true, afterImage: verde, cuota: cuota(200) } });
+    await ruta.fulfill({ json: { ok: true, afterImage: verde, cuota: cuota(40) } });
   });
   await page.getByRole('button', { name: 'Generar Reforma en Vivo' }).click();
   await expect(page.locator('#slider-wrapper')).toBeVisible();
@@ -80,13 +80,13 @@ test('simulador: barra del mes, zona marcada y resultado cosido, sin claves en e
   expect(fuera[0]! - fuera[1]!).toBeGreaterThan(5);
 
   // Desde el 80 %, aviso naranja con lo que queda.
-  await expect(page.locator('#cuota-aviso')).toHaveText('Te quedan 50 simulaciones este mes.');
-  await expect(page.getByRole('progressbar', { name: 'Simulaciones de este mes' })).toHaveAttribute('aria-valuenow', '200');
+  await expect(page.locator('#cuota-aviso')).toHaveText('Te quedan 10 simulaciones este mes.');
+  await expect(page.getByRole('progressbar', { name: 'Simulaciones de este mes' })).toHaveAttribute('aria-valuenow', '40');
   await auditar(page);
 
   // Al llegar al tope, el botón se bloquea hasta el mes que viene.
   await page.unroute('**/api/panel/simulador');
-  await page.route('**/api/panel/simulador', (ruta) => ruta.fulfill({ status: 403, json: { ok: false, error: 'Has llegado al tope de simulaciones de este mes. El servicio se reactiva el día 1 del mes que viene.', cuota: cuota(250) } }));
+  await page.route('**/api/panel/simulador', (ruta) => ruta.fulfill({ status: 403, json: { ok: false, error: 'Has llegado al tope de simulaciones de este mes. El servicio se reactiva el día 1 del mes que viene.', cuota: cuota(50) } }));
   await page.getByRole('button', { name: 'Generar Reforma en Vivo' }).click();
   await expect(page.getByRole('button', { name: 'Generar Reforma en Vivo' })).toBeDisabled();
   await expect(page.locator('#cuota-aviso')).toContainText('día 1 del mes que viene');

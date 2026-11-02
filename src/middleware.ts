@@ -1,6 +1,6 @@
 import { defineMiddleware } from 'astro:middleware';
 import { env } from 'cloudflare:workers';
-import { rutaDisponible } from './plataforma/actual.ts';
+import { clienteActual, rutaDisponible } from './plataforma/actual.ts';
 import { mismoOrigen, sesionPanel, type EntornoPanel } from './server/panel/acceso.ts';
 
 /**
@@ -11,6 +11,11 @@ import { mismoOrigen, sesionPanel, type EntornoPanel } from './server/panel/acce
  * pública en un cliente sin web, no existen (404).
  */
 const CABECERAS = {
+  ...(clienteActual().sector === 'carpinteria' ? {
+    'Permissions-Policy': 'geolocation=(), microphone=(), camera=(self)',
+    'Content-Security-Policy': "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'",
+    'Strict-Transport-Security': 'max-age=31536000',
+  } : {}),
   'Cache-Control': 'no-store',
   'X-Frame-Options': 'DENY',
   'X-Robots-Tag': 'noindex, nofollow',

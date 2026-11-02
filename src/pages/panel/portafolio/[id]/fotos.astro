@@ -4,13 +4,17 @@ import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
 import { campo, sesionCon } from '../../../../server/panel/pagina.ts';
 import { anadirFoto, MAXIMO_FOTOS_POR_LADO, quitarFoto, type Lado } from '../../../../server/portafolio/portafolio.ts';
 
+import { cuerpoLimitado } from '../../../../server/panel/cuerpo.ts';
+import { MAXIMO_FOTO } from '../../../../server/panel/fotos.ts';
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'inventario');
 const id = Astro.params.id ?? '';
 let error = '';
 if (s && Astro.request.method === 'POST') {
-  const form = await Astro.request.formData();
+  const cuerpo = await cuerpoLimitado(Astro.request, MAXIMO_FOTO + 32768);
+  if (!cuerpo) return new Response('La foto es demasiado grande. Elige otra de menos de 1,9 MB.', { status: 413 });
+  const form = await cuerpo.formData().catch(() => new FormData());
   const accion = campo(form, 'accion');
   if (accion === 'quitar') {
     await quitarFoto(s.repos, id, campo(form, 'adjunto'), s.usuario.email);

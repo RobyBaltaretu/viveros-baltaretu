@@ -1,3 +1,4 @@
+import { clienteActual } from '../../plataforma/actual.ts';
 import { descontarFactura } from './inventario.ts';
 import type { DatosEmisor, Factura, Repositorios } from '../data/tipos.ts';
 import {
@@ -114,12 +115,16 @@ export async function emitirFactura(repos: Repositorios, borrador: Factura, emai
   const ajustes = await ajustesFacturacion(repos);
   const fa = await borradorAlDia(repos, borrador);
   const errores = await comprobarEmision(repos, fa, ajustes);
+  const { iva } = clienteActual();
+  if (iva.fijo && fa.lineas.some((l) => l.concepto && l.iva !== iva.general)) errores.push({ campo: 'iva', mensaje: `Revisa las líneas. El IVA debe ser del ${iva.general} %.` });
   if (errores.length) return { ok: false, errores };
   const { prueba, serie, emisor } = await destinoEmision(repos, fa, ajustes);
-  await repos.facturas.guardarBorrador({ ...fa, prueba });
+  const taller = clienteActual().sector === 'carpinteria';
+  if (!taller) await repos.facturas.guardarBorrador({ ...fa, prueba });
   // Las de prueba no entran en la cadena de huellas de las reales.
   const anterior = prueba ? null : await repos.facturas.ultimaHuella();
   const emitida = await repos.facturas.emitir(fa.id, {
+    ...(taller ? { validado: { factura: { ...fa, prueba }, version: borrador.actualizada } } : {}),
     serie,
     fecha: fa.fecha,
     emisor,
@@ -128,7 +133,7 @@ export async function emitirFactura(repos: Repositorios, borrador: Factura, emai
     codigo: (n) => codigoDe(serie, n),
     huella: (_n, codigo) => huellaDe({ codigo, fecha: fa.fecha, total: fa.totales.total, nifEmisor: emisor.nif, nifCliente: fa.cliente.nif }, anterior),
   });
-  if (!emitida) return { ok: false, errores: [{ campo: 'estado', mensaje: 'Esa factura ya no es un borrador.' }] };
+  if (!emitida) return { ok: false, errores: [{ campo: 'estado', mensaje: taller ? 'La factura o la numeración ha cambiado. Vuelve a abrirla y revisa el importe antes de emitir.' : 'Esa factura ya no es un borrador.' }] };
   await repos.auditoria.registrar(email, 'factura emitida', `${emitida.codigo} · ${emitida.totales.total}`);
   await descontarFactura(repos, emitida, email);
   return { ok: true, factura: emitida };

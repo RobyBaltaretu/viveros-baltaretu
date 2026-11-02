@@ -331,7 +331,7 @@ export interface RepositorioFacturas {
   /** La última emitida de todas (para la cadena de huellas). */
   ultimaHuella(): Promise<string | null>;
   /** Emite un borrador con el número siguiente de la serie. Devuelve la factura o `null` si ya no era borrador. */
-  emitir(id: string, datos: { serie: string; fecha: string; emisor: DatosEmisor; cliente: Cliente; huella: (numero: number, codigo: string) => Promise<string>; huellaAnterior: string | null; codigo: (numero: number) => string }): Promise<Factura | null>;
+  emitir(id: string, datos: { validado?: { factura: Factura; version: string }; serie: string; fecha: string; emisor: DatosEmisor; cliente: Cliente; huella: (numero: number, codigo: string) => Promise<string>; huellaAnterior: string | null; codigo: (numero: number) => string }): Promise<Factura | null>;
   marcarCobrada(id: string, fecha: string | null): Promise<boolean>;
   /** Borra las facturas de prueba (serie PRUEBA o marcadas como prueba). Devuelve cuántas. */
   borrarPruebas(): Promise<number>;
@@ -580,6 +580,9 @@ export interface PresupuestoCliente {
 }
 
 export interface RepositorioPresupuestosCliente {
+  registrarCobro(id: string, parte: 'anticipo' | 'resto', fecha: string | null, email: string): Promise<boolean>;
+  enlazarFactura(p: PresupuestoCliente, tipo: 'anticipo' | 'final', factura: Factura, email: string): Promise<boolean>;
+  indicadores(desde: string, hasta: string, hoy: string): Promise<{ aceptados: number; decididos: number; pendientes: number; cartera: number; caducan: number; valorCaduca: number }>;
   listar(filtro?: { estado?: EstadoPresupuestoCliente; clienteId?: string; limite?: number }): Promise<PresupuestoCliente[]>;
   obtener(id: string): Promise<PresupuestoCliente | null>;
   /** Alta con el número siguiente de la serie (correlativo, sin huecos ni repetidos). */
@@ -752,6 +755,7 @@ export interface PedidoProveedor {
 }
 
 export interface RepositorioPedidosProveedor {
+  crearGasto(p: PedidoProveedor, gasto: Gasto, email: string): Promise<string | null>;
   listar(filtro?: { estado?: EstadoPedido; proveedorId?: string; presupuestoClienteId?: string; limite?: number }): Promise<PedidoProveedor[]>;
   obtener(id: string): Promise<PedidoProveedor | null>;
   /** Alta con el código siguiente del año (correlativo, sin repetidos). */

@@ -3,7 +3,8 @@ import { env } from 'cloudflare:workers';
 import { clienteActual } from '../../../plataforma/actual.ts';
 import { iaDe } from '../../../plataforma/configuracion.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
-import { claveGemini, simular } from '../../../server/simulador/cuota.ts';
+import { cuerpoLimitado } from '../../../server/panel/cuerpo.ts';
+import { MAXIMO_IMAGEN, claveGemini, simular } from '../../../server/simulador/cuota.ts';
 import { resolveRenovationConfig, type RenovationConfig, type RenovationRequestPayload } from '../../../server/simulador/materiales.ts';
 
 export const prerender = false;
@@ -21,7 +22,9 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   let body: { image?: unknown; mask?: unknown; config?: RenovationConfig | RenovationRequestPayload } | null;
   try {
-    body = await request.json();
+    const limitado = await cuerpoLimitado(request, MAXIMO_IMAGEN * 2 + 16384);
+    if (!limitado) return json(413, { ok: false, error: 'La foto y la máscara superan el tamaño permitido.' });
+    body = await limitado.json();
   } catch {
     body = null;
   }
