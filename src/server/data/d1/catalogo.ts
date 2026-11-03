@@ -14,7 +14,7 @@ interface FilaArticulo {
   archivado: number;
   actualizado: string;
 }
-type DatosArticulo = Pick<ArticuloCatalogo, 'merma' | 'margen' | 'precioFijo' | 'referencia' | 'proveedor' | 'espesor' | 'acabado' | 'notas'>;
+type DatosArticulo = Pick<ArticuloCatalogo, 'merma' | 'margen' | 'precioFijo' | 'referencia' | 'proveedor' | 'espesor' | 'acabado' | 'notas' | 'visual'>;
 
 const aArticulo = (f: FilaArticulo): ArticuloCatalogo => {
   const d = JSON.parse(f.datos) as DatosArticulo;
@@ -49,7 +49,7 @@ export function crearRepositorioCatalogo(db: BaseD1): Pick<Repositorios, 'catalo
         return f ? aArticulo(f) : null;
       },
       async guardarArticulo(a, email) {
-        const datos: DatosArticulo = { merma: a.merma, margen: a.margen, precioFijo: a.precioFijo, referencia: a.referencia, proveedor: a.proveedor, espesor: a.espesor, acabado: a.acabado, notas: a.notas };
+        const datos: DatosArticulo = { merma: a.merma, margen: a.margen, precioFijo: a.precioFijo, referencia: a.referencia, proveedor: a.proveedor, espesor: a.espesor, acabado: a.acabado, notas: a.notas, ...(a.visual ? {visual:a.visual} : {}) };
         const t = ahora();
         await db
           .prepare(

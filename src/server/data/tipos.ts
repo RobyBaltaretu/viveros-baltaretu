@@ -580,6 +580,9 @@ export interface PresupuestoCliente {
 }
 
 export interface RepositorioPresupuestosCliente {
+  porFactura(id: string): Promise<PresupuestoCliente | null>;
+  transicionarEstado(previo: PresupuestoCliente, nuevo: EstadoPresupuestoCliente, email: string): Promise<boolean>;
+  actualizarBorrador(previo: PresupuestoCliente, nuevo: PresupuestoCliente, email: string): Promise<boolean>;
   registrarCobro(id: string, parte: 'anticipo' | 'resto', fecha: string | null, email: string): Promise<boolean>;
   enlazarFactura(p: PresupuestoCliente, tipo: 'anticipo' | 'final', factura: Factura, email: string): Promise<boolean>;
   indicadores(desde: string, hasta: string, hoy: string): Promise<{ aceptados: number; decididos: number; pendientes: number; cartera: number; caducan: number; valorCaduca: number }>;
@@ -594,6 +597,7 @@ export interface RepositorioPresupuestosCliente {
 
 /** Artículo del catálogo de la carpintería: un material, herraje, acabado, hora de trabajo o servicio. */
 export interface ArticuloCatalogo {
+  visual?: import('../catalogo/visual').DatosVisuales;
   id: string;
   /** Categoría (src/server/catalogo/catalogo.ts): tableros, cantos, herrajes, mano-obra… */
   categoria: string;

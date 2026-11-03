@@ -12,8 +12,9 @@ import { dinero, importeLinea } from '../../server/facturas/importes.ts';
 
 interface Props {
   factura: Factura;
+  presupuestoId: string | null;
 }
-const { factura: f } = Astro.props;
+const { factura: f, presupuestoId } = Astro.props;
 const fecha = (iso: string) => iso.split('-').reverse().join('/');
 const pdf = `/api/panel/factura-pdf?id=${f.id}`;
 const [tono, estado] = f.estado === 'cobrada' ? ['verde', 'Cobrada'] : vencida(f) ? ['rojo', 'Vencida'] : ['azul', 'Por cobrar'];
@@ -24,6 +25,13 @@ const lineas = f.lineas.filter((l) => l.concepto);
   <span class={`nv-chip nv-chip-${tono}`}>{estado}</span>
   {f.cliente.nombre} · del {fecha(f.fecha)}{f.rectificaCodigo && ` · rectifica a ${f.rectificaCodigo}`}
 </p>
+{presupuestoId && (
+  <p class="nv-fecha">
+    <a class="enlace-panel" href={`/panel/presupuestos-cliente/${presupuestoId}`}>
+      Volver al presupuesto de origen
+    </a>
+  </p>
+)}
 
 {
   f.estado === 'emitida' ? (

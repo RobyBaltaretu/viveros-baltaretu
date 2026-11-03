@@ -37,8 +37,11 @@ let v: Record<string, string> = guardado
       espesor: guardado.espesor === null ? '' : String(guardado.espesor).replace('.', ','),
       acabado: guardado.acabado,
       notas: guardado.notas,
+      visual: guardado.visual ? JSON.stringify(guardado.visual,null,2) : '',
     }
   : { categoria: cat0.id, nombre: '', unidad: cat0.unidad, coste: '', merma: String(cat0.merma), margen: String(MARGEN_PROPUESTO), precioFijo: '', referencia: '', proveedor: '', espesor: '', acabado: '', notas: '' };
+v.visual ??= '';
+const camposVisuales = [['fabricante','Fabricante'],['coleccion','Colección'],['codigoDecor','Código del decor'],['fuente','Ficha del fabricante (HTTPS)'],['textura','Imagen de textura (HTTPS)'],['colorHex','Color digital (#RRGGBB)'],['escalaAnchoMm','Ancho real de la muestra (mm)'],['escalaAltoMm','Alto real de la muestra (mm)'],['soporte','Soporte'],['licencia','Condiciones de uso de la imagen'],['verificadoEl','Fecha de verificación (AAAA-MM-DD)']];
 let error = '';
 if (s && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
@@ -63,7 +66,16 @@ if (s && Astro.request.method === 'POST') {
     acabado: v.acabado,
     notas: v.notas,
   };
-  const r = await guardarArticulo(s.repos, entrada, s.usuario.email);
+  let visualValida = true;
+  try {
+    const visual: Record<string,unknown> = {...(guardado?.visual ?? {})};
+    for(const [k] of camposVisuales){const value=campo(form,'visual-'+k);if(value)visual[k]=k.startsWith('escala')?numero(value):value;else delete visual[k];}
+    for(const k of ['veta','brillo','humedad']){const value=campo(form,'visual-'+k);if(value)visual[k]=value;else delete visual[k];}
+    visual.uso=form.getAll('visual-uso').map(String);visual.reformas=form.getAll('visual-reformas').map(String);
+    for(const k of ['uso','reformas'])if(!(visual[k] as string[]).length)delete visual[k];
+    entrada.visual=visual;v.visual=JSON.stringify(visual);
+  } catch { visualValida=false; }
+  const r = visualValida ? await guardarArticulo(s.repos, entrada, s.usuario.email) : {ok:false as const,error:'Revisa el formato JSON de los parámetros visuales.'};
   if (r.ok) return Astro.redirect(`/panel/catalogo?ver=articulos&categoria=${r.valor.categoria}&hecho=guardado`, 303);
   error = r.error;
   Astro.response.status = 400;
@@ -188,6 +200,13 @@ const titulo = guardado ? guardado.nombre : 'Nuevo artículo';
         </label>
         <label class="nv-campo nv-ancho-todo">
           Notas
+          <details><summary class="enlace-panel">Parámetros de simulación (opcionales)</summary>
+            <p>Completa solo datos verificados en la ficha del fabricante. Registrar una textura no descarga su imagen ni acredita derechos para utilizarla.</p>
+            {camposVisuales.map(([k,nombre])=><label class="block">{nombre}<input name={'visual-'+k} value={String((JSON.parse(v.visual||'{}') as Record<string,unknown>)[k]??'')} class="campo-panel" maxlength={k==='fuente'||k==='textura'?1000:300}/></label>)}
+            {Object.entries({veta:['sin-veta','vertical','horizontal','direccional'],brillo:['mate','satinado','brillante'],humedad:['no-declarada','interior-seco','humedo-segun-ficha']}).map(([k,opciones])=><label class="block">{k}<select name={'visual-'+k} class="campo-panel"><option value="">Sin especificar</option>{opciones.map(o=><option selected={JSON.parse(v.visual||'{}')[k]===o}>{o}</option>)}</select></label>)}
+            <fieldset><legend>Aplicaciones declaradas</legend>{['mueble','encimera','suelo'].map(o=><label class="enlace-panel"><input type="checkbox" name="visual-uso" value={o} checked={JSON.parse(v.visual||'{}').uso?.includes(o)}/>{o}</label>)}</fieldset>
+            <fieldset><legend>Tipos de reforma compatibles</legend>{['cocina','bano','armario','vestidor','puertas','salon','oficina','lavadero'].map(o=><label class="enlace-panel"><input type="checkbox" name="visual-reformas" value={o} checked={JSON.parse(v.visual||'{}').reformas?.includes(o)}/>{o}</label>)}</fieldset>
+          </details>
           <textarea name="notas" class="campo-panel" rows="2" maxlength="500">{v.notas}</textarea>
         </label>
       </div>

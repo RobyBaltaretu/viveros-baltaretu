@@ -1,0 +1,18 @@
+/** Requisitos funcionales del diseño. No son certificación ni reglas de instalación. */
+export const PERFILES = {
+ cocina:{nombre:'Cocina',zonas:['mueble','encimera','suelo'],campos:{distribucion:['Conservar','Lineal','En L','En U','Con isla'],frentes:['Lisos','Enmarcados'],equipamiento:['Conservar electrodomésticos','Integrados','Vistos'],fregadero:['Conservar','Sobre encimera','Bajo encimera'],proteccion:['Conservar frontal','Frontal de encimera','Aplacado completo']},revision:'Medir pasos y apertura de electrodomésticos; comprobar tomas, ventilación y distancias del fabricante antes de definir módulos.'},
+ bano:{nombre:'Baño',zonas:['mueble','encimera','suelo'],campos:{montaje:['Suspendido','A suelo'],lavabo:['Conservar','Sobre encimera','Integrado'],almacenamiento:['Cajones','Puertas','Mixto'],espejo:['Conservar','Sin marco','Con armario']},revision:'Comprobar resistencia a humedad del soporte y los cantos, sellados, sifón, anclajes y acceso a instalaciones. Hidrófugo no significa impermeable.'},
+ armario:{nombre:'Armario',zonas:['mueble'],campos:{montaje:['Empotrado','Exento'],apertura:['Abatible','Corredera','Plegable'],interior:['Baldas','Barra y baldas','Cajones y barras','Maletero'],frentes:['Ciegos','Espejo','Cristal']},revision:'Medir hueco en varios puntos, nivel y aplomado; reservar holguras, guías y fondo útil según el herraje elegido.'},
+ vestidor:{nombre:'Vestidor',zonas:['mueble'],campos:{distribucion:['Lineal','En L','En U'],frentes:['Abierto','Con puertas'],interior:['Barras simples','Doble barra','Baldas y cajones','Zapatero']},revision:'Comprobar pasos, acceso a esquinas, longitud de barras y cargas admitidas por los accesorios.'},
+ puertas:{nombre:'Puertas',zonas:['mueble'],campos:{apertura:['Abatible','Corredera vista','Corredera empotrada'],hojas:['Una hoja','Doble hoja'],frentes:['Ciega','Acristalada'],marco:['Conservar','Sustituir']},revision:'Verificar hueco, espesor de tabique, mano de apertura, suelo terminado, premarco y requisitos de seguridad o fuego aplicables.'},
+ salon:{nombre:'Salón / Mueble TV',zonas:['mueble'],campos:{montaje:['Suspendido','A suelo','Composición mixta'],interior:['Estantes abiertos','Puertas','Cajones'],cables:['Conservar','Pasacables oculto'],ventilacion:['Hueco abierto','Trasera ventilada']},revision:'Verificar cargas y anclajes, medidas de equipos, disipación de calor y acceso al cableado.'},
+ oficina:{nombre:'Oficina / Estantería',zonas:['mueble'],campos:{montaje:['Escritorio','Estantería','Composición mixta'],interior:['Abierto','Puertas','Cajones'],cables:['Pasacables','Canaleta']},revision:'Comprobar ergonomía, paso libre, luz de trabajo, flecha de baldas y carga prevista.'},
+ lavadero:{nombre:'Lavadero',zonas:['mueble','encimera'],campos:{equipamiento:['Conservar','Lavadora y secadora en columna','Lavadora y secadora en paralelo'],interior:['Limpieza','Ropa y limpieza'],ventilacion:['Huecos abiertos','Puertas ventiladas']},revision:'Respetar ventilación, separaciones y acceso a conexiones según el fabricante de cada electrodoméstico; prever fugas y humedad.'},
+} as const;
+export function resolverPerfil(tipo:unknown,valor:unknown) {
+ const entrada=Object.entries(PERFILES).find(([id,p])=>id===tipo||p.nombre===tipo);
+ if(!entrada)throw Error('Tipo de reforma no válido');
+ const [id,perfil]=entrada;const datos=(valor&&typeof valor==='object'?valor:{}) as Record<string,unknown>;const opciones:Record<string,string>={};
+ for(const [campo,lista] of Object.entries(perfil.campos)){const v=datos[campo];if(v!==undefined&&!(lista as readonly unknown[]).includes(v))throw Error('Opción incompatible con esta reforma');opciones[campo]=typeof v==='string'?v:lista[0];}
+ return {tipo:id,opciones,revision:perfil.revision};
+}

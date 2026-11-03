@@ -6,14 +6,15 @@ export async function auditar(page: Page) {
   // Se mide el estado final: se espera a que acaben las animaciones de entrada
   // (con opacidad a medias, el contraste saldría más bajo de lo que se ve).
   // Las que se repiten sin fin (hojas, cinta) y las ligadas al scroll no se esperan.
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.timeline instanceof DocumentTimeline && a.effect?.getTiming().iterations !== Infinity)
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
+  await page.evaluate(async () => {
+    // Un editor interactivo puede crear animaciones finitas que se reinician.
+    // La auditoría no debe bloquearse esperando indefinidamente esos efectos.
+    const animaciones = document.getAnimations().filter((a) => a.playState === 'running' && a.timeline instanceof DocumentTimeline && a.effect?.getTiming().iterations !== Infinity);
+    await Promise.race([
+      Promise.all(animaciones.map((a) => a.finished.catch(() => undefined))),
+      new Promise<void>((resolver) => setTimeout(resolver, 1200)),
+    ]);
+  });
   const resultado = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   const resumen = resultado.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`);
   expect(resumen).toEqual([]);

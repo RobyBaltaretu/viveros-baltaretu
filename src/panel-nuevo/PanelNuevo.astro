@@ -15,8 +15,11 @@ import { vocabularioPanel } from '../plataforma/vocabulario.ts';
 import { tp } from '../i18n/panel';
 import { modoPruebas } from '../server/panel/facturacion.ts';
 import { MAS, menuDe, seccionActual, zonaActual, zonasDe } from '../server/panel/navegacion.ts';
-import { accionesCrear, gruposLateral, pestanasMovil } from './navegacion.ts';
+import { accionesCrear, pestanasMovil } from './navegacion.ts';
 import estilos from './estilos.css?raw';
+import inicioUx from './inicio-ux.css?raw';
+import Avisos from './Avisos.astro';
+import MarcaTaller from './MarcaTaller.astro';
 
 interface Props {
   titulo: string;
@@ -30,9 +33,16 @@ const usuario = sesion?.estado === 'ok' ? sesion.usuario : null;
 const menu = usuario ? menuDe(usuario.rol) : [];
 const ruta = Astro.url.pathname.replace(/\/+$/, '') || '/';
 const enMas = ruta === MAS;
-const actual = enMas ? MAS : seccionActual(ruta, menu);
-const zona = enMas ? null : zonaActual(ruta, menu);
-const grupos = usuario ? gruposLateral(zonasDe(usuario.rol)) : [];
+const actual = enMas ? MAS : ruta.startsWith('/panel/proyectos') ? '/panel/proyectos' : seccionActual(ruta, menu);
+const zona = enMas ? null : ruta.startsWith('/panel/proyectos') ? 'plantas' : zonaActual(ruta, menu);
+const principales = ['/panel', '/panel/presupuestos-cliente', '/panel/facturas', '/panel/facturas/clientes', '/panel/proveedores', '/panel/gastos', '/panel/proyectos', '/panel/portafolio', '/panel/informes'];
+const menuUx = [...menu];
+if (menu.some(m => m.href === '/panel/presupuestos-cliente')) menuUx.push({href:'/panel/proyectos',texto:'Proyectos',zona:'plantas',icono:'inventario',descripcion:'Presupuestos aceptados y sus cobros'});
+const gruposUx = [
+ {texto:'',secciones:principales.flatMap(href => menuUx.filter(m => m.href === href))},
+ {texto:'',secciones:menu.filter(m => m.href === '/panel/asistente').map(m => ({...m,texto:'Asistente IA'}))},
+ {texto:'Herramientas',secciones:menu.filter(m => !principales.includes(m.href) && m.href !== '/panel/asistente')},
+];
 const crear = accionesCrear(menu);
 const pestanas = usuario ? pestanasMovil(zonasDe(usuario.rol), zona, enMas, crear.length > 0) : [];
 const seccion = menu.find((s) => s.href === actual);
@@ -89,9 +99,9 @@ const inicialUsuario = (usuario?.nombre || usuario?.email || '?').trim().slice(0
       })();
     </script>
     <Font cssVariable="--font-dm-sans" preload />
-    <style is:inline set:html={estilos}></style>
+    <style is:inline set:html={estilos + inicioUx}></style>
   </head>
-  <body class="panel nv">
+  <body class="panel nv ux-turia">
     <a href="#principal" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-tarjeta focus:bg-papel focus:p-3">{tp.saltar}</a>
     <div class="nv-armazon">
       {
@@ -99,7 +109,7 @@ const inicialUsuario = (usuario?.nombre || usuario?.email || '?').trim().slice(0
           <aside class="nv-lateral">
             <a href="/panel" class="nv-marca" aria-label="Inicio del panel">
               <span class="nv-monograma" aria-hidden="true">
-                {marca.monograma ? <img src={marca.monograma} alt="" width="36" height="36" /> : iniciales}
+                {marca.monograma ? <img src={marca.monograma} alt="" width="36" height="36" /> : clienteActual().id === 'turia' ? <MarcaTaller /> : iniciales}
               </span>
               <span class="nv-marca-texto">
                 <strong>{marca.nombreCorto}</strong>
@@ -107,7 +117,7 @@ const inicialUsuario = (usuario?.nombre || usuario?.email || '?').trim().slice(0
               </span>
             </a>
             <nav aria-label={tp.menu}>
-              {grupos.map((g) => (
+              {gruposUx.map((g) => (
                 <>
                   {g.texto && <p class="nv-grupo">{g.texto}</p>}
                   <ul class="nv-lista" role="list">
@@ -115,7 +125,7 @@ const inicialUsuario = (usuario?.nombre || usuario?.email || '?').trim().slice(0
                       <li>
                         <a href={s.href} class="nv-enlace" aria-current={s.href === actual ? 'page' : undefined}>
                           <Icono nombre={s.icono} />
-                          {s.texto}
+                          {s.href === '/panel/gastos' ? 'Compras y gastos' : s.texto}
                         </a>
                       </li>
                     ))}
@@ -128,7 +138,7 @@ const inicialUsuario = (usuario?.nombre || usuario?.email || '?').trim().slice(0
                 {inicialUsuario}
               </span>
               <span class="nv-cuenta-texto">
-                <span>{usuario.nombre || usuario.email}</span>
+                <span>{marca.nombreCorto}</span>
                 <span>{tp.roles[usuario.rol]}</span>
               </span>
               <a href="/cdn-cgi/access/logout" class="boton-icono" aria-label={tp.salir} title={tp.salir}>
@@ -149,7 +159,7 @@ const inicialUsuario = (usuario?.nombre || usuario?.email || '?').trim().slice(0
           }
           <a href="/panel" class="nv-marca" aria-label="Inicio del panel">
             <span class="nv-monograma" aria-hidden="true">
-              {marca.monograma ? <img src={marca.monograma} alt="" width="36" height="36" /> : iniciales}
+              {marca.monograma ? <img src={marca.monograma} alt="" width="36" height="36" /> : clienteActual().id === 'turia' ? <MarcaTaller /> : iniciales}
             </span>
             <span class="nv-marca-texto">
               <strong>{marca.nombreCorto}</strong>
@@ -163,6 +173,12 @@ const inicialUsuario = (usuario?.nombre || usuario?.email || '?').trim().slice(0
             <span aria-current="page">{titulo}</span>
           </nav>
           <span class="nv-hueco"></span>
+          {usuario && <>
+            <form action="/panel/buscar" method="get" role="search" class="ux-buscador"><label class="sr-only" for="ux-buscar">Buscar en el panel</label><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input id="ux-buscar" name="q" placeholder="Buscar…" maxlength="100"/><button type="submit" aria-label="Buscar">↵</button><kbd aria-hidden="true">⌘ K</kbd></form>
+            <a href="/panel/buscar" class="boton-icono ux-buscar-movil" aria-label="Buscar en el panel"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg></a>
+            <Avisos />
+            <button type="button" class="boton-icono ux-cuenta-boton" aria-label="Mi cuenta" popovertarget="ux-cuenta"><span class="nv-avatar">{inicialUsuario}</span></button>
+          </>}
           {
             enPruebas && (
               <a href="/panel/pruebas" class="nv-etiqueta-pruebas" title="Hay datos inventados y las facturas que emitas son de prueba.">
@@ -227,9 +243,9 @@ const inicialUsuario = (usuario?.nombre || usuario?.email || '?').trim().slice(0
                 </li>
               ) : (
                 <li>
-                  <a href={p.href} class="nv-pestana" aria-current={p.activa ? 'page' : undefined}>
-                    <Icono nombre={p.icono} />
-                    <span>{p.texto}</span>
+                  <a href={p.texto === 'Taller' ? '/panel/proyectos' : p.href} class="nv-pestana" aria-current={p.activa ? 'page' : undefined}>
+                    <Icono nombre={p.texto === 'Taller' ? 'inventario' : p.icono} />
+                    <span>{p.texto === 'Ventas' ? 'Documentos' : p.texto === 'Taller' ? 'Proyectos' : p.texto}</span>
                   </a>
                 </li>
               ),
@@ -238,5 +254,14 @@ const inicialUsuario = (usuario?.nombre || usuario?.email || '?').trim().slice(0
         </nav>
       )
     }
+    {usuario && <div id="ux-cuenta" popover class="nv-menu" role="dialog" aria-labelledby="ux-cuenta-titulo"><h2 id="ux-cuenta-titulo">Mi cuenta</h2><p>{usuario.nombre || usuario.email}</p><p>{tp.roles[usuario.rol]}</p><a class="enlace-panel" href="/cdn-cgi/access/logout">Cerrar sesión</a><button class="nv-cerrar-menu" popovertarget="ux-cuenta" popovertargetaction="hide">Cerrar</button></div>}
+    <script is:inline>
+      document.addEventListener('keydown', (event) => {
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+          const buscar = document.querySelector('#ux-buscar');
+          if (buscar && buscar.getClientRects().length) { event.preventDefault(); buscar.focus(); }
+        }
+      });
+    </script>
   </body>
 </html>

@@ -2405,3 +2405,204 @@
   .nv-contenido :is(button, select, summary):not([hidden]) { min-height: 3rem; }
   .nv-contenido :is(h1,h2,dd,strong) { overflow-wrap: anywhere; }
 }
+
+
+/* Fase 3: carácter de taller mediterráneo, conservando accesibilidad y fluidez. */
+.nv {
+  --nv-radio: 12px;
+  --nv-radio-control: 9px;
+  --nv-sombra: 0 1px 3px rgb(35 38 29 / .07);
+  --nv-sombra-alta: 0 12px 30px -12px rgb(35 38 29 / .19);
+  accent-color: var(--nv-acento-oscuro);
+}
+.nv :where(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--nv-acento-oscuro);
+  outline-offset: 3px;
+}
+.nv :where(input, select, textarea) {
+  scroll-margin-block: 6rem;
+}
+.nv :where(.nv-tarjeta, .nv-siguiente) {
+  overflow-wrap: anywhere;
+}
+.nv :where(.nv-cifra, .nv-total, .nv-filas-resumen dd) {
+  font-variant-numeric: tabular-nums;
+}
+.nv :where(.nv-tabla-caja) {
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+}
+.nv :where(.nv-tabla-caja):focus-visible {
+  outline-offset: -3px;
+}
+@media (max-width: 47.99rem) {
+  .nv :where(.nv-ficha, .nv-ficha-lado, .nv-tarjeta) {
+    min-width: 0;
+  }
+  .nv :where(.nv-botones-columna > a, .nv-botones-columna > button, .nv-botones-columna > form > button) {
+    min-height: 48px;
+  }
+  .nv :where(.nv-cobro input[type="date"]) {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nv *, .nv *::before, .nv *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Fase 3: jerarquía clara y áreas táctiles en dispositivos pequeños. */
+.nv .nv-inicio-subtitulo {
+  margin-top: .375rem;
+  color: var(--nv-acento-oscuro);
+  font-size: .875rem;
+  letter-spacing: .01em;
+}
+.nv .nv-titulo h1 { text-wrap: balance; }
+.nv :where(.nv-tarjeta, .nv-kpi) {
+  border-color: var(--nv-borde);
+}
+.nv :where(.nv-kpi, .nv-atajo, .nv-desde-boton):focus-visible {
+  outline: 3px solid var(--nv-acento-oscuro);
+  outline-offset: 3px;
+}
+@media (max-width: 48rem) {
+  .nv .nv-titulo { gap: .75rem; }
+  .nv .nv-titulo h1 { font-size: clamp(1.55rem, 6vw, 2rem); line-height: 1.2; }
+  .nv .nv-por-hacer .nv-tarea { min-width: 0; }
+  .nv .nv-inferior {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nv .nv-tabla-caja {
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nv .nv-cobro { min-width: 0; }
+  .nv .nv-cobro .nv-boton { width: 100%; }
+}
+@media (min-width: 64rem) {
+  .nv .nv-contenido { max-width: 100rem; margin-inline: auto; }
+}
+@media (prefers-contrast: more) {
+  .nv { --nv-borde: var(--nv-tinta); }
+  .nv :where(.nv-boton, .nv-chip) { border: 1px solid currentColor; }
+}
+
+
+/* Accesibilidad y adaptación final: sin desplazamiento lateral del armazón. */
+.nv-armazon, .nv-armazon > div, .nv-contenido { min-width: 0; }
+.nv-contenido { overflow-wrap: break-word; }
+.nv-contenido :where(img, video, canvas, svg) { max-width: 100%; }
+.nv-contenido :where(input, select, textarea) { min-width: 0; }
+.nv-contenido :where(button, a) { touch-action: manipulation; }
+.nv-contenido :where(p, li, dd, td) { overflow-wrap: anywhere; }
+.nv :where(.nv-boton, .nv-pestana, .nv-enlace):focus-visible {
+  outline: 3px solid var(--nv-acento-oscuro);
+  outline-offset: 2px;
+}
+@media (max-width: 47.99rem) {
+  .nv-contenido { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+  .nv-contenido :where(.nv-ficha, .nv-inicio-columnas, .nv-inicio-lado) { min-width: 0; }
+  .nv-contenido :where(.nv-pareja) { grid-template-columns: minmax(0, 1fr); }
+  .nv-contenido :where(.nv-desde-importe) { margin-inline-start: 0; }
+}
+@media (forced-colors: active) {
+  .nv :where(.nv-chip, .nv-boton, .nv-tarjeta, .nv-pestana) { border: 1px solid CanvasText; }
+  .nv :focus-visible { outline: 3px solid Highlight; }
+}
+@media print {
+  .nv-lateral, .nv-cabecera, .nv-inferior, .nv-menu { display: none !important; }
+  .nv-armazon { display: block; }
+  .nv-contenido { padding: 0; max-width: none; }
+}
+
+
+/* Inicio de Creaciones Turia. El resto del panel conserva sus controles existentes. */
+.nv-taller {--nv-fondo:#f8f7f5;--nv-superficie:#fff;--nv-borde:#e9e5df;--nv-acento:#795b40;--nv-acento-oscuro:#435b3b;--nv-sombra:0 4px 24px -17px rgb(40 37 32 / .2)}
+.nv-taller .nv-lateral {background:#fbfaf8;border-right:1px solid var(--nv-borde)}
+.nv-taller .nv-lateral .nv-enlace[aria-current="page"] {background:#f0e9e2;color:#4c3829}
+.nv-taller .nv-cabecera {background:#fbfaf9;border-bottom:1px solid var(--nv-borde)}
+.nv-taller .nv-estudio-movil-titulo {display:none}
+.nv-taller .nv-estudio {display:grid;gap:1.25rem;max-width:95rem;margin:auto}
+.nv-taller .nv-estudio-hero {position:relative;display:flex;align-items:center;min-height:205px;overflow:hidden;border-radius:22px;background:#473b31 url('/turia-roble.webp') center/cover no-repeat;color:#fff}
+.nv-taller .nv-estudio-hero::before {content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(27,23,20,.70),rgba(27,23,20,.28) 48%,transparent 85%)}
+.nv-taller .nv-estudio-bienvenida {position:relative;z-index:1;padding:clamp(1.4rem,4vw,3rem)}
+.nv-taller .nv-estudio-saludo {margin:0;font-size:clamp(1rem,1.8vw,1.25rem)}
+.nv-taller .nv-estudio-hero h1 {font-size:clamp(1.85rem,3.5vw,3rem);letter-spacing:-.035em;line-height:1.1;margin:.3rem 0 .6rem;color:#fff}
+.nv-taller .nv-estudio-hero p {color:#fff}
+.nv-taller .nv-estudio-hero p:last-child {margin:0;font-size:clamp(.9rem,1.5vw,1.05rem)}
+.nv-taller .nv-estudio-crear ul {display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;list-style:none;padding:0;margin:0}
+.nv-taller .nv-estudio-atajo {display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:.7rem;min-height:108px;padding:1.2rem;border:1px solid #eae6e1;border-radius:18px;background:#fff;color:#292722;text-decoration:none;box-shadow:var(--nv-sombra)}
+.nv-taller .nv-estudio-crear li:first-child .nv-estudio-atajo {background:#f2e9df;color:#4b3223}
+.nv-taller .nv-estudio-atajo:hover,.nv-taller .nv-estudio-metrica:hover {background:#f8f5f1;transform:translateY(-1px)}
+.nv-taller .nv-estudio-grid {display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:1rem;align-items:stretch}
+.nv-taller .nv-estudio :is(.nv-estudio-grid > section,.nv-estudio-pendientes) {min-width:0;padding:1.3rem;border:1px solid #eae6e1;border-radius:20px;background:#fff;box-shadow:var(--nv-sombra)}
+.nv-taller .nv-estudio h2 {margin:0;font-size:1.1rem;letter-spacing:-.025em}
+.nv-taller .nv-cabeza-tarjeta {display:flex;justify-content:space-between;align-items:center;gap:.7rem;padding:0;border:0}
+.nv-taller .nv-estudio-periodo {font-size:.8rem;color:var(--nv-gris);text-transform:capitalize}
+.nv-taller .nv-estudio-metricas {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.65rem;list-style:none;padding:0;margin:1.1rem 0}
+.nv-taller .nv-estudio-metrica {display:flex;flex-direction:column;gap:.15rem;min-width:0;min-height:96px;padding:.75rem;border:1px solid #eeeae6;border-radius:13px;color:inherit;text-decoration:none}
+.nv-taller .nv-estudio-metrica span {font-size:.78rem}
+.nv-taller .nv-estudio-metrica strong {font-size:clamp(1.05rem,1.7vw,1.45rem);line-height:1.2;white-space:normal;overflow-wrap:anywhere}
+.nv-taller .nv-estudio-metrica small {font-size:.72rem;color:var(--nv-gris);line-height:1.25}
+.nv-taller .nv-estudio-mas-metricas {display:none}
+.nv-taller .nv-estudio-grafico {margin-top:1.1rem}
+.nv-taller .nv-estudio-grafico-titulo {display:flex;justify-content:space-between;gap:.6rem;font-size:.82rem;color:#57594f}
+.nv-taller .nv-estudio-sin-grafica {display:grid;place-items:center;min-height:100px;margin:.5rem 0;color:var(--nv-gris);font-size:.85rem;text-align:center}
+.nv-taller .nv-estudio-linea {display:block;width:100%;height:100px;margin:.5rem 0}
+.nv-taller .nv-estudio-grafico details {font-size:.8rem;color:var(--nv-gris)}
+.nv-taller .nv-estudio-grafico summary {display:flex;align-items:center;min-height:48px;cursor:pointer}
+.nv-taller .nv-estudio-grafico .enlace-panel {display:inline-flex;align-items:center;min-height:48px}
+.nv-taller .nv-estudio-lista {list-style:none;padding:0;margin:.7rem 0 0}
+.nv-taller .nv-estudio-lista li+li {border-top:1px solid #eeeae6}
+.nv-taller .nv-estudio-lista a {display:flex;align-items:center;gap:.8rem;min-height:66px;padding:.5rem 0;color:inherit;text-decoration:none}
+.nv-taller .nv-estudio-lista a:hover {background:#faf8f5}
+.nv-taller .nv-estudio-lista a > span:nth-child(2) {display:grid;flex:1;min-width:0;gap:.15rem}
+.nv-taller .nv-estudio-lista small {font-size:.78rem;color:var(--nv-gris)}
+.nv-taller .nv-estudio-proyecto-icono {display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:12px;background:#f0eae3;color:#725638}
+.nv-taller .nv-estudio-proyectos .nv-cabeza-tarjeta a {display:inline-flex;align-items:center;min-height:48px;font-size:.8rem}
+.nv-taller .nv-estudio-vacio {margin:1.5rem 0;color:var(--nv-gris)}
+.nv-taller .nv-estudio-vacio a {display:inline-flex;align-items:center;min-height:48px}
+.nv-taller .nv-estudio-simulador {display:flex;align-items:center;gap:.8rem;min-height:64px;padding:.85rem 1rem;border:1px solid var(--nv-borde);border-radius:16px;background:#fff;color:inherit;text-decoration:none}
+.nv-taller .nv-estudio-simulador span:nth-child(2) {display:grid;flex:1}
+.nv-taller .nv-estudio-simulador small {color:var(--nv-gris)}
+.nv-taller .chat-agricolai .burbuja.burbuja-usuario {background:#344d3b !important;color:#fff !important}
+.nv-taller .chat-agricolai .burbuja-usuario .whitespace-pre-line {color:#fff !important}
+@media(max-width:70rem){.nv-taller .nv-estudio-grid {grid-template-columns:1fr}}
+@media(max-width:47.99rem){
+ .nv-taller .nv-estudio {gap:1rem}
+ .nv-taller .nv-estudio-movil-titulo {display:block}
+ .nv-taller .nv-estudio-movil-titulo p {margin:0;font-size:.9rem}
+ .nv-taller .nv-estudio-movil-titulo h1 {margin:.15rem 0 0;font-size:1.65rem;letter-spacing:-.04em}
+ .nv-taller .nv-estudio-hero {min-height:105px;background-position:58% center;border-radius:16px}
+ .nv-taller .nv-estudio-hero::before {background:none}
+ .nv-taller .nv-estudio-bienvenida {display:none}
+ .nv-taller .nv-estudio-crear ul {grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+ .nv-taller .nv-estudio-crear li:nth-child(n+5) {display:none}
+ .nv-taller .nv-estudio-atajo {flex-direction:row;align-items:center;justify-content:flex-start;gap:.55rem;min-height:62px;padding:.7rem;border-radius:14px}
+ .nv-taller .nv-estudio-atajo strong {font-size:.83rem}
+ .nv-taller .nv-estudio :is(.nv-estudio-grid > section,.nv-estudio-pendientes) {padding:1rem;border-radius:16px}
+ .nv-taller .nv-estudio-metricas {grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
+ .nv-taller .nv-estudio-metrica {min-height:80px}
+ .nv-taller .nv-estudio-metricas li:nth-child(n+2) {display:none}
+ .nv-taller .nv-estudio-metricas {display:block;margin-bottom:.3rem}
+ .nv-taller .nv-estudio-metricas li:first-child .nv-estudio-metrica {border:0;padding:.25rem 0;min-height:75px}
+ .nv-taller .nv-estudio-metricas li:first-child .nv-cifra {font-size:1.7rem}
+ .nv-taller .nv-estudio-resumen {display:flex;flex-direction:column}
+ .nv-taller .nv-estudio-grafico {margin-top:.35rem}
+ .nv-taller .nv-estudio-linea,.nv-taller .nv-estudio-sin-grafica {height:75px;min-height:75px}
+ .nv-taller .nv-estudio-mas-metricas {display:block;order:3;border-top:1px solid var(--nv-borde)}
+ .nv-taller .nv-estudio-mas-metricas summary {display:flex;align-items:center;min-height:48px;cursor:pointer;color:var(--nv-acento)}
+ .nv-taller .nv-estudio-mas-metricas ul {display:grid;gap:.5rem;list-style:none;margin:.4rem 0;padding:0}
+ .nv-taller .nv-estudio-meses-movil {padding:.8rem 0;border-top:1px solid var(--nv-borde)}
+ .nv-taller .nv-estudio-meses-movil ul {display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;margin:.5rem 0;font-size:.82rem}
+ .nv-taller .nv-estudio-informes-movil {display:inline-flex;align-items:center;min-height:48px}
+ .nv-taller .nv-estudio-grafico details,.nv-taller .nv-estudio-grafico .enlace-panel {display:none}
+}
+@media(min-width:48rem) and (max-width:80rem){.nv-taller .nv-estudio-metricas {grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:48rem) and (max-width:70rem){.nv-taller .nv-estudio-crear ul {grid-template-columns:repeat(5,minmax(0,1fr))}.nv-taller .nv-estudio-atajo {padding:.85rem;font-size:.88rem}}
+@media(prefers-reduced-motion:reduce){.nv-taller .nv-estudio-atajo:hover,.nv-taller .nv-estudio-metrica:hover {transform:none}}

@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { sesionCon } from '../../../server/panel/pagina.ts';
 import { fotoDeProyecto } from '../../../server/portafolio/portafolio.ts';
+import { respuestaImagenPrivada } from '../../../server/panel/imagen-privada.ts';
 
 export const prerender = false;
 
@@ -10,5 +11,5 @@ export const GET: APIRoute = async ({ locals, url }) => {
   if (!s) return new Response(null, { status: 403 });
   const a = await fotoDeProyecto(s.repos, url.searchParams.get('id') ?? '');
   if (!a) return new Response(null, { status: 404 });
-  return new Response(a.bytes as Uint8Array<ArrayBuffer>, { headers: { 'Content-Type': a.tipo, 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff' } });
+  return respuestaImagenPrivada(a.bytes, 'portafolio');
 };

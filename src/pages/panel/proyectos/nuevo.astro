@@ -1,0 +1,9 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import Icono from '../../../components/panel/ui/Icono.astro';
+export const prerender = false;
+---
+<PaginaPanel titulo="Crear proyecto" permiso="facturas" volver="/panel/proyectos">
+  <div class="nv-titulo"><div><h1>Crear proyecto</h1><p>Cada proyecto parte de un presupuesto para tu cliente.</p></div></div>
+  <section class="ux-card ux-paso-proyecto"><h2>Primero, prepara el trabajo</h2><p>Indica el cliente, el concepto y las partidas. Cuando el cliente acepte el presupuesto, aparecerá en «Proyectos en curso» con su facturación y cobros conectados.</p><a href="/panel/presupuestos-cliente/nuevo" class="nv-boton"><Icono nombre="nuevo"/>Preparar presupuesto del proyecto</a><a href="/panel/presupuestos-cliente" class="enlace-panel">Elegir un presupuesto existente</a></section>
+</PaginaPanel>

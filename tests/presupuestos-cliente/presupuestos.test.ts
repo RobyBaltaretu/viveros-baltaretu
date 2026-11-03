@@ -95,7 +95,28 @@ describe('presupuestos a cliente', () => {
     expect(await apuntarCobro(repos, id, 'anticipo', '2026-11-02', yo)).toMatchObject({ ok: false });
     expect((await cambiarEstado(repos, id, 'aceptado', yo, '2026-11-01')).ok).toBe(true);
     expect(await apuntarCobro(repos, id, 'anticipo', '2026-11-02', yo)).toMatchObject({ ok: true, presupuesto: { cobroAnticipo: '2026-11-02', cobroResto: null } });
+    expect(await apuntarCobro(repos, id, 'anticipo', '2099-01-01', yo)).toMatchObject({ ok: false });
     expect(await cambiarEstado(repos, id, 'borrador', yo, '2026-11-03')).toMatchObject({ ok: false });
+  });
+
+  it('una transición concurrente no puede sobrescribir una decisión ya tomada', async () => {
+    const r = await crearPresupuesto(repos, base, yo, 21);
+    if (!r.ok) throw new Error(r.error);
+    await cambiarEstado(repos, r.presupuesto.id, 'enviado', yo, '2026-10-30');
+    const previo = (await repos.presupuestosCliente.obtener(r.presupuesto.id))!;
+    expect(await repos.presupuestosCliente.transicionarEstado(previo, 'aceptado', yo)).toBe(true);
+    expect(await repos.presupuestosCliente.transicionarEstado(previo, 'rechazado', yo)).toBe(false);
+    expect((await repos.presupuestosCliente.obtener(previo.id))?.estado).toBe('aceptado');
+  });
+
+  it('un borrador obsoleto no puede sobrescribir una edición más reciente', async () => {
+    const r = await crearPresupuesto(repos, base, yo, 21);
+    if (!r.ok) throw new Error(r.error);
+    const original = (await repos.presupuestosCliente.obtener(r.presupuesto.id))!;
+    const editado = { ...original, concepto: 'Edición vigente' };
+    expect(await repos.presupuestosCliente.actualizarBorrador(original, editado, yo)).toBe(true);
+    expect(await repos.presupuestosCliente.actualizarBorrador(original, { ...original, concepto: 'Edición obsoleta' }, yo)).toBe(false);
+    expect((await repos.presupuestosCliente.obtener(original.id))?.concepto).toBe('Edición vigente');
   });
 
   it('en borrador se cambian los datos y se recalcula; la serie y el número se quedan', async () => {

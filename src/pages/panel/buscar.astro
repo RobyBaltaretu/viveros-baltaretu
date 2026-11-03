@@ -1,0 +1,35 @@
+---
+import PaginaPanel from '../../components/panel/PaginaPanel.astro';
+import Icono from '../../components/panel/ui/Icono.astro';
+import { sesionCon } from '../../server/panel/pagina';
+import { menuDe } from '../../server/panel/navegacion';
+import { puede } from '../../server/panel/permisos';
+import { rutaDisponible } from '../../plataforma/actual';
+export const prerender = false;
+const s = sesionCon(Astro.locals);
+const q = (Astro.url.searchParams.get('q') ?? '').trim().slice(0,100);
+const normal = (x: string) => x.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es');
+const coincide = (x: string) => normal(x).includes(normal(q));
+const ver = (permiso: Parameters<typeof puede>[1], ruta: string) => !!s && puede(s.usuario.rol, permiso) && rutaDisponible(ruta);
+const [presupuestos,facturas,clientes,proveedores,portfolio] = s && q ? await Promise.all([
+ ver('facturas','/panel/presupuestos-cliente') ? s.repos.presupuestosCliente.listar() : [],
+ ver('facturas','/panel/facturas') ? s.repos.facturas.listar() : [],
+ ver('facturas','/panel/facturas') ? s.repos.clientes.listar() : [],
+ ver('gastos','/panel/proveedores') ? s.repos.proveedores.listar() : [],
+ ver('inventario','/panel/portafolio') ? s.repos.portafolio.listar() : [],
+]) : [[],[],[],[],[]];
+const resultados = [
+ ...(s ? menuDe(s.usuario.rol).map(x => ({href:x.href,titulo:x.texto,detalle:x.descripcion,tipo:'Sección'})) : []),
+ ...presupuestos.map(x => ({href:`/panel/presupuestos-cliente/${x.id}`,titulo:x.concepto,detalle:`${x.codigo} · ${x.cliente.nombre}`,tipo:'Presupuesto'})),
+ ...facturas.map(x => ({href:`/panel/facturas/${x.id}`,titulo:x.codigo || 'Factura en borrador',detalle:x.cliente.nombre,tipo:'Factura'})),
+ ...clientes.map(x => ({href:`/panel/facturas/clientes/${x.id}`,titulo:x.nombre,detalle:x.email,tipo:'Cliente'})),
+ ...proveedores.map(x => ({href:`/panel/proveedores/${x.id}`,titulo:x.nombre,detalle:x.email,tipo:'Proveedor'})),
+ ...portfolio.map(x => ({href:`/panel/portafolio/${x.id}`,titulo:x.titulo,detalle:x.categoria,tipo:'Portafolio'})),
+].filter(x => q && coincide(`${x.titulo} ${x.detalle} ${x.tipo}`));
+---
+<PaginaPanel titulo="Buscar" ancho="amplio">
+ <div class="nv-titulo"><div><h1>Buscar en tu negocio</h1><p>Presupuestos, facturas, clientes, proveedores y portafolio.</p></div></div>
+ <form method="get" role="search" class="nv-filtros"><label for="ux-busqueda-pagina" class="sr-only">Qué quieres buscar</label><input id="ux-busqueda-pagina" class="campo-panel" name="q" value={q} placeholder="Cliente, trabajo o número de documento…" maxlength="100"/><button class="nv-boton" type="submit">Buscar</button></form>
+ <p role="status">{q ? `${resultados.length} resultados para «${q}»` : 'Escribe para buscar.'}</p>
+ <ul class="ux-lista-proyectos" role="list">{resultados.slice(0,100).map(r => <li class="ux-card"><a class="ux-proyecto" href={r.href}><span class="ux-proyecto-datos"><small>{r.tipo}</small><strong>{r.titulo}</strong><span>{r.detalle}</span></span><Icono nombre="siguiente"/></a></li>)}</ul>
+</PaginaPanel>

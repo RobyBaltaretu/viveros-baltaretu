@@ -3,40 +3,36 @@ import PaginaPanel from '../../components/panel/PaginaPanel.astro';
 import Icono from '../../components/panel/ui/Icono.astro';
 import {
   ESTILOS_MUEBLE,
-  MATERIALES_ENCIMERA,
-  MATERIALES_MUEBLE,
-  MATERIALES_SUELO,
   TIPOS_ESTANCIA,
 } from '../../server/simulador/materiales.ts';
 // CSS propio, en línea (scripts/generar-css-simulador.mjs): el simulador está fuera del Tailwind de la web para que Baltaretu no cambie.
+import studioCss from '../../panel-nuevo/studio.css?raw';
 import estilosSimulador from '../../panel-nuevo/simulador.css?raw';
 import { clienteActual } from '../../plataforma/actual.ts';
 import { iaDe } from '../../plataforma/configuracion.ts';
 import { sesionCon } from '../../server/panel/pagina.ts';
 import { AVISO_AGOTADA, estadoCuota, limitePresupuestado, mesDe } from '../../server/simulador/cuota.ts';
 
+import { materialesDelTaller, DISTRIBUCIONES, APERTURAS, ACABADOS, VETAS } from '../../server/simulador/catalogo';
+import {PERFILES} from '../../server/simulador/perfiles';
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'editar');
+const materiales = materialesDelTaller(s ? await s.repos.catalogo.articulos() : []);
+const MATERIALES_MUEBLE = materiales.filter(m=>m.categoria==='mueble');
+const MATERIALES_ENCIMERA = materiales.filter(m=>m.categoria==='encimera');
+const MATERIALES_SUELO = materiales.filter(m=>m.categoria==='suelo');
 const cliente = clienteActual();
 const ia = iaDe(cliente);
 const cuota = estadoCuota(s ? await s.repos.usoSimulador.usos(cliente.id, mesDe()) : 0, limitePresupuestado(ia.simulacionesMes));
 const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · quedan ${c.quedan}`;
 ---
 
-<PaginaPanel titulo="Simulador de Reformas en Vivo (IA)" permiso="editar">
-  <style is:inline set:html={estilosSimulador}></style>
-  <div class="simulador-wrapper space-y-6">
-    <!-- Cabecera de la Herramienta -->
-    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-linea pb-4">
-      <div>
-        <h1 class="font-titular text-2xl font-bold text-tinta sm:text-3xl">Simulador de Reformas en Vivo con IA</h1>
-        <p class="text-sm text-gris">
-          Sube la foto real de la estancia del cliente y aplica materiales fotorrealistas manteniendo intactas la geometría, iluminación y perspectiva.
-        </p>
-      </div>
-    </div>
-
+<PaginaPanel titulo="Simulador de Reformas en Vivo (IA)" permiso="editar" ancho="amplio">
+  <style is:inline set:html={estilosSimulador + studioCss}></style>
+  <div class="simulador-wrapper studio space-y-6">
+    <header class="studio-bar"><div><h1>Turia Studio</h1><p>Diseña, visualiza y prepara tu reforma.</p></div><div class="studio-actions"><button type="button" id="studio-save" class="studio-button">Guardar borrador</button><button type="button" id="studio-reset" class="studio-button">Nueva simulación</button></div><p id="studio-status" role="status"></p></header>
+    <nav class="studio-steps" aria-label="Pasos del diseño">{['Espacio','Diseño','Materiales','Revisar'].map((t,i)=><button type="button" data-studio-step={i} aria-current={i===0?'step':undefined}>{i+1} · {t}</button>)}</nav>
     <!-- Simulaciones del mes: tope duro en D1 (aviso desde el 80 %, bloqueo al 100 %) -->
     <section
       id="cuota"
@@ -78,9 +74,9 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
     </div>
 
     <!-- Layout Principal: Formulario y Vista Previa -->
-    <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
+    <div class="studio-layout">
       <!-- Columna Izquierda: Configuración de la Reforma -->
-      <form id="simulador-form" class="space-y-6 lg:col-span-5">
+      <form id="simulador-form" class="space-y-6">
         <!-- 1. Cargar Foto -->
         <div class="rounded-2xl border border-linea bg-papel p-5 shadow-xs">
           <h2 class="font-titular text-base font-bold text-tinta mb-2 flex items-center gap-2">
@@ -143,7 +139,13 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
           </div>
         </div>
 
-        <!-- 2. Tipo de Estancia -->
+        <section class="rounded-2xl border border-linea bg-papel p-5 space-y-3"><h2>Definición del proyecto</h2><p>Medidas en cm aportadas por el taller; no se deducen de la foto. Deja vacío lo que desconozcas.</p>
+{['ancho','alto','fondo','puertas','cajones'].map(k=><label class="block">{k}<input name={k} type="number" min="0" max={k==='ancho'?3000:k==='alto'?1000:k==='fondo'?300:k==='puertas'?30:50} step={['puertas','cajones'].includes(k)?'1':'0.1'} class="campo-panel"/></label>)}
+{[['distribucion',DISTRIBUCIONES],['apertura',APERTURAS],['acabado',ACABADOS],['veta',VETAS]].map(([k,opciones])=><label class="block">{k}<select name={k as string} class="campo-panel">{(opciones as readonly string[]).map(o=><option>{o}</option>)}</select></label>)}
+<p>Los colores son orientativos, no fotografías del fabricante. Artículo activo no significa stock confirmado. Comprueba humedad, espesores, herrajes, instalaciones y holguras en la visita técnica.</p><a href="/panel/catalogo">Gestionar materiales del catálogo</a>
+{!materiales.length && <p role="status">Añade materiales al catálogo para seleccionar acabados reales del taller.</p>}</section>
+<section id="studio-perfil" class="space-y-3" data-perfiles={JSON.stringify(PERFILES)}><h2>Decisiones para tu reforma</h2><div id="studio-perfil-campos"></div><p id="studio-perfil-revision"></p></section>
+<!-- 2. Tipo de Estancia -->
         <div class="rounded-2xl border border-linea bg-papel p-5 shadow-xs">
           <h2 class="font-titular text-base font-bold text-tinta mb-3 flex items-center gap-2">
             <span class="flex size-6 items-center justify-center rounded-full bg-verdor text-xs text-terracota">2</span>
@@ -156,7 +158,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
                   <input
                     type="radio"
                     name="spaceType"
-                    value={e.nombre}
+                    value={e.id}
                     checked={idx === 0}
                     class="peer sr-only"
                   />
@@ -180,7 +182,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
           <div class="space-y-3 border-b border-linea pb-4">
             <label class="flex items-center justify-between font-bold text-sm text-tinta cursor-pointer">
               <span>Mobiliario / Muebles</span>
-              <input type="checkbox" id="zone-cabinets" checked class="size-4 rounded-xs border-linea text-terracota focus:ring-terracota" />
+              <input type="checkbox" id="zone-cabinets" checked={MATERIALES_MUEBLE.length > 0} class="size-4 rounded-xs border-linea text-terracota focus:ring-terracota" />
             </label>
             <div id="sec-cabinets" class="space-y-3 pt-1">
               <div>
@@ -240,7 +242,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
           <div class="space-y-3 border-b border-linea pb-4">
             <label class="flex items-center justify-between font-bold text-sm text-tinta cursor-pointer">
               <span>Encimera & Frontal</span>
-              <input type="checkbox" id="zone-countertop" checked class="size-4 rounded-xs border-linea text-terracota" />
+              <input type="checkbox" id="zone-countertop" checked={MATERIALES_ENCIMERA.length > 0} class="size-4 rounded-xs border-linea text-terracota" />
             </label>
             <div id="sec-countertop" class="space-y-3 pt-1">
               <label class="flex items-center gap-2 text-xs text-tinta cursor-pointer">
@@ -324,7 +326,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
       </form>
 
       <!-- Columna Derecha: Comparador Antes / Después -->
-      <div class="space-y-4 lg:col-span-7">
+      <div class="studio-preview space-y-4">
         <div class="flex items-center justify-between">
           <h2 class="font-titular text-lg font-bold text-tinta">Resultado de la Reforma</h2>
           <div id="acciones-resultado" class="hidden items-center gap-2">
@@ -358,7 +360,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
           </div>
           <div>
             <h3 class="font-titular text-lg font-bold text-tinta">Transformando Estancia...</h3>
-            <p id="loading-status" class="mt-1 text-xs font-semibold text-terracota">Analizando geometría 3D de la habitación...</p>
+            <p id="loading-status" class="mt-1 text-xs font-semibold text-terracota">Preparando la propuesta visual...</p>
           </div>
         </div>
 
@@ -669,6 +671,8 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
       const datos = new FormData(form);
       const config = {
         spaceType: datos.get('spaceType'),
+        perfil: {opciones:Object.fromEntries([...form.querySelectorAll('[data-perfil-campo]')].map(e=>[e.dataset.perfilCampo,e.value]))},
+        proyecto: Object.fromEntries(['ancho','alto','fondo','puertas','cajones','distribucion','apertura','acabado','veta'].map(k=>[k,['ancho','alto','fondo','puertas','cajones'].includes(k) ? (datos.get(k) ? Number(datos.get(k)) : null) : datos.get(k)])),
         cabinetStyle: $('cabinet-style')?.value,
         floorToCeiling: marcado('floor-to-ceiling'),
         zones: { cabinets: marcado('zone-cabinets'), countertop: marcado('zone-countertop'), flooring: marcado('zone-flooring'), lighting: marcado('zone-lighting') },
@@ -753,4 +757,38 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
       a.click();
     });
   })();
+</script>
+
+<script is:inline>
+(() => {
+ const form=document.getElementById('simulador-form'); if(!form)return;
+ const children=[...form.children];
+ const panels=[document.createElement('section'),document.createElement('section'),document.createElement('section'),document.createElement('section')];
+ panels.forEach((p,i)=>{p.dataset.studioPanel=i;p.setAttribute('aria-label',['Espacio','Diseño','Materiales','Revisar'][i]);form.insertBefore(p,children[0]);});
+ panels[0].append(children[0],children[3]);panels[1].append(children[1],children[2]);panels[2].append(children[4]);
+ const search=document.createElement('input');search.placeholder='Buscar material, acabado o referencia…';search.setAttribute('aria-label','Buscar materiales del catálogo');search.className='studio-material-search';panels[2].prepend(search);
+ search.addEventListener('input',()=>{panels[2].querySelectorAll('label:has(input[type=radio])').forEach(l=>l.hidden=!l.textContent.toLocaleLowerCase('es').includes(search.value.toLocaleLowerCase('es')));});
+ const review=document.createElement('div');review.className='studio-review';panels[3].append(review);
+ const budget=document.createElement('a');budget.href='/panel/presupuestos-cliente/nuevo';budget.className='enlace-panel';budget.textContent='Preparar presupuesto con el catálogo';panels[3].append(budget);
+ const notice=document.createElement('p');notice.textContent='La imagen no es un plano ni un precio calculado. El presupuesto se prepara con mediciones y partidas verificadas.';panels[3].append(notice);
+ const footer=document.createElement('div');footer.className='studio-footer';const prev=document.createElement('button'),next=document.createElement('button');prev.type=next.type='button';prev.className=next.className='studio-button';prev.textContent='← Anterior';next.textContent='Continuar →';footer.append(prev,next);form.insertBefore(footer,document.getElementById('btn-generar'));
+ let step=0;const show=(i)=>{step=i;panels.forEach((p,j)=>p.hidden=j!==i);document.querySelectorAll('[data-studio-step]').forEach((b,j)=>{if(i===j)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');});prev.disabled=i===0;next.hidden=i===3;review.textContent=[...form.querySelectorAll('select,input[type=number],input[type=radio]:checked')].map(e=>{if(e.closest('label')?.hidden)return '';const key=e.name||e.id;const labels={spaceType:'Espacio',ancho:'Ancho (cm)',alto:'Alto (cm)',fondo:'Fondo (cm)',puertas:'Puertas',cajones:'Cajones',distribucion:'Distribución',apertura:'Apertura',acabado:'Acabado',veta:'Veta','cabinet-style':'Frentes y tiradores',upperMaterial:'Módulos superiores',lowerMaterial:'Módulos inferiores',countertopMaterial:'Encimera',flooringMaterial:'Suelo','led-temp':'Iluminación'};const name=labels[key];if(!name)return '';const value=e.tagName==='SELECT'?e.selectedOptions[0]?.textContent:e.type==='radio'?e.closest('label')?.textContent.trim():e.value;return value?name+': '+value:'';}).filter(Boolean).join('\n');};
+ document.querySelectorAll('[data-studio-step]').forEach(b=>b.addEventListener('click',()=>show(Number(b.dataset.studioStep))));prev.onclick=()=>show(Math.max(0,step-1));next.onclick=()=>{if(step===0&&!document.getElementById('foto-input').files.length){document.getElementById('foto-input').reportValidity();return;}show(Math.min(3,step+1));};form.addEventListener('invalid',e=>{const panel=e.target.closest('[data-studio-panel]');if(panel)show(Number(panel.dataset.studioPanel));},true);
+ form.addEventListener('change',()=>{if(document.getElementById('img-after').getAttribute('src'))document.getElementById('studio-status').textContent='El diseño ha cambiado. Genera otra visualización para actualizar el resultado.';});
+ const key='turia:studio:draft:v1';const status=document.getElementById('studio-status');
+ document.getElementById('studio-save').onclick=()=>{try{const values=[...form.querySelectorAll('input:not([type=file]),select')].filter(e=>e.name||e.id).map(e=>({key:e.name||e.id,type:e.type,value:e.value,checked:e.checked}));localStorage.setItem(key,JSON.stringify(values));status.textContent='Borrador guardado en este dispositivo. Las fotos no se guardan.';}catch{status.textContent='No se pudo guardar el borrador en este dispositivo.';}};
+ try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(Array.isArray(saved)){saved.forEach(v=>{form.querySelectorAll('input,select').forEach(e=>{if((e.name||e.id)===v.key){if(e.type==='radio'){if(e.value===v.value)e.checked=v.checked;}else if(e.type==='checkbox')e.checked=v.checked;else if(e.type!=='file')e.value=v.value;}});});status.textContent='Borrador recuperado. Vuelve a cargar la foto para continuar.';}}catch{/* Un borrador inválido no impide comenzar otro diseño. */}
+ document.getElementById('studio-reset').onclick=()=>{if(confirm('¿Descartar el borrador y empezar otro diseño?')){localStorage.removeItem(key);location.reload();}};
+ const mirror=document.createElement('img');mirror.className='studio-original';mirror.alt='Foto de referencia del proyecto';document.getElementById('vacio-container').append(mirror);const source=document.getElementById('preview-thumb');new MutationObserver(()=>{if(source.src)mirror.src=source.src;}).observe(source,{attributes:true,attributeFilter:['src']});
+ show(0);
+})();
+</script>
+
+<script is:inline>
+(()=>{
+ const host=document.getElementById('studio-perfil');if(!host)return;const perfiles=JSON.parse(host.dataset.perfiles);const tipo=document.querySelector('[name=spaceType]')?.closest('fieldset') || document.getElementById('simulador-form');
+ function update(){const seleccionado=document.querySelector('[name=spaceType]:checked')?.value;const par=Object.entries(perfiles).find(([k,p])=>k===seleccionado||p.nombre===seleccionado);if(!par)return;const [key,p]=par;const campos=document.getElementById('studio-perfil-campos');campos.replaceChildren();Object.entries(p.campos).forEach(([nombre,opciones])=>{const label=document.createElement('label');label.textContent=nombre[0].toUpperCase()+nombre.slice(1);label.className='block';const select=document.createElement('select');select.className='campo-panel';select.name='perfil-'+nombre;select.dataset.perfilCampo=nombre;opciones.forEach(o=>{const option=document.createElement('option');option.textContent=o;select.append(option);});try{const saved=JSON.parse(localStorage.getItem('turia:studio:draft:v1')||'[]');const previous=saved.find(v=>v.key===select.name);if(previous&&opciones.includes(previous.value))select.value=previous.value;}catch{/* No bloquea el diseño. */}label.append(select);campos.append(label);});for(const name of ['distribucion','apertura']){const control=document.querySelector('[name='+name+']');if(control)control.closest('label').hidden=true;}
+ document.getElementById('studio-perfil-revision').textContent=p.revision;for(const [id,zona] of [['zone-countertop','encimera'],['zone-flooring','suelo']]){const e=document.getElementById(id);const compatible=p.zonas.includes(zona);if(!compatible)e.checked=false;e.disabled=!compatible;e.closest('label').title=compatible?'':'No corresponde a este tipo de reforma';e.dispatchEvent(new Event('change'));}host.dataset.tipo=key;}
+ tipo?.addEventListener('change',e=>{if(e.target.name==='spaceType')update();});update();
+})();
 </script>

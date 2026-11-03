@@ -1,3 +1,4 @@
+import { esquemaVisual } from './visual';
 import { z } from 'astro/zod';
 import type { ArticuloCatalogo, PlantillaCatalogo, Repositorios } from '../data/tipos.ts';
 import { comprobarFormula } from './formulas.ts';
@@ -67,6 +68,7 @@ export const esquemaArticulo = z.object({
   espesor: numero('el espesor', 1000).nullable().default(null),
   acabado: texto(80).default(''),
   notas: texto(500).default(''),
+  visual: esquemaVisual.optional(),
 });
 export type EntradaArticulo = z.input<typeof esquemaArticulo>;
 

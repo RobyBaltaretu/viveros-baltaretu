@@ -81,14 +81,11 @@ export function porFacturar(p: Pick<PresupuestoCliente, 'totales' | 'facturaAnti
 /** Importe con IVA de esa factura: el anticipo, o lo que queda (el total si no hubo anticipo). */
 export const importeAFacturar = (p: Pick<PresupuestoCliente, 'totales' | 'facturaAnticipoId'>, que: 'anticipo' | 'final') => (que === 'anticipo' ? p.totales.anticipo : p.facturaAnticipoId ? p.totales.restante : p.totales.total);
 
-/**
- * Presupuestos que se pueden facturar ya: los aceptados con algo por facturar
- * y los enviados aún vigentes (al facturarlos, se dan por aceptados). Primero
- * los aceptados; dentro de cada grupo, los más recientes.
- */
-export function facturables(ps: PresupuestoCliente[], hoy: string): { p: PresupuestoCliente; que: 'anticipo' | 'final'; importe: number; acepta: boolean }[] {
+/** Presupuestos facturables: solo aceptados. La aceptación comercial es una acción explícita. */
+export function facturables(ps: PresupuestoCliente[], _hoy: string): { p: PresupuestoCliente; que: 'anticipo' | 'final'; importe: number; acepta: boolean }[] {
+  void _hoy;
   return ps
-    .filter((p) => p.estado === 'aceptado' || (p.estado === 'enviado' && !(p.validez && p.validez < hoy)))
+    .filter((p) => p.estado === 'aceptado')
     .flatMap((p) => {
       const que = porFacturar(p);
       return que ? [{ p, que, importe: importeAFacturar(p, que), acepta: p.estado === 'enviado' }] : [];
@@ -96,15 +93,12 @@ export function facturables(ps: PresupuestoCliente[], hoy: string): { p: Presupu
     .sort((a, b) => Number(a.acepta) - Number(b.acepta) || b.p.fecha.localeCompare(a.p.fecha));
 }
 
-/** Factura lo que toque de un presupuesto; si estaba enviado, primero lo da por aceptado. */
-export async function facturarLoQueToca(repos: Repositorios, id: string, email: string, ajustes: AjustesFacturacion, hoy: string): Promise<Resultado> {
-  let p = await repos.presupuestosCliente.obtener(id);
+/** Factura lo que toca sin cambiar nunca el estado comercial del presupuesto. */
+export async function facturarLoQueToca(repos: Repositorios, id: string, email: string, ajustes: AjustesFacturacion, _hoy: string): Promise<Resultado> {
+  void _hoy;
+  const p = await repos.presupuestosCliente.obtener(id);
   if (!p) return { ok: false, error: 'Ese presupuesto no existe.' };
-  if (p.estado === 'enviado') {
-    if (p.validez && p.validez < hoy) return { ok: false, error: 'Ese presupuesto ha caducado: cambia su fecha de validez antes de facturarlo.' };
-    p = { ...p, estado: 'aceptado' };
-    await repos.presupuestosCliente.guardar(p, email);
-  }
+  if (p.estado !== 'aceptado') return { ok: false, error: 'Primero registra que el cliente ha aceptado el presupuesto antes de facturarlo.' };
   const que = porFacturar(p);
   if (!que) return p.facturaId ? facturarPresupuesto(repos, id, 'final', email, ajustes) : { ok: false, error: 'Ese presupuesto ya está facturado.' };
   return facturarPresupuesto(repos, id, que, email, ajustes);

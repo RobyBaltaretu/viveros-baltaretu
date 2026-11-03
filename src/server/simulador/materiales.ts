@@ -1,3 +1,5 @@
+import {resolverPerfil} from './perfiles';
+import { detallesProyecto, type DetallesProyecto } from './catalogo';
 export interface MaterialOption {
   id: string;
   nombre: string;
@@ -10,6 +12,8 @@ export interface MaterialOption {
 }
 
 export interface RenovationConfig {
+  perfil?: ReturnType<typeof resolverPerfil>;
+  proyecto?: DetallesProyecto;
   spaceType: string;
   cabinetStyle?: string;
   openingSystem?: string;
@@ -32,6 +36,8 @@ export interface RenovationConfig {
 }
 
 export interface RenovationRequestPayload {
+  perfil?: {opciones?: Record<string,string>};
+  proyecto?: DetallesProyecto;
   spaceType: string;
   cabinetStyle?: string;
   floorToCeiling?: boolean;
@@ -188,6 +194,9 @@ export const TIPOS_ESTANCIA = [
   { id: 'vestidor', nombre: 'Vestidor' },
   { id: 'puertas', nombre: 'Puertas de Paso' },
   { id: 'salon', nombre: 'Salón / Mueble TV' },
+  { id: 'bano', nombre: 'Mueble de baño' },
+  { id: 'oficina', nombre: 'Oficina / Estantería' },
+  { id: 'lavadero', nombre: 'Lavadero' },
 ];
 
 /**
@@ -195,22 +204,31 @@ export const TIPOS_ESTANCIA = [
  * materiales, estilos y estancias por su id o nombre, y el resto como sí/no.
  * Así ningún texto libre de la petición llega a la IA.
  */
-export function resolveRenovationConfig(payload: RenovationRequestPayload | RenovationConfig): RenovationConfig {
+export function resolveRenovationConfig(payload: RenovationRequestPayload | RenovationConfig, catalogo?: MaterialOption[]): RenovationConfig {
   const p = (payload ?? {}) as Partial<RenovationRequestPayload> & Partial<Pick<RenovationConfig, 'upperMaterial' | 'lowerMaterial' | 'countertopMaterial' | 'flooringMaterial'>>;
-  const de = (lista: MaterialOption[], id: unknown, material?: MaterialOption) => lista.find((m) => m.id === id || m.id === material?.id) ?? lista[0]!;
+  const de = (lista: MaterialOption[], id: unknown, material?: MaterialOption) => {
+    if (catalogo) {
+      const m = catalogo.find(m => m.categoria === lista[0].categoria && m.id === id);
+      if (!m) throw Error('El material ya no está activo en el catálogo');
+      return m;
+    }
+    return lista.find(m => m.id === id || m.id === material?.id) ?? lista[0]!;
+  };
   const si = (v: unknown) => v === true;
   const zonas = (p.zones ?? {}) as Partial<RenovationConfig['zones']>;
   const luz = (p.lighting ?? {}) as Partial<RenovationConfig['lighting']>;
   return {
+    perfil: resolverPerfil(TIPOS_ESTANCIA.find(e=>e.id===p.spaceType||e.nombre===p.spaceType)?.id ?? 'cocina', p.perfil?.opciones),
+    proyecto: p.proyecto === undefined ? undefined : detallesProyecto(p.proyecto),
     spaceType: TIPOS_ESTANCIA.find((e) => e.nombre === p.spaceType || e.id === p.spaceType)?.nombre ?? TIPOS_ESTANCIA[0]!.nombre,
     cabinetStyle: ESTILOS_MUEBLE.find((e) => e.nombre === p.cabinetStyle || e.id === p.cabinetStyle)?.nombre ?? ESTILOS_MUEBLE[0]!.nombre,
     floorToCeiling: si(p.floorToCeiling),
     zones: { cabinets: si(zonas.cabinets), countertop: si(zonas.countertop), flooring: si(zonas.flooring), lighting: si(zonas.lighting) },
-    upperMaterial: de(MATERIALES_MUEBLE, p.upperMaterialId, p.upperMaterial),
-    lowerMaterial: de(MATERIALES_MUEBLE, p.lowerMaterialId, p.lowerMaterial),
-    countertopMaterial: de(MATERIALES_ENCIMERA, p.countertopMaterialId, p.countertopMaterial),
+    upperMaterial: (catalogo && !si(zonas.cabinets) ? MATERIALES_MUEBLE[0]! : de(MATERIALES_MUEBLE, p.upperMaterialId, p.upperMaterial)),
+    lowerMaterial: (catalogo && !si(zonas.cabinets) ? MATERIALES_MUEBLE[0]! : de(MATERIALES_MUEBLE, p.lowerMaterialId, p.lowerMaterial)),
+    countertopMaterial: (catalogo && !si(zonas.countertop) ? MATERIALES_ENCIMERA[0]! : de(MATERIALES_ENCIMERA, p.countertopMaterialId, p.countertopMaterial)),
     includeBacksplash: si(p.includeBacksplash),
-    flooringMaterial: de(MATERIALES_SUELO, p.flooringMaterialId, p.flooringMaterial),
+    flooringMaterial: (catalogo && !si(zonas.flooring) ? MATERIALES_SUELO[0]! : de(MATERIALES_SUELO, p.flooringMaterialId, p.flooringMaterial)),
     lighting: { underCabinetLed: si(luz.underCabinetLed), colorTemp: TEMPERATURAS_LED.includes(luz.colorTemp as never) ? luz.colorTemp! : TEMPERATURAS_LED[1] },
   };
 }

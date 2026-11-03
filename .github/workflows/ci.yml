@@ -41,6 +41,16 @@ jobs:
       - name: Comprobar el Worker de Cloudflare
         run: npm run check:worker
 
+      # Construir también el segundo cliente: el build estándar verifica Baltaretu.
+      - name: Build de Creaciones Turia
+        run: npm run build:turia
+        env:
+          ASTRO_TELEMETRY_DISABLED: '1'
+
+      - name: Comprobar Worker de Creaciones Turia
+        run: |
+          node -e "const w=require('./dist/server/wrangler.json'); if(w.name!=='creacionesturia'||w.d1_databases?.[0]?.database_name!=='creacionesturia') process.exit(1)"
+
   accesibilidad:
     name: Accesibilidad y teclado (Playwright + axe)
     runs-on: ubuntu-latest
@@ -68,6 +78,14 @@ jobs:
         run: npm run test:e2e:turia
         env:
           ASTRO_TELEMETRY_DISABLED: '1'
+
+      - name: Capturas reales del inicio de Turia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: inicio-turia-responsive
+          path: test-results/**/inicio-*.png
+          if-no-files-found: warn
 
   equivalencia:
     name: Build desde D1 igual al actual

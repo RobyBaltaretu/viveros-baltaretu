@@ -45,6 +45,7 @@ if (s && Astro.request.method === 'POST') {
 }
 const p = s ? await s.repos.presupuestosCliente.obtener(id) : null;
 if (s && !p) return new Response(null, { status: 404 });
+const [facturaAnticipo, facturaFinal] = s && p ? await Promise.all([p.facturaAnticipoId ? s.repos.facturas.obtener(p.facturaAnticipoId) : null, p.facturaId ? s.repos.facturas.obtener(p.facturaId) : null]) : [null, null];
 const empresa = s ? (await ajustesFacturacion(s.repos)).nombre : '';
 const efectivo = p ? estadoEfectivo(p, dia) : 'borrador';
 const fecha = (iso: string | null) => (iso ? iso.split('-').reverse().join('/') : '');
@@ -55,7 +56,7 @@ const extras = p?.lineas.filter((l) => l.extra) ?? [];
 ---
 
 <PaginaPanel titulo={p ? `Presupuesto ${p.codigo}` : 'Presupuesto'} permiso="facturas" volver="/panel/presupuestos-cliente" ancho={nuevo ? 'amplio' : 'normal'}>
-  {nuevo && p && <FichaPresupuesto p={p} efectivo={efectivo} hoy={dia} hecho={hecho} error={error} correo={p.cliente.email ? enlaceCorreo(p, empresa) : null} whatsapp={enlaceWhatsapp(p, empresa)} />}
+  {nuevo && p && <FichaPresupuesto p={p} efectivo={efectivo} hoy={dia} hecho={hecho} error={error} correo={p.cliente.email ? enlaceCorreo(p, empresa) : null} whatsapp={enlaceWhatsapp(p, empresa)} facturaAnticipo={facturaAnticipo} facturaFinal={facturaFinal} />}
   {
     !nuevo && p && (
       <>

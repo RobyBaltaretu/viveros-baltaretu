@@ -39,18 +39,20 @@ test('simulador: barra del mes, zona marcada y resultado cosido, sin claves en e
   await page.mouse.move(caja.x + caja.width * 0.6, caja.y + caja.height * 0.7, { steps: 4 });
   await page.mouse.up();
 
+  // Generar la respuesta simulada antes de interceptar la petición: no ejecutar
+  // page.evaluate desde route.handle mientras la página espera el fetch.
+  const verde = await page.evaluate(() => {
+    const c = document.createElement('canvas');
+    c.width = 1024;
+    c.height = 768;
+    const k = c.getContext('2d')!;
+    k.fillStyle = '#2f6b3a';
+    k.fillRect(0, 0, 1024, 768);
+    return c.toDataURL('image/png');
+  });
   let enviado: { image?: string; mask?: string; options?: unknown } = {};
   await page.route('**/api/panel/simulador', async (ruta) => {
     enviado = ruta.request().postDataJSON();
-    const verde = await page.evaluate(() => {
-      const c = document.createElement('canvas');
-      c.width = 1024;
-      c.height = 768;
-      const k = c.getContext('2d')!;
-      k.fillStyle = '#2f6b3a';
-      k.fillRect(0, 0, 1024, 768);
-      return c.toDataURL('image/png');
-    });
     await ruta.fulfill({ json: { ok: true, afterImage: verde, cuota: cuota(40) } });
   });
   await page.getByRole('button', { name: 'Generar Reforma en Vivo' }).click();

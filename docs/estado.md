@@ -116,3 +116,13 @@ Peticiones del propietario: publicación automática, facturas, control de gasto
 Los informes del taller calculan la aceptación sobre presupuestos aceptados o rechazados del periodo, y la cartera pendiente sobre los enviados que siguen vigentes hoy. Se calculan en D1. El taller confirma cada propuesta de Gubia con su botón. La factura final exige emitir primero cualquier anticipo enlazado.
 
 En Workers Builds de creacionesturia, usar `npm run build:turia` también para ramas de prueba. El despliegue lee la configuración generada y usa `wrangler versions upload` sin `-c`. Antes de publicar, verificar Access en el dominio y las vistas previas, las pruebas de móvil y la equivalencia de Baltaretu. El formulario web de Baltaretu requiere el secreto de Turnstile en producción.
+
+## Inicio de Turia según la referencia UX (2 de noviembre de 2026)
+
+La rama `feat/turia-inicio-ux` adapta exclusivamente el armazón nuevo de Turia: identidad en madera y crema, portada decorativa, cinco accesos rápidos, búsqueda por registros y secciones, notificaciones de tareas reales y menú de cuenta. El resumen permite elegir este mes o el anterior, calcula presupuestos, facturación sin IVA, gastos confirmados y cobros por su fecha real, y compara con el periodo previo sin inventar tendencias. En móvil se puede desplegar el resto de cifras.
+
+La vista «Proyectos» conecta presupuestos aceptados con sus hitos de facturación y cobro. Sus porcentajes son administrativos (25/50/75/100), indicados expresamente; no constituyen seguimiento físico de obra. Crear un proyecto comienza por preparar o elegir su presupuesto. El seguimiento independiente de obras de la fase 3.7 sigue pendiente. No hay cambios de esquema ni datos simulados en las cifras. La imagen de portada es decorativa, generada para esta interfaz; no representa un trabajo del portafolio.
+
+Validación de esta revisión: 360 tests en 59 archivos; lint y build de Turia correctos; diez pruebas de navegador del armazón/inicio en móvil y escritorio, con axe y controles de 48 px. Comprobación adicional con datos locales de prueba: presupuesto aceptado, avisos, búsqueda y navegación a la ficha. Equivalencia de Baltaretu en producción y pruebas sin diferencias frente a su línea base.
+
+Revisión Turia Studio: flujo por pasos con vista previa, búsqueda de materiales, resumen y borrador local sin fotos. Escenario de prueba ampliado de Turia: 15 clientes, 20 presupuestos, 41 facturas, 29 gastos, 30 materiales adicionales, 8 pedidos vinculados y 3 proyectos del portafolio. Se carga desde «Datos de prueba» y se elimina con su acción habitual. Cargado y comprobado en el entorno local; no en producción.

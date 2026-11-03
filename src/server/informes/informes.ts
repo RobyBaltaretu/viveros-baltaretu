@@ -257,3 +257,21 @@ export function conclusiones(d: {
   if (d.porRevisar) frases.push(`Quedan ${d.porRevisar} ${d.porRevisar === 1 ? 'ticket' : 'tickets'} por revisar: no cuentan hasta que se guarden.`);
   return frases;
 }
+
+/** Evolución mensual limitada al intervalo solicitado, incluyendo meses parciales. */
+export function evolucionPeriodo(fs: Factura[], gs: Gasto[], desde: string, hasta: string): PuntoMes[] {
+  const inicio = new Date(`${desde.slice(0, 7)}-01T12:00:00Z`);
+  const final = hasta.slice(0, 7);
+  const acumulados = new Map<string, {ingresos: number; gastos: number}>();
+  const mesDe = (fecha: string) => { const clave=fecha.slice(0,7); let valor=acumulados.get(clave); if(!valor){valor={ingresos:0,gastos:0};acumulados.set(clave,valor);} return valor; };
+  for(const f of fs) if(f.estado!=='borrador' && f.fecha>=desde && f.fecha<=hasta) mesDe(f.fecha).ingresos+=f.totales.base;
+  for(const g of gs) if(g.estado==='confirmado' && g.fecha>=desde && g.fecha<=hasta) mesDe(g.fecha).gastos+=baseGasto(g);
+  const out: PuntoMes[] = [];
+  while (inicio.toISOString().slice(0, 7) <= final) {
+    const mes = inicio.toISOString().slice(0, 7);
+    const valores=acumulados.get(mes);
+    out.push({mes,etiqueta:MESES[inicio.getUTCMonth()]!.slice(0,3),nombre:`${MESES[inicio.getUTCMonth()]} de ${inicio.getUTCFullYear()}`,ingresos:r2(valores?.ingresos??0),gastos:r2(valores?.gastos??0)});
+    inicio.setUTCMonth(inicio.getUTCMonth()+1);
+  }
+  return out;
+}

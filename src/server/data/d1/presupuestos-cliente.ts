@@ -69,6 +69,26 @@ export function crearRepositorioPresupuestosCliente(db: BaseD1): Pick<Repositori
         ).results.map(aPresupuesto);
       },
       obtener,
+      async porFactura(id) {
+        const fila = await db.prepare("SELECT * FROM presupuestos_cliente WHERE json_extract(datos, '$.facturaAnticipoId') = ? OR json_extract(datos, '$.facturaId') = ? LIMIT 1").bind(id, id).first<Fila>();
+        return fila ? aPresupuesto(fila) : null;
+      },
+      async actualizarBorrador(previo, nuevo, email) {
+        const reloj = ahora();
+        const t = reloj > previo.actualizado ? reloj : new Date(Date.parse(previo.actualizado) + 1).toISOString();
+        const r = await db.prepare(`UPDATE presupuestos_cliente
+          SET fecha = ?, validez = ?, cliente_id = ?, obra_id = ?, anticipo_pct = ?, total = ?,
+              datos = json_set(?, '$.facturaId', json_extract(datos, '$.facturaId'), '$.facturaAnticipoId', json_extract(datos, '$.facturaAnticipoId')),
+              actualizado = ?, actualizado_por = ?
+          WHERE id = ? AND estado = 'borrador' AND actualizado = ?`)
+          .bind(nuevo.fecha, nuevo.validez, nuevo.clienteId, nuevo.obraId, nuevo.anticipoPct, nuevo.totales.total, datosDe(nuevo), t, email, previo.id, previo.actualizado).run();
+        return (r.meta?.changes ?? 0) === 1;
+      },
+      async transicionarEstado(previo, nuevo, email) {
+        const r = await db.prepare('UPDATE presupuestos_cliente SET estado = ?, actualizado = ?, actualizado_por = ? WHERE id = ? AND estado = ? AND actualizado = ?')
+          .bind(nuevo, ahora(), email, previo.id, previo.estado, previo.actualizado).run();
+        return (r.meta?.changes ?? 0) === 1;
+      },
       async registrarCobro(id, parte, fecha, email) {
         const campo = parte === 'anticipo' ? '$.cobroAnticipo' : '$.cobroResto';
         const enlace = parte === 'anticipo' ? '$.facturaAnticipoId' : '$.facturaId';

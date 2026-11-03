@@ -8,7 +8,7 @@ import { AMBITO as AMBITO_PORTAFOLIO, anadirFoto } from '../portafolio/portafoli
 import { FOTO_ANTES, FOTO_DESPUES, PROYECTOS_EJEMPLO } from '../portafolio/ejemplos.ts';
 import { guardarTextos } from './textos.ts';
 import { cargarCatalogoDePartida } from '../catalogo/partida.ts';
-import { cargarPresupuestosCarpinteria, cargarProveedoresCarpinteria, clientesCarpinteria, FACTURAS_CARPINTERIA, GASTOS_CARPINTERIA } from './pruebas-carpinteria.ts';
+import { cargarEscenarioCompleto, cargarPresupuestosCarpinteria, cargarProveedoresCarpinteria, clientesCarpinteria, FACTURAS_CARPINTERIA, GASTOS_CARPINTERIA } from './pruebas-carpinteria.ts';
 
 /**
  * Datos de prueba para probar el panel con algo dentro (unos 5 de cada cosa).
@@ -215,6 +215,7 @@ export async function cargarDatosPrueba(repos: Repositorios, email: string, hoy:
   if (carpinteria) await cargarCatalogoDePartida(repos, email, PREFIJO, true);
   if (carpinteria && moduloActivoAhora('proveedores')) await cargarProveedoresCarpinteria(repos, email, PREFIJO);
 
+  if (carpinteria) await cargarEscenarioCompleto(repos, email, hoy);
   await repos.ajustesPrivados.guardar(CLAVE_MODO_PRUEBAS, { activo: true, desde: new Date().toISOString() }, email);
   await repos.auditoria.registrar(email, 'datos de prueba', 'cargados');
   return { clientes: clientes.length, presupuestos, facturas, gastos: DATOS_GASTOS.length, proyectos, guias };

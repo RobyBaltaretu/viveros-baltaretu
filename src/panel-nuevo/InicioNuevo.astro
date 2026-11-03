@@ -4,23 +4,25 @@
  * sección), «Por hacer» con un botón por cosa, lo facturado en seis meses y
  * atajos para crear. Los cálculos están en inicio.ts.
  */
+import taller from './assets/taller.webp?inline';
 import Icono from '../components/panel/ui/Icono.astro';
 import { dinero } from '../server/facturas/importes.ts';
 import { hoy } from '../server/gastos/gastos.ts';
-import { periodoAnterior, periodoDe } from '../server/informes/informes.ts';
+import { periodoAnterior, periodoDe, evolucionMensual } from '../server/informes/informes.ts';
 import { menuDe } from '../server/panel/navegacion.ts';
 import { sesionCon } from '../server/panel/pagina.ts';
 import { puede } from '../server/panel/permisos.ts';
-import { rutaDisponible } from '../plataforma/actual.ts';
-import { evolucion, kpis, porHacer, saludo, type DatosInicio } from './inicio.ts';
-import { accionesCrear } from './navegacion.ts';
+import { clienteActual, rutaDisponible } from '../plataforma/actual.ts';
+import { porHacer, saludo, type DatosInicio } from './inicio.ts';
+import { resumenNegocio, proyectosDe, trazado } from './resumen';
 
 const s = sesionCon(Astro.locals);
 const rol = s?.usuario.rol ?? 'editor';
 const dia = hoy();
-const mes = periodoDe('mes', dia);
+const seleccion = Astro.url.searchParams.get('periodo') === 'anterior' ? 'anterior' : 'mes';
+const mes = seleccion === 'anterior' ? periodoAnterior(periodoDe('mes', dia)) : periodoDe('mes', dia);
 let desde = mes;
-for (let i = 0; i < 5; i++) desde = periodoAnterior(desde);
+for (let i = 0; i < 11; i++) desde = periodoAnterior(desde);
 const ver = {
   facturas: puede(rol, 'facturas') && rutaDisponible('/panel/facturas'),
   presupuestos: puede(rol, 'facturas') && rutaDisponible('/panel/presupuestos-cliente'),
@@ -29,8 +31,8 @@ const ver = {
 };
 const [facturas, gastosMes, revisar, presupuestos] = s
   ? await Promise.all([
-      ver.facturas ? s.repos.facturas.listar({ desde: desde.desde }) : [],
-      ver.informes ? s.repos.gastos.listar({ estado: 'confirmado', desde: mes.desde, hasta: mes.hasta }) : [],
+      ver.facturas ? s.repos.facturas.listar() : [],
+      ver.informes ? s.repos.gastos.listar({ estado: 'confirmado', desde: desde.desde }) : [],
       ver.gastos ? s.repos.gastos.listar({ estado: 'revisar' }).then((l) => l.length) : 0,
       ver.presupuestos ? s.repos.presupuestosCliente.listar() : [],
     ])
@@ -40,160 +42,64 @@ const emitidas = ver.facturas && s ? await s.repos.facturas.listar({ estado: 'em
 const idsFacturas = new Set(facturas.map(f => f.id));
 const todas = [...facturas, ...emitidas.filter(f => !idsFacturas.has(f.id))];
 const datos: DatosInicio = { hoy: dia, facturas: todas, gastosMes, ticketsPorRevisar: revisar, presupuestos, ver };
-const cifras = kpis(datos);
 const tareas = porHacer(datos);
 const VISIBLES = 8;
-const meses = ver.facturas ? evolucion(datos) : [];
-const maximo = Math.max(...meses.map((m) => m.base), 0);
-const crear = accionesCrear(s ? menuDe(rol) : []);
+const menu = s ? menuDe(rol) : [];
+const acceso = (href: string) => menu.some(m => m.href === href);
+const resumen = resumenNegocio(todas, gastosMes, presupuestos, mes).filter(k => ver[k.permiso]);
+const proyectos = proyectosDe(presupuestos).filter(p => !p.terminado).slice(0, 3);
+const evolucion = evolucionMensual(todas, gastosMes, mes.hasta).slice(-6);
+const puntos = trazado(evolucion.map(m => m.ingresos));
+const atajos = [
+ { href: '/panel/presupuestos-cliente/nuevo', seccion: '/panel/presupuestos-cliente', texto: 'Nuevo presupuesto', corto: 'Presupuesto', icono: 'presupuestos' as const },
+ { href: '/panel/facturas/nueva', seccion: '/panel/facturas', texto: 'Nueva factura', corto: 'Factura', icono: 'facturas' as const },
+ { href: '/panel/gastos/nuevo', seccion: '/panel/gastos', texto: 'Registrar gasto', corto: 'Gasto', icono: 'gastos' as const },
+ { href: '/panel/pedidos/nuevo', seccion: '/panel/pedidos', texto: 'Nuevo pedido', corto: 'Pedido', icono: 'proveedores' as const },
+ { href: '/panel/proyectos/nuevo', seccion: '/panel/presupuestos-cliente', texto: 'Crear proyecto', corto: 'Proyecto', icono: 'inventario' as const },
+].filter(a => acceso(a.seccion));
 const verSimulador = rutaDisponible('/panel/simulador');
 
-const eur = dinero;
-const eurCorto = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000).toLocaleString('es-ES')}\u00a0mil\u00a0€` : `${Math.round(n).toLocaleString('es-ES', { useGrouping: true })}\u00a0€`);
-const valor = (k: (typeof cifras)[number]) => (k.valor === null ? '—' : k.formato === 'euros' ? eur(k.valor) : `${k.valor}\u00a0%`);
 const ahora = new Date();
 const hora = Number(ahora.toLocaleString('es-ES', { hour: 'numeric', hour12: false, timeZone: 'Europe/Madrid' }));
-const fecha = ahora.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Madrid' });
-const nombre = (s?.usuario.nombre || '').split(' ')[0];
 ---
 
-<div class="nv-inicio">
-  <div class="nv-titulo">
-    <div>
-      <p class="nv-fecha">{fecha}</p>
-      <h1>{saludo(hora)}{nombre ? `, ${nombre}` : ''}</h1>
-      <p>{tareas.length ? `Tienes ${tareas.length === 1 ? '1 cosa' : `${tareas.length} cosas`} por hacer. Empieza por la primera.` : 'No tienes nada pendiente.'}</p>
-    </div>
+<div class="nv-inicio ux-inicio">
+  <section class="ux-hero" aria-labelledby="ux-bienvenida">
+    <div class="ux-saludo"><p>{saludo(hora)}</p><h1 id="ux-bienvenida">{clienteActual().nombre}</h1><p class="ux-lema">Carpintería a medida y proyectos singulares</p></div>
+    <img src={taller} alt="" class="ux-hero-foto" fetchpriority="high" width="1600" height="533" />
+  </section>
+  <nav aria-label="Acciones rápidas" class="ux-acciones">
+    {atajos.map((a, i) => <a href={a.href} class:list={['ux-accion', i === 0 && 'ux-accion-principal']}><Icono nombre={a.icono}/><span class="ux-accion-larga">{a.texto}</span><span class="ux-accion-corta">{a.corto}</span></a>)}
+  </nav>
+  <div class="ux-cuadricula">
+    {resumen.length > 0 && <section class="ux-card ux-resumen" aria-labelledby="ux-resumen-titulo">
+      <div class="ux-card-cabecera"><h2 id="ux-resumen-titulo">Resumen del negocio</h2><form method="get"><label class="sr-only" for="ux-periodo">Periodo del resumen</label><select id="ux-periodo" name="periodo"><option value="mes" selected={seleccion === 'mes'}>Este mes</option><option value="anterior" selected={seleccion === 'anterior'}>Mes anterior</option></select><button type="submit" class="ux-aplicar">Ver</button></form></div>
+      <p class="ux-periodo">{mes.etiqueta} · importes sin IVA, salvo cobros</p>
+      <ul class="ux-metricas" id="ux-metricas" role="list">{resumen.map(k => <li><a href={k.href}><span>{k.nombre}</span><strong class="nv-cifra">{k.euros ? dinero(k.valor) : k.valor}</strong><small class:list={[k.cambio !== null && (k.nombre === 'Gastos' ? k.cambio <= 0 : k.cambio >= 0) ? 'ux-positivo' : k.cambio !== null ? 'ux-negativo' : '']} >{k.cambio === null ? 'Sin comparación previa' : `${k.cambio >= 0 ? '↑ +' : '↓ '}${k.cambio.toLocaleString('es-ES')} %`}</small></a></li>)}</ul>
+      {ver.facturas && <figure class="ux-grafica"><svg viewBox="0 0 600 120" preserveAspectRatio="none" role="img" aria-label="Evolución de lo facturado sin IVA en los últimos seis meses"><defs><linearGradient id="ux-relleno" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#779561" stop-opacity=".3"/><stop offset="1" stop-color="#779561" stop-opacity="0"/></linearGradient></defs><polygon points={`0,120 ${puntos} 600,120`} fill="url(#ux-relleno)"/><polyline points={puntos} fill="none" stroke="#64804e" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><figcaption>Facturado · últimos 6 meses <a href="/panel/informes">Ver informes <span aria-hidden="true">→</span></a></figcaption><ul class="sr-only">{evolucion.map(m => <li>{m.nombre}: {dinero(m.ingresos)}</li>)}</ul></figure>}
+      <button type="button" class="ux-expandir-cifras" aria-expanded="false" aria-controls="ux-metricas">Ver todas las cifras</button>
+    </section>}
+    {ver.presupuestos && <section class="ux-card ux-proyectos" aria-labelledby="ux-proyectos-titulo">
+      <div class="ux-card-cabecera"><h2 id="ux-proyectos-titulo">Proyectos en curso</h2><a href="/panel/proyectos">Ver todos <Icono nombre="siguiente" clase="size-4"/></a></div>
+      <p class="ux-periodo">Hitos de presupuesto, facturación y cobro</p>
+      {proyectos.length ? <ul role="list">{proyectos.map(p => <li><a class="ux-proyecto" href={`/panel/presupuestos-cliente/${p.id}`}><span class="ux-proyecto-icono"><Icono nombre="inventario"/></span><span class="ux-proyecto-datos"><strong>{p.concepto} · {p.cliente.nombre}</strong><span class="ux-progreso"><progress max="100" value={p.avance} aria-label={`Avance administrativo: ${p.concepto}`}/><span>{p.avance} %</span></span><small>{p.etapa}</small></span><Icono nombre="siguiente" clase="size-4"/></a></li>)}</ul> : <div class="ux-vacio"><Icono nombre="inventario"/><p><strong>Tu próximo proyecto empieza aquí</strong><span>Al aceptar un presupuesto, podrás seguir aquí su facturación y cobros.</span></p><a href="/panel/proyectos/nuevo" class="nv-boton nv-boton-secundario">Crear proyecto</a></div>}
+    </section>}
   </div>
-
-  {
-    verSimulador && (
-      <section aria-labelledby="nv-simulador-banner">
-        <a href="/panel/simulador" class="nv-tarjeta nv-destacado">
-          <span class="nv-destacado-texto">
-            <span class="nv-destacado-etiqueta">Herramienta destacada con IA</span>
-            <strong id="nv-simulador-banner">Simulador de reformas en vivo</strong>
-            <small>Sube la foto del cliente y simula acabados de cocina, armarios o suelo con IA fotorrealista.</small>
-          </span>
-          <span class="nv-destacado-icono" aria-hidden="true">
-            <Icono nombre="camara" clase="size-6" />
-          </span>
-        </a>
-      </section>
-    )
-  }
-
-  {
-    cifras.length > 0 && (
-      <section aria-labelledby="nv-cifras">
-        <h2 id="nv-cifras" class="sr-only">
-          Cifras de {mes.etiqueta}
-        </h2>
-        <ul class="nv-kpis" role="list">
-          {cifras.map((k) => (
-            <li>
-              <a href={k.href} class="nv-kpi nv-tarjeta">
-                <span class="nv-kpi-nombre">{k.nombre}</span>
-                <span class="nv-kpi-valor nv-cifra">{valor(k)}</span>
-                <span class:list={['nv-kpi-nota', k.tono === 'aviso' && 'nv-aviso', k.tono === 'bien' && 'nv-bien']}>{k.nota}</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
-    )
-  }
-
-  <div class="nv-inicio-columnas">
-    <section class="nv-tarjeta nv-por-hacer" aria-labelledby="nv-por-hacer">
-      <div class="nv-cabeza-tarjeta">
-        <h2 id="nv-por-hacer">Por hacer</h2>
-        {tareas.length > 0 && <span class="nv-chip">{tareas.length}</span>}
-      </div>
-      {
-        tareas.length === 0 ? (
-          <div class="nv-vacio">
-            <span class="nv-vacio-icono" aria-hidden="true">
-              <Icono nombre="hecho" />
-            </span>
-            <p>
-              <strong>Todo al día</strong>
-              <br />
-              Cuando algo necesite tu atención (un cobro, un presupuesto que caduca…), saldrá aquí.
-            </p>
-          </div>
-        ) : (
-          <ul role="list">
-            {tareas.slice(0, VISIBLES).map((t) => (
-              <li class="nv-tarea">
-                <span class:list={['nv-punto', `nv-punto-${t.color}`]} aria-hidden="true" />
-                <span class="nv-tarea-texto">
-                  <strong>{t.titulo}</strong>
-                  <span>{t.detalle}</span>
-                </span>
-                <a href={t.href} class="nv-boton nv-boton-secundario">
-                  {t.accion}
-                  <span class="sr-only">: {t.titulo}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        )
-      }
-      {tareas.length > VISIBLES && <p class="nv-mas">Y {tareas.length - VISIBLES} más: resuelve estas primero.</p>}
-    </section>
-
-    <div class="nv-inicio-lado">
-      {
-        meses.length > 0 && (
-          <section class="nv-tarjeta nv-grafica" aria-labelledby="nv-grafica">
-            <div class="nv-cabeza-tarjeta">
-              <h2 id="nv-grafica">Facturado sin IVA</h2>
-              <span class="nv-gris">Últimos 6 meses</span>
-            </div>
-            <ol class="nv-barras" role="list">
-              {meses.map((m) => (
-                <li class:list={[m.actual && 'nv-barra-actual']} title={`${m.etiqueta}: ${eur(m.base)}`}>
-                  <span class="nv-barra-valor nv-cifra">{m.actual || m.base === maximo ? eurCorto(m.base) : ''}</span>
-                  <span class="nv-barra-hueco" aria-hidden="true">
-                    <span class="nv-barra" style={`height:${maximo > 0 ? Math.max(2, (m.base / maximo) * 100) : 2}%`} />
-                  </span>
-                  <span class="nv-barra-mes">{m.etiqueta}</span>
-                  <span class="sr-only">{eur(m.base)}</span>
-                </li>
-              ))}
-            </ol>
-            {ver.informes && (
-              <a href="/panel/informes" class="enlace-panel">
-                Ver informes
-              </a>
-            )}
-          </section>
-        )
-      }
-
-      {
-        crear.length > 0 && (
-          <section class="nv-atajos" aria-labelledby="nv-atajos">
-            <h2 id="nv-atajos">Crear</h2>
-            <ul role="list">
-              {crear.slice(0, 4).map((c) => (
-                <li>
-                  <a href={c.href} class="nv-atajo nv-tarjeta">
-                    <span class="nv-atajo-icono" aria-hidden="true">
-                      <Icono nombre={c.icono} clase="size-5" />
-                    </span>
-                    <span>
-                      <strong>{c.texto}</strong>
-                      <small>{c.descripcion}</small>
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )
-      }
-    </div>
-  </div>
+  <section class="ux-card ux-pendientes" id="nv-por-hacer" aria-labelledby="nv-pendientes-titulo">
+    <div class="ux-card-cabecera"><h2 id="nv-pendientes-titulo">Por hacer</h2><span class="nv-chip">{tareas.length}</span></div>
+    {tareas.length ? <ul role="list">{tareas.slice(0,VISIBLES).map(t => <li class="nv-tarea"><span class:list={['nv-punto', `nv-punto-${t.color}`]} aria-hidden="true"/><span class="nv-tarea-texto"><strong>{t.titulo}</strong><span>{t.detalle}</span></span><a class="nv-boton nv-boton-secundario" href={t.href}>{t.accion}<span class="sr-only">: {t.titulo}</span></a></li>)}</ul> : <p class="ux-todo-dia"><Icono nombre="hecho"/>Todo al día. Aquí aparecerán tus próximos cobros y tareas pendientes.</p>}
+    {tareas.length > VISIBLES && <p class="nv-mas">Y {tareas.length - VISIBLES} más. Resuelve estas primero.</p>}
+  </section>
+  {verSimulador && <a href="/panel/simulador" class="ux-asistente-enlace"><Icono nombre="camara"/><span><strong>Da forma a la próxima idea</strong><span>Prueba acabados con el simulador de reformas</span></span><Icono nombre="siguiente"/></a>}
 </div>
+<script is:inline>
+  const periodo = document.querySelector('#ux-periodo');
+  periodo?.addEventListener('change', () => periodo.form?.requestSubmit());
+  const expandir = document.querySelector('.ux-expandir-cifras');
+  expandir?.addEventListener('click', () => {
+    const abierto = expandir.getAttribute('aria-expanded') !== 'true';
+    expandir.setAttribute('aria-expanded', String(abierto));
+    document.querySelector('.ux-resumen')?.classList.toggle('ux-cifras-abiertas', abierto);
+    expandir.textContent = abierto ? 'Ver menos cifras' : 'Ver todas las cifras';
+  });
+</script>

@@ -7,6 +7,8 @@ import { cuerpoLimitado } from '../../../server/panel/cuerpo.ts';
 import { MAXIMO_IMAGEN, claveGemini, simular } from '../../../server/simulador/cuota.ts';
 import { resolveRenovationConfig, type RenovationConfig, type RenovationRequestPayload } from '../../../server/simulador/materiales.ts';
 
+import { materialesDelTaller } from '../../../server/simulador/catalogo';
+
 export const prerender = false;
 
 const json = (estado: number, cuerpo: unknown) => new Response(JSON.stringify(cuerpo), { status: estado, headers: { 'Content-Type': 'application/json' } });
@@ -32,10 +34,11 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   let config: RenovationConfig;
   try {
-    config = resolveRenovationConfig(body.config);
+    config = resolveRenovationConfig(body.config, materialesDelTaller(await s.repos.catalogo.articulos()));
   } catch {
-    return json(400, { ok: false, error: 'La configuración de la reforma no es válida.' });
+    return json(400, { ok: false, error: 'Revisa las medidas y selecciona materiales activos del catálogo del taller.' });
   }
+  if (!Object.values(config.zones).some(Boolean)) return json(400,{ok:false,error:'Selecciona al menos una zona para reformar.'});
   const cliente = clienteActual();
   const r = await simular(
     { cliente: cliente.id, ia: iaDe(cliente), apiKey: claveGemini(env as Record<string, unknown>), uso: s.repos.usoSimulador },
