@@ -15,7 +15,7 @@ const reposMock = () => {
   const guardar = vi.fn(async (x: unknown) => {guardados.push(x);});
   const auditar = vi.fn(async () => {});
   const repos = {
-    catalogo: { articulos: vi.fn(async () => guardados), guardarArticulo: guardar },
+    catalogo: { articulos: vi.fn(async () => guardados), articulo: vi.fn(async (id: string) => guardados.find(a => (a as { id?: string }).id === id) ?? null), guardarArticulo: guardar },
     auditoria: { registrar: auditar },
   } as unknown as Repositorios;
   return {repos, guardados, guardar, auditar};
