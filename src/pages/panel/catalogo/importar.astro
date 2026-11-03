@@ -20,6 +20,8 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       <form id="gubia-pdf-form" class="gubia-formulario">
         <label>Proveedor <input required id="gubia-proveedor" name="proveedor" maxlength="80" placeholder="Ej. ONESTA" autocomplete="organization" /></label>
         <label>PDF del catálogo <input id="gubia-pdf" name="archivo" type="file" accept=".pdf,application/pdf" required /></label>
+        <label>Empezar desde la página <input id="gubia-inicio" type="number" min="1" max="160" value="1" aria-describedby="gubia-continuar-ayuda" /></label>
+        <p class="gubia-nota" id="gubia-continuar-ayuda">Si Groq Free se queda sin cuota, podrás continuar desde la siguiente página otro día sin duplicar artículos.</p>
         <p class="gubia-nota">Máximo 25 MB y 160 páginas. El PDF permanece en tu dispositivo: solo enviamos texto extraído y, si tú lo solicitas, una imagen de la página a Groq Free. No se llama a Gemini. Se utilizan las cuotas gratuitas de Groq.</p>
         <button class="nv-boton" id="gubia-analizar" type="submit">Analizar PDF con Gubia</button>
       </form>
@@ -158,11 +160,12 @@ const sesion = sesionCon(Astro.locals, 'facturas');
   $('gubia-cancelar').addEventListener('click',()=>{
     articulos=[];sessionStorage.removeItem(BORRADOR);resultado.hidden=true;mensaje('Revisión descartada. Los artículos existentes no se han modificado.');});
   let documento = null;
+  let siguientePagina = 1;
   const textosPagina = new Map();
   const BORRADOR = 'gubia-turia-importacion-local-v1';
   function guardarBorrador() {
     try {
-      sessionStorage.setItem(BORRADOR,JSON.stringify({proveedor:$('gubia-proveedor').value,nombreArchivo,articulos}));
+      sessionStorage.setItem(BORRADOR,JSON.stringify({proveedor:$('gubia-proveedor').value,nombreArchivo,articulos,siguientePagina}));
     } catch { /* Memoria de sesión agotada: continúa en la pestaña. */ }
   }
   function juntarCandidatos(nuevos) {
@@ -199,12 +202,17 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     const file=$('gubia-pdf').files?.[0],proveedor=$('gubia-proveedor').value.trim();
     if(!file||!proveedor){mensaje('Selecciona el PDF e indica el proveedor.');return;}
     if(!window.gubiaPDF){mensaje('Todavía no se ha cargado PDF.js. Comprueba la conexión y vuelve a intentarlo.');return;}
-    nombreArchivo=file.name;articulos=[];textosPagina.clear();sessionStorage.removeItem(BORRADOR);
+    const comenzar=Number($('gubia-inicio').value)||1;
+    if(!Number.isInteger(comenzar)||comenzar<1||comenzar>160){mensaje('La página de inicio debe estar entre 1 y 160.');return;}
+    const continuar=comenzar>1 && nombreArchivo===file.name;
+    if(!continuar){articulos=[];sessionStorage.removeItem(BORRADOR);}
+    nombreArchivo=file.name;siguientePagina=comenzar;textosPagina.clear();
     resultado.hidden=true;detener(true);
     try{
       if(documento){await documento.cerrar();documento=null;}
       documento=await window.gubiaPDF.abrirPDFLocal(file);
       $('gubia-numero-pagina').max=String(documento.paginas);
+      if(comenzar>documento.paginas)throw Error('La página de inicio supera las páginas del documento.');
       let bloque=[],longitud=0;
       const enviar=async () => {
         if(!bloque.length)return;
@@ -212,9 +220,12 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         actualizarProgreso(hasta,documento.paginas,'Groq Free interpreta hasta la página '+hasta+' de '+documento.paginas);
         const response=await jsonPost({accion:'interpretar',proveedor,paginas:bloque});
         juntarCandidatos(response.articulos);
+        siguientePagina=hasta+1;
+        $('gubia-inicio').value=String(Math.min(siguientePagina,documento.paginas));
+        guardarBorrador();
         bloque=[];longitud=0;
       };
-      for(let numero=1;numero<=documento.paginas;numero++){
+      for(let numero=comenzar;numero<=documento.paginas;numero++){
         actualizarProgreso(numero-1,documento.paginas,'PDF.js leyendo página '+numero+' de '+documento.paginas+' en este dispositivo');
         const pagina=await documento.pagina(numero);
         textosPagina.set(numero,pagina.texto);
@@ -226,12 +237,14 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         if(bloque.length===3)await enviar();
       }
       await enviar();
+      siguientePagina=documento.paginas+1;guardarBorrador();
       actualizarProgreso(documento.paginas,documento.paginas,'Análisis finalizado');
       mostrarRevision();
       mensaje('PDF procesado localmente: '+documento.paginas+' páginas, '+articulos.length+' materiales. Puedes utilizar la revisión visual para las páginas con muestras.');
     }catch(err){
       actualizarProgreso(0,1,'Análisis interrumpido');
-      mensaje('Análisis interrumpido: '+(err?.message||'Error desconocido')+'. Puedes revisar lo encontrado; se conserva un borrador en esta pestaña.');
+      $('gubia-inicio').value=String(siguientePagina);
+      mensaje('Análisis interrumpido: '+(err?.message||'Error desconocido')+'. Puedes revisar lo encontrado y reanudar desde la página '+siguientePagina+' con el mismo PDF.');
       mostrarRevision();
     }finally{detener(false);}
   });
@@ -295,6 +308,8 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     const borrador=JSON.parse(sessionStorage.getItem(BORRADOR)||'null');
     if(borrador&&Array.isArray(borrador.articulos)&&borrador.articulos.length<=400){
       articulos=borrador.articulos;nombreArchivo=borrador.nombreArchivo||'catalogo.pdf';
+      siguientePagina=Math.max(1,Math.min(160,Number(borrador.siguientePagina)||1));
+      $('gubia-inicio').value=String(siguientePagina);
       $('gubia-proveedor').value=borrador.proveedor||'';
       resultado.hidden=false;pintar();
       mensaje('Borrador local recuperado: '+articulos.length+' materiales. Puedes confirmarlos o volver a subir el PDF.');
