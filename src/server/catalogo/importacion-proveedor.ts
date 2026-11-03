@@ -1,6 +1,7 @@
 import { z } from 'astro/zod';
 import { CATEGORIAS, MARGEN_PROPUESTO, esquemaArticulo } from './catalogo.ts';
 import type { Repositorios } from '../data/tipos.ts';
+import { tipoDeImagen } from '../panel/fotos.ts';
 
 /** El PDF es entrada no fiable: Gubia solo propone, un humano aprueba. */
 export const MAX_PAGINAS_PDF = 160;
@@ -50,13 +51,28 @@ export function depurarCandidatos(datos: unknown, inicio: number, fin: number): 
   return salida;
 }
 
+/** Muestra real recortada en el navegador, máximo 24 KB WebP por material. */
+export function muestraWebp(valor: unknown): Uint8Array | null {
+  if (valor === null || valor === undefined || valor === '') return null;
+  if (typeof valor !== 'string' || valor.length > 35000 ||
+    !/^data:image\/webp;base64,[A-Za-z0-9+/=]+$/.test(valor))
+    throw new ErrorImportacion('La muestra visual debe ser WebP y ocupar menos de 24 KB.');
+  let bytes: Uint8Array;
+  try { bytes = Uint8Array.from(atob(valor.split(',')[1] ?? ''),c=>c.charCodeAt(0)); }
+  catch { throw new ErrorImportacion('La imagen recortada no es válida.'); }
+  if (!bytes.length || bytes.length > 24000 || tipoDeImagen(bytes)?.tipo !== 'image/webp')
+    throw new ErrorImportacion('La muestra visual no es una imagen WebP válida.');
+  return bytes;
+}
+
 /** Las fichas llegan del texto o imagen local interpretados por Groq, no del PDF original. */
 
-export async function importarCandidatos(repos: Repositorios, proveedor: string, filename: string, candidatos: unknown, email: string) {
+export async function importarCandidatos(repos: Repositorios, proveedor: string, filename: string, candidatos: unknown, email: string, muestras: unknown = []) {
   const nombreProveedor = nombreSeguro(proveedor);
   if (nombreProveedor.length < 2 || nombreProveedor.length > 80) throw new ErrorImportacion('Indica un proveedor válido.');
   if (!Array.isArray(candidatos) || candidatos.length > MAX_CANDIDATOS_IMPORTACION)
     throw new ErrorImportacion('El lote no puede superar 400 materiales.');
+  if (!Array.isArray(muestras) || muestras.length > candidatos.length) throw new ErrorImportacion('Las muestras no coinciden con la selección.');
   const actuales = await repos.catalogo.articulos({ incluirArchivados: true });
   const conocidos = new Set(actuales.map(a => clave({
     categoria: a.categoria, nombre: a.nombre, referencia: a.referencia,
@@ -65,7 +81,7 @@ export async function importarCandidatos(repos: Repositorios, proveedor: string,
   }, a.proveedor)));
   const ids = new Set(actuales.map(a => a.id));
   let creados = 0, duplicados = 0, rechazados = 0;
-  for (const dato of candidatos) {
+  for (const [indice, dato] of candidatos.entries()) {
     const r = candidatoProveedor.safeParse(dato);
     if (!r.success) { rechazados++; continue; }
     const a = r.data;
@@ -73,8 +89,13 @@ export async function importarCandidatos(repos: Repositorios, proveedor: string,
     if (!categoria) { rechazados++; continue; }
     const k = clave(a, nombreProveedor), id = idEstable(k);
     if (conocidos.has(k) || ids.has(id)) { duplicados++; continue; }
+    let bytes: Uint8Array | null;
+    try { bytes = muestraWebp(muestras[indice]); }
+    catch { rechazados++; continue; }
+    const rutaMuestra = bytes ? 'catalogo-materiales/' + id + '/muestra.webp' : '';
     const visual = {
       fabricante: nombreProveedor,
+      ...(rutaMuestra ? { textura: '/api/panel/foto?ruta=' + encodeURIComponent(rutaMuestra) } : {}),
       ...(a.codigoDecor ? { codigoDecor: a.codigoDecor } : {}),
       ...(a.soporte ? { soporte: a.soporte } : {}),
       ...(a.colorHex ? { colorHex: a.colorHex } : {}),
@@ -94,6 +115,10 @@ export async function importarCandidatos(repos: Repositorios, proveedor: string,
       acabado: a.acabado, notas, visual,
     });
     if (!validado.success) { rechazados++; continue; }
+    // Si se ha confirmado una muestra, almacenarla en el almacén privado D1.
+    // El acceso a la imagen exige la misma sesión que el catálogo del panel.
+    if (bytes && rutaMuestra)
+      await repos.fotos.guardar({ruta:rutaMuestra,tipo:'image/webp',bytes},email);
     // D1 aplica INSERT ... ON CONFLICT DO NOTHING: nunca pisa modificaciones humanas
     // ni por importaciones concurrentes. Los mocks sin esa primitiva se comprueban.
     const insertado = repos.catalogo.insertarArticuloSiNuevo
