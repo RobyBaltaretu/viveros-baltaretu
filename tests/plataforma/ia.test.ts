@@ -19,11 +19,11 @@ describe('IA por cliente: configuración', () => {
     expect(IA_POR_DEFECTO.asistente).toEqual(['workers-ai', 'groq', 'local']);
   });
 
-  it('Turia: Groq primero, Gemini en el simulador y tope de 250 al mes', () => {
+  it('Turia: Groq primero, Gemini en el simulador y tope de 50 al mes', () => {
     const ia = iaDe(esquemaCliente.parse(turia));
     expect(ia.asistente).toEqual(['groq', 'workers-ai', 'local']);
     expect(ia.simulador).toBe('gemini');
-    expect(ia.simulacionesMes).toBe(250);
+    expect(ia.simulacionesMes).toBe(50);
   });
 
   it('rechaza listas repetidas, «local» en medio y proveedores desconocidos', () => {

@@ -37,7 +37,7 @@ export const PROVEEDORES_ASISTENTE = ['groq', 'workers-ai', 'local'] as const;
 export type ProveedorAsistente = (typeof PROVEEDORES_ASISTENTE)[number];
 
 /** Modelos por defecto. `openai/gpt-oss-120b` sustituye a llama-3.3-70b-versatile, retirado por Groq el 16-8-2026. */
-export const MODELOS_POR_DEFECTO = { groq: 'openai/gpt-oss-120b', gemini: 'gemini-3.1-flash-image-preview' } as const;
+export const MODELOS_POR_DEFECTO = { groq: 'openai/gpt-oss-120b', gemini: 'gemini-3.1-flash-image' } as const;
 
 /** Simulaciones al mes si el cliente no pone otra cifra: unos 10 € al mes con Gemini. */
 export const SIMULACIONES_MES_POR_DEFECTO = 250;
