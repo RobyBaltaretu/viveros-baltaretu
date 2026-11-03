@@ -1,4 +1,5 @@
 ---
+import { campoCsv } from '../../server/informes/csv';
 import { clienteActual } from '../../plataforma/actual.ts';
 import InformesTuria from '../../panel-nuevo/InformesTuria.astro';
 import Barras from '../../components/panel/graficos/Barras.astro';
@@ -13,6 +14,7 @@ import {
   conclusiones,
   conversion,
   evolucionMensual,
+  evolucionPeriodo,
   gastosPorCategoria,
   masVendido,
   mejoresClientes,
@@ -28,11 +30,18 @@ export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'informes');
 const dia = hoy();
-const pedidoTipo = Astro.url.searchParams.get('periodo');
-const tipo: TipoPeriodo = pedidoTipo === 'trimestre' || pedidoTipo === 'anio' ? pedidoTipo : 'mes';
 const esTuria = clienteActual().sector === 'carpinteria';
+const pedidoTipo = Astro.url.searchParams.get('periodo') ?? (esTuria ? '12meses' : null);
+const ultimos12=esTuria && pedidoTipo==='12meses';
+const tipo: TipoPeriodo = pedidoTipo === 'trimestre' || pedidoTipo === 'anio' ? pedidoTipo : 'mes';
 const pedidaFecha = Astro.url.searchParams.get('fecha') ?? '';
-const periodo = periodoDe(tipo, fechaValida(pedidaFecha) && pedidaFecha >= '1900-01-01' && pedidaFecha <= dia ? pedidaFecha : dia);
+const fechaBase = fechaValida(pedidaFecha) && pedidaFecha >= '1900-01-01' && pedidaFecha <= dia ? pedidaFecha : dia;
+const desdePedido=Astro.url.searchParams.get('desde')??'';
+const hastaPedido=Astro.url.searchParams.get('hasta')??'';
+const personalizado=pedidoTipo==='personalizado' && fechaValida(desdePedido) && fechaValida(hastaPedido) && desdePedido >= '1900-01-01' && desdePedido<=hastaPedido && hastaPedido<=dia;
+const inicio12=new Date(`${fechaBase.slice(0,7)}-01T12:00:00Z`);inicio12.setUTCMonth(inicio12.getUTCMonth()-11);
+const periodo=personalizado ? {tipo,desde:desdePedido,hasta:hastaPedido,etiqueta:`${desdePedido.split('-').reverse().join('/')} – ${hastaPedido.split('-').reverse().join('/')}`} : ultimos12 ? {tipo,desde:inicio12.toISOString().slice(0,10),hasta:fechaBase,etiqueta:'Últimos 12 meses'} : periodoDe(tipo,fechaBase);
+if (pedidoTipo==='personalizado'&&!personalizado) return new Response('Rango no válido: revisa las fechas.',{status:400});
 const taller = esTuria && s ? await s.repos.presupuestosCliente.indicadores(periodo.desde, periodo.hasta, dia) : null;
 const anterior = periodoAnterior(periodo);
 const siguiente = periodoSiguiente(periodo);
@@ -44,7 +53,7 @@ const rango = { desde: desde.toISOString().slice(0, 10) };
 const [facturas, gastos, presupuestos, porRevisar] = s
   ? await Promise.all([
       s.repos.facturas.listar({ ...(esTuria ? {} : {desde: rango.desde}), limite: 20000 }),
-      s.repos.gastos.listar({ estado: 'confirmado', desde: rango.desde, limite: 20000 }),
+      s.repos.gastos.listar({ estado: 'confirmado', ...(esTuria ? {} : {desde:rango.desde}), limite: 20000 }),
       esTuria ? [] : s.repos.presupuestos.listar({ limite: 5000 }),
       s.repos.gastos.listar({ estado: 'revisar' }),
     ])
@@ -53,9 +62,23 @@ const [facturas, gastos, presupuestos, porRevisar] = s
 const todasPendientes = s ? await s.repos.facturas.listar({ estado: 'emitida', limite: 20000 }) : [];
 
 const a = cifras(facturas, gastos, presupuestos, periodo);
+const incluyeHoy=periodo.desde<=dia && periodo.hasta>=dia;
+const gastosConIva=Math.round(gastos.filter(g=>g.fecha>=periodo.desde&&g.fecha<=periodo.hasta).reduce((n,g)=>n+g.total,0)*100)/100;
+if(Astro.url.searchParams.get('exportar')==='csv' && s){
+ const filas=[['Indicador','Valor','Criterio'],['Periodo',`${periodo.desde} a ${periodo.hasta}`,''],['Facturación sin IVA',a.ingresos,'Facturas emitidas y cobradas, rectificativas incluidas'],['Facturado con IVA',a.facturado,''],['Gastos confirmados sin IVA',a.gastos,'Sin IVA desglosado se usa el total'],['Gastos confirmados con IVA',gastosConIva,''],['Resultado registrado sin IVA',a.resultado,'Facturación menos gastos registrados'],['Cobrado con IVA',a.cobrado,'Fecha de cobro'],['Pendiente de cobro',incluyeHoy?cobros(todasPendientes,dia).pendiente:'Sin datos suficientes',incluyeHoy?'Situación actual':'No se puede reconstruir el saldo histórico'],['IVA repercutido y recargo',a.ivaRepercutido,''],['IVA soportado registrado',a.ivaSoportado,'']];
+ const evolucionCsv=evolucionPeriodo(facturas,gastos,periodo.desde,periodo.hasta);
+ for(const p of evolucionCsv){filas.push([`Ingresos ${p.mes}`,p.ingresos,'Sin IVA'],[`Gastos ${p.mes}`,p.gastos,'Sin IVA']);}
+ for(const x of gastosPorCategoria(gastos,periodo))filas.push([`Gastos: ${x.nombre}`,x.valor,'Sin IVA']);
+ for(const x of mejoresClientes(facturas,periodo))filas.push([`Cliente: ${x.nombre}`,x.valor,'Facturación sin IVA']);
+ for(const x of masVendido(facturas,periodo))filas.push([`Producto: ${x.nombre}`,x.valor,'Facturación sin IVA']);
+ const pendientes=cobros(todasPendientes,dia);filas.push(['Cobros en plazo',incluyeHoy?pendientes.enPlazo:'Sin datos suficientes',incluyeHoy?'Situación actual':'Sin histórico fiable'],['Vencidos hasta 30 días',incluyeHoy?pendientes.vencido30:'Sin datos suficientes',incluyeHoy?'Situación actual':'Sin histórico fiable'],['Vencidos más de 30 días',incluyeHoy?pendientes.vencidoMas30:'Sin datos suficientes',incluyeHoy?'Situación actual':'Sin histórico fiable']);
+ if(taller)filas.push(['Presupuestos aceptados',taller.aceptados,'Del periodo'],['Presupuestos rechazados',taller.decididos-taller.aceptados,'Del periodo'],['Tasa de aceptación',taller.decididos?`${Math.round(100*taller.aceptados/taller.decididos)} %`:'Sin datos suficientes','Sobre aceptados y rechazados'],['Cartera pendiente',incluyeHoy?taller.cartera:'Sin datos suficientes','IVA incluido'],['Caducan en 7 días',incluyeHoy?taller.valorCaduca:'Sin datos suficientes','IVA incluido']);
+ const csv=filas.map(f=>f.map(campoCsv).join(';')).join('\r\n');
+ return new Response('\ufeff'+csv,{headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="informe.csv"','Cache-Control':'no-store'}});
+}
 const b = cifras(facturas, gastos, presupuestos, anterior);
 const c = cobros(todasPendientes, dia);
-const evolucion = evolucionMensual(facturas, gastos, periodo.hasta);
+const evolucion = esTuria ? evolucionPeriodo(facturas,gastos,periodo.desde,periodo.hasta) : evolucionMensual(facturas,gastos,periodo.hasta);
 const categorias = gastosPorCategoria(gastos, periodo);
 const clientes = mejoresClientes(facturas, periodo);
 const productos = masVendido(facturas, periodo);
@@ -98,7 +121,7 @@ const DATOS = [
 ---
 
 <PaginaPanel titulo="Informes" permiso="informes" ancho={esTuria ? 'amplio' : 'normal'}>
-  {esTuria ? <InformesTuria {periodo} {anterior} {siguiente} {tipo} {dia} {a} {b} {c} {evolucion} {categorias} {clientes} {productos} {taller} {porRevisar} {gastos} /> : <Fragment>
+  {esTuria ? <InformesTuria {periodo} {anterior} {siguiente} {tipo} {dia} {a} {b} {c} {evolucion} {categorias} {clientes} {productos} {taller} {porRevisar} {gastosConIva} {personalizado} {ultimos12} {incluyeHoy} /> : <Fragment>
   <div class="informes">
     <h1 class="titular-grande">Informes</h1>
     <nav aria-label="Periodo" class="mt-6 grid gap-3">
