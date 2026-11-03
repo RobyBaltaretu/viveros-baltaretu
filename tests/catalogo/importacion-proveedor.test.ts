@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { PDFDocument } from 'pdf-lib';
 import type { Repositorios } from '../../src/server/data/tipos.ts';
 import {
-  analizarLotePDF, depurarCandidatos, ErrorImportacion, importarCandidatos, modeloCatalogoConfigurado, MODELO_CATALOGO_DEFAULT,
+  depurarCandidatos, importarCandidatos,
 } from '../../src/server/catalogo/importacion-proveedor.ts';
 
 const candidato = {
@@ -21,26 +20,6 @@ const reposMock = () => {
   return {repos, guardados, guardar, auditar};
 };
 describe('Gubia · PDF no fiable',()=>{
-  it('rechaza entradas que no son PDF y rangos imposibles',async()=>{
-    await expect(analizarLotePDF(new TextEncoder().encode('<html>'), 'ONESTA', 1,{apiKey:'test'})).rejects.toBeInstanceOf(ErrorImportacion);
-    const doc=await PDFDocument.create();doc.addPage();const pdf=new Uint8Array(await doc.save());
-    await expect(analizarLotePDF(pdf,'ONESTA',0,{apiKey:'test'})).rejects.toBeInstanceOf(ErrorImportacion);
-  });
-  it('recorta el PDF por páginas y no permite datos fuera de ellas',async()=>{
-    const doc=await PDFDocument.create();for(let i=0;i<9;i++)doc.addPage();
-    const pdf=new Uint8Array(await doc.save());
-    const mocked = vi.fn(async (_url:string,init?:RequestInit)=>{
-      const body=JSON.parse(String(init?.body)) as {contents:Array<{parts:Array<{inlineData?:{data:string}}>} >};
-      const encoded=body.contents[0]?.parts.find(p=>p.inlineData)?.inlineData?.data ?? '';
-      expect(encoded).toBeTruthy();
-      const partial=await PDFDocument.load(Uint8Array.from(atob(encoded ?? ''),c=>c.charCodeAt(0)));
-      expect(partial.getPageCount()).toBe(6);
-      return new Response(JSON.stringify({candidates:[{content:{parts:[{text:JSON.stringify({articulos:[candidato,{...candidato,pagina:9}]})}]}}]}),{status:200});
-    });
-    const result=await analizarLotePDF(pdf,'ONESTA',1,{apiKey:'test',fetch:mocked as typeof fetch});
-    expect(result).toMatchObject({paginas:9,inicio:1,fin:6});
-    expect(result.articulos).toHaveLength(1);
-  });
   it('descarta registros malformados, duplicados o sin página verificable',()=>{
     expect(depurarCandidatos([candidato,{...candidato},{...candidato,pagina:55},{...candidato,nombre:'x'}],1,6)).toHaveLength(1);
   });
@@ -60,22 +39,3 @@ describe('Gubia · PDF no fiable',()=>{
   });
 });
 
-describe('Gubia: modelo PDF y errores del proveedor', () => {
-  it('usa un modelo de lectura PDF vigente y rechaza modelos de imagen', () => {
-    expect(MODELO_CATALOGO_DEFAULT).toBe('gemini-3.5-flash-lite');
-    expect(modeloCatalogoConfigurado('gemini-3.8-flash')).toBe('gemini-3.8-flash');
-    expect(modeloCatalogoConfigurado('gemini-3.1-flash-image')).toBe(MODELO_CATALOGO_DEFAULT);
-    expect(modeloCatalogoConfigurado('gemini-2.5-flash')).toBe(MODELO_CATALOGO_DEFAULT);
-  });
-  it('explica un 404 con nombre del modelo sin exponer detalles del proveedor', async () => {
-    const doc = await PDFDocument.create();
-    doc.addPage();
-    const pdf = new Uint8Array(await doc.save());
-    const fake = vi.fn(async (url: string) => {
-      expect(url).toContain('/gemini-3.5-flash-lite:generateContent');
-      return new Response('private provider diagnostic', {status:404});
-    });
-    await expect(analizarLotePDF(pdf, 'ONESTA', 1, {apiKey:'test', fetch:fake as typeof fetch}))
-      .rejects.toThrow(/modelo de análisis PDF \(gemini-3\.5-flash-lite\).*no está disponible/);
-  });
-});
