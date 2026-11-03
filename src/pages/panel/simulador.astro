@@ -827,7 +827,30 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
 (()=>{
  const host=document.getElementById('studio-perfil');if(!host)return;const perfiles=JSON.parse(host.dataset.perfiles);const tipo=document.querySelector('[name=spaceType]')?.closest('fieldset') || document.getElementById('simulador-form');
  function update(){const seleccionado=document.querySelector('[name=spaceType]:checked')?.value;const par=Object.entries(perfiles).find(([k,p])=>k===seleccionado||p.nombre===seleccionado);if(!par)return;const [key,p]=par;const campos=document.getElementById('studio-perfil-campos');campos.replaceChildren();Object.entries(p.campos).forEach(([nombre,opciones])=>{const label=document.createElement('label');label.textContent=nombre[0].toUpperCase()+nombre.slice(1);label.className='block';const select=document.createElement('select');select.className='campo-panel';select.name='perfil-'+nombre;select.dataset.perfilCampo=nombre;opciones.forEach(o=>{const option=document.createElement('option');option.textContent=o;select.append(option);});try{const saved=JSON.parse(localStorage.getItem('turia:studio:draft:v1')||'[]');const previous=saved.find(v=>v.key===select.name);if(previous&&opciones.includes(previous.value))select.value=previous.value;}catch{/* No bloquea el diseño. */}label.append(select);campos.append(label);});for(const name of ['distribucion','apertura']){const control=document.querySelector('[name='+name+']');if(control)control.closest('label').hidden=true;}
- document.getElementById('studio-perfil-revision').textContent=p.revision;for(const [id,zona] of [['zone-countertop','encimera'],['zone-flooring','suelo']]){const e=document.getElementById(id);const compatible=p.zonas.includes(zona);if(!compatible)e.checked=false;e.disabled=!compatible;e.closest('label').title=compatible?'':'No corresponde a este tipo de reforma';e.dispatchEvent(new Event('change'));}host.dataset.tipo=key;}
+ document.getElementById('studio-perfil-revision').textContent=p.revision;
+  const cocina=key==='cocina';
+  const titulos={cocina:['Mobiliario / Muebles','Material Muebles Superiores / Columnas','Material Muebles Inferiores / Isla'],armario:['Armario y frentes','Material principal del armario','Material de puertas e interiores'],vestidor:['Módulos del vestidor','Material de módulos y baldas','Material de cajones y frentes'],puertas:['Puertas de paso','Material de la hoja','Material de marco y molduras'],salon:['Mueble TV / Salón','Material de estructura y baldas','Material de puertas y cajones'],bano:['Mueble de baño','Material de estructura','Material de frentes'],oficina:['Oficina / Estantería','Material de estructura','Material de frentes y cajones'],lavadero:['Mobiliario de lavadero','Material de módulos','Material de frentes']};
+  const etiquetas=titulos[key]||titulos.cocina;
+  const mueble=document.getElementById('zone-cabinets').closest('.space-y-3');
+  const tituloMueble=mueble?.querySelector('label span');if(tituloMueble)tituloMueble.textContent=etiquetas[0];
+  for(const [nombre,texto] of [['upperMaterial',etiquetas[1]],['lowerMaterial',etiquetas[2]]]){
+    const control=document.querySelector('[name="'+nombre+'"]');
+    const etiqueta=control?.closest('div')?.querySelector('label');
+    if(etiqueta)etiqueta.textContent=texto;
+  }
+  const estilo=document.getElementById('cabinet-style')?.closest('div');if(estilo)estilo.hidden=!cocina;
+  const techo=document.getElementById('floor-to-ceiling')?.closest('label');
+  if(techo){techo.hidden=!cocina;if(!cocina)document.getElementById('floor-to-ceiling').checked=false;}
+  for(const [id,zona] of [['zone-countertop','encimera'],['zone-flooring','suelo']]){
+    const e=document.getElementById(id);const compatible=p.zonas.includes(zona);
+    if(!compatible)e.checked=false;e.disabled=!compatible;
+    const seccion=e.closest('.space-y-3.border-b');if(seccion)seccion.hidden=!compatible;
+    e.dispatchEvent(new Event('change'));
+  }
+  const luz=document.getElementById('zone-lighting');
+  if(luz){if(!cocina)luz.checked=false;luz.disabled=!cocina;const seccion=luz.closest('.space-y-3');if(seccion)seccion.hidden=!cocina;luz.dispatchEvent(new Event('change'));}
+  host.open=true;host.querySelector('summary').textContent='Configuración de '+p.nombre;
+  host.dataset.tipo=key;}
  tipo?.addEventListener('change',e=>{if(e.target.name==='spaceType')update();});update();
 })();
 </script>

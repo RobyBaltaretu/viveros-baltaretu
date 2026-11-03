@@ -220,19 +220,25 @@ export function resolveRenovationConfig(payload: RenovationRequestPayload | Reno
   const si = (v: unknown) => v === true;
   const zonas = (p.zones ?? {}) as Partial<RenovationConfig['zones']>;
   const luz = (p.lighting ?? {}) as Partial<RenovationConfig['lighting']>;
+  const estancia = TIPOS_ESTANCIA.find(e=>e.id===p.spaceType||e.nombre===p.spaceType);
+  if (!estancia) throw Error('Tipo de reforma no válido');
+  const perfil = resolverPerfil(estancia.id,p.perfil?.opciones);
+  const cocina = estancia.id === 'cocina';
+  const encimera = ['cocina','bano','lavadero'].includes(estancia.id);
+  const suelo = ['cocina','bano'].includes(estancia.id);
   return {
-    perfil: resolverPerfil(TIPOS_ESTANCIA.find(e=>e.id===p.spaceType||e.nombre===p.spaceType)?.id ?? 'cocina', p.perfil?.opciones),
+    perfil,
     proyecto: p.proyecto === undefined ? undefined : detallesProyecto(p.proyecto),
-    spaceType: TIPOS_ESTANCIA.find((e) => e.nombre === p.spaceType || e.id === p.spaceType)?.nombre ?? TIPOS_ESTANCIA[0]!.nombre,
+    spaceType: estancia.nombre,
     cabinetStyle: ESTILOS_MUEBLE.find((e) => e.nombre === p.cabinetStyle || e.id === p.cabinetStyle)?.nombre ?? ESTILOS_MUEBLE[0]!.nombre,
     floorToCeiling: si(p.floorToCeiling),
-    zones: { cabinets: si(zonas.cabinets), countertop: si(zonas.countertop), flooring: si(zonas.flooring), lighting: si(zonas.lighting) },
+    zones: { cabinets: si(zonas.cabinets), countertop: encimera && si(zonas.countertop), flooring: suelo && si(zonas.flooring), lighting: cocina && si(zonas.lighting) },
     upperMaterial: (catalogo && !si(zonas.cabinets) ? MATERIALES_MUEBLE[0]! : de(MATERIALES_MUEBLE, p.upperMaterialId, p.upperMaterial)),
     lowerMaterial: (catalogo && !si(zonas.cabinets) ? MATERIALES_MUEBLE[0]! : de(MATERIALES_MUEBLE, p.lowerMaterialId, p.lowerMaterial)),
     countertopMaterial: (catalogo && !si(zonas.countertop) ? MATERIALES_ENCIMERA[0]! : de(MATERIALES_ENCIMERA, p.countertopMaterialId, p.countertopMaterial)),
     includeBacksplash: si(p.includeBacksplash),
     flooringMaterial: (catalogo && !si(zonas.flooring) ? MATERIALES_SUELO[0]! : de(MATERIALES_SUELO, p.flooringMaterialId, p.flooringMaterial)),
-    lighting: { underCabinetLed: si(luz.underCabinetLed), colorTemp: TEMPERATURAS_LED.includes(luz.colorTemp as never) ? luz.colorTemp! : TEMPERATURAS_LED[1] },
+    lighting: { underCabinetLed: cocina && si(luz.underCabinetLed), colorTemp: TEMPERATURAS_LED.includes(luz.colorTemp as never) ? luz.colorTemp! : TEMPERATURAS_LED[1] },
   };
 }
 
