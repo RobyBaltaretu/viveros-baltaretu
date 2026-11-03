@@ -4,7 +4,7 @@ import FormPedido from '../../../panel-nuevo/pedidos/FormPedido.astro';
 import { calcularEscandallo } from '../../../server/catalogo/escandallo.ts';
 import { hoy } from '../../../server/gastos/gastos.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
-import { crearPedido, leerFormularioPedido, type EntradaPedido, lineasDeTrabajo, proveedorProbable, type Error } from '../../../server/pedidos/pedidos.ts';
+import { crearPedido, leerFormularioPedido, type EntradaPedido, lineasDeVenta, lineasDeTrabajo, proveedorProbable, type Error } from '../../../server/pedidos/pedidos.ts';
 import { numero } from '../../../server/presupuestos-cliente/formulario.ts';
 import { moduloActivoAhora } from '../../../plataforma/actual.ts';
 
@@ -33,6 +33,18 @@ if (Astro.request.method === 'GET' && trabajo && !trabajo.archivado) {
   valores = { ...valores, lineas, proveedorId: valores.proveedorId || proveedorProbable(lineas, articulos, proveedores)?.id || '', notasInternas: `Material de: ${trabajo.nombre}.` };
   filas = lineas.length + 1;
 }
+let origen = '';
+if (s && Astro.request.method === 'GET' && !trabajo && (q.has('factura') || q.has('presupuesto'))) {
+  const factura = q.has('factura') ? await s.repos.facturas.obtener(q.get('factura')!) : null;
+  if (q.has('factura') && (!factura || factura.tipo !== 'ordinaria')) return new Response('Factura no disponible', {status:404});
+  const presupuesto = factura ? await s.repos.presupuestosCliente.porFactura(factura.id) : await s.repos.presupuestosCliente.obtener(q.get('presupuesto')!);
+  const documento = presupuesto ?? factura;
+  if (!documento) return new Response('Documento no disponible', {status:404});
+  const lineas = lineasDeVenta(documento.lineas, articulos);
+  origen = documento.codigo || 'documento de venta';
+  valores = {...valores, lineas, presupuestoClienteId:presupuesto?.id ?? null, notasInternas:'Origen: ' + origen};
+  if (presupuesto && !presupuestos.some(p => p.id === presupuesto.id)) presupuestos.push(presupuesto);
+}
 if (s && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const datos = leerFormularioPedido(form);
@@ -58,7 +70,7 @@ const obras = presupuestos.filter((p) => p.estado === 'aceptado' || p.estado ===
   <div class="nv-titulo">
     <div>
       <h1>Pedido nuevo</h1>
-      <p>{trabajo ? `Con el material de «${trabajo.nombre}». Revisa las cantidades y elige el proveedor.` : 'Lo que necesitas pedir. Se numera al guardarlo y lo envías desde su ficha, sin precios.'}</p>
+      <p>{origen ? `Desde ${origen}. Revisa las partidas, cantidades y costes de compra. Quita lo que no vayas a pedir a este proveedor.` : trabajo ? `Con el material de «${trabajo.nombre}». Revisa las cantidades y elige el proveedor.` : 'Lo que necesitas pedir. Se numera al guardarlo y lo envías desde su ficha, sin precios.'}</p>
     </div>
   </div>
   <FormPedido valores={valores} proveedores={proveedores} presupuestos={obras} articulos={articulos} plantillas={plantillas} filas={Math.max(filas, valores.lineas.length + 1)} boton="Guardar el pedido" errores={errores} hoy={dia} />

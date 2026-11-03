@@ -4,6 +4,7 @@
  * envío, líneas, totales y otras acciones (hacer otra igual, rectificativa).
  * Mismas acciones que la vista de siempre (las procesa la página).
  */
+import { moduloActivoAhora } from '../../plataforma/actual';
 import PdfEnNavegador from '../../components/panel/PdfEnNavegador.astro';
 import Icono from '../../components/panel/ui/Icono.astro';
 import type { Factura } from '../../server/data/tipos.ts';
@@ -144,6 +145,7 @@ const lineas = f.lineas.filter((l) => l.concepto);
     <section class="nv-tarjeta nv-seccion" aria-labelledby="otras-acciones">
       <h2 id="otras-acciones">Otras acciones</h2>
       <div class="nv-botones-columna">
+        {f.tipo === 'ordinaria' && moduloActivoAhora('pedidosProveedor') && <a class="nv-boton nv-boton-secundario" href={`/panel/pedidos/nuevo?factura=${f.id}`}>Preparar pedido a proveedor</a>}
         <form method="post">
           <input type="hidden" name="accion" value="duplicar" />
           <button class="nv-boton nv-boton-secundario nv-boton-ancho-total">Hacer otra igual</button>
