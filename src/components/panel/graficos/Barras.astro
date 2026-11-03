@@ -21,7 +21,7 @@ const { titulo, categorias, series, nombres = categorias, unidades = false } = A
 const valor = (n: number) => (unidades ? n.toLocaleString('es-ES') : dinero(n));
 
 // Lienzo estrecho: en el móvil las letras se leen (unos 10 px) y en el ordenador no crecen de más (ancho máximo).
-const ANCHO = 400;
+const ANCHO = categorias.length > 18 ? categorias.length * 24 + 56 : 400;
 const ALTO = 240;
 const M = { arriba: 10, derecha: 4, abajo: 24, izquierda: 52 };
 const ancho = ANCHO - M.izquierda - M.derecha;
@@ -69,7 +69,7 @@ const camino = (x: number, v: number) => {
       ))
     }
   </ul>
-  <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} class="h-auto w-full max-w-xl" role="img" aria-label={`${titulo}. Los datos están en la tabla de debajo.`}>
+  <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} class="h-auto w-full max-w-xl" style={categorias.length > 18 ? `min-width:${ANCHO}px;max-width:none` : undefined} role="img" aria-label={`${titulo}. Los datos están en la tabla de debajo.`}>
     {
       marcas.map((m) => (
         <g>
