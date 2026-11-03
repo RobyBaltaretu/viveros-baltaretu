@@ -161,8 +161,13 @@ export async function importarCandidatos(repos: Repositorios, proveedor: string,
       acabado: a.acabado, notas, visual,
     });
     if (!validado.success) { rechazados++; continue; }
-    await repos.catalogo.guardarArticulo({ ...validado.data, id }, email);
-    ids.add(id); conocidos.add(k); creados++;
+    // D1 aplica INSERT ... ON CONFLICT DO NOTHING: nunca pisa modificaciones humanas
+    // ni por importaciones concurrentes. Los mocks sin esa primitiva se comprueban.
+    const insertado = repos.catalogo.insertarArticuloSiNuevo
+      ? await repos.catalogo.insertarArticuloSiNuevo({ ...validado.data, id }, email)
+      : !(await repos.catalogo.articulo(id)) && (await repos.catalogo.guardarArticulo({ ...validado.data, id }, email), true);
+    ids.add(id); conocidos.add(k);
+    if (insertado) creados++; else duplicados++;
   }
   if (creados) await repos.auditoria.registrar(email, 'importación catálogo PDF', nombreProveedor + ': ' + creados + ' nuevos, ' + duplicados + ' duplicados, ' + rechazados + ' rechazados');
   return {creados, duplicados, rechazados};
