@@ -33,6 +33,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       <progress id="gubia-progreso" aria-label="Progreso de análisis del PDF" max="100" value="0" style="width:100%;height:13px;accent-color:#526b39"></progress>
       <p id="gubia-fase" class="gubia-nota">Leyendo PDF localmente…</p>
     </section>
+    <div class="gubia-estado nv-caja-aviso" id="gubia-estado" role="status" aria-live="polite">Elige un PDF para comenzar. No se realizará ninguna importación sin tu confirmación.</div>
     <section class="nv-tarjeta nv-seccion" id="gubia-resultado" hidden aria-labelledby="gubia-paso2">
       <div class="gubia-cabecera">
         <div><h2 id="gubia-paso2">2. Revisa los materiales</h2><p>Los datos son propuestas de IA, no están todavía en el catálogo. Desmarca las fichas que no quieras crear.</p></div>
@@ -65,7 +66,6 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         <button class="nv-boton" id="gubia-confirmar" type="button">Crear artículos seleccionados</button>
       </div>
     </section>
-    <div class="gubia-estado nv-caja-aviso" id="gubia-estado" role="status" aria-live="polite">Elige un PDF para comenzar. No se realizará ninguna importación sin tu confirmación.</div>
   </div>}
 </PaginaPanel>
 <style is:inline>
@@ -303,10 +303,13 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       if (pendientes.length) mensaje(estado.textContent+' · Páginas sin propuestas, disponibles en revisión visual: '+pendientes.join(', ')+'.');
 
     }catch(err){
+      const detalle=err?.message||String(err)||'Error desconocido';
       actualizarProgreso(0,1,'Análisis interrumpido');
       $('gubia-inicio').value=String(siguientePagina);
-      mensaje('Análisis interrumpido en PDF.js (lectura local), página '+siguientePagina+': '+(err?.message||'Error desconocido')+'. Groq no ha sido necesariamente el origen del fallo. Puedes revisar lo encontrado y reanudar con el mismo PDF.');
-      mostrarRevision();
+      mensaje('Análisis interrumpido en la página '+siguientePagina+': '+detalle+'. Puedes revisar lo encontrado y reanudar con el mismo PDF.');
+      console.error('[Gubia Importador] Error durante el análisis',err);
+      if(articulos.length)mostrarRevision();
+      estado.scrollIntoView({behavior:'smooth',block:'center'});
     }finally{detener(false);}
   });
   async function vistaPagina(){
