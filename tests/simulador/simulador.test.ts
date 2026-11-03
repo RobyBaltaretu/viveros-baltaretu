@@ -105,6 +105,26 @@ describe('Simulador de Reformas con IA', () => {
     expect(() => resolveRenovationConfig({} as never)).not.toThrow();
   });
 
+  test('armario: el prompt prohíbe convertirlo en cocina y elimina zonas incompatibles', () => {
+    const config = resolveRenovationConfig({
+      ...dummyConfig,
+      spaceType: 'armario',
+      zones: { cabinets: true, countertop: true, flooring: true, lighting: true },
+    });
+    expect(config.perfil?.tipo).toBe('armario');
+    expect(config.zones).toEqual({ cabinets: true, countertop: false, flooring: false, lighting: false });
+    const prompt = buildRenovationPrompt(config);
+    expect(prompt).toContain('wardrobe or closet only');
+    expect(prompt).toContain('This is NOT a kitchen renovation');
+    expect(prompt).toContain('Do NOT add kitchen cabinets');
+    expect(prompt).not.toContain('Replace the existing countertop');
+    expect(prompt).not.toContain('Add a realistic recessed warm LED strip');
+  });
+
+  test('tipo de reforma desconocido: rechazar, nunca asumir cocina', () => {
+    expect(() => resolveRenovationConfig({ ...dummyConfig, spaceType: 'armariosss' })).toThrow('Tipo de reforma no válido');
+  });
+
   test('la clave sale del secreto GOOGLE_API_KEY o, si no, de GEMINI_API_KEY', () => {
     expect(claveGemini({ GOOGLE_API_KEY: 'g' })).toBe('g');
     expect(claveGemini({ GEMINI_API_KEY: 'm' })).toBe('m');
