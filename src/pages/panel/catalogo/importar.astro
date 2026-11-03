@@ -11,7 +11,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     <div>
       <a href="/panel/catalogo" class="gubia-volver">← Volver al catálogo</a>
       <h1>Importar catálogo con Gubia</h1>
-      <p>Sube el PDF original del proveedor. Gubia identificará materiales, referencias, acabados y medidas para que revises el resultado antes de crearlos.</p>
+      <p>El PDF se lee en tu navegador con PDF.js. Groq Free interpreta las tablas y, si lo necesitas, revisa muestras visuales. Gemini no se utiliza.</p>
     </div>
   </div>
   {sesion && <div class="gubia-importador">
@@ -20,9 +20,14 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       <form id="gubia-pdf-form" class="gubia-formulario">
         <label>Proveedor <input required id="gubia-proveedor" name="proveedor" maxlength="80" placeholder="Ej. ONESTA" autocomplete="organization" /></label>
         <label>PDF del catálogo <input id="gubia-pdf" name="archivo" type="file" accept=".pdf,application/pdf" required /></label>
-        <p class="gubia-nota">Máximo 8 MB y 160 páginas. El análisis se realiza por bloques de 6 páginas para evitar pérdidas por tiempo de ejecución. El documento se envía al proveedor de IA configurado; comprueba que tienes derecho a procesarlo.</p>
+        <p class="gubia-nota">Máximo 8 MB y 160 páginas. El PDF permanece en tu dispositivo: solo enviamos texto extraído y, si tú lo solicitas, una imagen de la página a Groq Free. No se llama a Gemini. Se utilizan las cuotas gratuitas de Groq.</p>
         <button class="nv-boton" id="gubia-analizar" type="submit">Analizar PDF con Gubia</button>
       </form>
+    </section>
+    <section class="nv-tarjeta nv-seccion" aria-label="Progreso de lectura y análisis" id="gubia-seguimiento" hidden>
+      <h2>Procesamiento del catálogo</h2>
+      <progress id="gubia-progreso" max="100" value="0" style="width:100%;height:13px;accent-color:#526b39"></progress>
+      <p id="gubia-fase" class="gubia-nota">Leyendo PDF localmente…</p>
     </section>
     <section class="nv-tarjeta nv-seccion" id="gubia-resultado" hidden aria-labelledby="gubia-paso2">
       <div class="gubia-cabecera">
@@ -35,6 +40,18 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       </div>
       <p class="gubia-nota">Los colores generados son aproximados, no muestras oficiales. La importación no crea precios ni modifica artículos existentes. Corrige las fichas antes de confirmar.</p>
       <div id="gubia-lista" class="gubia-lista"></div>
+      <section class="gubia-vision" aria-labelledby="gubia-titulo-vision">
+        <h3 id="gubia-titulo-vision">Comprobar una página visual</h3>
+        <p class="gubia-nota">Si un material está en una carta de colores o no tiene texto seleccionable, pide a Groq que lea esa página. Solo se envía una imagen JPEG de esa página y el texto disponible. Esta función consume cuota gratuita de Groq.</p>
+        <div class="gubia-vision-controles">
+          <label> Página del catálogo <input id="gubia-numero-pagina" type="number" min="1" max="160" value="1" /></label>
+          <button type="button" id="gubia-ver-pagina" class="nv-boton nv-boton-secundario">Ver página</button>
+          <button type="button" id="gubia-analizar-vision" class="nv-boton nv-boton-secundario">Analizar imagen con Groq</button>
+        </div>
+        <div id="gubia-vista-pagina" class="gubia-vista-pagina" hidden>
+          <img id="gubia-preview-pagina" alt="Vista de página seleccionada del PDF" />
+        </div>
+      </section>
       <div class="gubia-final">
         <button class="nv-boton nv-boton-secundario" id="gubia-cancelar" type="button">Descartar revisión</button>
         <button class="nv-boton" id="gubia-confirmar" type="button">Crear artículos seleccionados</button>
@@ -58,10 +75,19 @@ const sesion = sesionCon(Astro.locals, 'facturas');
 .gubia-item-campos label{display:grid;gap:4px;font-size:.75rem;font-weight:600;color:#53594e;min-width:0}
 .gubia-item-campos input,.gubia-item-campos select{width:100%;min-width:0;min-height:40px;background:#fff;border:1px solid #d8ded2;border-radius:8px;padding:7px;font:inherit;font-size:.86rem;color:#232823}
 .gubia-origen{font-size:.75rem;color:#626960;margin:8px 0 0}
+.gubia-vision{margin:1.3rem 0;padding:1.2rem;border:1px solid #dbe3d5;background:#f9fbf7;border-radius:14px}
+.gubia-vision h3{font-size:1.05rem;font-weight:750}
+.gubia-vision-controles{display:flex;align-items:end;flex-wrap:wrap;gap:.65rem}
+.gubia-vision-controles label{display:grid;gap:.3rem;font-size:.82rem;font-weight:700}
+.gubia-vision-controles input{max-width:100px;min-height:43px;padding:7px;border:1px solid #cbd4c3;border-radius:8px}
+.gubia-vista-pagina{max-height:360px;overflow:auto;margin-top:1rem;display:grid;place-items:start center}
+.gubia-vista-pagina[hidden]{display:none}
+.gubia-vista-pagina img{display:block;max-width:100%;max-height:350px;object-fit:contain;border:1px solid #e3e1dd;border-radius:8px}
 .gubia-final{border-top:1px solid #e6e7de;padding-top:16px}.gubia-estado{margin-top:4px}
 .gubia-importador button:focus-visible,.gubia-importador input:focus-visible,.gubia-importador select:focus-visible{outline:3px solid #526939;outline-offset:2px}
 @media(max-width:600px){.gubia-item{grid-template-columns:42px minmax(0,1fr);gap:9px;padding:10px}.gubia-muestra{width:42px;height:42px}.gubia-item-campos{grid-template-columns:repeat(2,minmax(0,1fr))}.gubia-resumen label{width:100%}.gubia-resumen input[type=search]{flex:1;min-width:0}.gubia-final button{flex:1;min-height:48px}}
 </style>
+<script src="../../../panel-nuevo/gubia-pdf.ts"></script>
 <script is:inline>
 (() => {
   const form = document.getElementById('gubia-pdf-form');
