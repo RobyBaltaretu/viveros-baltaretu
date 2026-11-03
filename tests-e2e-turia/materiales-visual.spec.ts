@@ -24,13 +24,14 @@ test('Turia Studio: material visual por zona, búsqueda y confirmación en móvi
   const choices=dialog.locator('#studio-material-results [data-material-option]');
   if(await choices.count()>1){
     const second=choices.nth(1);
-    const selected=await second.getAttribute('data-name');
+    const selected=(await second.getAttribute('data-name'))!;
+    const selectedId=(await second.getAttribute('data-id'))!;
     await second.click();
     await dialog.getByRole('button',{name:'Aplicar material'}).click();
     await expect(dialog).toBeHidden();
-    await expect(trigger.locator('[data-current-name]')).toHaveText(selected!);
+    await expect(trigger.locator('[data-current-name]')).toHaveText(selected);
     expect(await trigger.locator('[data-current-name]').innerText()).not.toBe(before);
-    await expect(page.locator('input[name="upperMaterial"]:checked')).toHaveAttribute('value',await second.getAttribute('data-id')!);
+    await expect(page.locator('input[name="upperMaterial"]:checked')).toHaveAttribute('value',selectedId);
   } else {
     await dialog.getByRole('button',{name:'Cancelar'}).click();
     await expect(trigger.locator('[data-current-name]')).toHaveText(before);
