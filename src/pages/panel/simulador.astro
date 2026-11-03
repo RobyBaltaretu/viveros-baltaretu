@@ -772,3 +772,101 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
  tipo?.addEventListener('change',e=>{if(e.target.name==='spaceType')update();});update();
 })();
 </script>
+
+
+<script is:inline>
+(() => {
+  const dialog = document.getElementById('studio-material-dialog');
+  const library = [...document.querySelectorAll('#studio-material-library [data-material-option]')];
+  const results = document.getElementById('studio-material-results');
+  const query = document.getElementById('studio-material-query');
+  const count = document.getElementById('studio-material-count');
+  const empty = document.getElementById('studio-material-empty');
+  const more = document.getElementById('studio-material-more');
+  const apply = document.getElementById('studio-material-apply');
+  if (!dialog || !results) return;
+
+  let activeSlot = null;
+  let pendingId = '';
+  let filter = 'todos';
+  let visibleCount = 18;
+  let lastTrigger = null;
+  const norm = (s) => (s || '').toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const families = {
+    madera: /madera|roble|nogal|pino|fresno|haya|chapa|melamin|tablero|contrachapad|tarima|parquet/,
+    lacado: /laca|blanco|verde|negro|gris|color|pintad|satinad|mate|brillo/,
+    piedra: /piedra|marmol|granito|porcelanic|cuarzo|calacatta|dekton|silestone/,
+  };
+  const optionOf = (id,kind) => library.find(b => b.dataset.id === id && b.dataset.kind === kind);
+  function refreshSlot(slot) {
+    const radio = slot.querySelector('input[type=radio]:checked');
+    const item = radio && optionOf(radio.value,slot.dataset.materialKind);
+    if (!item) return;
+    slot.querySelector('[data-current-name]').textContent = item.dataset.name;
+    slot.querySelector('[data-current-description]').textContent = item.dataset.description || 'Artículo de catálogo';
+    const swatch = slot.querySelector('[data-current-swatch]');
+    swatch.style.backgroundColor = item.dataset.color || '#ebe4da';
+    swatch.replaceChildren();
+    if (item.dataset.texture) {
+      const image = document.createElement('img');
+      image.src = item.dataset.texture; image.alt = ''; image.loading = 'lazy';
+      image.referrerPolicy = 'no-referrer'; swatch.append(image);
+    }
+  }
+  const available = () => library.filter(item => {
+    if (item.dataset.kind !== activeSlot?.dataset.materialKind) return false;
+    const content = norm(item.dataset.name + ' ' + item.dataset.description);
+    if (norm(query.value) && !content.includes(norm(query.value))) return false;
+    return filter === 'todos' || families[filter]?.test(content);
+  });
+  function render() {
+    if (!activeSlot) return;
+    const found = available();
+    results.replaceChildren();
+    found.slice(0,visibleCount).forEach(item => {
+      const card = item.cloneNode(true);
+      card.removeAttribute('id');
+      card.dataset.selected = String(card.dataset.id === pendingId);
+      card.setAttribute('aria-pressed', String(card.dataset.id === pendingId));
+      card.addEventListener('click', () => { pendingId = card.dataset.id; render(); });
+      results.append(card);
+    });
+    count.textContent = found.length === 1 ? '1 material compatible' : found.length + ' materiales compatibles';
+    empty.hidden = found.length !== 0;
+    more.hidden = found.length <= visibleCount;
+    apply.disabled = !pendingId || !found.some(item => item.dataset.id === pendingId);
+  }
+  document.querySelectorAll('[data-material-slot]').forEach(slot => {
+    refreshSlot(slot);
+    slot.querySelector('[data-material-open]')?.addEventListener('click', e => {
+      activeSlot = slot;
+      lastTrigger = e.currentTarget;
+      pendingId = slot.querySelector('input[type=radio]:checked')?.value || '';
+      filter = 'todos'; visibleCount = 18; query.value = '';
+      document.getElementById('studio-material-dialog-title').textContent = 'Elige material · ' + slot.querySelector('.studio-material-slot-heading').textContent;
+      document.querySelectorAll('[data-material-filter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.materialFilter === 'todos')));
+      render(); dialog.showModal(); query.focus();
+    });
+  });
+  query.addEventListener('input', () => { visibleCount = 18; render(); });
+  document.querySelectorAll('[data-material-filter]').forEach(button => button.addEventListener('click', () => {
+    filter = button.dataset.materialFilter; visibleCount = 18;
+    document.querySelectorAll('[data-material-filter]').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
+    render();
+  }));
+  more.addEventListener('click', () => {visibleCount += 18; render();});
+  const close = () => dialog.close();
+  document.getElementById('studio-material-close').addEventListener('click', close);
+  document.getElementById('studio-material-cancel').addEventListener('click', close);
+  apply.addEventListener('click', () => {
+    if (!activeSlot || apply.disabled) return;
+    const radio = [...activeSlot.querySelectorAll('input[type=radio]')].find(r => r.value === pendingId);
+    if (!radio) return;
+    radio.checked = true;
+    radio.dispatchEvent(new Event('change',{bubbles:true}));
+    refreshSlot(activeSlot);
+    close();
+  });
+  dialog.addEventListener('close', () => { if (lastTrigger?.isConnected) lastTrigger.focus(); });
+})();
+</script>
