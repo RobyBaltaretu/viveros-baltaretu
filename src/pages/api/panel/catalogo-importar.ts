@@ -34,7 +34,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
       const archivo = form.get('archivo');
       const proveedor = String(form.get('proveedor') || '').trim();
       const inicio = Number(form.get('inicio') || '1');
-      if (!(archivo instanceof File) || archivo.type !== 'application/pdf' || archivo.size > MAX_PDF_BYTES)
+      if (!(archivo instanceof File) || !archivo.name.toLowerCase().endsWith('.pdf') || archivo.size > MAX_PDF_BYTES)
         return json(400, { ok: false, error: 'Selecciona un PDF válido de hasta 8 MB.' });
       if (proveedor.length < 2 || proveedor.length > 80) return json(400, {ok:false,error:'Indica el proveedor (2–80 caracteres).'});
       // Control de consumo por usuario: 40 bloques PDF por día como máximo.
