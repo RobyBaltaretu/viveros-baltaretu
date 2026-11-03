@@ -224,6 +224,8 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       documento=await window.gubiaPDF.abrirPDFLocal(file);
       $('gubia-numero-pagina').max=String(documento.paginas);
       if(comenzar>documento.paginas)throw Error('La página de inicio supera las páginas del documento.');
+      let fase='abrir PDF';
+      const paginasFallidas=[];
       let bloque=[],longitud=0;
       let groqDisponible=true;
       let errorGroq='';
@@ -235,6 +237,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         if(!bloque.length)return;
         const hasta=bloque[bloque.length-1].pagina;
         actualizarProgreso(hasta,documento.paginas,'Groq Free interpreta hasta la página '+hasta+' de '+documento.paginas);
+        fase='interpretar lote hasta página '+hasta;
         let interpretados=[];
         if (groqDisponible) {
           try {
@@ -249,6 +252,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         {
           // No consumir de nuevo cuotas Groq con 404/429 o fallos de red.
           // Se generan únicamente propuestas verificables desde el texto local.
+          fase='generar propuestas locales hasta página '+hasta;
           const sugeridos=window.gubiaPDF.sugerirMaterialesLocales(bloque.filter(p=>!paginasLocales.has(p.pagina)).map(p=>({...p,texto:textosPagina.get(p.pagina)||p.texto}))).filter(local =>
             !interpretados.some(ia => ia.pagina===local.pagina && local.referencia && ia.referencia===local.referencia &&
               (!local.acabado || local.acabado===ia.acabado) && ia.categoria===local.categoria &&
@@ -266,7 +270,16 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       };
       for(let numero=comenzar;numero<=documento.paginas;numero++){
         actualizarProgreso(numero-1,documento.paginas,'PDF.js leyendo página '+numero+' de '+documento.paginas+' en este dispositivo');
-        const pagina=await documento.pagina(numero);
+        let pagina;
+        fase='extraer texto de página '+numero;
+        try {
+          pagina=await documento.pagina(numero);
+        } catch(error) {
+          paginasFallidas.push({pagina:numero,detalle:error instanceof Error?error.message:String(error)});
+          console.error('[Gubia Importador] No se pudo extraer la página '+numero,error);
+          siguientePagina=numero+1;
+          continue;
+        }
         textosPagina.set(numero,pagina.texto);
         // El resto de páginas (escaneos, páginas sin texto) se revisa visualmente cuando el usuario lo solicite.
         if(!pagina.texto.trim()){sinTexto.push(numero);continue;}
@@ -281,6 +294,8 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         }
       }
       await enviar();
+      if(paginasFallidas.length && !articulos.length && paginasFallidas.length===documento.paginas-comenzar+1)
+        throw Error('No se ha podido leer ninguna página. Primer error: '+paginasFallidas[0].detalle);
       let avisoVision='';
       if ($('gubia-vision-auto').checked) {
         const prioridades=[...new Set([...sinTexto,...revisar])].filter(p=>!articulos.some(a=>a.data.pagina===p)).slice(0,8);
@@ -301,12 +316,13 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       if (avisoVision) mensaje(estado.textContent+avisoVision);
       const pendientes=[...new Set([...sinTexto,...revisar])].filter(p=>!articulos.some(a=>a.data.pagina===p));
       if (pendientes.length) mensaje(estado.textContent+' · Páginas sin propuestas, disponibles en revisión visual: '+pendientes.join(', ')+'.');
+      if (paginasFallidas.length) mensaje(estado.textContent+' · Páginas con errores de extracción: '+paginasFallidas.map(p=>p.pagina).join(', ')+'. Primer error: '+paginasFallidas[0].detalle+'.');
 
     }catch(err){
       const detalle=err?.message||String(err)||'Error desconocido';
       actualizarProgreso(0,1,'Análisis interrumpido');
       $('gubia-inicio').value=String(siguientePagina);
-      mensaje('Análisis interrumpido en la página '+siguientePagina+': '+detalle+'. Puedes revisar lo encontrado y reanudar con el mismo PDF.');
+      mensaje('Análisis interrumpido durante «'+fase+'», página '+siguientePagina+': '+detalle+'. Puedes revisar lo encontrado y reanudar con el mismo PDF.');
       console.error('[Gubia Importador] Error durante el análisis',err);
       if(articulos.length)mostrarRevision();
       estado.scrollIntoView({behavior:'smooth',block:'center'});
