@@ -61,6 +61,15 @@ export function crearRepositorioCatalogo(db: BaseD1): Pick<Repositorios, 'catalo
           .bind(a.id, a.categoria, a.nombre, a.unidad, a.coste, JSON.stringify(datos), t, t, email)
           .run();
       },
+      async insertarArticuloSiNuevo(a, email) {
+        const datos: DatosArticulo = { merma: a.merma, margen: a.margen, precioFijo: a.precioFijo, referencia: a.referencia, proveedor: a.proveedor, espesor: a.espesor, acabado: a.acabado, notas: a.notas, ...(a.visual ? {visual:a.visual} : {}) };
+        const t = ahora();
+        const r = await db.prepare(
+          `INSERT INTO catalogo_articulos (id, categoria, nombre, unidad, coste, datos, archivado, creado, actualizado, actualizado_por)
+           VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
+        ).bind(a.id, a.categoria, a.nombre, a.unidad, a.coste, JSON.stringify(datos), t, t, email).run();
+        return (r.meta?.changes ?? 0) > 0;
+      },
       async archivarArticulo(id, archivado, email) {
         const r = await db.prepare('UPDATE catalogo_articulos SET archivado = ?, actualizado = ?, actualizado_por = ? WHERE id = ?').bind(archivado ? 1 : 0, ahora(), email, id).run();
         return (r.meta?.changes ?? 0) > 0;
