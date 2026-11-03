@@ -93,3 +93,11 @@
  .studio .studio-material-trigger{min-height:72px}
 }
 @media(prefers-reduced-motion:reduce){.studio .studio-material-trigger{transition:none}}
+
+
+/* En escritorio, la fotografía es el lienzo protagonista y la configuración ocupa un lateral. */
+@media(min-width:801px){
+ .studio .studio-layout{grid-template-columns:minmax(0,1.3fr) minmax(320px,420px);gap:20px}
+ .studio #simulador-form{grid-column:2;grid-row:1}
+ .studio .studio-preview{grid-column:1;grid-row:1}
+}
