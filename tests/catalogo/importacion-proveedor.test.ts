@@ -32,7 +32,7 @@ describe('Muestras reales almacenadas en D1',()=>{
     expect(resultado.creados).toBe(1);
     expect(guardarFoto).toHaveBeenCalledTimes(1);
     const ficha=guardados[0] as {visual:{textura:string}};
-    expect(ficha.visual.textura).toMatch(/^\/api\/panel\/foto\?ruta=catalogo-materiales%2Fprov-[a-z0-9]+%2Fmuestra\.webp$/);
+    expect(ficha.visual.textura).toMatch(/^\/api\/panel\/catalogo-muestra\?ruta=catalogo-materiales%2Fprov-[a-z0-9]+%2Fmuestra\.webp$/);
     const nuevo=await importarCandidatos(repos,'ONESTA','catalogo.pdf',[candidato],'propietario@example.test',[imagen]);
     expect(nuevo).toMatchObject({creados:0,duplicados:1});
     expect(guardarFoto).toHaveBeenCalledTimes(1); // el duplicado nunca reescribe la textura

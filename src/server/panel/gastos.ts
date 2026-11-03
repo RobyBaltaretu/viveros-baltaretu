@@ -1,3 +1,4 @@
+import { ErrorEspacioImagen } from '../data/tipos';
 import type { Gasto, Repositorios } from '../data/tipos.ts';
 import { avisosDe, gastoVacio, hoy } from '../gastos/gastos.ts';
 import { LIMITE_DIARIO_TICKETS, type LectorTickets } from '../gastos/lector.ts';
@@ -20,7 +21,8 @@ export async function gastoDesdeTicket(repos: Repositorios, email: string, bytes
 
   const gasto = gastoVacio(email);
   gasto.ticketId = crypto.randomUUID();
-  await repos.tickets.guardar({ id: gasto.ticketId, tipo: tipo.tipo, bytes }, email);
+  try { await repos.tickets.guardar({ id: gasto.ticketId, tipo: tipo.tipo, bytes }, email); }
+  catch (e) { if (e instanceof ErrorEspacioImagen) return {ok:false,mensaje:e.message}; throw e; }
 
   let leido: 'si' | 'no' | 'sin-lector' | 'sin-cupo' = 'sin-lector';
   if (lector) {

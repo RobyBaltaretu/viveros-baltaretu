@@ -4,7 +4,7 @@ import { clienteActual } from '../../../plataforma/actual.ts';
 import { iaDe } from '../../../plataforma/configuracion.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
 import { cuerpoLimitado } from '../../../server/panel/cuerpo.ts';
-import { MAXIMO_IMAGEN, claveGemini, simular } from '../../../server/simulador/cuota.ts';
+import { MAXIMO_IMAGEN, claveGemini, mesDe, simular } from '../../../server/simulador/cuota.ts';
 import { resolveRenovationConfig, type RenovationConfig, type RenovationRequestPayload } from '../../../server/simulador/materiales.ts';
 
 import { materialesDelTaller } from '../../../server/simulador/catalogo';
@@ -44,5 +44,9 @@ export const POST: APIRoute = async ({ locals, request }) => {
     { cliente: cliente.id, ia: iaDe(cliente), apiKey: claveGemini(env as Record<string, unknown>), uso: s.repos.usoSimulador },
     { image: body.image, mascara: typeof body.mask === 'string' && body.mask ? body.mask : undefined, config },
   );
+  if (r.cuerpo.ok) {
+    // Un fallo de telemetría nunca debe provocar otro intento de pago.
+    await s.repos.usoAsistente.sumar('studio:generadas',mesDe()).catch(()=>console.error('No se pudo registrar el contador de Studio.'));
+  }
   return json(r.estado, r.cuerpo);
 };

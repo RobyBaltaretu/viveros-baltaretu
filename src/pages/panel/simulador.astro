@@ -26,6 +26,8 @@ const MATERIALES_SUELO = materiales.filter(m=>m.categoria==='suelo');
 const cliente = clienteActual();
 const ia = iaDe(cliente);
 const cuota = estadoCuota(s ? await s.repos.usoSimulador.usos(cliente.id, mesDe()) : 0, limitePresupuestado(ia.simulacionesMes));
+const resumen = s ? await s.repos.portafolio.resumenSimulaciones() : null;
+const generadas = s ? await s.repos.usoAsistente.obtener('studio:generadas',mesDe()) : 0;
 const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · quedan ${c.quedan}`;
 ---
 
@@ -45,6 +47,10 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
         <h2 id="cuota-titulo" class="font-titular text-sm font-bold text-tinta">Simulaciones de este mes</h2>
         <p id="cuota-texto" class="text-sm font-semibold text-tinta">{textoCuota(cuota)}</p>
       </div>
+      {resumen && <details><summary>Uso y almacenamiento</summary>
+        <p>{generadas} generaciones correctas registradas este mes · {resumen.guardadas} proyectos de simulación guardados en total.</p>
+        {resumen.espacio && <p>Imágenes privadas en R2: {(resumen.espacio.bytes/1e6).toLocaleString('es-ES',{maximumFractionDigits:2})} MB reservados de {resumen.espacio.limite/1e6} MB.</p>}
+      </details>}
       <div
         id="cuota-barra"
         role="progressbar"
@@ -712,6 +718,11 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
           datos.set(lado, imagen, lado + '.jpg');
         }
         const respuesta = await fetch('/panel/proyectos?ver=simulaciones',{method:'POST',body:datos});
+        if (respuesta.status===507) {
+          estado.textContent='El almacén de imágenes está lleno. Descarga la imagen para conservarla.';
+          boton.disabled=false;
+          return;
+        }
         if (!respuesta.ok || !respuesta.headers.get('content-type')?.includes('application/json')) throw Error();
         await respuesta.json();
         estado.textContent = 'Proyecto guardado con su antes y después.';

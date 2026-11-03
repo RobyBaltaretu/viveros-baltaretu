@@ -1,3 +1,4 @@
+import type { Imagenes, BytesGuardados } from './imagenes-r2.ts';
 import type { Adjunto, ProyectoPortafolio, Repositorios } from '../tipos.ts';
 import type { BaseD1 } from './base.ts';
 
@@ -30,20 +31,30 @@ interface FilaAdjunto {
 }
 const aAdjunto = (f: FilaAdjunto): Adjunto => ({ id: f.id, ambito: f.ambito, ref: f.ref, tipo: f.tipo, tamano: f.tamano, creado: f.creado });
 
-export function crearRepositoriosPortafolio(db: BaseD1): Pick<Repositorios, 'portafolio' | 'adjuntos'> {
+export function crearRepositoriosPortafolio(db: BaseD1, imagenes: Imagenes): Pick<Repositorios, 'portafolio' | 'adjuntos'> {
   return {
     portafolio: {
+      async resumenSimulaciones() {
+        const fila = await db.prepare("SELECT count(*) AS n FROM portafolio WHERE id GLOB 'studio_sim_*'").first<{n:number}>();
+        return {guardadas:fila!.n,espacio:await imagenes.ocupacion()};
+      },
       async guardarSimulacion(id, titulo, antes, despues, email) {
+        if (await db.prepare('SELECT id FROM portafolio WHERE id=?').bind(id).first()) return;
         const fecha = ahora();
         const datos: DatosProyecto = { descripcion: 'Propuesta de reforma generada en Turia Studio.', materiales: '', localidad: '',
           anio: null, destacado: false, antes: [id + '-antes'], despues: [id + '-despues'] };
         // Los tres registros se confirman juntos. Un reintento conserva el primer resultado.
         const proyecto = db.prepare(`INSERT INTO portafolio (id,titulo,categoria,datos,orden,archivado,creado,actualizado,actualizado_por)
-          VALUES (?,?,'Simulación en borrador',?,0,0,?,?,?) ON CONFLICT(id) DO NOTHING`)
+          VALUES (?,?,'Simulación en borrador',?,0,0,?,?,?)`)
           .bind(id,titulo,JSON.stringify(datos),fecha,fecha,email);
-        const adjunto = (lado: string, bytes: Uint8Array) => db.prepare(`INSERT INTO adjuntos (id,ambito,ref,tipo,bytes,tamano,creado,creado_por)
-          VALUES (?,'portafolio',?,'image/jpeg',?,?,?,?) ON CONFLICT(id) DO NOTHING`).bind(id + '-' + lado,id,bytes,bytes.length,fecha,email);
-        await db.batch([proyecto, adjunto('antes',antes), adjunto('despues',despues)]);
+        const adjunto = (lado: string, puntero: Uint8Array|string, tamano: number) => db.prepare(`INSERT INTO adjuntos (id,ambito,ref,tipo,bytes,tamano,creado,creado_por)
+          VALUES (?,'portafolio',?,'image/jpeg',?,?,?,?)`).bind(id + '-' + lado,id,puntero,tamano,fecha,email);
+        try {
+          await imagenes.escribir([{bytes:antes},{bytes:despues}], ([a,b]) => [proyecto, adjunto('antes',a,antes.length), adjunto('despues',b,despues.length)]);
+        } catch (error) {
+          if (String(error).includes('UNIQUE') && await db.prepare('SELECT id FROM portafolio WHERE id=?').bind(id).first()) return;
+          throw error;
+        }
       },
       async listar(opciones = {}) {
         const sql = `SELECT * FROM portafolio ${opciones.incluirArchivados ? '' : 'WHERE archivado = 0'} ORDER BY orden, creado DESC`;
@@ -76,26 +87,28 @@ export function crearRepositoriosPortafolio(db: BaseD1): Pick<Repositorios, 'por
     },
     adjuntos: {
       async guardar(a, email) {
-        await db
+        await imagenes.escribir([a], ([puntero]) => [db
           .prepare('INSERT INTO adjuntos (id, ambito, ref, tipo, bytes, tamano, creado, creado_por) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-          .bind(a.id, a.ambito, a.ref, a.tipo, a.bytes, a.bytes.byteLength, ahora(), email)
-          .run();
+          .bind(a.id, a.ambito, a.ref, a.tipo, puntero, a.bytes.byteLength, ahora(), email)
+        ]);
       },
       async obtener(id) {
-        const f = await db.prepare('SELECT * FROM adjuntos WHERE id = ?').bind(id).first<FilaAdjunto & { bytes: ArrayBuffer | number[] }>();
-        return f ? { ...aAdjunto(f), bytes: new Uint8Array(f.bytes) } : null;
+        const f = await db.prepare('SELECT * FROM adjuntos WHERE id = ?').bind(id).first<FilaAdjunto & { bytes: BytesGuardados }>();
+        return f ? { ...aAdjunto(f), bytes: await imagenes.leer(f.bytes) } : null;
       },
       async listar(ambito, ref) {
         const filas = await db.prepare('SELECT id, ambito, ref, tipo, tamano, creado FROM adjuntos WHERE ambito = ? AND ref = ? ORDER BY creado').bind(ambito, ref).all<FilaAdjunto>();
         return filas.results.map(aAdjunto);
       },
       async borrar(id) {
-        const r = await db.prepare('DELETE FROM adjuntos WHERE id = ?').bind(id).run();
-        return (r.meta?.changes ?? 0) > 0;
+        const r = await db.prepare("DELETE FROM adjuntos WHERE id=? RETURNING CASE WHEN typeof(bytes)='text' THEN bytes END AS clave").bind(id).first<{clave:string}>();
+        await imagenes.retirar(r?.clave);
+        return !!r;
       },
       async borrarDe(ambito, ref) {
-        const r = await db.prepare('DELETE FROM adjuntos WHERE ambito = ? AND ref = ?').bind(ambito, ref).run();
-        return r.meta?.changes ?? 0;
+        const r = await db.prepare("DELETE FROM adjuntos WHERE ambito=? AND ref=? RETURNING CASE WHEN typeof(bytes)='text' THEN bytes END AS clave").bind(ambito,ref).all<{clave:string}>();
+        for (const fila of r.results) await imagenes.retirar(fila.clave);
+        return r.results.length;
       },
     },
   };

@@ -1,3 +1,4 @@
+import { imagenesPrivadas, type BucketPrivado, type BytesGuardados } from './imagenes-r2.ts';
 import type {
   Autor,
   Cambio,
@@ -99,7 +100,8 @@ const aPresupuesto = (f: FilaPresupuesto): Presupuesto => ({
 
 const PENDIENTE = '((archivada = 0 AND (publicado IS NULL OR publicado != borrador)) OR (archivada = 1 AND publicado IS NOT NULL))';
 
-export function crearRepositoriosD1(db: BaseD1): Repositorios {
+export function crearRepositoriosD1(db: BaseD1, bucket?: BucketPrivado, exigirR2 = false): Repositorios {
+  const imagenes = imagenesPrivadas(db,bucket,undefined,exigirR2);
   const insertarCambio = (coleccion: Coleccion, id: string, antes: string | null, despues: string | null, autor: Autor) =>
     db
       .prepare('INSERT INTO cambios (fecha, email, coleccion, entrada_id, antes, despues, origen) VALUES (?, ?, ?, ?, ?, ?, ?)')
@@ -216,18 +218,20 @@ export function crearRepositoriosD1(db: BaseD1): Repositorios {
     contenido,
     fotos: {
       async guardar(foto, email) {
-        await db
+        const previo = bucket ? await db.prepare("SELECT bytes FROM fotos WHERE ruta=? AND typeof(bytes)='text'").bind(foto.ruta).first<{bytes:string}>() : null;
+        await imagenes.escribir([foto], ([puntero]) => [db
           .prepare(
             `INSERT INTO fotos (ruta, tipo, bytes, tamano, subida, subida_por) VALUES (?, ?, ?, ?, ?, ?)
              ON CONFLICT (ruta) DO UPDATE SET tipo = excluded.tipo, bytes = excluded.bytes, tamano = excluded.tamano,
              subida = excluded.subida, subida_por = excluded.subida_por`,
           )
-          .bind(foto.ruta, foto.tipo, foto.bytes, foto.bytes.byteLength, ahora(), email)
-          .run();
+          .bind(foto.ruta, foto.tipo, puntero, foto.bytes.byteLength, ahora(), email)
+        ]);
+        await imagenes.retirar(previo?.bytes);
       },
       async obtener(ruta) {
-        const f = await db.prepare('SELECT ruta, tipo, bytes FROM fotos WHERE ruta = ?').bind(ruta).first<{ ruta: string; tipo: string; bytes: ArrayBuffer | number[] }>();
-        return f ? { ruta: f.ruta, tipo: f.tipo, bytes: new Uint8Array(f.bytes) } : null;
+        const f = await db.prepare('SELECT ruta, tipo, bytes FROM fotos WHERE ruta = ?').bind(ruta).first<{ ruta: string; tipo: string; bytes: BytesGuardados }>();
+        return f ? { ruta: f.ruta, tipo: f.tipo, bytes: await imagenes.leer(f.bytes) } : null;
       },
       async listar() {
         const filas = await db
@@ -236,7 +240,8 @@ export function crearRepositoriosD1(db: BaseD1): Repositorios {
         return filas.results.map((f) => ({ ruta: f.ruta, tipo: f.tipo, tamano: f.tamano, subida: f.subida, subidaPor: f.subida_por }));
       },
       async borrar(ruta) {
-        await db.prepare('DELETE FROM fotos WHERE ruta = ?').bind(ruta).run();
+        const f = await db.prepare("DELETE FROM fotos WHERE ruta=? RETURNING CASE WHEN typeof(bytes)='text' THEN bytes END AS clave").bind(ruta).first<{clave:string}>();
+        await imagenes.retirar(f?.clave);
       },
     },
     usuarios: {
@@ -353,12 +358,12 @@ export function crearRepositoriosD1(db: BaseD1): Repositorios {
       },
     },
     ...crearRepositoriosFacturacion(db),
-    ...crearRepositoriosGastos(db),
+    ...crearRepositoriosGastos(db,imagenes),
     conversaciones: crearRepositorioConversaciones(db),
     inventario: crearRepositorioInventario(db),
-    ...crearRepositoriosPortafolio(db),
+    ...crearRepositoriosPortafolio(db,imagenes),
     ...crearRepositorioPresupuestosCliente(db),
-    ...crearRepositorioCatalogo(db),
+    ...crearRepositorioCatalogo(db,imagenes),
     ...crearRepositorioProveedores(db),
     ...crearRepositorioPedidosProveedor(db),
   };

@@ -89,8 +89,8 @@ El mismo repositorio construye el panel de Turia con la variable `CLIENTE_ID=tur
    - En https://aistudio.google.com crea una *API key* de un proyecto con facturación.
    - En ese proyecto, pon un **límite de gasto** o una alerta de presupuesto de 10 € al mes en Google Cloud (*Billing → Budgets & alerts*).
    - En el Worker `creacionesturia`, *Settings → Variables and Secrets*, añade el **secreto** `GOOGLE_API_KEY` (también vale `GEMINI_API_KEY`).
-   - El panel no deja pasar de **250 simulaciones al mes** (contador en D1; avisa en naranja desde 200 y se bloquea en 250 hasta el día 1). Una simulación que falla no cuenta.
-   - El modelo (`gemini-3.1-flash-image-preview`, unos 0,045 $ por imagen) y el tope se cambian en `clientes/turia/cliente.config.json` (`ia.modelos.gemini`, `ia.simulacionesMes`).
+   - El panel no deja pasar de **50 simulaciones al mes** (contador en D1; avisa en naranja desde 200 y se bloquea en 250 hasta el día 1). Una simulación que falla no cuenta.
+   - El modelo (`gemini-3.1-flash-image`, salida a 1K) y el tope se cambian en `clientes/turia/cliente.config.json` (`ia.modelos.gemini`, `ia.simulacionesMes`).
    - La clave nunca va en el navegador: la pone el Worker en cada petición.
 
 ### Antes de activar la revisión de Turia
@@ -98,3 +98,10 @@ El mismo repositorio construye el panel de Turia con la variable `CLIENTE_ID=tur
 - En Workers Builds del taller, elegir `npm run build:turia` tanto en producción como para las ramas. Proteger con Access el dominio del Worker y los alias de vista previa. En el Worker de producción deben faltar `PANEL_ENTORNO=desarrollo` y `PANEL_PRUEBA_EMAIL`.
 - El simulador reserva 20 céntimos del presupuesto interno por intento y admite hasta 50 intentos por mes natural de Madrid. La reserva incluye respuestas de coste desconocido. Antes de activar la clave, verificar que el máximo facturable por intento de 1K, con entradas, cambio e impuestos, cabe en esos 20 céntimos. Contrastar también el consumo previo del mes y utilizar un proyecto de Google dedicado. La reserva interna no impone un límite en la cuenta del proveedor.
 - Para una copia íntegra, exportar la D1 de Turia desde un equipo de confianza con `npx wrangler d1 export creacionesturia --remote --config wrangler.creacionesturia.jsonc --output copia-turia.sql`. Cifrar la copia fuera del repositorio y comprobar la restauración en una base local vacía con `npx wrangler d1 execute creacionesturia --local --config wrangler.creacionesturia.jsonc --file copia-turia.sql`. Revisar una factura, su presupuesto y un ticket restaurado antes de retirar la copia anterior.
+
+### Almacén privado de imágenes de Turia
+Antes de activar la versión, crea en Cloudflare R2 el bucket Standard `creacionesturia-imagenes` en la cuenta de Turia. Mantén desactivados r2.dev y los dominios públicos. Comprueba el binding IMAGENES_PRIVADAS del Worker y la D1 creacionesturia. Desarrollo usa almacenamiento emulado separado. Sigue el despliegue habitual del proyecto. R2 debe estar habilitado en la cuenta.
+
+Verificación con Access: abre un ticket anterior, guarda una simulación nueva y comprueba sus dos fotos desde otra sesión autorizada. Verifica que las URLs privadas exigen sesión. En el simulador, «Uso y almacenamiento» distingue el cupo reservado, resultados correctos registrados desde esta versión, proyectos guardados y bytes reservados en R2. La reserva de 5 GB es de esta aplicación, no de toda la cuenta. Revisa también los contadores de operaciones y consumo total en el panel de Cloudflare.
+
+Los BLOB existentes se leen de D1. Para una copia completa de esta versión hay que conservar tanto la D1 como los objetos del bucket. Evita volver a una versión anterior que no entienda referencias R2 después de empezar a guardar fotos. Si falla una operación con resultado incierto queda una reserva conservadora. Antes de liberar una reserva antigua, con las escrituras detenidas verifica que su clave no está referenciada en fotos.bytes, adjuntos.bytes ni tickets.bytes. Borra primero el objeto privado y después su fila de turia_objetos_r2; el trigger actualiza el contador. Nunca borres solo el contador.

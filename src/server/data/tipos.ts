@@ -497,7 +497,12 @@ export interface ProyectoPortafolio {
   actualizado: string;
 }
 
+export class ErrorEspacioImagen extends Error {
+  constructor(cause: unknown) { super('El almacén de imágenes está lleno. Puedes seguir trabajando con los documentos.', {cause}); }
+}
+
 export interface RepositorioPortafolio {
+  resumenSimulaciones(): Promise<{guardadas:number; espacio:{bytes:number;limite:number}|null}>;
   guardarSimulacion(id: string, titulo: string, antes: Uint8Array, despues: Uint8Array, email: string): Promise<void>;
   listar(opciones?: { incluirArchivados?: boolean }): Promise<ProyectoPortafolio[]>;
   obtener(id: string): Promise<ProyectoPortafolio | null>;
@@ -675,7 +680,7 @@ export interface RepositorioCatalogo {
   articulo(id: string): Promise<ArticuloCatalogo | null>;
   guardarArticulo(a: Omit<ArticuloCatalogo, 'actualizado' | 'archivado'>, email: string): Promise<void>;
   /** Importación segura: inserta solo si no existe, sin sobrescribir ediciones previas. */
-  insertarArticuloSiNuevo?(a: Omit<ArticuloCatalogo, 'actualizado' | 'archivado'>, email: string): Promise<boolean>;
+  insertarArticuloSiNuevo?(a: Omit<ArticuloCatalogo, 'actualizado' | 'archivado'>, email: string, muestra?: {ruta:string;bytes:Uint8Array}): Promise<boolean>;
   archivarArticulo(id: string, archivado: boolean, email: string): Promise<boolean>;
   plantillas(opciones?: { incluirArchivadas?: boolean }): Promise<PlantillaCatalogo[]>;
   plantilla(id: string): Promise<PlantillaCatalogo | null>;
