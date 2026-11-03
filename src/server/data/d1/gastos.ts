@@ -1,10 +1,11 @@
+import type { Imagenes, BytesGuardados } from './imagenes-r2.ts';
 import type { Gasto, Repositorios } from '../tipos.ts';
 import type { BaseD1 } from './base.ts';
 
 /** Repositorios de gastos y fotos de tickets sobre D1. */
 const ahora = () => new Date().toISOString();
 
-export function crearRepositoriosGastos(db: BaseD1): Pick<Repositorios, 'gastos' | 'tickets'> {
+export function crearRepositoriosGastos(db: BaseD1, imagenes: Imagenes): Pick<Repositorios, 'gastos' | 'tickets'> {
   return {
     gastos: {
       async listar(filtro = {}) {
@@ -42,17 +43,19 @@ export function crearRepositoriosGastos(db: BaseD1): Pick<Repositorios, 'gastos'
       async borrar(id) {
         const f = await db.prepare('SELECT ticket_id FROM gastos WHERE id = ?').bind(id).first<{ ticket_id: string | null }>();
         if (!f) return false;
+        const imagen = f.ticket_id ? await db.prepare("SELECT bytes FROM tickets WHERE id=? AND typeof(bytes)='text'").bind(f.ticket_id).first<{bytes:string}>() : null;
         await db.batch([db.prepare('DELETE FROM gastos WHERE id = ?').bind(id), db.prepare('DELETE FROM tickets WHERE id = ?').bind(f.ticket_id ?? '')]);
+        await imagenes.retirar(imagen?.bytes);
         return true;
       },
     },
     tickets: {
       async guardar(t, email) {
-        await db.prepare('INSERT INTO tickets (id, tipo, bytes, tamano, subido, subido_por) VALUES (?, ?, ?, ?, ?, ?)').bind(t.id, t.tipo, t.bytes, t.bytes.byteLength, ahora(), email).run();
+        await imagenes.escribir([t], ([puntero]) => [db.prepare('INSERT INTO tickets (id, tipo, bytes, tamano, subido, subido_por) VALUES (?, ?, ?, ?, ?, ?)').bind(t.id, t.tipo, puntero, t.bytes.byteLength, ahora(), email)]);
       },
       async obtener(id) {
-        const f = await db.prepare('SELECT tipo, bytes FROM tickets WHERE id = ?').bind(id).first<{ tipo: string; bytes: ArrayBuffer | number[] }>();
-        return f ? { tipo: f.tipo, bytes: new Uint8Array(f.bytes) } : null;
+        const f = await db.prepare('SELECT tipo, bytes FROM tickets WHERE id = ?').bind(id).first<{ tipo: string; bytes: BytesGuardados }>();
+        return f ? { tipo: f.tipo, bytes: await imagenes.leer(f.bytes) } : null;
       },
     },
   };
