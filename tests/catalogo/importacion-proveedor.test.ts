@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
 import type { Repositorios } from '../../src/server/data/tipos.ts';
 import {
-  analizarLotePDF, depurarCandidatos, ErrorImportacion, importarCandidatos,
+  analizarLotePDF, depurarCandidatos, ErrorImportacion, importarCandidatos, modeloCatalogoConfigurado, MODELO_CATALOGO_DEFAULT,
 } from '../../src/server/catalogo/importacion-proveedor.ts';
 
 const candidato = {
@@ -57,5 +57,25 @@ describe('Gubia · PDF no fiable',()=>{
     const second=await importarCandidatos(repos,'ONESTA','catalogo.pdf',[candidato],'propietario@example.test');
     expect(second.creados).toBe(0);
     expect(second.duplicados).toBe(1);
+  });
+});
+
+describe('Gubia: modelo PDF y errores del proveedor', () => {
+  it('usa un modelo de lectura PDF vigente y rechaza modelos de imagen', () => {
+    expect(MODELO_CATALOGO_DEFAULT).toBe('gemini-3.5-flash-lite');
+    expect(modeloCatalogoConfigurado('gemini-3.8-flash')).toBe('gemini-3.8-flash');
+    expect(modeloCatalogoConfigurado('gemini-3.1-flash-image')).toBe(MODELO_CATALOGO_DEFAULT);
+    expect(modeloCatalogoConfigurado('gemini-2.5-flash')).toBe(MODELO_CATALOGO_DEFAULT);
+  });
+  it('explica un 404 con nombre del modelo sin exponer detalles del proveedor', async () => {
+    const doc = await PDFDocument.create();
+    doc.addPage();
+    const pdf = new Uint8Array(await doc.save());
+    const fake = vi.fn(async (url: string) => {
+      expect(url).toContain('/gemini-3.5-flash-lite:generateContent');
+      return new Response('private provider diagnostic', {status:404});
+    });
+    await expect(analizarLotePDF(pdf, 'ONESTA', 1, {apiKey:'test', fetch:fake as typeof fetch}))
+      .rejects.toThrow(/modelo de análisis PDF \(gemini-3\.5-flash-lite\).*no está disponible/);
   });
 });
