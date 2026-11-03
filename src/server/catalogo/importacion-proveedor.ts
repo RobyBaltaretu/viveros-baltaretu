@@ -115,17 +115,18 @@ export async function importarCandidatos(repos: Repositorios, proveedor: string,
       acabado: a.acabado, notas, visual,
     });
     if (!validado.success) { rechazados++; continue; }
-    // Si se ha confirmado una muestra, almacenarla en el almacén privado D1.
-    // El acceso a la imagen exige la misma sesión que el catálogo del panel.
-    if (bytes && rutaMuestra)
-      await repos.fotos.guardar({ruta:rutaMuestra,tipo:'image/webp',bytes},email);
-    // D1 aplica INSERT ... ON CONFLICT DO NOTHING: nunca pisa modificaciones humanas
-    // ni por importaciones concurrentes. Los mocks sin esa primitiva se comprueban.
+    // Crear primero el artículo de forma idempotente: no guardar imágenes
+    // de IDs ya existentes, ni sobrescribir las muestras editadas manualmente.
     const insertado = repos.catalogo.insertarArticuloSiNuevo
       ? await repos.catalogo.insertarArticuloSiNuevo({ ...validado.data, id }, email)
       : !(await repos.catalogo.articulo(id)) && (await repos.catalogo.guardarArticulo({ ...validado.data, id }, email), true);
     ids.add(id); conocidos.add(k);
-    if (insertado) creados++; else duplicados++;
+    if (!insertado) { duplicados++; continue; }
+    creados++;
+    // La ficha ya está creada, la muestra privada es un recurso complementario.
+    // Un fallo aquí debe informarse, no reintentar la creación como un duplicado.
+    if (bytes && rutaMuestra)
+      await repos.fotos.guardar({ruta:rutaMuestra,tipo:'image/webp',bytes},email);
   }
   if (creados) await repos.auditoria.registrar(email, 'importación catálogo PDF', nombreProveedor + ': ' + creados + ' nuevos, ' + duplicados + ' duplicados, ' + rechazados + ' rechazados');
   return {creados, duplicados, rechazados};
