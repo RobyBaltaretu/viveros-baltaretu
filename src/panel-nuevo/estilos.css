@@ -2326,9 +2326,11 @@
 }
 @media (max-width: 47.99rem) {
   .nv-lineas-pedido tr {
-    grid-template-areas: 'concepto concepto concepto' 'cantidad unidad coste' 'importe importe quitar';
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas: 'concepto concepto' 'cantidad unidad' 'coste importe' '. quitar';
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .nv-lineas-pedido .nv-pareja {grid-template-columns: minmax(0,1fr)}
+  .nv-lineas-pedido :is(input,select) {width:100%;min-width:0;max-width:100%}
   .nv-lineas-pedido td:nth-child(3) {
     grid-area: unidad;
   }

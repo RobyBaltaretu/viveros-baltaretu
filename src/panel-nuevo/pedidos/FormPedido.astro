@@ -354,16 +354,3 @@ const fila = (i: number) => {
     recalcular();
   })();
 </script>
-
-<style is:inline>
-@media(max-width: 700px) {
- #form-pedido .nv-lineas-pedido{display:block;width:100%;min-width:0}
- #form-pedido .nv-lineas-pedido tbody{display:grid;gap:.8rem}
- #form-pedido .nv-lineas-pedido thead{position:absolute;clip-path:inset(50%);height:1px;width:1px;overflow:hidden}
- #form-pedido .nv-lineas-pedido tr:not([hidden]){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;padding:.8rem;border-bottom:1px solid var(--nv-borde)}
- #form-pedido .nv-lineas-pedido td{display:block;min-width:0;padding:.15rem;white-space:normal}
- #form-pedido .nv-lineas-pedido td:first-child{grid-column:1/-1}
- #form-pedido .nv-lineas-pedido :is(input,select){width:100%;max-width:100%;min-width:0}
- #form-pedido .nv-lineas-pedido td[data-titulo]::before{content:attr(data-titulo);display:block;font-size:.8rem}
-}
-</style>
