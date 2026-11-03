@@ -8,6 +8,7 @@ export interface MaterialOption {
   finish: string;
   grainDirection?: string;
   previewColor?: string;
+  colorRegistrado?: boolean;
   /** Textura HTTPS verificada en el catálogo; opcional y nunca inventada. */
   previewTexture?: string;
   categoria: 'mueble' | 'encimera' | 'suelo';

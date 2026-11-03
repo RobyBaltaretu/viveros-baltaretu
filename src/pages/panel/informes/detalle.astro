@@ -12,4 +12,23 @@ if(s && (!puede(s.usuario.rol,tipo==='gastos'?'gastos':'facturas') || (tipo==='r
 const [facturas,gastos,presupuestos]=s?await Promise.all([tipo==='facturas'||tipo==='pendientes'||tipo==='resultado'?s.repos.facturas.listar({limite:20000}):[],tipo==='gastos'||tipo==='resultado'?s.repos.gastos.listar({estado:'confirmado',desde,hasta,limite:20000}):[],tipo==='presupuestos'?s.repos.presupuestosCliente.listar({limite:20000}):[]]):[[],[],[]];
 const filas=tipo==='resultado'?[...facturas.filter(f=>f.estado!=='borrador'&&f.fecha>=desde&&f.fecha<=hasta).map(f=>({fecha:f.fecha,nombre:`${f.codigo??'Factura'} · ${f.cliente.nombre}`,importe:f.totales.base,href:`/panel/facturas/${f.id}`,estado:f.estado})),...gastos.map(g=>({fecha:g.fecha,nombre:g.lineas[0]?.concepto||g.proveedor,importe:-(g.base??g.total),href:`/panel/gastos/${g.id}`,estado:'Gasto confirmado'}))].sort((a,b)=>b.fecha.localeCompare(a.fecha)):tipo==='gastos'?gastos.map(g=>({fecha:g.fecha,nombre:g.lineas[0]?.concepto||g.proveedor,importe:g.base??g.total,href:`/panel/gastos/${g.id}`,estado:'Confirmado'})):tipo==='presupuestos'?presupuestos.filter(p=>p.fecha>=desde&&p.fecha<=hasta).map(p=>({fecha:p.fecha,nombre:`${p.codigo} · ${p.cliente.nombre} · ${p.concepto}`,importe:p.totales.total,href:`/panel/presupuestos-cliente/${p.id}`,estado:p.estado})):facturas.filter(f=>tipo==='pendientes'?f.estado==='emitida':f.estado!=='borrador'&&f.fecha>=desde&&f.fecha<=hasta).map(f=>({fecha:f.fecha,nombre:`${f.codigo??'Factura'} · ${f.cliente.nombre}`,importe:tipo==='pendientes'?f.totales.total:f.totales.base,href:`/panel/facturas/${f.id}`,estado:f.estado}));
 ---
-<PaginaPanel titulo="Detalle del informe" permiso="informes" ancho="amplio"><div class="nv-titulo"><div><h1>Detalle del informe</h1><p>{tipo==='pendientes'?'Pendientes en la fecha actual':`Desde ${desde} hasta ${hasta}`} · {tipo==='facturas'||tipo==='resultado'?'Importes sin IVA; los gastos restan':tipo==='gastos'?'Base registrada': 'Importes con IVA'}</p></div><a href="/panel/informes" class="nv-boton nv-boton-secundario">Volver a informes</a></div>{filas.length===0&&<p>No hay registros en este periodo.</p>}<ul role="list" style="list-style:none;padding:0;display:grid;gap:10px">{filas.map(f=><li class="nv-tarjeta" style="padding:16px"><a href={f.href} class="enlace-panel" style="width:100%;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><span>{f.fecha} · {f.nombre} <small>({f.estado})</small></span><strong>{dinero(f.importe)}</strong></a></li>)}</ul></PaginaPanel>
+<PaginaPanel titulo="Detalle del informe" permiso="informes" ancho="amplio"><div class="nv-titulo"><div><h1>Detalle del informe</h1><p>{tipo==='pendientes'?'Pendientes en la fecha actual':`Desde ${desde} hasta ${hasta}`} · {tipo==='facturas'||tipo==='resultado'?'Importes sin IVA; los gastos restan':tipo==='gastos'?'Base registrada': 'Importes con IVA'}</p></div><a href="/panel/informes" class="nv-boton nv-boton-secundario">Volver a informes</a></div>{filas.length===0&&<p>No hay registros en este periodo.</p>}<ul role="list" class="detalle-lista">
+  {filas.map(f => <li class="nv-tarjeta">
+    <a href={f.href} class="detalle-fila">
+      <time datetime={f.fecha}>{f.fecha.split('-').reverse().join('/')}</time>
+      <span class="detalle-estado" data-estado={f.estado.toLowerCase()}>{f.estado}</span>
+      <strong>{f.nombre}</strong><b>{dinero(f.importe)}</b>
+    </a>
+  </li>)}
+</ul></PaginaPanel>
+<style is:inline>
+.detalle-lista{list-style:none;padding:0;display:grid;gap:.65rem}
+.detalle-fila{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.5rem;padding:1rem;color:inherit;text-decoration:none;align-items:center}
+.detalle-fila strong{overflow-wrap:anywhere}.detalle-fila time{font-size:.85rem;color:#595954}
+.detalle-estado{justify-self:end;border-radius:1rem;padding:.2rem .65rem;font-size:.8rem;font-weight:650;background:#eeede8;color:#45443e}
+.detalle-estado::first-letter{text-transform:uppercase}
+.detalle-estado:is([data-estado=emitida],[data-estado=enviado]){background:#e1eef9;color:#164b70}
+.detalle-estado:is([data-estado=cobrada],[data-estado=aceptado],[data-estado=confirmado],[data-estado="gasto confirmado"]){background:#e3efdf;color:#31532d}
+.detalle-estado[data-estado=rechazado]{background:#f8e3df;color:#812d29}
+.detalle-estado[data-estado=caducado]{background:#faecd2;color:#74490c}
+</style>
