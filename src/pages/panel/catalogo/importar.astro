@@ -297,22 +297,31 @@ const sesion = sesionCon(Astro.locals, 'facturas');
   }catch{/* Borrador inválido: no impedir la carga normal */}
   $('gubia-confirmar').addEventListener('click',async()=>{
     if(trabajando)return;
-    const seleccion=articulos.filter(a=>a.activo).map(a=>a.data);
+    const seleccion=articulos.filter(a=>a.activo);
     if(!seleccion.length){mensaje('Selecciona al menos un material.');return;}
     if(!confirm('Crear '+seleccion.length+' artículos nuevos del proveedor '+$('gubia-proveedor').value+' sin precios confirmados?'))return;
     detener(true);
-    mensaje('Guardando artículos seleccionados y comprobando duplicados…');
+    const totales={creados:0,duplicados:0,rechazados:0};
     try{
-      const response=await fetch('/api/panel/catalogo-importar',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({accion:'confirmar',proveedor:$('gubia-proveedor').value,archivo:nombreArchivo,articulos:seleccion}),
-      });
-      const body=await response.json().catch(()=>({}));
-      if(!response.ok||!body.ok)throw Error(body.error||'No se ha podido importar.');
-      mensaje('Importación completada: '+body.creados+' nuevos, '+body.duplicados+' duplicados omitidos, '+body.rechazados+' rechazados. Revisa los artículos y completa sus precios.');
+      // Pequeños lotes para limitar carga de Worker/D1 y las muestras privadas.
+      for(let inicio=0;inicio<seleccion.length;inicio+=20){
+        const lote=seleccion.slice(inicio,inicio+20);
+        mensaje('Guardando artículos '+(inicio+1)+'–'+Math.min(inicio+20,seleccion.length)+' de '+seleccion.length+'…');
+        const response=await fetch('/api/panel/catalogo-importar',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({accion:'confirmar',proveedor:$('gubia-proveedor').value,
+            archivo:nombreArchivo,articulos:lote.map(a=>a.data),muestras:lote.map(a=>a.muestra||null)}),
+        });
+        const body=await response.json().catch(()=>({}));
+        if(!response.ok||!body.ok)throw Error(body.error||'No se ha podido importar el bloque.');
+        for(const clave of Object.keys(totales))totales[clave]+=Number(body[clave]||0);
+      }
+      mensaje('Importación completada: '+totales.creados+' nuevos, '+totales.duplicados+' duplicados omitidos, '+totales.rechazados+' rechazados. Revisa los artículos y completa sus precios.');
       articulos=[];sessionStorage.removeItem(BORRADOR);resultado.hidden=true;
-    }catch(err){mensaje('Error al guardar: '+(err?.message||'Error')+'. Comprueba el catálogo antes de reintentar.');}
-    finally{detener(false);}
+    }catch(err){
+      guardarBorrador();
+      mensaje('Importación parcial: '+totales.creados+' nuevos confirmados; '+(err?.message||'Error')+'. Puedes reintentar: los artículos existentes se omiten automáticamente.');
+    }finally{detener(false);}
   });
 })();
 </script>
