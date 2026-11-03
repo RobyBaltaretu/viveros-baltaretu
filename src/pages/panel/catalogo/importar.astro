@@ -3,7 +3,7 @@ import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
 import { clienteActual } from '../../../plataforma/actual.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
 export const prerender = false;
-if (clienteActual().sector !== 'carpinteria') return new Response('No disponible', {status:404});
+if (clienteActual().id !== 'turia') return new Response('No disponible', {status:404});
 const sesion = sesionCon(Astro.locals, 'facturas');
 ---
 <PaginaPanel titulo="Importar catálogo con Gubia" permiso="facturas" ancho="amplio">
@@ -78,9 +78,9 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     const input = document.createElement(tag);
     if(tag==='select'){
       opts.forEach(opt => {const o=document.createElement('option');o.value=opt;o.textContent=opt;input.append(o);});
-    } else {input.type='text';input.maxLength=key==='nombre'?120:100;}
+    } else {input.type=key==='espesorMm'?'number':'text';input.maxLength=key==='nombre'?120:100;if(key==='espesorMm'){input.min='0.01';input.max='1000';input.step='0.1';}}
     input.value=value ?? '';
-    input.addEventListener('change', () => { const index = Number(label.closest('[data-index]').dataset.index); articulos[index].data[key]=input.value;});
+    input.addEventListener('change', () => { const index = Number(label.closest('[data-index]').dataset.index); articulos[index].data[key]=key==='espesorMm' ? (input.value===''?null:Number(input.value)) : key==='colorHex' ? (input.value.trim()||null) : input.value; if(key==='colorHex'){const muestra=label.closest('.gubia-item').querySelector('.gubia-muestra');if(/^#[0-9a-fA-F]{6}$/.test(input.value))muestra.style.backgroundColor=input.value;}});
     label.append(input);return label;
   };
   function pintar(){
@@ -104,6 +104,8 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         fields.append(field('input',key,a.data[key],label));
       }
       fields.append(field('select','categoria',a.data.categoria,'Categoría',categorias));
+      fields.append(field('input','espesorMm',a.data.espesorMm,'Espesor (mm)'));
+      fields.append(field('input','colorHex',a.data.colorHex,'Color digital (#RRGGBB)'));
       const span = document.createElement('p');span.className='gubia-origen';
       span.textContent='Página original '+a.data.pagina+' · '+(a.data.espesorMm === null ? 'Espesor no especificado' : a.data.espesorMm+' mm')+' · Precio pendiente de validar';
       inner.append(head,fields,span);article.append(muestra,inner);lista.append(article);
@@ -132,7 +134,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         const response=await fetch('/api/panel/catalogo-importar',{method:'POST',body:datos});
         const body=await response.json().catch(()=>({}));
         if(!response.ok||!body.ok)throw Error(body.error||'No se ha podido analizar el PDF.');
-        paginas=body.paginas;inicio=body.fin+1;
+        paginas=body.paginas;inicio=body.fin < body.paginas ? body.fin : body.paginas+1; // solapa una página entre bloques
         const existentes=new Set(articulos.map(x=>[x.data.categoria,x.data.referencia||x.data.codigoDecor||x.data.nombre,x.data.espesorMm,x.data.formato].join('|').toLowerCase()));
         for(const item of body.articulos||[]){
           const k=[item.categoria,item.referencia||item.codigoDecor||item.nombre,item.espesorMm,item.formato].join('|').toLowerCase();
