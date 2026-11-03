@@ -1,7 +1,8 @@
 import { identidadProveedor } from '../server/catalogo/identidad-proveedor';
-import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 
+// Usar el build legacy para compatibilidad con Safari/iOS y navegadores sin APIs recientes.
 // El Worker de PDF.js se sirve desde el propio build Turia (sin CDN).
 GlobalWorkerOptions.workerSrc = workerUrl;
 const MAX_PAGINAS = 160;
