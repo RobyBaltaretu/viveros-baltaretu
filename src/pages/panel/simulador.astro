@@ -1,6 +1,7 @@
 ---
 import PaginaPanel from '../../components/panel/PaginaPanel.astro';
 import Icono from '../../components/panel/ui/Icono.astro';
+import SelectorMaterial from '../../panel-nuevo/SelectorMaterial.astro';
 import {
   ESTILOS_MUEBLE,
   TIPOS_ESTANCIA,
@@ -196,45 +197,9 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
                 <span>Extender muebles superiores hasta el techo</span>
               </label>
 
-              <div>
-                <span class="block text-xs font-semibold text-gris mb-2">Material Muebles Superiores / Columnas:</span>
-                <div class="grid grid-cols-1 gap-2">
-                  {
-                    MATERIALES_MUEBLE.map((m, idx) => (
-                      <label class="cursor-pointer">
-                        <input type="radio" name="upperMaterial" value={m.id} checked={idx === 0} class="peer sr-only" />
-                        <div class="flex items-center gap-3 rounded-xl border border-linea p-2 text-xs peer-checked:border-terracota peer-checked:bg-verdor/30">
-                          <span class="size-6 rounded-full border border-linea/50 shadow-xs shrink-0" style={`background-color: ${m.previewColor};`}></span>
-                          <div class="min-w-0">
-                            <strong class="block font-semibold text-tinta">{m.nombre}</strong>
-                            <small class="text-gris truncate block">{m.descripcion}</small>
-                          </div>
-                        </div>
-                      </label>
-                    ))
-                  }
-                </div>
-              </div>
+              <SelectorMaterial nombre="upperMaterial" titulo="Material Muebles Superiores / Columnas" opciones={MATERIALES_MUEBLE} />
 
-              <div>
-                <span class="block text-xs font-semibold text-gris mb-2">Material Muebles Inferiores / Isla:</span>
-                <div class="grid grid-cols-1 gap-2">
-                  {
-                    MATERIALES_MUEBLE.map((m, idx) => (
-                      <label class="cursor-pointer">
-                        <input type="radio" name="lowerMaterial" value={m.id} checked={idx === 0} class="peer sr-only" />
-                        <div class="flex items-center gap-3 rounded-xl border border-linea p-2 text-xs peer-checked:border-terracota peer-checked:bg-verdor/30">
-                          <span class="size-6 rounded-full border border-linea/50 shadow-xs shrink-0" style={`background-color: ${m.previewColor};`}></span>
-                          <div class="min-w-0">
-                            <strong class="block font-semibold text-tinta">{m.nombre}</strong>
-                            <small class="text-gris truncate block">{m.descripcion}</small>
-                          </div>
-                        </div>
-                      </label>
-                    ))
-                  }
-                </div>
-              </div>
+              <SelectorMaterial nombre="lowerMaterial" titulo="Material Muebles Inferiores / Isla" opciones={MATERIALES_MUEBLE} />
             </div>
           </div>
 
@@ -249,22 +214,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
                 <input type="checkbox" id="include-backsplash" checked class="size-4 rounded-xs border-linea text-terracota" />
                 <span>Aplicar el mismo material en la pared / aplacado</span>
               </label>
-              <div class="grid grid-cols-1 gap-2">
-                {
-                  MATERIALES_ENCIMERA.map((m, idx) => (
-                    <label class="cursor-pointer">
-                      <input type="radio" name="countertopMaterial" value={m.id} checked={idx === 0} class="peer sr-only" />
-                      <div class="flex items-center gap-3 rounded-xl border border-linea p-2 text-xs peer-checked:border-terracota peer-checked:bg-verdor/30">
-                        <span class="size-6 rounded-full border border-linea/50 shadow-xs shrink-0" style={`background-color: ${m.previewColor};`}></span>
-                        <div class="min-w-0">
-                          <strong class="block font-semibold text-tinta">{m.nombre}</strong>
-                          <small class="text-gris truncate block">{m.descripcion}</small>
-                        </div>
-                      </div>
-                    </label>
-                  ))
-                }
-              </div>
+              <SelectorMaterial nombre="countertopMaterial" titulo="Encimera" opciones={MATERIALES_ENCIMERA} />
             </div>
           </div>
 
@@ -272,25 +222,10 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
           <div class="space-y-3 border-b border-linea pb-4">
             <label class="flex items-center justify-between font-bold text-sm text-tinta cursor-pointer">
               <span>Suelo / Pavimento</span>
-              <input type="checkbox" id="zone-flooring" checked class="size-4 rounded-xs border-linea text-terracota" />
+              <input type="checkbox" id="zone-flooring" checked={MATERIALES_SUELO.length > 0} class="size-4 rounded-xs border-linea text-terracota" />
             </label>
             <div id="sec-flooring" class="space-y-3 pt-1">
-              <div class="grid grid-cols-1 gap-2">
-                {
-                  MATERIALES_SUELO.map((m, idx) => (
-                    <label class="cursor-pointer">
-                      <input type="radio" name="flooringMaterial" value={m.id} checked={idx === 0} class="peer sr-only" />
-                      <div class="flex items-center gap-3 rounded-xl border border-linea p-2 text-xs peer-checked:border-terracota peer-checked:bg-verdor/30">
-                        <span class="size-6 rounded-full border border-linea/50 shadow-xs shrink-0" style={`background-color: ${m.previewColor};`}></span>
-                        <div class="min-w-0">
-                          <strong class="block font-semibold text-tinta">{m.nombre}</strong>
-                          <small class="text-gris truncate block">{m.descripcion}</small>
-                        </div>
-                      </div>
-                    </label>
-                  ))
-                }
-              </div>
+              <SelectorMaterial nombre="flooringMaterial" titulo="Suelo" opciones={MATERIALES_SUELO} />
             </div>
           </div>
 
@@ -403,6 +338,51 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
       </div>
     </div>
   </div>
+
+  <!-- Única biblioteca visual; el catálogo original sigue siendo la fuente de verdad. -->
+  <div id="studio-material-library" hidden>
+    {materiales.map((m) => (
+      <button type="button" class="studio-material-card" data-material-option data-kind={m.categoria} data-id={m.id} data-name={m.nombre} data-description={m.descripcion} data-texture={m.previewTexture ?? ''} data-color={m.previewColor ?? '#ebe4da'}>
+        <span class="studio-material-card-image" style={`background-color: ${m.previewColor ?? '#ebe4da'}`}>
+          {m.previewTexture && <img src={m.previewTexture} alt="" loading="lazy" referrerpolicy="no-referrer" />}
+          <span class="studio-material-selected-icon" aria-hidden="true">✓</span>
+        </span>
+        <strong>{m.nombre}</strong>
+        <small>{m.descripcion || 'Artículo del catálogo'}</small>
+      </button>
+    ))}
+  </div>
+
+  <dialog id="studio-material-dialog" class="studio-material-dialog" aria-labelledby="studio-material-dialog-title">
+    <div class="studio-dialog-shell">
+      <header class="studio-dialog-heading">
+        <div>
+          <p class="studio-dialog-eyebrow">CATÁLOGO DE CREACIONES TURIA</p>
+          <h2 id="studio-material-dialog-title">Elige el acabado</h2>
+          <p id="studio-material-dialog-subtitle">Selecciona un material de tu catálogo.</p>
+        </div>
+        <button type="button" id="studio-material-close" class="studio-dialog-close" aria-label="Cerrar selector de materiales">✕</button>
+      </header>
+      <div class="studio-dialog-search">
+        <label for="studio-material-query">Buscar por nombre, referencia o acabado</label>
+        <input type="search" id="studio-material-query" autocomplete="off" placeholder="Ej. roble, nogal, mate, referencia…" />
+        <div class="studio-dialog-filters" aria-label="Filtrar materiales">
+          <button type="button" data-material-filter="todos" aria-pressed="true">Todos</button>
+          <button type="button" data-material-filter="madera" aria-pressed="false">Madera</button>
+          <button type="button" data-material-filter="lacado" aria-pressed="false">Lacados</button>
+          <button type="button" data-material-filter="piedra" aria-pressed="false">Piedra</button>
+        </div>
+      </div>
+      <p id="studio-material-count" class="studio-material-count" role="status"></p>
+      <div class="studio-material-grid" id="studio-material-results" aria-label="Resultados del catálogo"></div>
+      <p id="studio-material-empty" class="studio-material-empty" hidden>No hay artículos compatibles con estos filtros. Prueba otra búsqueda o revisa el catálogo.</p>
+      <button type="button" id="studio-material-more" class="studio-dialog-more" hidden>Mostrar más materiales</button>
+      <footer class="studio-dialog-footer">
+        <button type="button" id="studio-material-cancel" class="studio-button">Cancelar</button>
+        <button type="button" id="studio-material-apply" class="studio-dialog-apply" disabled>Aplicar material</button>
+      </footer>
+    </div>
+  </dialog>
 </PaginaPanel>
 
 <script is:inline>
@@ -766,8 +746,6 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
  const panels=[document.createElement('section'),document.createElement('section'),document.createElement('section'),document.createElement('section')];
  panels.forEach((p,i)=>{p.dataset.studioPanel=i;p.setAttribute('aria-label',['Espacio','Diseño','Materiales','Revisar'][i]);form.insertBefore(p,children[0]);});
  panels[0].append(children[0],children[3]);panels[1].append(children[1],children[2]);panels[2].append(children[4]);
- const search=document.createElement('input');search.placeholder='Buscar material, acabado o referencia…';search.setAttribute('aria-label','Buscar materiales del catálogo');search.className='studio-material-search';panels[2].prepend(search);
- search.addEventListener('input',()=>{panels[2].querySelectorAll('label:has(input[type=radio])').forEach(l=>l.hidden=!l.textContent.toLocaleLowerCase('es').includes(search.value.toLocaleLowerCase('es')));});
  const review=document.createElement('div');review.className='studio-review';panels[3].append(review);
  const budget=document.createElement('a');budget.href='/panel/presupuestos-cliente/nuevo';budget.className='enlace-panel';budget.textContent='Preparar presupuesto con el catálogo';panels[3].append(budget);
  const notice=document.createElement('p');notice.textContent='La imagen no es un plano ni un precio calculado. El presupuesto se prepara con mediciones y partidas verificadas.';panels[3].append(notice);
@@ -790,5 +768,103 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
  function update(){const seleccionado=document.querySelector('[name=spaceType]:checked')?.value;const par=Object.entries(perfiles).find(([k,p])=>k===seleccionado||p.nombre===seleccionado);if(!par)return;const [key,p]=par;const campos=document.getElementById('studio-perfil-campos');campos.replaceChildren();Object.entries(p.campos).forEach(([nombre,opciones])=>{const label=document.createElement('label');label.textContent=nombre[0].toUpperCase()+nombre.slice(1);label.className='block';const select=document.createElement('select');select.className='campo-panel';select.name='perfil-'+nombre;select.dataset.perfilCampo=nombre;opciones.forEach(o=>{const option=document.createElement('option');option.textContent=o;select.append(option);});try{const saved=JSON.parse(localStorage.getItem('turia:studio:draft:v1')||'[]');const previous=saved.find(v=>v.key===select.name);if(previous&&opciones.includes(previous.value))select.value=previous.value;}catch{/* No bloquea el diseño. */}label.append(select);campos.append(label);});for(const name of ['distribucion','apertura']){const control=document.querySelector('[name='+name+']');if(control)control.closest('label').hidden=true;}
  document.getElementById('studio-perfil-revision').textContent=p.revision;for(const [id,zona] of [['zone-countertop','encimera'],['zone-flooring','suelo']]){const e=document.getElementById(id);const compatible=p.zonas.includes(zona);if(!compatible)e.checked=false;e.disabled=!compatible;e.closest('label').title=compatible?'':'No corresponde a este tipo de reforma';e.dispatchEvent(new Event('change'));}host.dataset.tipo=key;}
  tipo?.addEventListener('change',e=>{if(e.target.name==='spaceType')update();});update();
+})();
+</script>
+
+
+<script is:inline>
+(() => {
+  const dialog = document.getElementById('studio-material-dialog');
+  const library = [...document.querySelectorAll('#studio-material-library [data-material-option]')];
+  const results = document.getElementById('studio-material-results');
+  const query = document.getElementById('studio-material-query');
+  const count = document.getElementById('studio-material-count');
+  const empty = document.getElementById('studio-material-empty');
+  const more = document.getElementById('studio-material-more');
+  const apply = document.getElementById('studio-material-apply');
+  if (!dialog || !results) return;
+
+  let activeSlot = null;
+  let pendingId = '';
+  let filter = 'todos';
+  let visibleCount = 18;
+  let lastTrigger = null;
+  const norm = (s) => (s || '').toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const families = {
+    madera: /madera|roble|nogal|pino|fresno|haya|chapa|melamin|tablero|contrachapad|tarima|parquet/,
+    lacado: /laca|blanco|verde|negro|gris|color|pintad|satinad|mate|brillo/,
+    piedra: /piedra|marmol|granito|porcelanic|cuarzo|calacatta|dekton|silestone/,
+  };
+  const optionOf = (id,kind) => library.find(b => b.dataset.id === id && b.dataset.kind === kind);
+  function refreshSlot(slot) {
+    const radio = slot.querySelector('input[type=radio]:checked');
+    const item = radio && optionOf(radio.value,slot.dataset.materialKind);
+    if (!item) return;
+    slot.querySelector('[data-current-name]').textContent = item.dataset.name;
+    slot.querySelector('[data-current-description]').textContent = item.dataset.description || 'Artículo de catálogo';
+    const swatch = slot.querySelector('[data-current-swatch]');
+    swatch.style.backgroundColor = item.dataset.color || '#ebe4da';
+    swatch.replaceChildren();
+    if (item.dataset.texture) {
+      const image = document.createElement('img');
+      image.src = item.dataset.texture; image.alt = ''; image.loading = 'lazy';
+      image.referrerPolicy = 'no-referrer'; swatch.append(image);
+    }
+  }
+  const available = () => library.filter(item => {
+    if (item.dataset.kind !== activeSlot?.dataset.materialKind) return false;
+    const content = norm(item.dataset.name + ' ' + item.dataset.description);
+    if (norm(query.value) && !content.includes(norm(query.value))) return false;
+    return filter === 'todos' || families[filter]?.test(content);
+  });
+  function render() {
+    if (!activeSlot) return;
+    const found = available();
+    results.replaceChildren();
+    found.slice(0,visibleCount).forEach(item => {
+      const card = item.cloneNode(true);
+      card.removeAttribute('id');
+      card.dataset.selected = String(card.dataset.id === pendingId);
+      card.setAttribute('aria-pressed', String(card.dataset.id === pendingId));
+      card.addEventListener('click', () => { pendingId = card.dataset.id; render(); });
+      results.append(card);
+    });
+    count.textContent = found.length === 1 ? '1 material compatible' : found.length + ' materiales compatibles';
+    empty.hidden = found.length !== 0;
+    more.hidden = found.length <= visibleCount;
+    apply.disabled = !pendingId || !found.some(item => item.dataset.id === pendingId);
+  }
+  document.querySelectorAll('[data-material-slot]').forEach(slot => {
+    refreshSlot(slot);
+    slot.querySelector('[data-material-open]')?.addEventListener('click', e => {
+      activeSlot = slot;
+      lastTrigger = e.currentTarget;
+      pendingId = slot.querySelector('input[type=radio]:checked')?.value || '';
+      filter = 'todos'; visibleCount = 18; query.value = '';
+      document.getElementById('studio-material-dialog-title').textContent = 'Elige material · ' + slot.querySelector('.studio-material-slot-heading').textContent;
+      document.querySelectorAll('[data-material-filter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.materialFilter === 'todos')));
+      render(); dialog.showModal(); query.focus();
+    });
+  });
+  query.addEventListener('input', () => { visibleCount = 18; render(); });
+  document.querySelectorAll('[data-material-filter]').forEach(button => button.addEventListener('click', () => {
+    filter = button.dataset.materialFilter; visibleCount = 18;
+    document.querySelectorAll('[data-material-filter]').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
+    render();
+  }));
+  more.addEventListener('click', () => {visibleCount += 18; render();});
+  const close = () => dialog.close();
+  document.getElementById('studio-material-close').addEventListener('click', close);
+  document.getElementById('studio-material-cancel').addEventListener('click', close);
+  apply.addEventListener('click', () => {
+    if (!activeSlot || apply.disabled) return;
+    const radio = [...activeSlot.querySelectorAll('input[type=radio]')].find(r => r.value === pendingId);
+    if (!radio) return;
+    radio.checked = true;
+    radio.dispatchEvent(new Event('change',{bubbles:true}));
+    refreshSlot(activeSlot);
+    close();
+  });
+  dialog.addEventListener('close', () => { if (lastTrigger?.isConnected) lastTrigger.focus(); });
 })();
 </script>

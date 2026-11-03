@@ -1,0 +1,22 @@
+---
+import type { MaterialOption } from '../server/simulador/materiales';
+interface Props { nombre: string; titulo: string; opciones: MaterialOption[] }
+const {nombre,titulo,opciones}=Astro.props;
+const primero=opciones[0];
+---
+<div class="studio-material-slot" data-material-slot={nombre} data-material-kind={primero?.categoria ?? ''}>
+  <span class="studio-material-slot-heading">{titulo}</span>
+  <button type="button" class="studio-material-trigger" data-material-open disabled={opciones.length===0} aria-haspopup="dialog" aria-label={`Elegir material para ${titulo}`}>
+    <span class="studio-material-swatch" data-current-swatch style={`background-color:${primero?.previewColor ?? '#eee9e1'}`}>
+      {primero?.previewTexture && <img src={primero.previewTexture} alt="" loading="lazy" referrerpolicy="no-referrer" />}
+    </span>
+    <span class="studio-material-choice"><strong data-current-name>{primero?.nombre ?? 'Sin materiales en el catálogo'}</strong><small data-current-description>{primero?.descripcion ?? 'Añade artículos compatibles al catálogo para poder configurar esta zona'}</small></span>
+    <span class="studio-material-chevron" aria-hidden="true">Cambiar ›</span>
+  </button>
+  {opciones.map((material,i)=>(
+    <label class="studio-material-radio-source">
+      <input type="radio" tabindex="-1" name={nombre} value={material.id} checked={i===0} />
+      {material.nombre}
+    </label>
+  ))}
+</div>

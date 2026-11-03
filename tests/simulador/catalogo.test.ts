@@ -15,3 +15,11 @@ expect(()=>detallesProyecto({puertas:1.5})).toThrow();
 expect(()=>detallesProyecto({apertura:'instrucciones arbitrarias'})).toThrow();
 expect(detallesProyecto({ancho:240,apertura:'Corredera'})).toMatchObject({ancho:240,apertura:'Corredera',alto:null});
 });
+
+it('respeta las zonas visuales del catálogo y conserva texturas, sin datos comerciales',()=>{
+  const articulo={id:'ejemplo',nombre:'Calacatta',categoria:'encimeras',referencia:'C-01',archivado:false,coste:120,margen:22,visual:{uso:['mueble'],textura:'https://example.com/c-01.webp',colorHex:'#eae6df'}} as unknown as ArticuloCatalogo;
+  const mats=materialesDelTaller([articulo]);
+  expect(mats).toHaveLength(1);
+  expect(mats[0]).toMatchObject({id:'catalogo:ejemplo',categoria:'mueble',previewTexture:'https://example.com/c-01.webp'});
+  expect(JSON.stringify(mats)).not.toMatch(/"coste"|"margen"/);
+});
