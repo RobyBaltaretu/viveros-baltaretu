@@ -47,9 +47,11 @@ const sesion = sesionCon(Astro.locals, 'facturas');
           <label> Página del catálogo <input id="gubia-numero-pagina" type="number" min="1" max="160" value="1" /></label>
           <button type="button" id="gubia-ver-pagina" class="nv-boton nv-boton-secundario">Ver página</button>
           <button type="button" id="gubia-analizar-vision" class="nv-boton nv-boton-secundario">Analizar imagen con Groq</button>
+          <label>Asociar muestra a <select id="gubia-muestra-destino" aria-label="Artículo al que asignar una muestra"></select></label>
         </div>
         <div id="gubia-vista-pagina" class="gubia-vista-pagina" hidden>
-          <img id="gubia-preview-pagina" alt="Vista de página seleccionada del PDF" />
+          <img id="gubia-preview-pagina" alt="Vista de página seleccionada del PDF. Toca una textura para asociarla al material elegido." />
+          <p class="gubia-nota">Selecciona un artículo arriba y toca sobre su muestra en la página. Guardaremos un pequeño recorte WebP privado para ese material.</p>
         </div>
       </section>
       <button type="button" id="gubia-crear-manual" class="nv-boton nv-boton-secundario">Añadir ficha manualmente</button>
@@ -81,6 +83,8 @@ const sesion = sesionCon(Astro.locals, 'facturas');
 .gubia-vision-controles{display:flex;align-items:end;flex-wrap:wrap;gap:.65rem}
 .gubia-vision-controles label{display:grid;gap:.3rem;font-size:.82rem;font-weight:700}
 .gubia-vision-controles input{max-width:100px;min-height:43px;padding:7px;border:1px solid #cbd4c3;border-radius:8px}
+.gubia-vision-controles select{max-width:240px;min-height:43px;padding:7px;border:1px solid #cbd4c3;border-radius:8px;background:#fff}
+#gubia-preview-pagina{cursor:crosshair;touch-action:manipulation}
 .gubia-vista-pagina{max-height:360px;overflow:auto;margin-top:1rem;display:grid;place-items:start center}
 .gubia-vista-pagina[hidden]{display:none}
 .gubia-vista-pagina img{display:block;max-width:100%;max-height:350px;object-fit:contain;border:1px solid #e3e1dd;border-radius:8px}
@@ -120,6 +124,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       const article=document.createElement('article');article.className='gubia-item';article.dataset.index=String(i);article.dataset.activo=String(a.activo);
       const muestra=document.createElement('span');muestra.className='gubia-muestra';
       if(/^#[0-9a-fA-F]{6}$/.test(a.data.colorHex||''))muestra.style.backgroundColor=a.data.colorHex;
+      if(a.muestra){muestra.style.backgroundImage='url('+a.muestra+')';muestra.style.backgroundSize='cover';muestra.title='Textura recortada del PDF';}
       const inner=document.createElement('div');inner.className='gubia-item-contenido';
       const head=document.createElement('div');head.className='gubia-item-cabecera';
       const checkLabel=document.createElement('label'),check=document.createElement('input');
@@ -138,6 +143,12 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       inner.append(head,fields,span);article.append(muestra,inner);lista.append(article);
     });
     if(!visibles){const p=document.createElement('p');p.textContent='No hay resultados para esta búsqueda.';lista.append(p);}
+    const selector=$('gubia-muestra-destino');
+    if(selector){
+      const previous=selector.value;selector.replaceChildren();
+      articulos.forEach((a,i)=>{const opt=document.createElement('option');opt.value=String(i);opt.textContent=a.data.nombre+' · '+(a.data.referencia||'Sin ref.');selector.append(opt);});
+      if(articulos[Number(previous)])selector.value=previous;
+    }
     contar();
   }
   function contar(){ $('gubia-total').textContent=articulos.filter(a=>a.activo).length+' seleccionados de '+articulos.length; }
@@ -233,6 +244,25 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     $('gubia-vista-pagina').hidden=false;
     return {numero,image};
   }
+  $('gubia-preview-pagina').addEventListener('click',e=>{
+    const img=e.currentTarget,indice=Number($('gubia-muestra-destino').value);
+    if(!articulos[indice]){mensaje('Selecciona primero un material en la lista para asociarle una textura.');return;}
+    const rect=img.getBoundingClientRect();
+    if(!rect.width||!rect.height||!img.naturalWidth)return;
+    const x=(e.clientX-rect.left)/rect.width*img.naturalWidth;
+    const y=(e.clientY-rect.top)/rect.height*img.naturalHeight;
+    const dimension=Math.min(155,img.naturalWidth,img.naturalHeight);
+    const sx=Math.max(0,Math.min(img.naturalWidth-dimension,x-dimension/2));
+    const sy=Math.max(0,Math.min(img.naturalHeight-dimension,y-dimension/2));
+    const canvas=document.createElement('canvas');canvas.width=112;canvas.height=112;
+    const ctx=canvas.getContext('2d');if(!ctx)return;
+    ctx.drawImage(img,sx,sy,dimension,dimension,0,0,112,112);
+    const muestra=canvas.toDataURL('image/webp',.65);
+    if(!muestra.startsWith('data:image/webp;')||muestra.length>35000){mensaje('No se puede recortar esa muestra. Prueba con otro punto.');return;}
+    articulos[indice].muestra=muestra;
+    guardarBorrador();pintar();
+    mensaje('Muestra visual asociada a «'+articulos[indice].data.nombre+'». Se guardará de forma privada cuando confirmes la importación.');
+  });
   $('gubia-ver-pagina').addEventListener('click',async()=>{
     if(trabajando)return;
     try{await vistaPagina();}catch(err){mensaje('No se ha podido mostrar esa página: '+(err?.message||'Error'));}
