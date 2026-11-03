@@ -1,32 +1,31 @@
-# Gubia · Importar catálogos PDF de proveedores (Creaciones Turia)
+# Gubia Importador · PDF.js local + Groq Free
 
-## Objetivo
-En **Catálogo → Importar PDF con Gubia**, el gerente o propietario sube un PDF original, indica el proveedor y obtiene candidatos editables. El usuario selecciona y confirma expresamente qué materiales se crean. El asistente no guarda artículos durante el análisis.
+## Coste y aislamiento
+- **Gemini no participa en este importador**. La cuota presupuestada para el simulador de reformas se mantiene separada.
+- PDF.js 6.4.299 se integra en el bundle y se ejecuta en el navegador; no usa servidor para procesar el PDF, ni requiere CDN externo.
+- Groq Free procesa solo texto de las páginas o una página en JPEG si el usuario lo solicita.
+- El plan Free no factura por llamadas dentro de sus cuotas, pero devuelve HTTP 429 cuando se agotan. No hay respaldo de pago.
+- Clave `GROQ_API_KEY` en Cloudflare Workers; no se envía al navegador. El chat Gubia utiliza la misma organización, pero el flujo de importación es puntual y serial.
 
-## Primera entrega implementada
-- Entrada: PDF de hasta **8 MB y 160 páginas**. Worker Cloudflare protegido por Access y permiso `facturas`. No disponible en Viveros Baltaretu.
-- Análisis: PDF se abre con `pdf-lib` y se envía a Gemini en bloques de **6 páginas**, sin exponer `GOOGLE_API_KEY` al navegador. En interfaz se solapa una página entre bloques para aumentar las probabilidades de relacionar fichas y muestras.
-- Salida: lista validada mediante Zod (nombre, categoría, referencia, código decorativo, acabado, soporte, espesor, formato, unidad, color aproximado, veta, brillo, página).
-- Revisión: seleccionar o descartar cada ficha; corregir nombre, categoría, referencia, acabado, espesor, formato, color y soporte. El PDF y los candidatos permanecen en la sesión del navegador hasta la confirmación.
-- Guardado: **solo artículos nuevos**, mediante IDs deterministas y `INSERT … ON CONFLICT DO NOTHING` para evitar sobrescribir los existentes. Categoría/merma/margen se proponen desde las reglas actuales de Turia. `coste=0`, `precioFijo=null`, `notas` con documento y página de origen, pendiente de tarifa.
-- Seguridad: Access + rol, CSRF, límite real de bytes, validación del PDF, cuotas diarias de 40 bloques por usuario, sin escritura directa por IA. El PDF se trata como entrada no fiable; se informa de que se envía al proveedor de IA.
+## Flujo implementado
+1. `/panel/catalogo/importar`: subir el PDF original, hasta **25 MB** y **160 páginas**, indicar proveedor.
+2. PDF.js lee y reconstruye las filas de texto y tablas en el dispositivo. Guarda el texto temporalmente en memoria.
+3. Groq `openai/gpt-oss-120b` interpreta grupos de hasta **3 páginas o 9.000 caracteres**, como máximo 30 grupos/día por usuario. Páginas sin texto se pueden consultar mediante la opción visual.
+4. Para páginas escaneadas, tablas de color o dudas de relación, el usuario pulsa **Ver página** y **Analizar imagen con Groq**. PDF.js la renderiza localmente como JPEG; `qwen/qwen3.8-27b` la interpreta con un máximo de **8 peticiones/día por usuario**.
+5. El resultado se valida con Zod, se deduplica, se muestra editable y queda en `sessionStorage` de la pestaña. El usuario puede **seleccionar un artículo y tocar su textura en la página renderizada**, creando un pequeño recorte WebP sin llamada adicional de IA. No se guardan materiales sin confirmación humana.
+6. Solo al pulsar **Crear artículos seleccionados** se importan candidatos al catálogo existente de Turia en lotes de 20, con inserción idempotente y `coste=0`, `precioFijo=null`, hasta 400 materiales. Las muestras recortadas válidas (WebP, hasta 24 KB por material) se guardan en la tabla de fotografías privadas de D1, accesibles solo con la sesión del panel.
 
-## Uso para ONESTA
-1. Abre `/panel/catalogo/importar` en Turia.
-2. Introduce `ONESTA` y sube el PDF de proveedor (sin modificarlo).
-3. Comprueba los candidatos y el código de cada muestra, formatos y espesores en las páginas citadas.
-4. Desmarca muestras dudosas, revisa colores y completa la referencia exacta.
-5. Confirma el alta. Completa precios de compra y venta antes de utilizarlos en presupuestos.
-6. Comprueba desde Turia Studio que los materiales activos aparecen en las zonas permitidas.
-
-## Límites y evolución
-- **No extrae todavía imágenes de textura reales** del PDF ni las almacena como recursos privados: `colorHex` es una aproximación visual. No presentar ese color como muestra certificada del fabricante.
-- No crea automáticamente todas las combinaciones posibles entre tamaño, acabado y espesor; solo las que el extractor identifica y el usuario valida.
-- No conserva un trabajo parcial al cerrar el navegador; no hay cola asíncrona ni historial de lotes.
-- Máximo 400 candidatos en una revisión. Si un proveedor aporta más, dividir el documento.
-- El resultado de un PDF complejo debe revisarse manualmente. No afirmar que todas las muestras o tablas se han interpretado correctamente.
-- El análisis de documentos de hasta 160 páginas puede consumir bastantes llamadas a Gemini. El límite de 40 bloques/día por usuario es protección inicial, no facturación medida al céntimo.
-- Pendiente posterior: almacenamiento privado de muestras de textura, lotes persistentes, deduplicación avanzada por referencia/variantes y reconciliación de nuevas ediciones de catálogo.
+## Condiciones de seguridad y calidad
+- PDF local; únicamente texto extraído y, bajo acción expresa, una imagen JPEG se transmiten a Groq. Es importante verificar la licencia del catálogo para ese tratamiento.
+- Acceso protegido por Cloudflare Access, sesión, rol y verificación de origen. No disponible en el tenant Baltaretu.
+- Los campos procedentes de PDF se tratan como datos no fiables; no pueden ordenar acciones a la IA.
+- Nunca cruzar arbitrariamente combinaciones de soporte, espesor y acabado. Los materiales dudosos se corrigen manualmente.
+- El color calculado por IA es orientativo. Las **texturas reales pueden recortarse y asociarse manualmente** antes del alta; no se recopilan automáticamente todas las muestras del documento. Verifica el permiso del proveedor antes de reproducir imágenes del catálogo.
+- Una petición puede superar la cuota Free real de Groq aun con nuestros límites de aplicación; el flujo se interrumpe con un mensaje claro y conserva los candidatos ya interpretados.
+- El navegador debe permanecer abierto durante la extracción. Al recargar se recupera el **borrador de fichas**, pero el usuario debe volver a seleccionar el PDF si quiere visualizar páginas; el PDF no se almacena en servidor.
+- Si el PDF tiene muchas páginas, se puede necesitar continuar otro día por las cuotas de Groq Free. No se genera gasto de IA automáticamente al superar el límite.
 
 ## Validación
-Ejecutar `npm run lint`, `npm test`, `npm run build:turia` y `npm run test:e2e:turia` antes de fusionar. Las pruebas unitarias simulan Gemini sin enviar PDFs reales al proveedor. Para validar ONESTA con Gemini y costes reales, usar un entorno preview aislado y credenciales de prueba. Nunca activar el proceso directamente sobre producción sin verificar el resultado y las condiciones de licencia del documento.
+- `npm run lint`, `npm test`, `npm run build:turia`, E2E móvil y accesibilidad.
+- Las pruebas de API simulan Groq sin consumir tokens; para validar ONESTA con Groq Free es necesario un entorno autorizado con `GROQ_API_KEY` y control de cuota.
+- No realizar cambios directos en D1 remoto; desplegar desde `main` solo tras validar y fusionar PR.

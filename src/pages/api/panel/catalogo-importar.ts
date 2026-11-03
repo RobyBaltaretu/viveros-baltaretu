@@ -3,64 +3,63 @@ import { env } from 'cloudflare:workers';
 import { clienteActual } from '../../../plataforma/actual.ts';
 import { cuerpoLimitado } from '../../../server/panel/cuerpo.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
-import { claveGemini } from '../../../server/simulador/cuota.ts';
-import { analizarLotePDF, ErrorImportacion, importarCandidatos, MAX_PDF_BYTES, modeloCatalogoConfigurado } from '../../../server/catalogo/importacion-proveedor.ts';
+import { importarCandidatos, ErrorImportacion } from '../../../server/catalogo/importacion-proveedor.ts';
+import { interpretarTextoConGroq, interpretarMuestraConGroq } from '../../../server/catalogo/interpretacion-groq.ts';
 
 export const prerender = false;
-const json = (estado: number, cuerpo: unknown) => new Response(JSON.stringify(cuerpo), {
-  status: estado, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+const json = (estado: number, cuerpo: unknown) => new Response(JSON.stringify(cuerpo),{
+  status:estado,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'},
 });
 
-/**
- * Gubia importador. Permisos comprobados también en API; el frontend jamás
- * crea artículos sin que un propietario o gerente confirme el lote.
- */
-export const POST: APIRoute = async ({ locals, request }) => {
-  if (clienteActual().id !== 'turia') return json(404, { ok: false, error: 'No disponible.' });
-  const sesion = sesionCon(locals, 'facturas');
-  if (!sesion) return json(403, { ok: false, error: 'No tienes permiso para importar artículos.' });
-  const tipo = request.headers.get('content-type') || '';
-  const esMultipart = tipo.startsWith('multipart/form-data;');
-  const max = esMultipart ? MAX_PDF_BYTES + 64_000 : 330_000;
-  let cuerpo: Response | null;
-  try { cuerpo = await cuerpoLimitado(request, max); }
-  catch { return json(400, { ok: false, error: 'Solicitud ilegible.' }); }
-  if (!cuerpo) return json(413, { ok: false, error: 'El archivo o la selección supera el tamaño máximo.' });
+// Los límites por usuario protegen la cuota Free compartida con el chat Gubia.
+// No hay ninguna ruta hacia Gemini, ni respaldo de pago.
+export const MAX_LOTES_DIA = 30;
+export const MAX_VISION_DIA = 8;
+const dia = () => new Date().toISOString().slice(0,10);
+const dato = (valor: unknown, max=80) => typeof valor==='string' ? valor.slice(0,max) : '';
 
+export const POST: APIRoute = async ({locals,request}) => {
+  if (clienteActual().id!=='turia') return json(404,{ok:false,error:'No disponible.'});
+  const s=sesionCon(locals,'facturas');
+  if(!s)return json(403,{ok:false,error:'No tienes permiso para importar materiales.'});
+  if(!request.headers.get('content-type')?.startsWith('application/json'))
+    return json(415,{ok:false,error:'Este importador procesa el PDF localmente. Envía solo las fichas en JSON.'});
+  const limitado=await cuerpoLimitado(request,900_000);
+  if(!limitado)return json(413,{ok:false,error:'La petición supera el tamaño permitido.'});
+  let input: Record<string,unknown> | null;
   try {
-    if (esMultipart) {
-      const form = await cuerpo.formData();
-      if (form.get('accion') !== 'analizar') return json(400, {ok:false,error:'Acción no válida.'});
-      const archivo = form.get('archivo');
-      const proveedor = String(form.get('proveedor') || '').trim();
-      const inicio = Number(form.get('inicio') || '1');
-      if (!(archivo instanceof File) || !archivo.name.toLowerCase().endsWith('.pdf') || archivo.size > MAX_PDF_BYTES)
-        return json(400, { ok: false, error: 'Selecciona un PDF válido de hasta 8 MB.' });
-      if (proveedor.length < 2 || proveedor.length > 80) return json(400, {ok:false,error:'Indica el proveedor (2–80 caracteres).'});
-      // Control de consumo por usuario: 40 bloques PDF por día como máximo.
-      const dia = new Date().toISOString().slice(0, 10);
-      const contador = sesion.usuario.email + ':gubia-importacion-pdf';
-      if (await sesion.repos.usoAsistente.obtener(contador, dia) >= 40)
-        return json(429, {ok:false,error:'Se ha alcanzado el límite diario de análisis PDF.'});
-      const key = claveGemini(env as Record<string, unknown>);
-      if (!key) return json(503, { ok: false, error: 'Gubia necesita configurar GOOGLE_API_KEY en el Worker de Turia.' });
-      await sesion.repos.usoAsistente.sumar(contador, dia);
-      const modelo = modeloCatalogoConfigurado((env as Record<string, unknown>).GEMINI_CATALOGO_MODELO);
-      const datos = await analizarLotePDF(new Uint8Array(await archivo.arrayBuffer()), proveedor, inicio, { apiKey:key, modelo });
-      return json(200, { ok:true, ...datos });
+    const parsed:unknown=await limitado.json();
+    input=parsed!==null && typeof parsed==='object' && !Array.isArray(parsed) ? parsed as Record<string,unknown> : null;
+  }catch{input=null;}
+  if(!input)return json(400,{ok:false,error:'Solicitud no válida.'});
+  const accion=input.accion;
+  try{
+    if(accion==='confirmar'){
+      const result=await importarCandidatos(s.repos,dato(input.proveedor),dato(input.archivo,90),input.articulos,s.usuario.email,input.muestras);
+      return json(200,{ok:true,...result});
     }
-    if (tipo.startsWith('application/json')) {
-      const form = await cuerpo.json().catch(() => null) as Record<string, unknown> | null;
-      if (!form || form.accion !== 'confirmar') return json(400, { ok:false,error:'Acción no válida.' });
-      const proveedor = typeof form.proveedor === 'string' ? form.proveedor : '';
-      const archivo = typeof form.archivo === 'string' ? form.archivo : '';
-      const r = await importarCandidatos(sesion.repos, proveedor, archivo, form.articulos, sesion.usuario.email);
-      return json(200, {ok:true,...r});
+    if(accion!=='interpretar' && accion!=='vision')
+      return json(400,{ok:false,error:'Operación de importación no reconocida.'});
+    const clave=(env as Record<string,unknown>).GROQ_API_KEY;
+    if(typeof clave!=='string'||!clave.trim())
+      return json(503,{ok:false,error:'Configura GROQ_API_KEY para utilizar la interpretación inteligente gratuita. Puedes seguir revisando el PDF localmente.'});
+    const fecha=dia(),tipo=accion==='vision'?'vision':'texto';
+    const cuenta=s.usuario.email+':gubia-local-'+tipo;
+    const limite=accion==='vision'?MAX_VISION_DIA:MAX_LOTES_DIA;
+    if(await s.repos.usoAsistente.obtener(cuenta,fecha)>=limite)
+      return json(429,{ok:false,error:'Has alcanzado el límite diario de Gubia Importador. Conserva tu revisión y continúa otro día.'});
+    // Se contabiliza antes de la solicitud, incluso cuando la API externa falla.
+    await s.repos.usoAsistente.sumar(cuenta,fecha);
+    const proveedor=dato(input.proveedor);
+    if(accion==='vision'){
+      const articulos=await interpretarMuestraConGroq(proveedor,input.imagen,input.pagina,input.texto,{apiKey:clave});
+      return json(200,{ok:true,articulos});
     }
-    return json(415, { ok:false,error:'Formato de petición no admitido.' });
-  } catch (e) {
-    if (e instanceof ErrorImportacion) return json(e.estado, {ok:false,error:e.message});
-    console.error('[Gubia Importador] Error en importación de catálogo', e instanceof Error ? e.name : 'desconocido');
-    return json(500,{ok:false,error:'No ha sido posible completar esta operación. No repitas la confirmación sin revisar el catálogo.'});
+    const resultado=await interpretarTextoConGroq(proveedor,input.paginas,{apiKey:clave});
+    return json(200,{ok:true,...resultado});
+  }catch(e){
+    if(e instanceof ErrorImportacion)return json(e.estado,{ok:false,error:e.message});
+    console.error('[Gubia Local] Error de análisis o confirmación',e instanceof Error?e.name:'desconocido');
+    return json(500,{ok:false,error:'No se ha completado la operación. Conserva los materiales revisados y reintenta.'});
   }
 };

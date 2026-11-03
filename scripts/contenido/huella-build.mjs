@@ -67,15 +67,26 @@ export function resumenBaseline(h) {
   };
 }
 
-/** Diferencias con la línea base (vacío = la web es la misma). */
+/**
+ * Recursos generados exclusivamente para herramientas del panel privado, nunca
+ * enlazados por la web pública. Los cambios de código en el panel pueden variar
+ * sus hashes aunque el HTML/sitemap públicos permanezcan idénticos.
+ * La comparación completa entre build desde archivos y D1 sigue incluyendo
+ * estos recursos (compararHuellas), y los E2E cubren el panel.
+ */
+const SOLO_PANEL = /^_astro\/(?:importar\.|importar\.astro_|pdf\.worker\.min\.|preload-helper\.|PdfEnNavegador\.astro_)/;
+const esSoloPanel = (ruta) => SOLO_PANEL.test(ruta);
+
+/** Diferencias con la línea base pública (vacío = la web es la misma). */
 export function compararBaseline(base, actual) {
   const difs = [];
   for (const r of [...new Set([...base.rutas, ...actual.rutas])].sort()) {
+    if (esSoloPanel(r)) continue;
     if (!base.rutas.includes(r)) difs.push(`ruta nueva ${r}`);
     else if (!actual.rutas.includes(r)) difs.push(`falta la ruta ${r}`);
   }
   for (const campo of ['paginas', 'textos']) {
-    for (const r of Object.keys(base[campo])) if (r in actual[campo] && base[campo][r] !== actual[campo][r]) difs.push(`cambia ${r}`);
+    for (const r of Object.keys(base[campo])) if (!esSoloPanel(r) && r in actual[campo] && base[campo][r] !== actual[campo][r]) difs.push(`cambia ${r}`);
   }
   for (const r of Object.keys({ ...base.jsonLd, ...actual.jsonLd }).sort()) if (base.jsonLd[r] !== actual.jsonLd[r]) difs.push(`JSON-LD distinto en ${r}`);
   if (JSON.stringify(base.sitemap) !== JSON.stringify(actual.sitemap)) difs.push('sitemap.xml distinto');
