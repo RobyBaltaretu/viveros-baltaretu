@@ -3,7 +3,6 @@ import { CATEGORIAS, MARGEN_PROPUESTO, esquemaArticulo } from './catalogo.ts';
 import type { Repositorios } from '../data/tipos.ts';
 
 /** El PDF es entrada no fiable: Gubia solo propone, un humano aprueba. */
-export const MAX_PDF_BYTES = 8_000_000;
 export const MAX_PAGINAS_PDF = 160;
 export const PAGINAS_POR_LOTE = 6;
 export const MAX_CANDIDATOS_LOTE = 100;
