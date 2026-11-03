@@ -674,6 +674,8 @@ export interface RepositorioCatalogo {
   articulos(opciones?: { incluirArchivados?: boolean }): Promise<ArticuloCatalogo[]>;
   articulo(id: string): Promise<ArticuloCatalogo | null>;
   guardarArticulo(a: Omit<ArticuloCatalogo, 'actualizado' | 'archivado'>, email: string): Promise<void>;
+  /** Importación segura: inserta solo si no existe, sin sobrescribir ediciones previas. */
+  insertarArticuloSiNuevo?(a: Omit<ArticuloCatalogo, 'actualizado' | 'archivado'>, email: string): Promise<boolean>;
   archivarArticulo(id: string, archivado: boolean, email: string): Promise<boolean>;
   plantillas(opciones?: { incluirArchivadas?: boolean }): Promise<PlantillaCatalogo[]>;
   plantilla(id: string): Promise<PlantillaCatalogo | null>;
