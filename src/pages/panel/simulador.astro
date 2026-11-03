@@ -338,6 +338,51 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
       </div>
     </div>
   </div>
+
+  <!-- Única biblioteca visual; el catálogo original sigue siendo la fuente de verdad. -->
+  <div id="studio-material-library" hidden>
+    {materiales.map((m) => (
+      <button type="button" class="studio-material-card" data-material-option data-kind={m.categoria} data-id={m.id} data-name={m.nombre} data-description={m.descripcion} data-texture={m.previewTexture ?? ''} data-color={m.previewColor ?? '#ebe4da'}>
+        <span class="studio-material-card-image" style={`background-color: ${m.previewColor ?? '#ebe4da'}`}>
+          {m.previewTexture && <img src={m.previewTexture} alt="" loading="lazy" referrerpolicy="no-referrer" />}
+          <span class="studio-material-selected-icon" aria-hidden="true">✓</span>
+        </span>
+        <strong>{m.nombre}</strong>
+        <small>{m.descripcion || 'Artículo del catálogo'}</small>
+      </button>
+    ))}
+  </div>
+
+  <dialog id="studio-material-dialog" class="studio-material-dialog" aria-labelledby="studio-material-dialog-title">
+    <div class="studio-dialog-shell">
+      <header class="studio-dialog-heading">
+        <div>
+          <p class="studio-dialog-eyebrow">CATÁLOGO DE CREACIONES TURIA</p>
+          <h2 id="studio-material-dialog-title">Elige el acabado</h2>
+          <p id="studio-material-dialog-subtitle">Selecciona un material de tu catálogo.</p>
+        </div>
+        <button type="button" id="studio-material-close" class="studio-dialog-close" aria-label="Cerrar selector de materiales">✕</button>
+      </header>
+      <div class="studio-dialog-search">
+        <label for="studio-material-query">Buscar por nombre, referencia o acabado</label>
+        <input type="search" id="studio-material-query" autocomplete="off" placeholder="Ej. roble, nogal, mate, referencia…" />
+        <div class="studio-dialog-filters" aria-label="Filtrar materiales">
+          <button type="button" data-material-filter="todos" aria-pressed="true">Todos</button>
+          <button type="button" data-material-filter="madera" aria-pressed="false">Madera</button>
+          <button type="button" data-material-filter="lacado" aria-pressed="false">Lacados</button>
+          <button type="button" data-material-filter="piedra" aria-pressed="false">Piedra</button>
+        </div>
+      </div>
+      <p id="studio-material-count" class="studio-material-count" role="status"></p>
+      <div class="studio-material-grid" id="studio-material-results" aria-label="Resultados del catálogo"></div>
+      <p id="studio-material-empty" class="studio-material-empty" hidden>No hay artículos compatibles con estos filtros. Prueba otra búsqueda o revisa el catálogo.</p>
+      <button type="button" id="studio-material-more" class="studio-dialog-more" hidden>Mostrar más materiales</button>
+      <footer class="studio-dialog-footer">
+        <button type="button" id="studio-material-cancel" class="studio-button">Cancelar</button>
+        <button type="button" id="studio-material-apply" class="studio-dialog-apply" disabled>Aplicar material</button>
+      </footer>
+    </div>
+  </dialog>
 </PaginaPanel>
 
 <script is:inline>
