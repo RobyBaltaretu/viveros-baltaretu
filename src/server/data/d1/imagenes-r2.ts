@@ -31,6 +31,12 @@ export function imagenesPrivadas(db: BaseD1, bucket?: BucketPrivado, limite = LI
   }
   return {
     retirar,
+    async ocupacion() {
+      if (!bucket) return null;
+      await preparar();
+      const fila = await db.prepare('SELECT total FROM turia_bytes_r2 WHERE id=1').first<{total:number}>();
+      return {bytes: fila!.total, limite};
+    },
     async leer(valor: BytesGuardados) {
       if (typeof valor !== 'string') return new Uint8Array(valor);
       const objeto = await bucket?.get(valor);
@@ -51,7 +57,7 @@ export function imagenesPrivadas(db: BaseD1, bucket?: BucketPrivado, limite = LI
           SELECT ?,CASE WHEN total+?<=? THEN ? ELSE NULL END FROM turia_bytes_r2 WHERE id=1`)
           .bind(claves[i],f.bytes.byteLength,limite,f.bytes.byteLength)));
       } catch (e) {
-        if (String(e).includes('NOT NULL')) throw Error('Se ha alcanzado el límite de fotos del taller.');
+        if (String(e).includes('NOT NULL')) throw Error('Se ha alcanzado el límite de fotos del taller.',{cause:e});
         throw e;
       }
       try {
@@ -62,7 +68,14 @@ export function imagenesPrivadas(db: BaseD1, bucket?: BucketPrivado, limite = LI
       }
       // Si D1 no confirma el resultado, conservar los objetos y su reserva. La
       // conciliación operativa puede liberarlos tras verificar que no tienen referencia.
-      await db.batch(sentencias(claves));
+      try {
+        await db.batch(sentencias(claves));
+      } catch (error) {
+        if (/UNIQUE constraint failed/i.test(String(error))) {
+          for (const clave of claves) await retirar(clave);
+        }
+        throw error;
+      }
     },
   };
 }

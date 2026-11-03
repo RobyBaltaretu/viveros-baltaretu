@@ -1,7 +1,7 @@
 import {z} from 'astro/zod';
 const url=z.string().max(1000).url().refine(v=>{try{return new URL(v).protocol==='https:';}catch{return false;}},'Usa una dirección HTTPS');
 /** Muestras privadas de materiales alojadas en D1, servidas solo en el panel autenticado. */
-const texturaPrivada=z.string().regex(/^\/api\/panel\/foto\?ruta=catalogo-materiales%2F[a-z0-9-]+%2Fmuestra\.webp$/i);
+const texturaPrivada=z.string().regex(/^\/api\/panel\/(?:foto|catalogo-muestra)\?ruta=catalogo-materiales%2F[a-z0-9-]+%2Fmuestra\.webp$/i);
 const urlTextura=z.union([url,texturaPrivada]);
 export const esquemaVisual=z.object({
  fabricante:z.string().max(100).optional(),coleccion:z.string().max(100).optional(),codigoDecor:z.string().max(80).optional(),

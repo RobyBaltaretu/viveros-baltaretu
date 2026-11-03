@@ -2,7 +2,7 @@ import {expect,test} from '@playwright/test';
 import {PDFDocument,StandardFonts} from 'pdf-lib';
 import {auditar} from '../tests-e2e/ayudas';
 
-test('Gubia: PDF local se convierte en texto para Groq y no se envía el PDF completo',async({page})=>{
+test('Gubia: PDF local se convierte en texto para Groq y no se envía el PDF completo',async({page},testInfo)=>{
   await page.setViewportSize({width:390,height:844});
   let interpretados=0,guardados=0;
   await page.route('**/api/panel/catalogo-importar',async route=>{
@@ -44,6 +44,14 @@ test('Gubia: PDF local se convierte en texto para Groq y no se envía el PDF com
   expect(interpretados).toBe(1);
   expect(guardados).toBe(0);
   await page.getByRole('textbox',{name:'Nombre',exact:true}).fill('Roble natural validado');
+  for (const width of [390,1200]) {
+    await page.setViewportSize({width,height:844});
+    const card=page.locator('.gubia-item').first();
+    await expect(card).toHaveCSS('display','grid');
+    await expect(card.locator('.gubia-item-campos label').first()).toHaveCSS('display','grid');
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await card.screenshot({path:testInfo.outputPath('revision-catalogo-'+width+'.png')});
+  }
   await auditar(page);
   page.once('dialog',d=>d.accept());
   await page.getByRole('button',{name:'Crear artículos seleccionados'}).click();

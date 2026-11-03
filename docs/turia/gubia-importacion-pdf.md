@@ -13,7 +13,7 @@
 3. Groq `openai/gpt-oss-120b` interpreta grupos de hasta **3 páginas o 9.000 caracteres**, como máximo 30 grupos/día por usuario. Páginas sin texto se pueden consultar mediante la opción visual.
 4. Para páginas escaneadas, tablas de color o dudas de relación, el usuario pulsa **Ver página** y **Analizar imagen con Groq**. PDF.js la renderiza localmente como JPEG; `qwen/qwen3.8-27b` la interpreta con un máximo de **8 peticiones/día por usuario**.
 5. El resultado se valida con Zod, se deduplica, se muestra editable y queda en `sessionStorage` de la pestaña. El usuario puede **seleccionar un artículo y tocar su textura en la página renderizada**, creando un pequeño recorte WebP sin llamada adicional de IA. No se guardan materiales sin confirmación humana.
-6. Solo al pulsar **Crear artículos seleccionados** se importan candidatos al catálogo existente de Turia en lotes de 20, con inserción idempotente y `coste=0`, `precioFijo=null`, hasta 400 materiales. Las muestras recortadas válidas (WebP, hasta 24 KB por material) se guardan en la tabla de fotografías privadas de D1, accesibles solo con la sesión del panel.
+6. Solo al pulsar **Crear artículos seleccionados** se importan candidatos al catálogo existente de Turia en lotes de 20 (4 si hay muestras), con inserción idempotente y `coste=0`, `precioFijo=null`, con revisión paginada en grupos de 20. Las muestras recortadas válidas (WebP, hasta 24 KB por material) se guardan en el almacén privado de Turia, accesibles solo con la sesión del panel.
 
 ## Condiciones de seguridad y calidad
 - PDF local; únicamente texto extraído y, bajo acción expresa, una imagen JPEG se transmiten a Groq. Es importante verificar la licencia del catálogo para ese tratamiento.
@@ -21,7 +21,7 @@
 - Los campos procedentes de PDF se tratan como datos no fiables; no pueden ordenar acciones a la IA.
 - Nunca cruzar arbitrariamente combinaciones de soporte, espesor y acabado. Los materiales dudosos se corrigen manualmente.
 - El color calculado por IA es orientativo. Las **texturas reales pueden recortarse y asociarse manualmente** antes del alta; no se recopilan automáticamente todas las muestras del documento. Verifica el permiso del proveedor antes de reproducir imágenes del catálogo.
-- Una petición puede superar la cuota Free real de Groq aun con nuestros límites de aplicación; el flujo se interrumpe con un mensaje claro y conserva los candidatos ya interpretados.
+- Una petición puede superar la cuota Free real de Groq aun con nuestros límites de aplicación; el flujo de texto continúa con la extracción local y muestra las páginas sin propuestas.
 - El navegador debe permanecer abierto durante la extracción. Al recargar se recupera el **borrador de fichas**, pero el usuario debe volver a seleccionar el PDF si quiere visualizar páginas; el PDF no se almacena en servidor.
 - Si el PDF tiene muchas páginas, se puede necesitar continuar otro día por las cuotas de Groq Free. No se genera gasto de IA automáticamente al superar el límite.
 
@@ -29,3 +29,5 @@
 - `npm run lint`, `npm test`, `npm run build:turia`, E2E móvil y accesibilidad.
 - Las pruebas de API simulan Groq sin consumir tokens; para validar ONESTA con Groq Free es necesario un entorno autorizado con `GROQ_API_KEY` y control de cuota.
 - No realizar cambios directos en D1 remoto; desplegar desde `main` solo tras validar y fusionar PR.
+
+PDF.js conserva todo el texto de cada página. Solo la petición individual a Groq se divide en fragmentos de hasta 4.000 caracteres. La lectura local reconoce referencias de decorativo, acabado y nombre, y los códigos numéricos situados encima de una etiqueta de muestra. Las tablas de clasificación de calidades no son artículos. La revisión visual adicional es opcional y envía a Groq como máximo ocho páginas sin propuestas, dentro del límite diario existente.

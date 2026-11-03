@@ -363,7 +363,7 @@ export function crearRepositoriosD1(db: BaseD1, bucket?: BucketPrivado, exigirR2
     inventario: crearRepositorioInventario(db),
     ...crearRepositoriosPortafolio(db,imagenes),
     ...crearRepositorioPresupuestosCliente(db),
-    ...crearRepositorioCatalogo(db),
+    ...crearRepositorioCatalogo(db,imagenes),
     ...crearRepositorioProveedores(db),
     ...crearRepositorioPedidosProveedor(db),
   };

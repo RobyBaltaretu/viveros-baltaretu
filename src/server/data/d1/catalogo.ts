@@ -1,3 +1,4 @@
+import type { Imagenes } from './imagenes-r2';
 import type { ArticuloCatalogo, PlantillaCatalogo, Repositorios } from '../tipos.ts';
 import type { BaseD1 } from './base.ts';
 
@@ -18,6 +19,9 @@ type DatosArticulo = Pick<ArticuloCatalogo, 'merma' | 'margen' | 'precioFijo' | 
 
 const aArticulo = (f: FilaArticulo): ArticuloCatalogo => {
   const d = JSON.parse(f.datos) as DatosArticulo;
+  if (d.visual?.textura?.startsWith('/api/panel/foto?ruta=catalogo-materiales%2F')) {
+    d.visual.textura = d.visual.textura.replace('/panel/foto?', '/panel/catalogo-muestra?');
+  }
   return { id: f.id, categoria: f.categoria, nombre: f.nombre, unidad: f.unidad, coste: f.coste, ...d, archivado: f.archivado === 1, actualizado: f.actualizado };
 };
 
@@ -37,7 +41,7 @@ const aPlantilla = (f: FilaPlantilla): PlantillaCatalogo => {
   return { id: f.id, nombre: f.nombre, tipoTrabajo: f.tipo_trabajo, ...d, orden: f.orden, archivado: f.archivado === 1, actualizado: f.actualizado };
 };
 
-export function crearRepositorioCatalogo(db: BaseD1): Pick<Repositorios, 'catalogo'> {
+export function crearRepositorioCatalogo(db: BaseD1, imagenes: Imagenes): Pick<Repositorios, 'catalogo'> {
   return {
     catalogo: {
       async articulos(opciones = {}) {
@@ -61,14 +65,24 @@ export function crearRepositorioCatalogo(db: BaseD1): Pick<Repositorios, 'catalo
           .bind(a.id, a.categoria, a.nombre, a.unidad, a.coste, JSON.stringify(datos), t, t, email)
           .run();
       },
-      async insertarArticuloSiNuevo(a, email) {
+      async insertarArticuloSiNuevo(a, email, muestra) {
         const datos: DatosArticulo = { merma: a.merma, margen: a.margen, precioFijo: a.precioFijo, referencia: a.referencia, proveedor: a.proveedor, espesor: a.espesor, acabado: a.acabado, notas: a.notas, ...(a.visual ? {visual:a.visual} : {}) };
         const t = ahora();
-        const r = await db.prepare(
+        const insercion = db.prepare(
           `INSERT INTO catalogo_articulos (id, categoria, nombre, unidad, coste, datos, archivado, creado, actualizado, actualizado_por)
-           VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
-        ).bind(a.id, a.categoria, a.nombre, a.unidad, a.coste, JSON.stringify(datos), t, t, email).run();
-        return (r.meta?.changes ?? 0) > 0;
+           VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`,
+        ).bind(a.id, a.categoria, a.nombre, a.unidad, a.coste, JSON.stringify(datos), t, t, email);
+        try {
+          if (muestra) {
+            await imagenes.escribir([muestra], ([puntero]) => [insercion, db.prepare(
+              'INSERT INTO fotos (ruta,tipo,bytes,tamano,subida,subida_por) VALUES (?, ?, ?, ?, ?, ?)'
+            ).bind(muestra.ruta, 'image/webp', puntero, muestra.bytes.length, t, email)]);
+          } else await insercion.run();
+          return true;
+        } catch (e) {
+          if (String(e).includes('UNIQUE constraint failed: catalogo_articulos.id')) return false;
+          throw e;
+        }
       },
       async archivarArticulo(id, archivado, email) {
         const r = await db.prepare('UPDATE catalogo_articulos SET archivado = ?, actualizado = ?, actualizado_por = ? WHERE id = ?').bind(archivado ? 1 : 0, ahora(), email, id).run();

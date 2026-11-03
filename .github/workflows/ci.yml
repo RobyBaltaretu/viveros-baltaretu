@@ -87,6 +87,14 @@ jobs:
           path: test-results/**/inicio-*.png
           if-no-files-found: warn
 
+      - name: Capturas de revisión del catálogo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: revision-catalogo-turia
+          path: test-results/**/revision-catalogo-*.png
+          if-no-files-found: warn
+
   equivalencia:
     name: Build desde D1 igual al actual
     runs-on: ubuntu-latest

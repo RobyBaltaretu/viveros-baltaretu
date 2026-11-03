@@ -23,6 +23,8 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         <label>Empezar desde la página <input id="gubia-inicio" type="number" min="1" max="160" value="1" aria-describedby="gubia-continuar-ayuda" /></label>
         <p class="gubia-nota" id="gubia-continuar-ayuda">Si Groq Free se queda sin cuota, podrás continuar desde la siguiente página otro día sin duplicar artículos.</p>
         <p class="gubia-nota">Máximo 25 MB y 160 páginas. El PDF permanece en tu dispositivo: solo enviamos texto extraído y, si tú lo solicitas, una imagen de la página a Groq Free. No se llama a Gemini. Se utilizan las cuotas gratuitas de Groq.</p>
+        <label><span><input style="width:auto;min-height:0" id="gubia-vision-auto" type="checkbox" /> Revisar con Groq Vision hasta 8 páginas sin texto o sin propuestas</span></label>
+        <p class="gubia-nota">Si lo activas, se enviará la imagen de esas páginas a Groq. Puedes revisar las demás a mano.</p>
         <button class="nv-boton" id="gubia-analizar" type="submit">Analizar PDF con Gubia</button>
       </form>
     </section>
@@ -80,7 +82,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
 .gubia-item-campos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .gubia-item-campos label{display:grid;gap:4px;font-size:.75rem;font-weight:600;color:#53594e;min-width:0}
 .gubia-item-campos input,.gubia-item-campos select{width:100%;min-width:0;min-height:40px;background:#fff;border:1px solid #d8ded2;border-radius:8px;padding:7px;font:inherit;font-size:.86rem;color:#232823}
-.gubia-origen{font-size:.75rem;color:#626960;margin:8px 0 0}
+.gubia-item strong{display:block;font-size:1.06rem;overflow-wrap:anywhere}.gubia-item summary{min-height:48px;line-height:1.5;padding:12px 0;cursor:pointer;font-weight:650;color:#435638}.gubia-origen{font-size:.75rem;color:#626960;margin:8px 0 0}
 .gubia-vision{margin:1.3rem 0;padding:1.2rem;border:1px solid #dbe3d5;background:#f9fbf7;border-radius:14px}
 .gubia-vision h3{font-size:1.05rem;font-weight:750}
 .gubia-vision-controles{display:flex;align-items:end;flex-wrap:wrap;gap:.65rem}
@@ -133,7 +135,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       const head=document.createElement('div');head.className='gubia-item-cabecera';
       const checkLabel=document.createElement('label'),check=document.createElement('input');
       check.type='checkbox';check.checked=a.activo;
-      check.addEventListener('change',()=>{a.activo=check.checked;article.dataset.activo=String(check.checked);contar();});
+      check.addEventListener('change',()=>{a.activo=check.checked;article.dataset.activo=String(check.checked);contar();guardarBorrador();});
       checkLabel.append(check,document.createTextNode('Añadir al catálogo'));head.append(checkLabel);
       const fields=document.createElement('div');fields.className='gubia-item-campos';
       for(const [key,label] of [['nombre','Nombre'],['referencia','Referencia'],['acabado','Acabado'],['codigoDecor','Código de decor'],['soporte','Soporte'],['formato','Formato']]){
@@ -277,12 +279,24 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         }
       }
       await enviar();
+      let avisoVision='';
+      if ($('gubia-vision-auto').checked) {
+        const prioridades=[...new Set([...sinTexto,...revisar])].filter(p=>!articulos.some(a=>a.data.pagina===p)).slice(0,8);
+        for (const pagina of prioridades) {
+          actualizarProgreso(pagina,documento.paginas,'Interpretando imagen de la página '+pagina);
+          try {
+            const r=await jsonPost({accion:'vision',proveedor,pagina,imagen:await documento.imagen(pagina),texto:(textosPagina.get(pagina)||'').slice(0,2500)});
+            juntarCandidatos(r.articulos);
+          } catch(e) { avisoVision=' · Revisión visual detenida: '+e.message;break; }
+        }
+      }
       siguientePagina=documento.paginas+1;guardarBorrador();
       actualizarProgreso(documento.paginas,documento.paginas,'Análisis finalizado');
       mostrarRevision();
       mensaje(errorGroq
         ? 'PDF leído: '+documento.paginas+' páginas. Groq no ha podido analizar el documento: '+errorGroq+'. Se han recuperado '+fichasLocales+' posibles fichas mediante lectura local; REVISA sus datos antes de crearlas. Puedes consultar el PDF, añadir fichas manualmente o reintentar mañana.'
         : 'PDF procesado localmente: '+documento.paginas+' páginas, '+articulos.length+' materiales. Puedes utilizar la revisión visual para las páginas con muestras.');
+      if (avisoVision) mensaje(estado.textContent+avisoVision);
       const pendientes=[...new Set([...sinTexto,...revisar])].filter(p=>!articulos.some(a=>a.data.pagina===p));
       if (pendientes.length) mensaje(estado.textContent+' · Páginas sin propuestas, disponibles en revisión visual: '+pendientes.join(', ')+'.');
 
@@ -369,9 +383,10 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     const totales={creados:0,duplicados:0,rechazados:0};
     try{
       // Pequeños lotes para limitar carga de Worker/D1 y las muestras privadas.
-      for(let inicio=0;inicio<seleccion.length;inicio+=20){
-        const lote=seleccion.slice(inicio,inicio+20);
-        mensaje('Guardando artículos '+(inicio+1)+'–'+Math.min(inicio+20,seleccion.length)+' de '+seleccion.length+'…');
+      const tamanoLote=seleccion.some(a=>a.muestra)?4:20;
+      for(let inicio=0;inicio<seleccion.length;inicio+=tamanoLote){
+        const lote=seleccion.slice(inicio,inicio+tamanoLote);
+        mensaje('Guardando artículos '+(inicio+1)+'–'+Math.min(inicio+tamanoLote,seleccion.length)+' de '+seleccion.length+'…');
         const response=await fetch('/api/panel/catalogo-importar',{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({accion:'confirmar',proveedor:$('gubia-proveedor').value,

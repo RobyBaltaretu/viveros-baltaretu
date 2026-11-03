@@ -34,6 +34,10 @@ const aAdjunto = (f: FilaAdjunto): Adjunto => ({ id: f.id, ambito: f.ambito, ref
 export function crearRepositoriosPortafolio(db: BaseD1, imagenes: Imagenes): Pick<Repositorios, 'portafolio' | 'adjuntos'> {
   return {
     portafolio: {
+      async resumenSimulaciones() {
+        const fila = await db.prepare("SELECT count(*) AS n FROM portafolio WHERE id GLOB 'studio_sim_*'").first<{n:number}>();
+        return {guardadas:fila!.n,espacio:await imagenes.ocupacion()};
+      },
       async guardarSimulacion(id, titulo, antes, despues, email) {
         if (await db.prepare('SELECT id FROM portafolio WHERE id=?').bind(id).first()) return;
         const fecha = ahora();
@@ -45,7 +49,12 @@ export function crearRepositoriosPortafolio(db: BaseD1, imagenes: Imagenes): Pic
           .bind(id,titulo,JSON.stringify(datos),fecha,fecha,email);
         const adjunto = (lado: string, puntero: Uint8Array|string, tamano: number) => db.prepare(`INSERT INTO adjuntos (id,ambito,ref,tipo,bytes,tamano,creado,creado_por)
           VALUES (?,'portafolio',?,'image/jpeg',?,?,?,?)`).bind(id + '-' + lado,id,puntero,tamano,fecha,email);
-        await imagenes.escribir([{bytes:antes},{bytes:despues}], ([a,b]) => [proyecto, adjunto('antes',a,antes.length), adjunto('despues',b,despues.length)]);
+        try {
+          await imagenes.escribir([{bytes:antes},{bytes:despues}], ([a,b]) => [proyecto, adjunto('antes',a,antes.length), adjunto('despues',b,despues.length)]);
+        } catch (error) {
+          if (String(error).includes('UNIQUE') && await db.prepare('SELECT id FROM portafolio WHERE id=?').bind(id).first()) return;
+          throw error;
+        }
       },
       async listar(opciones = {}) {
         const sql = `SELECT * FROM portafolio ${opciones.incluirArchivados ? '' : 'WHERE archivado = 0'} ORDER BY orden, creado DESC`;
