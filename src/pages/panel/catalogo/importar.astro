@@ -124,7 +124,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     if(file.size>8000000){mensaje('El archivo supera 8 MB.');return;}
     nombreArchivo=file.name; articulos=[];resultado.hidden=true;detener(true);
     try{
-      let inicio=1,paginas=0,lotes=0;
+      let inicio=1,paginas=0;
       do{
         mensaje('Gubia está analizando páginas '+inicio+'–'+(inicio+5)+'…');
         const datos=new FormData();
@@ -132,7 +132,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         const response=await fetch('/api/panel/catalogo-importar',{method:'POST',body:datos});
         const body=await response.json().catch(()=>({}));
         if(!response.ok||!body.ok)throw Error(body.error||'No se ha podido analizar el PDF.');
-        paginas=body.paginas;inicio=body.fin+1;lotes++;
+        paginas=body.paginas;inicio=body.fin+1;
         const existentes=new Set(articulos.map(x=>[x.data.categoria,x.data.referencia||x.data.codigoDecor||x.data.nombre,x.data.espesorMm,x.data.formato].join('|').toLowerCase()));
         for(const item of body.articulos||[]){
           const k=[item.categoria,item.referencia||item.codigoDecor||item.nombre,item.espesorMm,item.formato].join('|').toLowerCase();
