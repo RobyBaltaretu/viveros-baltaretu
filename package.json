@@ -7,6 +7,9 @@
     "node": "^22.12.0"
   },
   "scripts": {
+    "predev": "node scripts/generar-css-simulador.mjs",
+    "prebuild": "node scripts/generar-css-simulador.mjs",
+    "pretest": "node scripts/generar-css-simulador.mjs",
     "dev": "wrangler types --include-runtime=false && astro dev",
     "build:turia": "CLIENTE_ID=turia npm run build",
     "build": "tsx scripts/contenido/descargar.ts && astro build",
