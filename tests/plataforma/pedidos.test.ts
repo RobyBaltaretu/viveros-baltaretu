@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ResultadoEscandallo } from '../../src/server/catalogo/escandallo.ts';
 import { aplicarMigraciones, crearRepositoriosD1, type Repositorios } from '../../src/server/data/index.ts';
 import type { ArticuloCatalogo, LineaPedido, PedidoProveedor, Proveedor } from '../../src/server/data/tipos.ts';
-import { cambiarEstadoPedido, cambiarPedido, costeDe, crearPedido, gastoDePedido, leerFormularioPedido, lineasDeTrabajo, mensajePedido, proveedorProbable } from '../../src/server/pedidos/pedidos.ts';
+import { cambiarEstadoPedido, cambiarPedido, costeDe, crearPedido, gastoDePedido, leerFormularioPedido, lineasDeVenta, lineasDeTrabajo, mensajePedido, proveedorProbable } from '../../src/server/pedidos/pedidos.ts';
 import { proveedorVacio } from '../../src/server/proveedores/proveedores.ts';
 import { d1DePrueba } from '../panel/d1.ts';
 
@@ -83,4 +83,14 @@ describe('pedidos: repositorio y estados', () => {
     expect(await repos.pedidosProveedor.listar({ proveedorId: 'prov' })).toHaveLength(3);
     expect(await repos.pedidosProveedor.borrar(b.pedido.id)).toBe(true);
   });
+});
+
+it('convierte cantidades y costes, mantiene texto libre y excluye extras y mano de obra reconocida', () => {
+  const tabla = art('tab','tableros','',{nombre:'Roble',unidad:'m²',coste:12});
+  const mano = art('h','mano-obra','',{nombre:'Montaje'});
+  const lineas = lineasDeVenta([{concepto:'Roble (m²)',cantidad:2.5},{concepto:'Pieza especial',cantidad:3,material:'Mate'},
+    {concepto:'Montaje',cantidad:2},{concepto:'Extra opcional',cantidad:1,extra:true}], [tabla,mano]);
+  expect(lineas).toHaveLength(2);
+  expect(lineas[0]).toMatchObject({articuloId:'tab',cantidad:2.5,coste:12,unidad:'m²'});
+  expect(lineas[1]).toMatchObject({articuloId:null,detalle:'Mate',coste:0});
 });

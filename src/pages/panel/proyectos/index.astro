@@ -27,12 +27,12 @@ if (Astro.request.method === 'POST') {
   }));
   const [antes,despues] = fotos;
   if (!antes || !despues) return new Response('Se necesitan dos imágenes JPEG válidas.',{status:400});
-  const id = 'studio-' + token;
+  const id = 'studio_sim_' + token;
   await s.repos.portafolio.guardarSimulacion(id,titulo,antes,despues,s.usuario.email);
   return Response.json({href:'/panel/portafolio/' + id},{headers:{'Cache-Control':'no-store'}});
 }
 const verSimulaciones = simulacionesPermitidas && Astro.url.searchParams.get('ver') === 'simulaciones';
-const borradores = verSimulaciones && s ? (await s.repos.portafolio.listar()).filter(p => p.id.startsWith('studio-')) : [];
+const borradores = verSimulaciones && s ? (await s.repos.portafolio.listar()).filter(p => p.id.startsWith('studio_sim_')) : [];
 const presupuestos = s && !verSimulaciones ? await s.repos.presupuestosCliente.listar() : [];
 const todos = proyectosDe(presupuestos);
 const filtro = ['pendientes', 'finalizados'].includes(Astro.url.searchParams.get('ver') ?? '') ? Astro.url.searchParams.get('ver')! : 'curso';
