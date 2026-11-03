@@ -498,6 +498,7 @@ export interface ProyectoPortafolio {
 }
 
 export interface RepositorioPortafolio {
+  guardarSimulacion(id: string, titulo: string, antes: Uint8Array, despues: Uint8Array, email: string): Promise<void>;
   listar(opciones?: { incluirArchivados?: boolean }): Promise<ProyectoPortafolio[]>;
   obtener(id: string): Promise<ProyectoPortafolio | null>;
   guardar(p: Omit<ProyectoPortafolio, 'actualizado' | 'archivado'>, email: string): Promise<void>;

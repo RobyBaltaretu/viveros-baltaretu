@@ -33,6 +33,7 @@ if (Astro.request.method === 'GET' && trabajo && !trabajo.archivado) {
   valores = { ...valores, lineas, proveedorId: valores.proveedorId || proveedorProbable(lineas, articulos, proveedores)?.id || '', notasInternas: `Material de: ${trabajo.nombre}.` };
   filas = lineas.length + 1;
 }
+const opcionesObra = [...presupuestos];
 let origen = '';
 if (s && Astro.request.method === 'GET' && !trabajo && (q.has('factura') || q.has('presupuesto'))) {
   const factura = q.has('factura') ? await s.repos.facturas.obtener(q.get('factura')!) : null;
@@ -43,7 +44,7 @@ if (s && Astro.request.method === 'GET' && !trabajo && (q.has('factura') || q.ha
   const lineas = lineasDeVenta(documento.lineas, articulos);
   origen = documento.codigo || 'documento de venta';
   valores = {...valores, lineas, presupuestoClienteId:presupuesto?.id ?? null, notasInternas:'Origen: ' + origen};
-  if (presupuesto && !presupuestos.some(p => p.id === presupuesto.id)) presupuestos.push(presupuesto);
+  if (presupuesto && !presupuestos.some(p => p.id === presupuesto.id)) opcionesObra.push(presupuesto);
 }
 if (s && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
@@ -63,7 +64,7 @@ if (s && Astro.request.method === 'POST') {
   }
 }
 // Para la obra: los presupuestos enviados y aceptados (y el ya elegido).
-const obras = presupuestos.filter((p) => p.estado === 'aceptado' || p.estado === 'enviado' || p.id === valores.presupuestoClienteId);
+const obras = opcionesObra.filter((p) => p.estado === 'aceptado' || p.estado === 'enviado' || p.id === valores.presupuestoClienteId);
 ---
 
 <PaginaPanel titulo="Pedido nuevo" permiso="facturas" volver="/panel/pedidos" ancho="amplio">

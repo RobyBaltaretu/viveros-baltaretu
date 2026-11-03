@@ -33,6 +33,18 @@ const aAdjunto = (f: FilaAdjunto): Adjunto => ({ id: f.id, ambito: f.ambito, ref
 export function crearRepositoriosPortafolio(db: BaseD1): Pick<Repositorios, 'portafolio' | 'adjuntos'> {
   return {
     portafolio: {
+      async guardarSimulacion(id, titulo, antes, despues, email) {
+        const fecha = ahora();
+        const datos: DatosProyecto = { descripcion: 'Propuesta de reforma generada en Turia Studio.', materiales: '', localidad: '',
+          anio: null, destacado: false, antes: [id + '-antes'], despues: [id + '-despues'] };
+        // Los tres registros se confirman juntos. Un reintento conserva el primer resultado.
+        const proyecto = db.prepare(`INSERT INTO portafolio (id,titulo,categoria,datos,orden,archivado,creado,actualizado,actualizado_por)
+          VALUES (?,?,'Simulación en borrador',?,0,0,?,?,?) ON CONFLICT(id) DO NOTHING`)
+          .bind(id,titulo,JSON.stringify(datos),fecha,fecha,email);
+        const adjunto = (lado: string, bytes: Uint8Array) => db.prepare(`INSERT INTO adjuntos (id,ambito,ref,tipo,bytes,tamano,creado,creado_por)
+          VALUES (?,'portafolio',?,'image/jpeg',?,?,?,?) ON CONFLICT(id) DO NOTHING`).bind(id + '-' + lado,id,bytes,bytes.length,fecha,email);
+        await db.batch([proyecto, adjunto('antes',antes), adjunto('despues',despues)]);
+      },
       async listar(opciones = {}) {
         const sql = `SELECT * FROM portafolio ${opciones.incluirArchivados ? '' : 'WHERE archivado = 0'} ORDER BY orden, creado DESC`;
         return (await db.prepare(sql).all<FilaProyecto>()).results.map(aProyecto);
