@@ -1,8 +1,11 @@
 import {z} from 'astro/zod';
 const url=z.string().max(1000).url().refine(v=>{try{return new URL(v).protocol==='https:';}catch{return false;}},'Usa una dirección HTTPS');
+/** Muestras privadas de materiales alojadas en D1, servidas solo en el panel autenticado. */
+const texturaPrivada=z.string().regex(/^\/api\/panel\/foto\?ruta=catalogo-materiales%2F[a-z0-9-]+%2Fmuestra\\.webp$/i);
+const urlTextura=z.union([url,texturaPrivada]);
 export const esquemaVisual=z.object({
  fabricante:z.string().max(100).optional(),coleccion:z.string().max(100).optional(),codigoDecor:z.string().max(80).optional(),
- fuente:url.optional(),textura:url.optional(),colorHex:z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+ fuente:url.optional(),textura:urlTextura.optional(),colorHex:z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
  escalaAnchoMm:z.number().positive().max(100000).optional(),escalaAltoMm:z.number().positive().max(100000).optional(),
  veta:z.enum(['sin-veta','vertical','horizontal','direccional']).optional(),brillo:z.enum(['mate','satinado','brillante']).optional(),
  soporte:z.string().max(100).optional(),uso:z.array(z.enum(['mueble','encimera','suelo'])).max(3).optional(),
