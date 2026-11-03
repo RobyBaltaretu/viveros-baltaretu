@@ -20,7 +20,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       <form id="gubia-pdf-form" class="gubia-formulario">
         <label>Proveedor <input required id="gubia-proveedor" name="proveedor" maxlength="80" placeholder="Ej. ONESTA" autocomplete="organization" /></label>
         <label>PDF del catálogo <input id="gubia-pdf" name="archivo" type="file" accept=".pdf,application/pdf" required /></label>
-        <p class="gubia-nota">Máximo 8 MB y 160 páginas. El PDF permanece en tu dispositivo: solo enviamos texto extraído y, si tú lo solicitas, una imagen de la página a Groq Free. No se llama a Gemini. Se utilizan las cuotas gratuitas de Groq.</p>
+        <p class="gubia-nota">Máximo 25 MB y 160 páginas. El PDF permanece en tu dispositivo: solo enviamos texto extraído y, si tú lo solicitas, una imagen de la página a Groq Free. No se llama a Gemini. Se utilizan las cuotas gratuitas de Groq.</p>
         <button class="nv-boton" id="gubia-analizar" type="submit">Analizar PDF con Gubia</button>
       </form>
     </section>
