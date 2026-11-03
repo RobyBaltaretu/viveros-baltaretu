@@ -12,15 +12,15 @@
 2. PDF.js lee y reconstruye las filas de texto y tablas en el dispositivo. Guarda el texto temporalmente en memoria.
 3. Groq `openai/gpt-oss-120b` interpreta grupos de hasta **3 páginas o 9.000 caracteres**, como máximo 30 grupos/día por usuario. Páginas sin texto se pueden consultar mediante la opción visual.
 4. Para páginas escaneadas, tablas de color o dudas de relación, el usuario pulsa **Ver página** y **Analizar imagen con Groq**. PDF.js la renderiza localmente como JPEG; `qwen/qwen3.8-27b` la interpreta con un máximo de **8 peticiones/día por usuario**.
-5. El resultado se valida con Zod, se deduplica, se muestra editable y queda en `sessionStorage` de la pestaña. No se guardan materiales sin confirmación humana.
-6. Solo al pulsar **Crear artículos seleccionados** se importan candidatos al catálogo existente de Turia, con inserción idempotente y `coste=0`, `precioFijo=null`, hasta 400 materiales por confirmación.
+5. El resultado se valida con Zod, se deduplica, se muestra editable y queda en `sessionStorage` de la pestaña. El usuario puede **seleccionar un artículo y tocar su textura en la página renderizada**, creando un pequeño recorte WebP sin llamada adicional de IA. No se guardan materiales sin confirmación humana.
+6. Solo al pulsar **Crear artículos seleccionados** se importan candidatos al catálogo existente de Turia en lotes de 20, con inserción idempotente y `coste=0`, `precioFijo=null`, hasta 400 materiales. Las muestras recortadas válidas (WebP, hasta 24 KB por material) se guardan en la tabla de fotografías privadas de D1, accesibles solo con la sesión del panel.
 
 ## Condiciones de seguridad y calidad
 - PDF local; únicamente texto extraído y, bajo acción expresa, una imagen JPEG se transmiten a Groq. Es importante verificar la licencia del catálogo para ese tratamiento.
 - Acceso protegido por Cloudflare Access, sesión, rol y verificación de origen. No disponible en el tenant Baltaretu.
 - Los campos procedentes de PDF se tratan como datos no fiables; no pueden ordenar acciones a la IA.
 - Nunca cruzar arbitrariamente combinaciones de soporte, espesor y acabado. Los materiales dudosos se corrigen manualmente.
-- El color calculado por IA es orientativo; **todavía no se almacenan automáticamente las texturas fotográficas originales** como imágenes privadas del catálogo.
+- El color calculado por IA es orientativo. Las **texturas reales pueden recortarse y asociarse manualmente** antes del alta; no se recopilan automáticamente todas las muestras del documento. Verifica el permiso del proveedor antes de reproducir imágenes del catálogo.
 - Una petición puede superar la cuota Free real de Groq aun con nuestros límites de aplicación; el flujo se interrumpe con un mensaje claro y conserva los candidatos ya interpretados.
 - El navegador debe permanecer abierto durante la extracción. Al recargar se recupera el **borrador de fichas**, pero el usuario debe volver a seleccionar el PDF si quiere visualizar páginas; el PDF no se almacena en servidor.
 - Si el PDF tiene muchas páginas, se puede necesitar continuar otro día por las cuotas de Groq Free. No se genera gasto de IA automáticamente al superar el límite.
