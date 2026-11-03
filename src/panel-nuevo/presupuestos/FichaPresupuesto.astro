@@ -111,6 +111,37 @@ const principalEstado = (e: EstadoPresupuestoCliente) => e === 'enviado' || e ==
   </div>
 </section>
 
+<details class="nv-doc-acciones">
+  <summary>Más acciones del documento</summary>
+  <div class="nv-doc-opciones">{moduloActivoAhora('pedidosProveedor') && (
+              <a href={`/panel/pedidos/nuevo?presupuesto=${p.id}`} class="enlace-panel">
+                Pedir material para esta obra
+              </a>
+            )}
+      <p class="nv-gris">Guárdalo en PDF (en la pantalla para imprimir, «Guardar como PDF») y envíalo con el PDF adjunto.</p>
+      {p.estado === 'borrador' && <p class="nv-gris">Después de enviarlo realmente, pulsa «Marcar como enviado». Abrir WhatsApp o el correo no cambia el estado ni confirma la entrega.</p>}
+      {p.estado === 'enviado' && <p class="nv-gris">Envío marcado manualmente. Registra la aceptación solo cuando el cliente la confirme.</p>}
+      <div class="nv-botones-columna">
+        <a href={`/panel/presupuestos-cliente/${p.id}/imprimir`} class="nv-boton nv-boton-secundario">
+          <Icono nombre="descargar" />
+          Imprimir o guardar en PDF
+        </a>
+        {
+          correo && (
+            <a href={correo} class="nv-boton nv-boton-secundario">
+              <Icono nombre="enviar" />
+              Enviar por correo
+            </a>
+          )
+        }
+        <a href={whatsapp} class="nv-boton nv-boton-secundario" target="_blank" rel="noopener">
+          <Icono nombre="conversacion" />
+          Enviar por WhatsApp
+        </a>
+      </div>
+  </div>
+</details>
+
 <div class="nv-ficha">
   <section class="nv-tarjeta" aria-labelledby="lineas">
     <div class="nv-cabeza-tarjeta">
@@ -196,30 +227,7 @@ const principalEstado = (e: EstadoPresupuestoCliente) => e === 'enviado' || e ==
       </p>
     </section>
 
-    <section class="nv-tarjeta nv-seccion" aria-labelledby="enviar">
-      <h2 id="enviar">Enviar al cliente</h2>
-      <p class="nv-gris">Guárdalo en PDF (en la pantalla para imprimir, «Guardar como PDF») y envíalo con el PDF adjunto.</p>
-      {p.estado === 'borrador' && <p class="nv-gris">Después de enviarlo realmente, pulsa «Marcar como enviado». Abrir WhatsApp o el correo no cambia el estado ni confirma la entrega.</p>}
-      {p.estado === 'enviado' && <p class="nv-gris">Envío marcado manualmente. Registra la aceptación solo cuando el cliente la confirme.</p>}
-      <div class="nv-botones-columna">
-        <a href={`/panel/presupuestos-cliente/${p.id}/imprimir`} class="nv-boton nv-boton-secundario">
-          <Icono nombre="descargar" />
-          Imprimir o guardar en PDF
-        </a>
-        {
-          correo && (
-            <a href={correo} class="nv-boton nv-boton-secundario">
-              <Icono nombre="enviar" />
-              Enviar por correo
-            </a>
-          )
-        }
-        <a href={whatsapp} class="nv-boton nv-boton-secundario" target="_blank" rel="noopener">
-          <Icono nombre="conversacion" />
-          Enviar por WhatsApp
-        </a>
-      </div>
-    </section>
+
 
     {
       p.estado === 'aceptado' && (
@@ -245,11 +253,7 @@ const principalEstado = (e: EstadoPresupuestoCliente) => e === 'enviado' || e ==
                 Ver la factura final
               </a>
             )}
-            {moduloActivoAhora('pedidosProveedor') && (
-              <a href={`/panel/pedidos/nuevo?presupuesto=${p.id}`} class="enlace-panel">
-                Pedir material para esta obra
-              </a>
-            )}
+            
           </div>
           {(['anticipo', 'resto'] as const)
             .filter((parte) => parte === 'resto' || p.totales.anticipo > 0)

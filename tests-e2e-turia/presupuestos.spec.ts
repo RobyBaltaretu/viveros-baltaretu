@@ -42,6 +42,7 @@ test('presupuestos: alta con extra, anticipo, envío, aceptación y factura de a
   await expect(page.getByText(/^1\.730,30/).first()).toBeVisible();
   await expect(page.getByText(/692,12.*\+.*1\.038,18/)).toBeVisible();
   await expect(page.getByText(/Extras opcionales .*Iluminación LED/)).toBeVisible();
+  await page.getByText('Más acciones del documento', {exact:true}).click();
   await expect(page.getByRole('link', { name: 'Enviar por WhatsApp' })).toHaveAttribute('href', /^https:\/\/wa\.me\/\?text=.*1\.730%2C30/);
   await auditar(page);
   await controlesGrandes(page);

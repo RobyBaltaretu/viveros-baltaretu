@@ -140,6 +140,41 @@ const TONO = { borrador: 'gris', enviado: 'azul', recibido: 'verde' } as const;
   </div>
 </section>
 
+<details class="nv-doc-acciones">
+  <summary>Más acciones del documento</summary>
+  <div class="nv-doc-opciones">
+      <p class="nv-gris">El mensaje y el PDF llevan lo que pides, las medidas y las referencias. Nunca los precios.</p>
+      <div class="nv-botones-columna">
+        <a href={whatsapp} class="nv-boton nv-boton-secundario" target="_blank" rel="noopener">
+          <Icono nombre="conversacion" />
+          Enviar por WhatsApp
+        </a>
+        {
+          correo && (
+            <a href={correo} class="nv-boton nv-boton-secundario">
+              <Icono nombre="enviar" />
+              Enviar por correo
+            </a>
+          )
+        }
+        <a href={`/panel/pedidos/${p.id}/imprimir`} class="nv-boton nv-boton-secundario">
+          <Icono nombre="descargar" />
+          Imprimir o guardar en PDF
+        </a>
+        {
+          p.proveedor.telefono && (
+            <a href={`tel:${p.proveedor.telefono.replace(/\s/g, '')}`} class="enlace-panel">
+              Llamar a {p.proveedor.contacto || p.proveedor.nombre}
+            </a>
+          )
+        }
+        <a href={`/panel/proveedores/${p.proveedorId}`} class="enlace-panel">
+          Ver el proveedor
+        </a>
+      </div>
+  </div>
+</details>
+
 <div class="nv-ficha">
   <section class="nv-tarjeta" aria-labelledby="lineas-pedido">
     <div class="nv-cabeza-tarjeta">
@@ -196,38 +231,7 @@ const TONO = { borrador: 'gris', enviado: 'azul', recibido: 'verde' } as const;
       {p.lineas.some((l) => !(l.coste > 0)) && <p class="nv-nota">Hay líneas sin coste: el proveedor te dirá el precio.</p>}
     </section>
 
-    <section class="nv-tarjeta nv-seccion" aria-labelledby="enviar-pedido">
-      <h2 id="enviar-pedido">Enviar al proveedor</h2>
-      <p class="nv-gris">El mensaje y el PDF llevan lo que pides, las medidas y las referencias. Nunca los precios.</p>
-      <div class="nv-botones-columna">
-        <a href={whatsapp} class="nv-boton nv-boton-secundario" target="_blank" rel="noopener">
-          <Icono nombre="conversacion" />
-          Enviar por WhatsApp
-        </a>
-        {
-          correo && (
-            <a href={correo} class="nv-boton nv-boton-secundario">
-              <Icono nombre="enviar" />
-              Enviar por correo
-            </a>
-          )
-        }
-        <a href={`/panel/pedidos/${p.id}/imprimir`} class="nv-boton nv-boton-secundario">
-          <Icono nombre="descargar" />
-          Imprimir o guardar en PDF
-        </a>
-        {
-          p.proveedor.telefono && (
-            <a href={`tel:${p.proveedor.telefono.replace(/\s/g, '')}`} class="enlace-panel">
-              Llamar a {p.proveedor.contacto || p.proveedor.nombre}
-            </a>
-          )
-        }
-        <a href={`/panel/proveedores/${p.proveedorId}`} class="enlace-panel">
-          Ver el proveedor
-        </a>
-      </div>
-    </section>
+
 
     {
       p.estado === 'borrador' && (
