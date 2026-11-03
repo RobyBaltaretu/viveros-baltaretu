@@ -52,6 +52,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
           <img id="gubia-preview-pagina" alt="Vista de página seleccionada del PDF" />
         </div>
       </section>
+      <button type="button" id="gubia-crear-manual" class="nv-boton nv-boton-secundario">Añadir ficha manualmente</button>
       <div class="gubia-final">
         <button class="nv-boton nv-boton-secundario" id="gubia-cancelar" type="button">Descartar revisión</button>
         <button class="nv-boton" id="gubia-confirmar" type="button">Crear artículos seleccionados</button>
@@ -144,35 +145,126 @@ const sesion = sesionCon(Astro.locals, 'facturas');
   $('gubia-buscar').addEventListener('input',pintar);
   $('gubia-todos').addEventListener('change',e=>{articulos.forEach(a=>a.activo=e.target.checked);pintar();});
   $('gubia-cancelar').addEventListener('click',()=>{
-    articulos=[];resultado.hidden=true;mensaje('Revisión descartada. Los artículos existentes no se han modificado.');});
+    articulos=[];sessionStorage.removeItem(BORRADOR);resultado.hidden=true;mensaje('Revisión descartada. Los artículos existentes no se han modificado.');});
+  let documento = null;
+  const textosPagina = new Map();
+  const BORRADOR = 'gubia-turia-importacion-local-v1';
+  function guardarBorrador() {
+    try {
+      sessionStorage.setItem(BORRADOR,JSON.stringify({proveedor:$('gubia-proveedor').value,nombreArchivo,articulos}));
+    } catch { /* Memoria de sesión agotada: continúa en la pestaña. */ }
+  }
+  function juntarCandidatos(nuevos) {
+    const vistos=new Set(articulos.map(x=>[x.data.categoria,x.data.referencia||x.data.codigoDecor||x.data.nombre,x.data.espesorMm,x.data.formato,x.data.acabado].join('|').toLowerCase()));
+    for(const item of nuevos||[]) {
+      if(articulos.length>=400)break;
+      const k=[item.categoria,item.referencia||item.codigoDecor||item.nombre,item.espesorMm,item.formato,item.acabado].join('|').toLowerCase();
+      if(!vistos.has(k)){articulos.push({activo:true,data:item});vistos.add(k);}
+    }
+    guardarBorrador();
+    pintar();
+  }
+  const jsonPost = async body => {
+    const res=await fetch('/api/panel/catalogo-importar',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+    });
+    const r=await res.json().catch(()=>({}));
+    if(!res.ok||!r.ok)throw Error(r.error||'Gubia no ha podido interpretar el material.');
+    return r;
+  };
+  const mostrarRevision = () => {
+    resultado.hidden=false;
+    pintar();
+    resultado.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  const actualizarProgreso = (actual,total,descripcion) => {
+    $('gubia-seguimiento').hidden=false;
+    $('gubia-progreso').value=Math.round(actual/Math.max(total,1)*100);
+    $('gubia-fase').textContent=descripcion;
+    mensaje(descripcion+' · '+articulos.length+' fichas propuestas');
+  };
   form.addEventListener('submit',async e=>{
-    e.preventDefault(); if(trabajando)return;
+    e.preventDefault();if(trabajando)return;
     const file=$('gubia-pdf').files?.[0],proveedor=$('gubia-proveedor').value.trim();
-    if(!file||!proveedor)return;
-    if(file.size>8000000){mensaje('El archivo supera 8 MB.');return;}
-    nombreArchivo=file.name; articulos=[];resultado.hidden=true;detener(true);
+    if(!file||!proveedor){mensaje('Selecciona el PDF e indica el proveedor.');return;}
+    if(!window.gubiaPDF){mensaje('Todavía no se ha cargado PDF.js. Comprueba la conexión y vuelve a intentarlo.');return;}
+    nombreArchivo=file.name;articulos=[];textosPagina.clear();sessionStorage.removeItem(BORRADOR);
+    resultado.hidden=true;detener(true);
     try{
-      let inicio=1,paginas=0;
-      do{
-        mensaje('Gubia está analizando páginas '+inicio+'–'+(inicio+5)+'…');
-        const datos=new FormData();
-        datos.set('accion','analizar');datos.set('proveedor',proveedor);datos.set('inicio',String(inicio));datos.set('archivo',file);
-        const response=await fetch('/api/panel/catalogo-importar',{method:'POST',body:datos});
-        const body=await response.json().catch(()=>({}));
-        if(!response.ok||!body.ok)throw Error(body.error||'No se ha podido analizar el PDF.');
-        paginas=body.paginas;inicio=body.fin < body.paginas ? body.fin : body.paginas+1; // solapa una página entre bloques
-        const existentes=new Set(articulos.map(x=>[x.data.categoria,x.data.referencia||x.data.codigoDecor||x.data.nombre,x.data.espesorMm,x.data.formato].join('|').toLowerCase()));
-        for(const item of body.articulos||[]){
-          const k=[item.categoria,item.referencia||item.codigoDecor||item.nombre,item.espesorMm,item.formato].join('|').toLowerCase();
-          if(!existentes.has(k)){articulos.push({activo:true,data:item});existentes.add(k);}
-        }
-        mensaje('Analizadas '+Math.min(inicio-1,paginas)+' de '+paginas+' páginas · '+articulos.length+' fichas propuestas.');
-        if(articulos.length>=400){mensaje('Se alcanzó el límite de 400 fichas. Confirma este lote antes de procesar otro PDF.');break;}
-      }while(inicio<=paginas);
-      resultado.hidden=false;pintar();resultado.scrollIntoView({behavior:'smooth',block:'start'});
-    }catch(err){mensaje('Análisis interrumpido: '+(err?.message||'Error inesperado')+'. Se conservan las fichas de los bloques procesados para revisarlas.');if(articulos.length){resultado.hidden=false;pintar();}}
+      if(documento){await documento.cerrar();documento=null;}
+      documento=await window.gubiaPDF.abrirPDFLocal(file);
+      $('gubia-numero-pagina').max=String(documento.paginas);
+      let bloque=[],longitud=0;
+      const enviar=async () => {
+        if(!bloque.length)return;
+        const hasta=bloque[bloque.length-1].pagina;
+        actualizarProgreso(hasta,documento.paginas,'Groq Free interpreta hasta la página '+hasta+' de '+documento.paginas);
+        const response=await jsonPost({accion:'interpretar',proveedor,paginas:bloque});
+        juntarCandidatos(response.articulos);
+        bloque=[];longitud=0;
+      };
+      for(let numero=1;numero<=documento.paginas;numero++){
+        actualizarProgreso(numero-1,documento.paginas,'PDF.js leyendo página '+numero+' de '+documento.paginas+' en este dispositivo');
+        const pagina=await documento.pagina(numero);
+        textosPagina.set(numero,pagina.texto);
+        // El resto de páginas (escaneos, páginas sin texto) se revisa visualmente cuando el usuario lo solicite.
+        if(pagina.texto.trim().length<25)continue;
+        if(bloque.length>=3 || longitud+pagina.texto.length>9000) await enviar();
+        bloque.push({pagina:numero,texto:pagina.texto});
+        longitud+=pagina.texto.length;
+        if(bloque.length===3)await enviar();
+      }
+      await enviar();
+      actualizarProgreso(documento.paginas,documento.paginas,'Análisis finalizado');
+      mostrarRevision();
+      mensaje('PDF procesado localmente: '+documento.paginas+' páginas, '+articulos.length+' materiales. Puedes utilizar la revisión visual para las páginas con muestras.');
+    }catch(err){
+      actualizarProgreso(0,1,'Análisis interrumpido');
+      mensaje('Análisis interrumpido: '+(err?.message||'Error desconocido')+'. Puedes revisar lo encontrado; se conserva un borrador en esta pestaña.');
+      mostrarRevision();
+    }finally{detener(false);}
+  });
+  async function vistaPagina(){
+    if(!documento){mensaje('Primero abre el PDF desde esta pantalla. Los borradores recuperados requieren seleccionar de nuevo el documento para ver las páginas.');return null;}
+    const numero=Number($('gubia-numero-pagina').value);
+    if(!Number.isInteger(numero)||numero<1||numero>documento.paginas){mensaje('Elige un número de página entre 1 y '+documento.paginas);return null;}
+    const image=await documento.imagen(numero);
+    $('gubia-preview-pagina').src=image;
+    $('gubia-vista-pagina').hidden=false;
+    return {numero,image};
+  }
+  $('gubia-ver-pagina').addEventListener('click',async()=>{
+    if(trabajando)return;
+    try{await vistaPagina();}catch(err){mensaje('No se ha podido mostrar esa página: '+(err?.message||'Error'));}
+  });
+  $('gubia-analizar-vision').addEventListener('click',async()=>{
+    if(trabajando)return;
+    detener(true);
+    try{
+      const vista=await vistaPagina();if(!vista)return;
+      if(vista.image.length>800000){mensaje('La página supera 800 KB. Prueba con otra página más sencilla.');return;}
+      mensaje('Groq está interpretando visualmente la página '+vista.numero+'…');
+      const response=await jsonPost({accion:'vision',proveedor:$('gubia-proveedor').value.trim(),pagina:vista.numero,
+        imagen:vista.image,texto:(textosPagina.get(vista.numero)||'').slice(0,2500)});
+      juntarCandidatos(response.articulos);
+      mensaje('Groq ha revisado la página '+vista.numero+'. Revisa nombres, colores y códigos antes de guardar.');
+    }catch(err){mensaje('Revisión visual no disponible: '+(err?.message||'Error')+'. Puedes continuar con los materiales detectados.');}
     finally{detener(false);}
   });
+  $('gubia-crear-manual')?.addEventListener('click',()=>{
+    articulos.push({activo:true,data:{categoria:'tableros',nombre:'Material por revisar',referencia:'',codigoDecor:'',
+      acabado:'',soporte:'',espesorMm:null,formato:'',unidad:'m²',colorHex:null,veta:null,brillo:null,pagina:Math.max(1,Number($('gubia-numero-pagina').value)||1)}});
+    guardarBorrador();pintar();
+  });
+  try{
+    const borrador=JSON.parse(sessionStorage.getItem(BORRADOR)||'null');
+    if(borrador&&Array.isArray(borrador.articulos)&&borrador.articulos.length<=400){
+      articulos=borrador.articulos;nombreArchivo=borrador.nombreArchivo||'catalogo.pdf';
+      $('gubia-proveedor').value=borrador.proveedor||'';
+      resultado.hidden=false;pintar();
+      mensaje('Borrador local recuperado: '+articulos.length+' materiales. Puedes confirmarlos o volver a subir el PDF.');
+    }
+  }catch{/* Borrador inválido: no impedir la carga normal */}
   $('gubia-confirmar').addEventListener('click',async()=>{
     if(trabajando)return;
     const seleccion=articulos.filter(a=>a.activo).map(a=>a.data);
@@ -188,7 +280,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       const body=await response.json().catch(()=>({}));
       if(!response.ok||!body.ok)throw Error(body.error||'No se ha podido importar.');
       mensaje('Importación completada: '+body.creados+' nuevos, '+body.duplicados+' duplicados omitidos, '+body.rechazados+' rechazados. Revisa los artículos y completa sus precios.');
-      articulos=[];resultado.hidden=true;
+      articulos=[];sessionStorage.removeItem(BORRADOR);resultado.hidden=true;
     }catch(err){mensaje('Error al guardar: '+(err?.message||'Error')+'. Comprueba el catálogo antes de reintentar.');}
     finally{detener(false);}
   });
