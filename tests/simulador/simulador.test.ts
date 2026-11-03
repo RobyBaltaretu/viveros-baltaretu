@@ -103,7 +103,7 @@ describe('Simulador de Reformas con IA', () => {
     expect(c.zones).toEqual({ cabinets: true, countertop: false, flooring: false, lighting: true });
     expect(c.spaceType).toBe('Cocina');
     expect(c.lighting.colorTemp).toBe('3000K neutral white');
-    expect(() => resolveRenovationConfig({} as never)).not.toThrow();
+    expect(() => resolveRenovationConfig({} as never)).toThrow('Tipo de reforma no válido');
   });
 
   test('armario: el prompt prohíbe convertirlo en cocina y elimina zonas incompatibles', () => {
@@ -155,7 +155,7 @@ describe('simulador: tope mensual', () => {
   afterAll(() => cerrar());
 
   const ia = (simulacionesMes = 3) => ({ simulador: 'gemini' as const, modelos: { groq: 'g', gemini: 'gemini-x' }, simulacionesMes });
-  const pide = { image: 'data:image/jpeg;base64,/9j/AAAAAAAAAAAAAAAA', config: resolveRenovationConfig({} as never) };
+  const pide = { image: 'data:image/jpeg;base64,/9j/AAAAAAAAAAAAAAAA', config: resolveRenovationConfig({ spaceType: 'cocina' } as never) };
   const bien = (async () => ({ ok: true, afterImage: 'data:image/png;base64,QQ==' })) as never;
   const mal = (estado: number) => (async () => ({ ok: false, error: 'x', estado })) as never;
 
