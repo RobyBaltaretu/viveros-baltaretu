@@ -1,4 +1,5 @@
 ---
+import { precioVenta } from '../../../server/catalogo/catalogo.ts';
 import Mensajes from '../../../components/panel/Mensajes.astro';
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
 import FormPresupuesto from '../../../components/panel/presupuestos-cliente/FormPresupuesto.astro';
@@ -44,6 +45,20 @@ const clientes = s ? await s.repos.clientes.listar() : [];
 // Diseño nuevo: editor en tabla con el total al escribir y los artículos del catálogo a un clic.
 const nuevo = clienteActual().panel?.diseno === 'nuevo';
 const [articulos, plantillas] = s && nuevo && rutaDisponible('/panel/catalogo') ? await Promise.all([s.repos.catalogo.articulos(), s.repos.catalogo.plantillas()]) : [[], []];
+if (s && Astro.request.method === 'GET' && clienteActual().id === 'turia' && q.has('materialStudio')) {
+  const ids = [...new Set(q.getAll('materialStudio'))].slice(0, 4);
+  const activos = new Map(articulos.filter(a => !a.archivado).map(a => [a.id, a]));
+  const lineas = ids.flatMap(id => {
+    const articulo = activos.get(id);
+    if (!articulo) return [];
+    return [{ concepto: articulo.nombre, material: [articulo.acabado, articulo.unidad].filter(Boolean).join(' · '),
+      cantidad: 1, precio: precioVenta(articulo), extra: false }];
+  });
+  valores = { ...valores, concepto: 'Reforma del simulador', lineas };
+  filas = Math.max(3, lineas.length + 1);
+  if (lineas.length < ids.length) error = 'Algún material ya no está disponible. Revisa las líneas antes de guardar.';
+}
+
 ---
 
 <PaginaPanel titulo="Nuevo presupuesto" permiso="facturas" volver="/panel/presupuestos-cliente" ancho={nuevo ? 'amplio' : 'normal'}>

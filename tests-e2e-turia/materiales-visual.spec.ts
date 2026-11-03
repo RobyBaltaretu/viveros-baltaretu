@@ -4,7 +4,7 @@ import {auditar} from '../tests-e2e/ayudas';
 test('Turia Studio: material visual por zona, búsqueda y confirmación en móvil',async({page})=>{
   await page.setViewportSize({width:390,height:844});
   await page.goto('/panel/simulador');
-  await page.getByRole('button',{name:/3 · Materiales/}).click();
+  await page.getByRole('button',{name:/2 · Materiales/}).click();
   const trigger=page.getByRole('button',{name:'Elegir material para Material Muebles Superiores / Columnas'});
   await expect(trigger).toBeVisible();
   await expect(trigger).toBeEnabled();

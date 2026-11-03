@@ -14,7 +14,7 @@ import { iaDe } from '../../plataforma/configuracion.ts';
 import { sesionCon } from '../../server/panel/pagina.ts';
 import { AVISO_AGOTADA, estadoCuota, limitePresupuestado, mesDe } from '../../server/simulador/cuota.ts';
 
-import { materialesDelTaller, DISTRIBUCIONES, APERTURAS, ACABADOS, VETAS } from '../../server/simulador/catalogo';
+import { materialesDelTaller } from '../../server/simulador/catalogo';
 import {PERFILES} from '../../server/simulador/perfiles';
 export const prerender = false;
 
@@ -33,7 +33,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
   <style is:inline set:html={estilosSimulador + studioCss}></style>
   <div class="simulador-wrapper studio space-y-6">
     <header class="studio-bar"><div><h1>Turia Studio</h1><p>Diseña, visualiza y prepara tu reforma.</p></div><div class="studio-actions"><button type="button" id="studio-save" class="studio-button">Guardar borrador</button><button type="button" id="studio-reset" class="studio-button">Nueva simulación</button></div><p id="studio-status" role="status"></p></header>
-    <nav class="studio-steps" aria-label="Pasos del diseño">{['Espacio','Diseño','Materiales','Revisar'].map((t,i)=><button type="button" data-studio-step={i} aria-current={i===0?'step':undefined}>{i+1} · {t}</button>)}</nav>
+    <nav class="studio-steps" aria-label="Pasos del diseño">{['Espacio','Materiales','Revisar'].map((t,i)=><button type="button" data-studio-step={i} aria-current={i===0?'step':undefined}>{i+1} · {t}</button>)}</nav>
     <!-- Simulaciones del mes: tope duro en D1 (aviso desde el 80 %, bloqueo al 100 %) -->
     <section
       id="cuota"
@@ -77,7 +77,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
     <!-- Layout Principal: Formulario y Vista Previa -->
     <div class="studio-layout">
       <!-- Columna Izquierda: Configuración de la Reforma -->
-      <form id="simulador-form" class="space-y-6">
+      <form id="simulador-form" data-presupuestar={!!sesionCon(Astro.locals, 'facturas') && cliente.modulos.presupuestosCliente} class="space-y-6">
         <!-- 1. Cargar Foto -->
         <div class="rounded-2xl border border-linea bg-papel p-5 shadow-xs">
           <h2 class="font-titular text-base font-bold text-tinta mb-2 flex items-center gap-2">
@@ -140,12 +140,10 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
           </div>
         </div>
 
-        <section class="rounded-2xl border border-linea bg-papel p-5 space-y-3"><h2>Definición del proyecto</h2><p>Medidas en cm aportadas por el taller; no se deducen de la foto. Deja vacío lo que desconozcas.</p>
-{['ancho','alto','fondo','puertas','cajones'].map(k=><label class="block">{k}<input name={k} type="number" min="0" max={k==='ancho'?3000:k==='alto'?1000:k==='fondo'?300:k==='puertas'?30:50} step={['puertas','cajones'].includes(k)?'1':'0.1'} class="campo-panel"/></label>)}
-{[['distribucion',DISTRIBUCIONES],['apertura',APERTURAS],['acabado',ACABADOS],['veta',VETAS]].map(([k,opciones])=><label class="block">{k}<select name={k as string} class="campo-panel">{(opciones as readonly string[]).map(o=><option>{o}</option>)}</select></label>)}
-<p>Los colores son orientativos, no fotografías del fabricante. Artículo activo no significa stock confirmado. Comprueba humedad, espesores, herrajes, instalaciones y holguras en la visita técnica.</p><a href="/panel/catalogo">Gestionar materiales del catálogo</a>
-{!materiales.length && <p role="status">Añade materiales al catálogo para seleccionar acabados reales del taller.</p>}</section>
-<section id="studio-perfil" class="space-y-3" data-perfiles={JSON.stringify(PERFILES)}><h2>Decisiones para tu reforma</h2><div id="studio-perfil-campos"></div><p id="studio-perfil-revision"></p></section>
+        <details id="studio-perfil" data-perfiles={JSON.stringify(PERFILES)}>
+          <summary>Opciones de la reforma</summary>
+          <div id="studio-perfil-campos"></div><p id="studio-perfil-revision"></p>
+        </details>
 <!-- 2. Tipo de Estancia -->
         <div class="rounded-2xl border border-linea bg-papel p-5 shadow-xs">
           <h2 class="font-titular text-base font-bold text-tinta mb-3 flex items-center gap-2">
@@ -311,8 +309,8 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
             <img id="img-after" src="" alt="Después de la reforma" class="absolute inset-0 size-full object-cover" />
 
             <!-- Foto ANTES (capa recortada encima) -->
-            <div id="before-clip-layer" class="absolute inset-0 overflow-hidden w-1/2">
-              <img id="img-before" src="" alt="Antes de la reforma" class="absolute inset-0 max-w-none object-cover" />
+            <div id="before-clip-layer" class="absolute inset-0" style="clip-path:inset(0 50% 0 0)">
+              <img id="img-before" src="" alt="Antes de la reforma" class="absolute inset-0 size-full object-cover" />
             </div>
 
             <!-- Línea Deslizante y Tirador -->
@@ -652,7 +650,6 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
       const config = {
         spaceType: datos.get('spaceType'),
         perfil: {opciones:Object.fromEntries([...form.querySelectorAll('[data-perfil-campo]')].map(e=>[e.dataset.perfilCampo,e.value]))},
-        proyecto: Object.fromEntries(['ancho','alto','fondo','puertas','cajones','distribucion','apertura','acabado','veta'].map(k=>[k,['ancho','alto','fondo','puertas','cajones'].includes(k) ? (datos.get(k) ? Number(datos.get(k)) : null) : datos.get(k)])),
         cabinetStyle: $('cabinet-style')?.value,
         floorToCeiling: marcado('floor-to-ceiling'),
         zones: { cabinets: marcado('zone-cabinets'), countertop: marcado('zone-countertop'), flooring: marcado('zone-flooring'), lighting: marcado('zone-lighting') },
@@ -704,29 +701,21 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
     function setSliderPosition(pct) {
       const v = Math.max(0, Math.min(100, pct));
       if (comparacion) comparacion.value = String(v);
-      if (beforeClipLayer) beforeClipLayer.style.width = `${v}%`;
+      if (beforeClipLayer) beforeClipLayer.style.clipPath = `inset(0 ${100 - v}% 0 0)`;
       if (sliderHandle) sliderHandle.style.left = `${v}%`;
-      if (comparatorContainer && imgBefore) {
-        const rect = comparatorContainer.getBoundingClientRect();
-        imgBefore.style.width = `${rect.width}px`;
-        imgBefore.style.height = `${rect.height}px`;
-      }
     }
 
-    let arrastrando = false;
-    const mover = (x) => {
-      if (!arrastrando || !comparatorContainer) return;
+    function revelar(event) {
       const rect = comparatorContainer.getBoundingClientRect();
-      setSliderPosition(((x - rect.left) / rect.width) * 100);
-    };
-    comparatorContainer?.addEventListener('pointerdown', (e) => {
-      arrastrando = true;
-      mover(e.clientX);
+      if (rect.width) setSliderPosition((event.clientX - rect.left) * 100 / rect.width);
+    }
+    comparatorContainer?.addEventListener('pointerdown', event => {
+      if (!event.isPrimary) return;
+      comparatorContainer.setPointerCapture(event.pointerId);
+      revelar(event);
     });
-    window.addEventListener('pointermove', (e) => mover(e.clientX));
-    window.addEventListener('pointerup', () => (arrastrando = false));
-    window.addEventListener('resize', () => {
-      if (sliderWrapper && !sliderWrapper.classList.contains('hidden') && beforeClipLayer) setSliderPosition(parseFloat(beforeClipLayer.style.width) || 50);
+    comparatorContainer?.addEventListener('pointermove', event => {
+      if (comparatorContainer.hasPointerCapture(event.pointerId)) revelar(event);
     });
 
     btnDescargar?.addEventListener('click', () => {
@@ -743,21 +732,40 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
 (() => {
  const form=document.getElementById('simulador-form'); if(!form)return;
  const children=[...form.children];
- const panels=[document.createElement('section'),document.createElement('section'),document.createElement('section'),document.createElement('section')];
- panels.forEach((p,i)=>{p.dataset.studioPanel=i;p.setAttribute('aria-label',['Espacio','Diseño','Materiales','Revisar'][i]);form.insertBefore(p,children[0]);});
- panels[0].append(children[0],children[3]);panels[1].append(children[1],children[2]);panels[2].append(children[4]);
- const review=document.createElement('div');review.className='studio-review';panels[3].append(review);
- const budget=document.createElement('a');budget.href='/panel/presupuestos-cliente/nuevo';budget.className='enlace-panel';budget.textContent='Preparar presupuesto con el catálogo';panels[3].append(budget);
- const notice=document.createElement('p');notice.textContent='La imagen no es un plano ni un precio calculado. El presupuesto se prepara con mediciones y partidas verificadas.';panels[3].append(notice);
+ const panels = Array.from({length: 3}, () => document.createElement('section'));
+ panels.forEach((p,i)=>{p.dataset.studioPanel=i;p.setAttribute('aria-label',['Espacio','Materiales','Revisar'][i]);form.insertBefore(p,children[0]);});
+ panels[0].append(children[0], children[2]);
+ panels[1].append(children[3], children[1]);
+ const review=document.createElement('div');review.className='studio-review';panels[2].append(review);
+ const budget=document.createElement('a');budget.href='/panel/presupuestos-cliente/nuevo';budget.className='enlace-panel';budget.textContent='Preparar presupuesto con el catálogo';if (form.dataset.presupuestar === 'true' || form.dataset.presupuestar === '') panels[2].append(budget);
+ function actualizarPresupuesto() {
+   const url = new URL('/panel/presupuestos-cliente/nuevo', location.origin);
+   const zonas = {cabinets:['upperMaterial','lowerMaterial'], countertop:['countertopMaterial'], flooring:['flooringMaterial']};
+   const ids = new Set();
+   for (const [zona, nombres] of Object.entries(zonas)) {
+     const control = document.getElementById('zone-' + zona);
+     if (!control.checked || control.disabled) continue;
+     for (const nombre of nombres) {
+       const id = form.elements.namedItem(nombre)?.value;
+       if (id?.startsWith('catalogo:')) ids.add(id.slice('catalogo:'.length));
+     }
+   }
+   for (const id of ids) url.searchParams.append('materialStudio', id);
+   budget.href = url.pathname + url.search;
+ }
+ form.addEventListener('change', actualizarPresupuesto);
+ budget.addEventListener('click', actualizarPresupuesto);
+ const notice=document.createElement('p');notice.textContent='Se añadirá una línea por material. Revisa las cantidades según las medidas reales antes de guardar.';panels[2].append(notice);
  const footer=document.createElement('div');footer.className='studio-footer';const prev=document.createElement('button'),next=document.createElement('button');prev.type=next.type='button';prev.className=next.className='studio-button';prev.textContent='← Anterior';next.textContent='Continuar →';footer.append(prev,next);form.insertBefore(footer,document.getElementById('btn-generar'));
- let step=0;const show=(i)=>{step=i;panels.forEach((p,j)=>p.hidden=j!==i);document.querySelectorAll('[data-studio-step]').forEach((b,j)=>{if(i===j)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');});prev.disabled=i===0;next.hidden=i===3;review.textContent=[...form.querySelectorAll('select,input[type=number],input[type=radio]:checked')].map(e=>{if(e.closest('label')?.hidden)return '';const key=e.name||e.id;const labels={spaceType:'Espacio',ancho:'Ancho (cm)',alto:'Alto (cm)',fondo:'Fondo (cm)',puertas:'Puertas',cajones:'Cajones',distribucion:'Distribución',apertura:'Apertura',acabado:'Acabado',veta:'Veta','cabinet-style':'Frentes y tiradores',upperMaterial:'Módulos superiores',lowerMaterial:'Módulos inferiores',countertopMaterial:'Encimera',flooringMaterial:'Suelo','led-temp':'Iluminación'};const name=labels[key];if(!name)return '';const value=e.tagName==='SELECT'?e.selectedOptions[0]?.textContent:e.type==='radio'?e.closest('label')?.textContent.trim():e.value;return value?name+': '+value:'';}).filter(Boolean).join('\n');};
- document.querySelectorAll('[data-studio-step]').forEach(b=>b.addEventListener('click',()=>show(Number(b.dataset.studioStep))));prev.onclick=()=>show(Math.max(0,step-1));next.onclick=()=>{if(step===0&&!document.getElementById('foto-input').files.length){document.getElementById('foto-input').reportValidity();return;}show(Math.min(3,step+1));};form.addEventListener('invalid',e=>{const panel=e.target.closest('[data-studio-panel]');if(panel)show(Number(panel.dataset.studioPanel));},true);
+ let step=0;const show=(i)=>{step=i;panels.forEach((p,j)=>p.hidden=j!==i);document.querySelectorAll('[data-studio-step]').forEach((b,j)=>{if(i===j)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');});prev.disabled=i===0;next.hidden=i===2;review.textContent=[...form.querySelectorAll('select,input[type=number],input[type=radio]:checked')].map(e=>{if(e.closest('label')?.hidden)return '';const key=e.name||e.id;const labels={spaceType:'Espacio',ancho:'Ancho (cm)',alto:'Alto (cm)',fondo:'Fondo (cm)',puertas:'Puertas',cajones:'Cajones',distribucion:'Distribución',apertura:'Apertura',acabado:'Acabado',veta:'Veta','cabinet-style':'Frentes y tiradores',upperMaterial:'Módulos superiores',lowerMaterial:'Módulos inferiores',countertopMaterial:'Encimera',flooringMaterial:'Suelo','led-temp':'Iluminación'};const name=labels[key];if(!name)return '';const value=e.tagName==='SELECT'?e.selectedOptions[0]?.textContent:e.type==='radio'?e.closest('label')?.textContent.trim():e.value;return value?name+': '+value:'';}).filter(Boolean).join('\n');};
+ document.querySelectorAll('[data-studio-step]').forEach(b=>b.addEventListener('click',()=>show(Number(b.dataset.studioStep))));prev.onclick=()=>show(Math.max(0,step-1));next.onclick=()=>{if(step===0&&!document.getElementById('foto-input').files.length){document.getElementById('foto-input').reportValidity();return;}show(Math.min(2,step+1));};form.addEventListener('invalid',e=>{const panel=e.target.closest('[data-studio-panel]');if(panel)show(Number(panel.dataset.studioPanel));},true);
  form.addEventListener('change',()=>{if(document.getElementById('img-after').getAttribute('src'))document.getElementById('studio-status').textContent='El diseño ha cambiado. Genera otra visualización para actualizar el resultado.';});
  const key='turia:studio:draft:v1';const status=document.getElementById('studio-status');
  document.getElementById('studio-save').onclick=()=>{try{const values=[...form.querySelectorAll('input:not([type=file]),select')].filter(e=>e.name||e.id).map(e=>({key:e.name||e.id,type:e.type,value:e.value,checked:e.checked}));localStorage.setItem(key,JSON.stringify(values));status.textContent='Borrador guardado en este dispositivo. Las fotos no se guardan.';}catch{status.textContent='No se pudo guardar el borrador en este dispositivo.';}};
  try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(Array.isArray(saved)){saved.forEach(v=>{form.querySelectorAll('input,select').forEach(e=>{if((e.name||e.id)===v.key){if(e.type==='radio'){if(e.value===v.value)e.checked=v.checked;}else if(e.type==='checkbox')e.checked=v.checked;else if(e.type!=='file')e.value=v.value;}});});status.textContent='Borrador recuperado. Vuelve a cargar la foto para continuar.';}}catch{/* Un borrador inválido no impide comenzar otro diseño. */}
  document.getElementById('studio-reset').onclick=()=>{if(confirm('¿Descartar el borrador y empezar otro diseño?')){localStorage.removeItem(key);location.reload();}};
  const mirror=document.createElement('img');mirror.className='studio-original';mirror.alt='Foto de referencia del proyecto';document.getElementById('vacio-container').append(mirror);const source=document.getElementById('preview-thumb');new MutationObserver(()=>{if(source.src)mirror.src=source.src;}).observe(source,{attributes:true,attributeFilter:['src']});
+ actualizarPresupuesto();
  show(0);
 })();
 </script>
