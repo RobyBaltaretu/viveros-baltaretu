@@ -31,7 +31,8 @@ describe('Gubia · PDF no fiable',()=>{
     const pdf=new Uint8Array(await doc.save());
     const mocked = vi.fn(async (_url:string,init?:RequestInit)=>{
       const body=JSON.parse(String(init?.body)) as {contents:Array<{parts:Array<{inlineData?:{data:string}}>} >};
-      const encoded=body.contents[0]!.parts.find(p=>p.inlineData)?.inlineData?.data!;
+      const encoded=body.contents[0]!.parts.find(p=>p.inlineData)?.inlineData?.data;
+      expect(encoded).toBeTruthy();
       const partial=await PDFDocument.load(Uint8Array.from(atob(encoded),c=>c.charCodeAt(0)));
       expect(partial.getPageCount()).toBe(6);
       return new Response(JSON.stringify({candidates:[{content:{parts:[{text:JSON.stringify({articulos:[candidato,{...candidato,pagina:9}]})}]}}]}),{status:200});
