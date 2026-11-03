@@ -4,7 +4,7 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 // El Worker de PDF.js se sirve desde el propio build Turia (sin CDN).
 GlobalWorkerOptions.workerSrc = workerUrl;
 const MAX_PAGINAS = 160;
-const MAX_BYTES = 8_000_000;
+const MAX_BYTES = 25_000_000;
 const TEXTO_PAGINA = 4000;
 export type PaginaLocal = { pagina: number; texto: string; caracteres: number };
 
@@ -32,7 +32,7 @@ export function reconstruirFilas(items: Array<{ str: string; transform: number[]
 }
 export async function abrirPDFLocal(file: File): Promise<DocumentoLocal> {
   if (file.size < 10 || file.size > MAX_BYTES || !file.name.toLowerCase().endsWith('.pdf'))
-    throw new Error('El catálogo debe ser un PDF de hasta 8 MB.');
+    throw new Error('El catálogo debe ser un PDF de hasta 25 MB.');
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (String.fromCharCode(...bytes.slice(0,5)) !== '%PDF-')
     throw new Error('El archivo no contiene la firma de un PDF válido.');
