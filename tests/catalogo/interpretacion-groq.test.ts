@@ -26,7 +26,7 @@ describe('Gubia Groq Free: importación local',()=>{
       expect(body.model).toBe(GROQ_TEXTO_MODELO);
       expect(body.messages[1].content).toContain('DEC-001');
       expect(JSON.stringify(body)).not.toContain('application/pdf');
-      return OK([candidato,{...candidato,pagina:30},{...candidato,nombre:'otro material',pagina:2}]);
+      return OK([candidato,{...candidato,pagina:30},{...candidato,nombre:'otro material',referencia:'DEC-002',codigoDecor:'DEC-002',pagina:2}]);
     });
     const res=await interpretarTextoConGroq('ONESTA',[{pagina:2,texto:'Melamina roble DEC-001 19 mm'}],{apiKey:'test',fetch:fake as typeof fetch});
     expect(res.articulos).toHaveLength(2);
