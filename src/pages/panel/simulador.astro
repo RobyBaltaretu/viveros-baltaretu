@@ -222,7 +222,7 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
           <div class="space-y-3 border-b border-linea pb-4">
             <label class="flex items-center justify-between font-bold text-sm text-tinta cursor-pointer">
               <span>Suelo / Pavimento</span>
-              <input type="checkbox" id="zone-flooring" checked class="size-4 rounded-xs border-linea text-terracota" />
+              <input type="checkbox" id="zone-flooring" checked={MATERIALES_SUELO.length > 0} class="size-4 rounded-xs border-linea text-terracota" />
             </label>
             <div id="sec-flooring" class="space-y-3 pt-1">
               <SelectorMaterial nombre="flooringMaterial" titulo="Suelo" opciones={MATERIALES_SUELO} />
@@ -746,8 +746,6 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
  const panels=[document.createElement('section'),document.createElement('section'),document.createElement('section'),document.createElement('section')];
  panels.forEach((p,i)=>{p.dataset.studioPanel=i;p.setAttribute('aria-label',['Espacio','Diseño','Materiales','Revisar'][i]);form.insertBefore(p,children[0]);});
  panels[0].append(children[0],children[3]);panels[1].append(children[1],children[2]);panels[2].append(children[4]);
- const search=document.createElement('input');search.placeholder='Buscar material, acabado o referencia…';search.setAttribute('aria-label','Buscar materiales del catálogo');search.className='studio-material-search';panels[2].prepend(search);
- search.addEventListener('input',()=>{panels[2].querySelectorAll('label:has(input[type=radio])').forEach(l=>l.hidden=!l.textContent.toLocaleLowerCase('es').includes(search.value.toLocaleLowerCase('es')));});
  const review=document.createElement('div');review.className='studio-review';panels[3].append(review);
  const budget=document.createElement('a');budget.href='/panel/presupuestos-cliente/nuevo';budget.className='enlace-panel';budget.textContent='Preparar presupuesto con el catálogo';panels[3].append(budget);
  const notice=document.createElement('p');notice.textContent='La imagen no es un plano ni un precio calculado. El presupuesto se prepara con mediciones y partidas verificadas.';panels[3].append(notice);
