@@ -5,6 +5,7 @@ import { cuerpoLimitado } from '../../../server/panel/cuerpo.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
 import { claveGemini } from '../../../server/simulador/cuota.ts';
 import { analizarLotePDF, ErrorImportacion, importarCandidatos, MAX_PDF_BYTES, modeloCatalogoConfigurado } from '../../../server/catalogo/importacion-proveedor.ts';
+import { revisarCandidatosConGroq, ErrorRevisionGroq } from '../../../server/catalogo/revision-groq.ts';
 
 export const prerender = false;
 const json = (estado: number, cuerpo: unknown) => new Response(JSON.stringify(cuerpo), {
@@ -51,7 +52,21 @@ export const POST: APIRoute = async ({ locals, request }) => {
     }
     if (tipo.startsWith('application/json')) {
       const form = await cuerpo.json().catch(() => null) as Record<string, unknown> | null;
-      if (!form || form.accion !== 'confirmar') return json(400, { ok:false,error:'Acción no válida.' });
+      if (!form) return json(400, { ok:false,error:'Acción no válida.' });
+      if (form.accion === 'revisar') {
+        const groqKey = (env as Record<string, unknown>).GROQ_API_KEY;
+        if (typeof groqKey !== 'string' || !groqKey.trim())
+          return json(503, {ok:false,error:'Gubia necesita el secreto GROQ_API_KEY para revisar las fichas.'});
+        const hoy = new Date().toISOString().slice(0, 10);
+        const contador = sesion.usuario.email + ':gubia-revision-groq';
+        if (await sesion.repos.usoAsistente.obtener(contador, hoy) >= 10)
+          return json(429, {ok:false,error:'Límite diario de revisiones con Groq alcanzado. Puedes revisar manualmente.'});
+        const proveedor = typeof form.proveedor === 'string' ? form.proveedor : '';
+        await sesion.repos.usoAsistente.sumar(contador, hoy);
+        const avisos = await revisarCandidatosConGroq(form.articulos, proveedor, {apiKey:groqKey});
+        return json(200, {ok:true, avisos});
+      }
+      if (form.accion !== 'confirmar') return json(400, {ok:false,error:'Acción no válida.'});
       const proveedor = typeof form.proveedor === 'string' ? form.proveedor : '';
       const archivo = typeof form.archivo === 'string' ? form.archivo : '';
       const r = await importarCandidatos(sesion.repos, proveedor, archivo, form.articulos, sesion.usuario.email);
@@ -59,7 +74,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     }
     return json(415, { ok:false,error:'Formato de petición no admitido.' });
   } catch (e) {
-    if (e instanceof ErrorImportacion) return json(e.estado, {ok:false,error:e.message});
+    if (e instanceof ErrorImportacion || e instanceof ErrorRevisionGroq) return json(e.estado, {ok:false,error:e.message});
     console.error('[Gubia Importador] Error en importación de catálogo', e instanceof Error ? e.name : 'desconocido');
     return json(500,{ok:false,error:'No ha sido posible completar esta operación. No repitas la confirmación sin revisar el catálogo.'});
   }
