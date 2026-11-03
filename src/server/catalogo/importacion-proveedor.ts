@@ -24,7 +24,6 @@ export const candidatoProveedor = z.object({
   pagina: z.number().int().min(1).max(MAX_PAGINAS_PDF),
 }).strict();
 export type CandidatoProveedor = z.infer<typeof candidatoProveedor>;
-const respuestaIA = z.object({ articulos: z.array(candidatoProveedor).max(MAX_CANDIDATOS_LOTE) });
 
 export class ErrorImportacion extends Error {
   constructor(mensaje: string, public readonly estado = 400) { super(mensaje); }
