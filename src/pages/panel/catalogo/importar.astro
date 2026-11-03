@@ -219,12 +219,12 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     if(!continuar){articulos=[];sessionStorage.removeItem(BORRADOR);}
     nombreArchivo=file.name;siguientePagina=comenzar;textosPagina.clear();
     resultado.hidden=true;detener(true);
+    let fase='abrir PDF';
     try{
       if(documento){await documento.cerrar();documento=null;}
       documento=await window.gubiaPDF.abrirPDFLocal(file);
       $('gubia-numero-pagina').max=String(documento.paginas);
       if(comenzar>documento.paginas)throw Error('La página de inicio supera las páginas del documento.');
-      let fase='abrir PDF';
       const paginasFallidas=[];
       let bloque=[],longitud=0;
       let groqDisponible=true;
