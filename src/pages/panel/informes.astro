@@ -1,5 +1,6 @@
 ---
 import { clienteActual } from '../../plataforma/actual.ts';
+import InformesTuria from '../../panel-nuevo/InformesTuria.astro';
 import Barras from '../../components/panel/graficos/Barras.astro';
 import Reparto from '../../components/panel/graficos/Reparto.astro';
 import PaginaPanel from '../../components/panel/PaginaPanel.astro';
@@ -42,7 +43,7 @@ desde.setUTCMonth(desde.getUTCMonth() - 24);
 const rango = { desde: desde.toISOString().slice(0, 10) };
 const [facturas, gastos, presupuestos, porRevisar] = s
   ? await Promise.all([
-      s.repos.facturas.listar({ desde: rango.desde, limite: 20000 }),
+      s.repos.facturas.listar({ ...(esTuria ? {} : {desde: rango.desde}), limite: 20000 }),
       s.repos.gastos.listar({ estado: 'confirmado', desde: rango.desde, limite: 20000 }),
       esTuria ? [] : s.repos.presupuestos.listar({ limite: 5000 }),
       s.repos.gastos.listar({ estado: 'revisar' }),
@@ -96,7 +97,8 @@ const DATOS = [
 ];
 ---
 
-<PaginaPanel titulo="Informes" permiso="informes">
+<PaginaPanel titulo="Informes" permiso="informes" ancho={esTuria ? 'amplio' : 'normal'}>
+  {esTuria ? <InformesTuria {periodo} {anterior} {siguiente} {tipo} {dia} {a} {b} {c} {evolucion} {categorias} {clientes} {productos} {taller} {porRevisar} {gastos} /> : <Fragment>
   <div class="informes">
     <h1 class="titular-grande">Informes</h1>
     <nav aria-label="Periodo" class="mt-6 grid gap-3">
@@ -181,6 +183,7 @@ const DATOS = [
       Ingresos: base de las facturas emitidas en el periodo (las rectificativas restan). Gastos: tickets revisados, sin IVA cuando el ticket lo indica. Los borradores y los tickets por revisar no cuentan.
     </p>
   </div>
+  </Fragment>}
 </PaginaPanel>
 
 <style>
