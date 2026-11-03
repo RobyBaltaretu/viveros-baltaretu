@@ -346,7 +346,8 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
           <span class="studio-material-selected-icon" aria-hidden="true">✓</span>
         </span>
         <strong>{m.nombre}</strong>
-        <small>{m.descripcion || 'Artículo del catálogo'}</small>
+        <small>{m.descripcion}</small>
+        <small>{m.previewTexture ? 'Textura del catálogo' : m.colorRegistrado ? 'Color de catálogo' : 'Color orientativo'}</small>
       </button>
     ))}
   </div>

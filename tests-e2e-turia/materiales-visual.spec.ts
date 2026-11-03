@@ -36,5 +36,9 @@ test('Turia Studio: material visual por zona, búsqueda y confirmación en móvi
     await dialog.getByRole('button',{name:'Cancelar'}).click();
     await expect(trigger.locator('[data-current-name]')).toHaveText(before);
   }
+  const sample = await trigger.locator('[data-current-name]').innerText();
+  await page.getByRole('button',{name:/3 · Revisar/}).click();
+  await page.getByRole('link',{name:'Preparar presupuesto con el catálogo'}).click();
+  await expect(page.locator('input[name="l0.concepto"]')).toHaveValue(sample);
   await auditar(page);
 });
