@@ -718,6 +718,11 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
           datos.set(lado, imagen, lado + '.jpg');
         }
         const respuesta = await fetch('/panel/proyectos?ver=simulaciones',{method:'POST',body:datos});
+        if (respuesta.status===507) {
+          estado.textContent='El almacén de imágenes está lleno. Descarga la imagen para conservarla.';
+          boton.disabled=false;
+          return;
+        }
         if (!respuesta.ok || !respuesta.headers.get('content-type')?.includes('application/json')) throw Error();
         await respuesta.json();
         estado.textContent = 'Proyecto guardado con su antes y después.';

@@ -76,7 +76,8 @@ export function sugerirMaterialesLocales(paginas: Array<{pagina:number;texto:str
       vistos.add(key);
       const mm=linea.match(/\b(?:espesor|grosor|esp\.?)\s*:?\s*(\d{1,3}(?:[,.]\d+)?)\s*mm\b/i);
       salida.push({
-        categoria:tipo[1],nombre,referencia,codigoDecor:'',acabado:'',soporte:'',
+        categoria:tipo[1],nombre,referencia,codigoDecor:'',acabado:tecnico ? (linea.match(/\b[A-Z]{2,3}\/[A-Z]{2,3}\b/)?.[0] || '') : '',
+        soporte:tecnico ? (linea.match(/\b(?:MDF|aglomerado|contrachapado)\b/i)?.[0] || '') : '',
         espesorMm:mm?Number(mm[1].replace(',','.')):null,
         formato:formato?.[0]??'',unidad:tipo[2],colorHex:null,veta:null,brillo:null,pagina:p.pagina,
       });

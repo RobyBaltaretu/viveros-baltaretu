@@ -1,3 +1,4 @@
+import {identidadProveedor as clave} from './identidad-proveedor';
 import { z } from 'astro/zod';
 import { CATEGORIAS, MARGEN_PROPUESTO, esquemaArticulo } from './catalogo.ts';
 import type { Repositorios } from '../data/tipos.ts';
@@ -31,9 +32,6 @@ export class ErrorImportacion extends Error {
 }
 
 const nombreSeguro = (s: string) => s.trim().replace(/[^\p{L}\p{N}._\- ]/gu, '').slice(0, 90);
-const normal = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ');
-const clave = (c: Pick<CandidatoProveedor, 'categoria' | 'nombre' | 'referencia' | 'espesorMm' | 'formato' | 'acabado' | 'codigoDecor'>, proveedor: string) =>
-  [normal(proveedor), c.categoria, normal(c.referencia || c.codigoDecor || c.nombre), String(c.espesorMm ?? ''), normal(c.formato), normal(c.acabado)].join('|');
 function idEstable(texto: string): string {
   let h = 2166136261;
   for (const char of texto) { h ^= char.charCodeAt(0); h = Math.imul(h, 16777619); }
@@ -76,7 +74,7 @@ export async function importarCandidatos(repos: Repositorios, proveedor: string,
   const actuales = await repos.catalogo.articulos({ incluirArchivados: true });
   const conocidos = new Set(actuales.map(a => clave({
     categoria: a.categoria, nombre: a.nombre, referencia: a.referencia,
-    codigoDecor: a.visual?.codigoDecor || '', espesorMm: a.espesor,
+    soporte: a.visual?.soporte, codigoDecor: a.visual?.codigoDecor || '', espesorMm: a.espesor,
     formato: a.notas.match(/Formato: ([^;]+)/)?.[1] || '', acabado: a.acabado,
   }, a.proveedor)));
   const ids = new Set(actuales.map(a => a.id));
@@ -95,6 +93,7 @@ export async function importarCandidatos(repos: Repositorios, proveedor: string,
     const rutaMuestra = bytes ? 'catalogo-materiales/' + id + '/muestra.webp' : '';
     const visual = {
       fabricante: nombreProveedor,
+      ...(a.soporte ? {soporte:a.soporte} : {}),
       ...(rutaMuestra ? { textura: '/api/panel/catalogo-muestra?ruta=' + encodeURIComponent(rutaMuestra) } : {}),
       ...(a.codigoDecor ? { codigoDecor: a.codigoDecor } : {}),
       ...(a.soporte ? { soporte: a.soporte } : {}),

@@ -1,4 +1,5 @@
 ---
+import { ErrorEspacioImagen } from '../../../server/data/tipos';
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
 import Icono from '../../../components/panel/ui/Icono.astro';
 import { sesionCon } from '../../../server/panel/pagina';
@@ -28,7 +29,8 @@ if (Astro.request.method === 'POST') {
   const [antes,despues] = fotos;
   if (!antes || !despues) return new Response('Se necesitan dos imágenes JPEG válidas.',{status:400});
   const id = 'studio_sim_' + token;
-  await s.repos.portafolio.guardarSimulacion(id,titulo,antes,despues,s.usuario.email);
+  try { await s.repos.portafolio.guardarSimulacion(id,titulo,antes,despues,s.usuario.email); }
+  catch (e) { if (e instanceof ErrorEspacioImagen) return new Response(e.message,{status:507}); throw e; }
   return Response.json({href:'/panel/portafolio/' + id},{headers:{'Cache-Control':'no-store'}});
 }
 const verSimulaciones = simulacionesPermitidas && Astro.url.searchParams.get('ver') === 'simulaciones';

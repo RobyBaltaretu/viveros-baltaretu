@@ -1,3 +1,4 @@
+import { ErrorEspacioImagen } from '../data/tipos';
 import { z } from 'astro/zod';
 import type { ProyectoPortafolio, Repositorios } from '../data/tipos.ts';
 import { MAXIMO_FOTO, tipoDeImagen } from '../panel/fotos.ts';
@@ -59,7 +60,8 @@ export async function anadirFoto(repos: Repositorios, id: string, lado: Lado, by
   if (!tipo) return { ok: false, error: 'Ese archivo no es una foto. Usa una foto JPG, PNG o WebP.' };
   if (p[lado].length >= MAXIMO_FOTOS_POR_LADO) return { ok: false, error: `Ya hay ${MAXIMO_FOTOS_POR_LADO} fotos de ${lado === 'antes' ? 'antes' : 'después'}. Quita alguna para añadir otra.` };
   const adjunto = `${id}-${lado}-${Date.now().toString(36)}${sufijo()}`;
-  await repos.adjuntos.guardar({ id: adjunto, ambito: AMBITO, ref: id, tipo: tipo.tipo, bytes }, email);
+  try { await repos.adjuntos.guardar({ id: adjunto, ambito: AMBITO, ref: id, tipo: tipo.tipo, bytes }, email); }
+  catch(e) { if (e instanceof ErrorEspacioImagen) return {ok:false,error:e.message}; throw e; }
   await repos.portafolio.guardar({ ...p, [lado]: [...p[lado], adjunto] }, email);
   return { ok: true, adjunto };
 }

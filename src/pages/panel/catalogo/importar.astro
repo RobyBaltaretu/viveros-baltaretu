@@ -180,10 +180,10 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     } catch { /* Memoria de sesión agotada: continúa en la pestaña. */ }
   }
   function juntarCandidatos(nuevos) {
-    const vistos=new Set(articulos.map(x=>[x.data.categoria,x.data.referencia||x.data.codigoDecor||x.data.nombre,x.data.espesorMm,x.data.formato,x.data.acabado].join('|').toLowerCase()));
+    const clave=window.gubiaPDF.identidadProveedor;
+    const vistos=new Set(articulos.map(x=>clave(x.data)));
     for(const item of nuevos||[]) {
-
-      const k=[item.categoria,item.referencia||item.codigoDecor||item.nombre,item.espesorMm,item.formato,item.acabado].join('|').toLowerCase();
+      const k=clave(item);
       if(!vistos.has(k)){articulos.push({activo:true,data:item});vistos.add(k);}
     }
     guardarBorrador();
@@ -251,7 +251,9 @@ const sesion = sesionCon(Astro.locals, 'facturas');
           // Se generan únicamente propuestas verificables desde el texto local.
           const sugeridos=window.gubiaPDF.sugerirMaterialesLocales(bloque.filter(p=>!paginasLocales.has(p.pagina)).map(p=>({...p,texto:textosPagina.get(p.pagina)||p.texto}))).filter(local =>
             !interpretados.some(ia => ia.pagina===local.pagina && local.referencia && ia.referencia===local.referencia &&
-              (!local.acabado || local.acabado===ia.acabado) && ia.categoria===local.categoria));
+              (!local.acabado || local.acabado===ia.acabado) && ia.categoria===local.categoria &&
+              (!local.soporte || normal(local.soporte)===normal(ia.soporte)) &&
+              (!/hidrófug|ignífug/i.test(local.nombre) || normal(local.nombre)===normal(ia.nombre))));
           for (const p of bloque) if (![...interpretados,...sugeridos].some(a=>a.pagina===p.pagina)) revisar.push(p.pagina);
           bloque.forEach(p=>paginasLocales.add(p.pagina));
           fichasLocales+=sugeridos.length;

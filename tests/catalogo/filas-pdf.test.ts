@@ -14,3 +14,10 @@ it('asocia códigos y nombres por posición y omite tablas de clasificación de 
   expect(sugerirMaterialesLocales([{pagina:26,texto}])).toMatchObject([{nombre:'Corten',referencia:'6300'},{nombre:'Lasa Pure',referencia:'6152'}]);
   expect(sugerirMaterialesLocales([{pagina:62,texto:'DESCRIPCIÓN DE CALIDADES\nMadera pre aserrada F-D1'}])).toEqual([]);
 });
+
+it('distingue soporte y tratamiento aunque dos tableros compartan decor y acabado', async()=>{
+  const {identidadProveedor}=await import('../../src/server/catalogo/identidad-proveedor');
+  const ficha={nombre:'Aglomerado melamina blanca',categoria:'tableros',referencia:'B3002',codigoDecor:'',acabado:'MA/SC',formato:'',espesorMm:null};
+  const claves=[ficha,{...ficha,nombre:'Aglomerado melamina blanca hidrófuga'},{...ficha,nombre:'MDF melamina blanca'}].map(f=>identidadProveedor(f,'Ejemplo'));
+  expect(new Set(claves).size).toBe(3);
+});

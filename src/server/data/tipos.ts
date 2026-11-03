@@ -497,6 +497,10 @@ export interface ProyectoPortafolio {
   actualizado: string;
 }
 
+export class ErrorEspacioImagen extends Error {
+  constructor(cause: unknown) { super('El almacén de imágenes está lleno. Puedes seguir trabajando con los documentos.', {cause}); }
+}
+
 export interface RepositorioPortafolio {
   resumenSimulaciones(): Promise<{guardadas:number; espacio:{bytes:number;limite:number}|null}>;
   guardarSimulacion(id: string, titulo: string, antes: Uint8Array, despues: Uint8Array, email: string): Promise<void>;

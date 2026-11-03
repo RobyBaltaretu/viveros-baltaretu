@@ -1,3 +1,4 @@
+import { ErrorEspacioImagen } from '../../../server/data/tipos';
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { clienteActual } from '../../../plataforma/actual.ts';
@@ -58,6 +59,7 @@ export const POST: APIRoute = async ({locals,request}) => {
     const resultado=await interpretarTextoConGroq(proveedor,input.paginas,{apiKey:clave});
     return json(200,{ok:true,...resultado});
   }catch(e){
+    if(e instanceof ErrorEspacioImagen)return json(507,{ok:false,error:e.message});
     if(e instanceof ErrorImportacion)return json(e.estado,{ok:false,error:e.message});
     console.error('[Gubia Local] Error de análisis o confirmación',e instanceof Error?e.name:'desconocido');
     return json(500,{ok:false,error:'No se ha completado la operación. Conserva los materiales revisados y reintenta.'});

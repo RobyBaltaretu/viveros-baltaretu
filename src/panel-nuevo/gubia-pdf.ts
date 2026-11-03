@@ -1,3 +1,4 @@
+import { identidadProveedor } from '../server/catalogo/identidad-proveedor';
 import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
@@ -64,7 +65,7 @@ export async function abrirPDFLocal(file: File): Promise<DocumentoLocal> {
   };
 }
 declare global {
-  interface Window { gubiaPDF?: {abrirPDFLocal: typeof abrirPDFLocal; sugerirMaterialesLocales: typeof sugerirMaterialesLocales}; }
+  interface Window { gubiaPDF?: {identidadProveedor: typeof identidadProveedor; abrirPDFLocal: typeof abrirPDFLocal; sugerirMaterialesLocales: typeof sugerirMaterialesLocales}; }
 }
-window.gubiaPDF = {abrirPDFLocal,sugerirMaterialesLocales};
+window.gubiaPDF = {identidadProveedor,abrirPDFLocal,sugerirMaterialesLocales};
 window.dispatchEvent(new Event('gubia-pdf-listo'));

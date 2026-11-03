@@ -1,3 +1,4 @@
+import { ErrorEspacioImagen } from '../tipos';
 import type { BaseD1, SentenciaD1 } from './base.ts';
 
 export interface BucketPrivado {
@@ -57,7 +58,7 @@ export function imagenesPrivadas(db: BaseD1, bucket?: BucketPrivado, limite = LI
           SELECT ?,CASE WHEN total+?<=? THEN ? ELSE NULL END FROM turia_bytes_r2 WHERE id=1`)
           .bind(claves[i],f.bytes.byteLength,limite,f.bytes.byteLength)));
       } catch (e) {
-        if (String(e).includes('NOT NULL')) throw Error('Se ha alcanzado el límite de fotos del taller.',{cause:e});
+        if (String(e).includes('NOT NULL')) throw new ErrorEspacioImagen(e);
         throw e;
       }
       try {
