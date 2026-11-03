@@ -42,6 +42,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       </div>
       <p class="gubia-nota">Los colores generados son aproximados, no muestras oficiales. La importación no crea precios ni modifica artículos existentes. Corrige las fichas antes de confirmar.</p>
       <div id="gubia-lista" class="gubia-lista"></div>
+      <button type="button" id="gubia-mas" class="nv-boton nv-boton-secundario" hidden>Mostrar otras 20 fichas</button>
       <section class="gubia-vision" aria-labelledby="gubia-titulo-vision">
         <h3 id="gubia-titulo-vision">Comprobar una página visual</h3>
         <p class="gubia-nota">Si un material está en una carta de colores o no tiene texto seleccionable, pide a Groq que lea esa página. Solo se envía una imagen JPEG de esa página y el texto disponible. Esta función consume cuota gratuita de Groq.</p>
@@ -65,14 +66,14 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     <div class="gubia-estado nv-caja-aviso" id="gubia-estado" role="status" aria-live="polite">Elige un PDF para comenzar. No se realizará ninguna importación sin tu confirmación.</div>
   </div>}
 </PaginaPanel>
-<style>
+<style is:inline>
 .gubia-importador{display:grid;gap:18px}.gubia-volver{color:#536b36;font-size:.87rem}.gubia-formulario{display:grid;gap:14px;max-width:690px}
 .gubia-formulario label{display:grid;gap:7px;font-weight:700;font-size:.87rem}.gubia-formulario input{width:100%;min-height:47px;padding:10px 12px;border:1px solid #d7d9d0;border-radius:11px;background:#fff;color:#272a24;font:inherit}
 .gubia-formulario button{justify-self:start}.gubia-nota{color:#5a6058;font-size:.86rem;line-height:1.5}
 .gubia-cabecera,.gubia-resumen,.gubia-final{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center}
 .gubia-resumen{padding:12px 0;border-block:1px solid #e5e4de}.gubia-resumen label{display:flex;align-items:center;gap:8px}
 .gubia-resumen input[type=search]{min-height:44px;padding:8px 12px;border:1px solid #d7d9d0;border-radius:10px;background:white}
-.gubia-lista{display:grid;gap:12px;margin:16px 0;max-height:650px;overflow:auto;overscroll-behavior:contain}
+.gubia-lista{display:grid;gap:12px;margin:16px 0;align-items:start}
 .gubia-item{border:1px solid #e0e4db;border-radius:13px;padding:13px;background:#fff;display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px}
 .gubia-item:not([data-activo=true]){opacity:.64}.gubia-muestra{width:54px;height:54px;border-radius:10px;border:1px solid #ddd9d0;background:#e6e1d8}
 .gubia-item-contenido{min-width:0}.gubia-item-cabecera{display:flex;gap:10px;align-items:center;margin-bottom:8px}.gubia-item-cabecera label{display:flex;gap:8px;align-items:center;font-weight:700}
@@ -92,7 +93,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
 .gubia-vista-pagina img{display:block;max-width:100%;max-height:350px;object-fit:contain;border:1px solid #e3e1dd;border-radius:8px}
 .gubia-final{border-top:1px solid #e6e7de;padding-top:16px}.gubia-estado{margin-top:4px}
 .gubia-importador button:focus-visible,.gubia-importador input:focus-visible,.gubia-importador select:focus-visible{outline:3px solid #526939;outline-offset:2px}
-@media(max-width:600px){.gubia-item{grid-template-columns:42px minmax(0,1fr);gap:9px;padding:10px}.gubia-muestra{width:42px;height:42px}.gubia-item-campos{grid-template-columns:repeat(2,minmax(0,1fr))}.gubia-resumen label{width:100%}.gubia-resumen input[type=search]{flex:1;min-width:0}.gubia-final button{flex:1;min-height:48px}}
+@media(max-width:600px){.gubia-item{grid-template-columns:42px minmax(0,1fr);gap:9px;padding:10px}.gubia-muestra{width:42px;height:42px}.gubia-item-campos{grid-template-columns:minmax(0,1fr)}.gubia-resumen label{width:100%}.gubia-resumen input[type=search]{flex:1;min-width:0}.gubia-final button{flex:1;min-height:48px}}
 </style>
 <script src="../../../panel-nuevo/gubia-pdf.ts"></script>
 <script is:inline>
@@ -116,13 +117,14 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     input.addEventListener('change', () => { const index = Number(label.closest('[data-index]').dataset.index); articulos[index].data[key]=key==='espesorMm' ? (input.value===''?null:Number(input.value)) : key==='colorHex' ? (input.value.trim()||null) : input.value; if(key==='colorHex'){const muestra=label.closest('.gubia-item').querySelector('.gubia-muestra');if(/^#[0-9a-fA-F]{6}$/.test(input.value))muestra.style.backgroundColor=input.value;}});
     label.append(input);return label;
   };
+  let maxVisibles=20;
   function pintar(){
     lista.replaceChildren();
     const filtro = normal($('gubia-buscar').value);
     let visibles=0;
     articulos.forEach((a, i) => {
       if(filtro && !normal(a.data.nombre+' '+a.data.referencia+' '+a.data.acabado+' '+a.data.codigoDecor).includes(filtro))return;
-      visibles++;
+      if (++visibles>maxVisibles) return;
       const article=document.createElement('article');article.className='gubia-item';article.dataset.index=String(i);article.dataset.activo=String(a.activo);
       const muestra=document.createElement('span');muestra.className='gubia-muestra';
       if(/^#[0-9a-fA-F]{6}$/.test(a.data.colorHex||''))muestra.style.backgroundColor=a.data.colorHex;
@@ -142,8 +144,14 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       fields.append(field('input','colorHex',a.data.colorHex,'Color digital (#RRGGBB)'));
       const span = document.createElement('p');span.className='gubia-origen';
       span.textContent='Página original '+a.data.pagina+' · '+(a.data.espesorMm === null ? 'Espesor no especificado' : a.data.espesorMm+' mm')+' · Precio pendiente de validar';
-      inner.append(head,fields,span);article.append(muestra,inner);lista.append(article);
+      const title=document.createElement('strong');title.textContent=a.data.nombre;
+      const editor=document.createElement('details'),summary=document.createElement('summary');
+      summary.textContent='Editar ficha'+(a.data.referencia?' · '+a.data.referencia:'');
+      editor.open=visibles===1;editor.append(summary,fields);
+      fields.addEventListener('change',()=>{title.textContent=a.data.nombre;guardarBorrador();});
+      inner.append(title,span,head,editor);article.append(muestra,inner);lista.append(article);
     });
+    $('gubia-mas').hidden=visibles<=maxVisibles;
     if(!visibles){const p=document.createElement('p');p.textContent='No hay resultados para esta búsqueda.';lista.append(p);}
     const selector=$('gubia-muestra-destino');
     if(selector){
@@ -155,7 +163,8 @@ const sesion = sesionCon(Astro.locals, 'facturas');
   }
   function contar(){ $('gubia-total').textContent=articulos.filter(a=>a.activo).length+' seleccionados de '+articulos.length; }
   function detener(value){trabajando=value;boton.disabled=value;$('gubia-confirmar').disabled=value;}
-  $('gubia-buscar').addEventListener('input',pintar);
+  $('gubia-mas').onclick=()=>{maxVisibles+=20;pintar();};
+  $('gubia-buscar').addEventListener('input',()=>{maxVisibles=20;pintar();});
   $('gubia-todos').addEventListener('change',e=>{articulos.forEach(a=>a.activo=e.target.checked);pintar();});
   $('gubia-cancelar').addEventListener('click',()=>{
     articulos=[];sessionStorage.removeItem(BORRADOR);resultado.hidden=true;mensaje('Revisión descartada. Los artículos existentes no se han modificado.');});
@@ -171,7 +180,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
   function juntarCandidatos(nuevos) {
     const vistos=new Set(articulos.map(x=>[x.data.categoria,x.data.referencia||x.data.codigoDecor||x.data.nombre,x.data.espesorMm,x.data.formato,x.data.acabado].join('|').toLowerCase()));
     for(const item of nuevos||[]) {
-      if(articulos.length>=400)break;
+
       const k=[item.categoria,item.referencia||item.codigoDecor||item.nombre,item.espesorMm,item.formato,item.acabado].join('|').toLowerCase();
       if(!vistos.has(k)){articulos.push({activo:true,data:item});vistos.add(k);}
     }
@@ -217,23 +226,32 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       let groqDisponible=true;
       let errorGroq='';
       let fichasLocales=0;
+      const paginasLocales=new Set();
+      const sinTexto=[];
+      const revisar=[];
       const enviar=async () => {
         if(!bloque.length)return;
         const hasta=bloque[bloque.length-1].pagina;
         actualizarProgreso(hasta,documento.paginas,'Groq Free interpreta hasta la página '+hasta+' de '+documento.paginas);
+        let interpretados=[];
         if (groqDisponible) {
           try {
             const response=await jsonPost({accion:'interpretar',proveedor,paginas:bloque});
-            juntarCandidatos(response.articulos);
+            interpretados=response.articulos;
+            juntarCandidatos(interpretados);
           } catch(err) {
             groqDisponible=false;
             errorGroq=err?.message||'No se ha podido procesar el lote en Groq';
           }
         }
-        if (!groqDisponible) {
+        {
           // No consumir de nuevo cuotas Groq con 404/429 o fallos de red.
           // Se generan únicamente propuestas verificables desde el texto local.
-          const sugeridos=window.gubiaPDF.sugerirMaterialesLocales(bloque);
+          const sugeridos=window.gubiaPDF.sugerirMaterialesLocales(bloque.filter(p=>!paginasLocales.has(p.pagina)).map(p=>({...p,texto:textosPagina.get(p.pagina)||p.texto}))).filter(local =>
+            !interpretados.some(ia => ia.pagina===local.pagina && local.referencia && ia.referencia===local.referencia &&
+              (!local.acabado || local.acabado===ia.acabado) && ia.categoria===local.categoria));
+          for (const p of bloque) if (![...interpretados,...sugeridos].some(a=>a.pagina===p.pagina)) revisar.push(p.pagina);
+          bloque.forEach(p=>paginasLocales.add(p.pagina));
           fichasLocales+=sugeridos.length;
           juntarCandidatos(sugeridos);
         }
@@ -247,11 +265,16 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         const pagina=await documento.pagina(numero);
         textosPagina.set(numero,pagina.texto);
         // El resto de páginas (escaneos, páginas sin texto) se revisa visualmente cuando el usuario lo solicite.
-        if(pagina.texto.trim().length<25)continue;
-        if(bloque.length>=3 || longitud+pagina.texto.length>9000) await enviar();
-        bloque.push({pagina:numero,texto:pagina.texto});
-        longitud+=pagina.texto.length;
-        if(bloque.length===3)await enviar();
+        if(!pagina.texto.trim()){sinTexto.push(numero);continue;}
+        // Conserva todo el texto local. Los trozos de una página se envían por separado
+        // porque la API no admite números de página repetidos en un lote.
+        const trozos=pagina.texto.match(/[\s\S]{1,4000}(?:\n|$)|[\s\S]{1,4000}/g) || [];
+        for (const texto of trozos) {
+          if(bloque.some(p=>p.pagina===numero) || bloque.length>=3 || longitud+texto.length>9000) await enviar();
+          bloque.push({pagina:numero,texto});
+          longitud+=texto.length;
+          if(bloque.length===3)await enviar();
+        }
       }
       await enviar();
       siguientePagina=documento.paginas+1;guardarBorrador();
@@ -260,6 +283,9 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       mensaje(errorGroq
         ? 'PDF leído: '+documento.paginas+' páginas. Groq no ha podido analizar el documento: '+errorGroq+'. Se han recuperado '+fichasLocales+' posibles fichas mediante lectura local; REVISA sus datos antes de crearlas. Puedes consultar el PDF, añadir fichas manualmente o reintentar mañana.'
         : 'PDF procesado localmente: '+documento.paginas+' páginas, '+articulos.length+' materiales. Puedes utilizar la revisión visual para las páginas con muestras.');
+      const pendientes=[...new Set([...sinTexto,...revisar])].filter(p=>!articulos.some(a=>a.data.pagina===p));
+      if (pendientes.length) mensaje(estado.textContent+' · Páginas sin propuestas, disponibles en revisión visual: '+pendientes.join(', ')+'.');
+
     }catch(err){
       actualizarProgreso(0,1,'Análisis interrumpido');
       $('gubia-inicio').value=String(siguientePagina);
@@ -325,7 +351,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
   });
   try{
     const borrador=JSON.parse(sessionStorage.getItem(BORRADOR)||'null');
-    if(borrador&&Array.isArray(borrador.articulos)&&borrador.articulos.length<=400){
+    if(borrador&&Array.isArray(borrador.articulos)){
       articulos=borrador.articulos;nombreArchivo=borrador.nombreArchivo||'catalogo.pdf';
       siguientePagina=Math.max(1,Math.min(160,Number(borrador.siguientePagina)||1));
       $('gubia-inicio').value=String(siguientePagina);
