@@ -4,7 +4,7 @@ import { clienteActual } from '../../../plataforma/actual.ts';
 import { cuerpoLimitado } from '../../../server/panel/cuerpo.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
 import { claveGemini } from '../../../server/simulador/cuota.ts';
-import { analizarLotePDF, ErrorImportacion, importarCandidatos, MAX_PDF_BYTES } from '../../../server/catalogo/importacion-proveedor.ts';
+import { analizarLotePDF, ErrorImportacion, importarCandidatos, MAX_PDF_BYTES, modeloCatalogoConfigurado } from '../../../server/catalogo/importacion-proveedor.ts';
 
 export const prerender = false;
 const json = (estado: number, cuerpo: unknown) => new Response(JSON.stringify(cuerpo), {
@@ -45,7 +45,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
       const key = claveGemini(env as Record<string, unknown>);
       if (!key) return json(503, { ok: false, error: 'Gubia necesita configurar GOOGLE_API_KEY en el Worker de Turia.' });
       await sesion.repos.usoAsistente.sumar(contador, dia);
-      const datos = await analizarLotePDF(new Uint8Array(await archivo.arrayBuffer()), proveedor, inicio, { apiKey:key });
+      const modelo = modeloCatalogoConfigurado((env as Record<string, unknown>).GEMINI_CATALOGO_MODELO);
+      const datos = await analizarLotePDF(new Uint8Array(await archivo.arrayBuffer()), proveedor, inicio, { apiKey:key, modelo });
       return json(200, { ok:true, ...datos });
     }
     if (tipo.startsWith('application/json')) {
