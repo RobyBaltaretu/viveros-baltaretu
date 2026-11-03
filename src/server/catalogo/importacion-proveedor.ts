@@ -9,7 +9,14 @@ export const MAX_PAGINAS_PDF = 160;
 export const PAGINAS_POR_LOTE = 6;
 export const MAX_CANDIDATOS_LOTE = 100;
 export const MAX_CANDIDATOS_IMPORTACION = 400;
-export const MODELO_CATALOGO_DEFAULT = 'gemini-2.5-flash';
+/** Modelo estable con soporte PDF para proyectos nuevos (2.5 está restringido). */
+export const MODELO_CATALOGO_DEFAULT = 'gemini-3.5-flash-lite';
+/** Modelos de texto multimodal aptos para el PDF; no aceptar modelos de imagen/TTS. */
+export const MODELOS_CATALOGO = ['gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.8-flash'] as const;
+export function modeloCatalogoConfigurado(value: unknown): string {
+  return typeof value === 'string' && MODELOS_CATALOGO.includes(value as (typeof MODELOS_CATALOGO)[number])
+    ? value : MODELO_CATALOGO_DEFAULT;
+}
 
 const categoriaId = z.enum(CATEGORIAS.map(c => c.id) as [string, ...string[]]);
 export const candidatoProveedor = z.object({
@@ -94,9 +101,10 @@ export async function analizarLotePDF(pdf: Uint8Array, proveedor: string, inicio
   for (const pagina of await parcial.copyPages(documento, Array.from({length: fin - inicio + 1}, (_, i) => inicio - 1 + i))) parcial.addPage(pagina);
   const bytes = await parcial.save({useObjectStreams: true});
   if (bytes.length > MAX_PDF_BYTES) throw new ErrorImportacion('Este bloque del PDF es demasiado grande.');
+  const modelo = modeloCatalogoConfigurado(opts.modelo);
   let res: Response;
   try {
-    res = await (opts.fetch ?? fetch)('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(opts.modelo || MODELO_CATALOGO_DEFAULT) + ':generateContent', {
+    res = await (opts.fetch ?? fetch)('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(modelo) + ':generateContent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': opts.apiKey },
       body: JSON.stringify({
@@ -108,7 +116,21 @@ export async function analizarLotePDF(pdf: Uint8Array, proveedor: string, inicio
       }),
     });
   } catch { throw new ErrorImportacion('No se ha podido conectar con Gubia. Reintenta este bloque.', 502); }
-  if (!res.ok) throw new ErrorImportacion(res.status === 429 ? 'Límite temporal de la IA. Reintenta más tarde.' : 'Servicio de análisis PDF no disponible (HTTP ' + res.status + ').', res.status === 429 ? 429 : 502);
+  if (!res.ok) {
+    // No mostrar el cuerpo devuelto por el proveedor: puede contener datos del PDF.
+    // El 404 suele indicar que la clave/proyecto no tiene acceso a ese modelo,
+    // aunque el modelo figure en models.list.
+    const mensajes: Record<number, string> = {
+      400: 'Gemini no ha aceptado el bloque PDF. Revisa que el documento no esté dañado o protegido.',
+      401: 'La clave de Gemini no es válida. Revisa el secreto del Worker de Turia.',
+      403: 'La clave de Gemini no tiene permiso para procesar el PDF. Revisa sus restricciones y el proyecto.',
+      404: 'El modelo de análisis PDF (' + modelo + ') no está disponible para esta clave o proyecto. Comprueba el acceso en Google AI Studio o configura GEMINI_CATALOGO_MODELO con otro modelo admitido.',
+      413: 'El proveedor ha rechazado el tamaño del bloque PDF.',
+      429: 'La API de Gemini ha alcanzado su cuota o límite temporal. Reintenta más tarde.',
+      503: 'El servicio Gemini está temporalmente saturado. Reintenta este bloque más tarde.',
+    };
+    throw new ErrorImportacion(mensajes[res.status] ?? 'El proveedor de IA ha rechazado el análisis PDF (HTTP ' + res.status + ').', res.status === 429 ? 429 : 502);
+  }
   const body = await res.json().catch(() => null) as { candidates?: Array<{content?: {parts?: Array<{text?: string}>}}>} | null;
   const mensaje = body?.candidates?.[0]?.content?.parts?.map(p => p.text ?? '').join('') || '';
   let parsed: unknown;
