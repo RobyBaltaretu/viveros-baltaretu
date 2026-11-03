@@ -16,7 +16,7 @@ const json = (estado: number, cuerpo: unknown) => new Response(JSON.stringify(cu
  * crea artículos sin que un propietario o gerente confirme el lote.
  */
 export const POST: APIRoute = async ({ locals, request }) => {
-  if (clienteActual().sector !== 'carpinteria') return json(404, { ok: false, error: 'No disponible.' });
+  if (clienteActual().id !== 'turia') return json(404, { ok: false, error: 'No disponible.' });
   const sesion = sesionCon(locals, 'facturas');
   if (!sesion) return json(403, { ok: false, error: 'No tienes permiso para importar artículos.' });
   const tipo = request.headers.get('content-type') || '';
@@ -37,8 +37,14 @@ export const POST: APIRoute = async ({ locals, request }) => {
       if (!(archivo instanceof File) || archivo.type !== 'application/pdf' || archivo.size > MAX_PDF_BYTES)
         return json(400, { ok: false, error: 'Selecciona un PDF válido de hasta 8 MB.' });
       if (proveedor.length < 2 || proveedor.length > 80) return json(400, {ok:false,error:'Indica el proveedor (2–80 caracteres).'});
+      // Control de consumo por usuario: 40 bloques PDF por día como máximo.
+      const dia = new Date().toISOString().slice(0, 10);
+      const contador = sesion.usuario.email + ':gubia-importacion-pdf';
+      if (await sesion.repos.usoAsistente.obtener(contador, dia) >= 40)
+        return json(429, {ok:false,error:'Se ha alcanzado el límite diario de análisis PDF.'});
       const key = claveGemini(env as Record<string, unknown>);
       if (!key) return json(503, { ok: false, error: 'Gubia necesita configurar GOOGLE_API_KEY en el Worker de Turia.' });
+      await sesion.repos.usoAsistente.sumar(contador, dia);
       const datos = await analizarLotePDF(new Uint8Array(await archivo.arrayBuffer()), proveedor, inicio, { apiKey:key });
       return json(200, { ok:true, ...datos });
     }
