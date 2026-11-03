@@ -36,14 +36,15 @@ export async function abrirPDFLocal(file: File): Promise<DocumentoLocal> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (String.fromCharCode(...bytes.slice(0,5)) !== '%PDF-')
     throw new Error('El archivo no contiene la firma de un PDF válido.');
+  const tarea = getDocument({ data: bytes });
   let doc: PDFDocumentProxy;
   try {
-    doc = await getDocument({ data: bytes, isEvalSupported: false }).promise;
+    doc = await tarea.promise;
   } catch {
     throw new Error('No se ha podido abrir el PDF. Comprueba que no esté cifrado ni dañado.');
   }
   if (doc.numPages < 1 || doc.numPages > MAX_PAGINAS) {
-    await doc.destroy();
+    await tarea.destroy();
     throw new Error('El límite es de 160 páginas por catálogo.');
   }
   return {
@@ -74,7 +75,7 @@ export async function abrirPDFLocal(file: File): Promise<DocumentoLocal> {
       canvas.width=0;canvas.height=0;page.cleanup();
       return imagen;
     },
-    async cerrar() {await doc.destroy();}
+    async cerrar() {await tarea.destroy();}
   };
 }
 declare global {
