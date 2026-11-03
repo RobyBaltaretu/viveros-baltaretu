@@ -35,7 +35,7 @@ export const POST: APIRoute = async ({locals,request}) => {
   const accion=input.accion;
   try{
     if(accion==='confirmar'){
-      const result=await importarCandidatos(s.repos,dato(input.proveedor),dato(input.archivo,90),input.articulos,s.usuario.email);
+      const result=await importarCandidatos(s.repos,dato(input.proveedor),dato(input.archivo,90),input.articulos,s.usuario.email,input.muestras);
       return json(200,{ok:true,...result});
     }
     if(accion!=='interpretar' && accion!=='vision')
