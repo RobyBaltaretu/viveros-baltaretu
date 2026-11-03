@@ -26,7 +26,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     </section>
     <section class="nv-tarjeta nv-seccion" aria-label="Progreso de lectura y análisis" id="gubia-seguimiento" hidden>
       <h2>Procesamiento del catálogo</h2>
-      <progress id="gubia-progreso" max="100" value="0" style="width:100%;height:13px;accent-color:#526b39"></progress>
+      <progress id="gubia-progreso" aria-label="Progreso de análisis del PDF" max="100" value="0" style="width:100%;height:13px;accent-color:#526b39"></progress>
       <p id="gubia-fase" class="gubia-nota">Leyendo PDF localmente…</p>
     </section>
     <section class="nv-tarjeta nv-seccion" id="gubia-resultado" hidden aria-labelledby="gubia-paso2">
@@ -50,7 +50,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
           <label>Asociar muestra a <select id="gubia-muestra-destino" aria-label="Artículo al que asignar una muestra"></select></label>
         </div>
         <div id="gubia-vista-pagina" class="gubia-vista-pagina" hidden>
-          <img id="gubia-preview-pagina" alt="Vista de página seleccionada del PDF. Toca una textura para asociarla al material elegido." />
+          <img id="gubia-preview-pagina" role="button" tabindex="0" alt="Seleccionar muestra de la página del PDF. Pulsa Intro para recortar el centro; toca el punto exacto con el ratón o el dedo." />
           <p class="gubia-nota">Selecciona un artículo arriba y toca sobre su muestra en la página. Guardaremos un pequeño recorte WebP privado para ese material.</p>
         </div>
       </section>
@@ -244,6 +244,11 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     $('gubia-vista-pagina').hidden=false;
     return {numero,image};
   }
+  $('gubia-preview-pagina').addEventListener('keydown',e=>{
+    if(e.key!=='Enter'&&e.key!==' ')return;
+    e.preventDefault();const r=e.currentTarget.getBoundingClientRect();
+    e.currentTarget.dispatchEvent(new MouseEvent('click',{clientX:r.left+r.width/2,clientY:r.top+r.height/2}));
+  });
   $('gubia-preview-pagina').addEventListener('click',e=>{
     const img=e.currentTarget,indice=Number($('gubia-muestra-destino').value);
     if(!articulos[indice]){mensaje('Selecciona primero un material en la lista para asociarle una textura.');return;}
