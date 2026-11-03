@@ -1,0 +1,168 @@
+---
+import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import { clienteActual } from '../../../plataforma/actual.ts';
+import { sesionCon } from '../../../server/panel/pagina.ts';
+export const prerender = false;
+if (clienteActual().sector !== 'carpinteria') return new Response('No disponible', {status:404});
+const sesion = sesionCon(Astro.locals, 'facturas');
+---
+<PaginaPanel titulo="Importar catálogo con Gubia" permiso="facturas" ancho="amplio">
+  <div class="nv-titulo">
+    <div>
+      <a href="/panel/catalogo" class="gubia-volver">← Volver al catálogo</a>
+      <h1>Importar catálogo con Gubia</h1>
+      <p>Sube el PDF original del proveedor. Gubia identificará materiales, referencias, acabados y medidas para que revises el resultado antes de crearlos.</p>
+    </div>
+  </div>
+  {sesion && <div class="gubia-importador">
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="gubia-paso1">
+      <h2 id="gubia-paso1">1. Selecciona el documento</h2>
+      <form id="gubia-pdf-form" class="gubia-formulario">
+        <label>Proveedor <input required id="gubia-proveedor" name="proveedor" maxlength="80" placeholder="Ej. ONESTA" autocomplete="organization" /></label>
+        <label>PDF del catálogo <input id="gubia-pdf" name="archivo" type="file" accept=".pdf,application/pdf" required /></label>
+        <p class="gubia-nota">Máximo 8 MB y 160 páginas. El análisis se realiza por bloques de 6 páginas para evitar pérdidas por tiempo de ejecución. El documento se envía al proveedor de IA configurado; comprueba que tienes derecho a procesarlo.</p>
+        <button class="nv-boton" id="gubia-analizar" type="submit">Analizar PDF con Gubia</button>
+      </form>
+    </section>
+    <section class="nv-tarjeta nv-seccion" id="gubia-resultado" hidden aria-labelledby="gubia-paso2">
+      <div class="gubia-cabecera">
+        <div><h2 id="gubia-paso2">2. Revisa los materiales</h2><p>Los datos son propuestas de IA, no están todavía en el catálogo. Desmarca las fichas que no quieras crear.</p></div>
+        <span class="nv-chip" id="gubia-total" aria-live="polite">0 candidatos</span>
+      </div>
+      <div class="gubia-resumen">
+        <label><input type="checkbox" id="gubia-todos" checked /> Seleccionar todos</label>
+        <label>Filtrar <input type="search" id="gubia-buscar" placeholder="Nombre, referencia, acabado…" /></label>
+      </div>
+      <p class="gubia-nota">Los colores generados son aproximados, no muestras oficiales. La importación no crea precios ni modifica artículos existentes. Corrige las fichas antes de confirmar.</p>
+      <div id="gubia-lista" class="gubia-lista"></div>
+      <div class="gubia-final">
+        <button class="nv-boton nv-boton-secundario" id="gubia-cancelar" type="button">Descartar revisión</button>
+        <button class="nv-boton" id="gubia-confirmar" type="button">Crear artículos seleccionados</button>
+      </div>
+    </section>
+    <div class="gubia-estado nv-caja-aviso" id="gubia-estado" role="status" aria-live="polite">Elige un PDF para comenzar. No se realizará ninguna importación sin tu confirmación.</div>
+  </div>}
+</PaginaPanel>
+<style>
+.gubia-importador{display:grid;gap:18px}.gubia-volver{color:#536b36;font-size:.87rem}.gubia-formulario{display:grid;gap:14px;max-width:690px}
+.gubia-formulario label{display:grid;gap:7px;font-weight:700;font-size:.87rem}.gubia-formulario input{width:100%;min-height:47px;padding:10px 12px;border:1px solid #d7d9d0;border-radius:11px;background:#fff;color:#272a24;font:inherit}
+.gubia-formulario button{justify-self:start}.gubia-nota{color:#5a6058;font-size:.86rem;line-height:1.5}
+.gubia-cabecera,.gubia-resumen,.gubia-final{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center}
+.gubia-resumen{padding:12px 0;border-block:1px solid #e5e4de}.gubia-resumen label{display:flex;align-items:center;gap:8px}
+.gubia-resumen input[type=search]{min-height:44px;padding:8px 12px;border:1px solid #d7d9d0;border-radius:10px;background:white}
+.gubia-lista{display:grid;gap:12px;margin:16px 0;max-height:650px;overflow:auto;overscroll-behavior:contain}
+.gubia-item{border:1px solid #e0e4db;border-radius:13px;padding:13px;background:#fff;display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px}
+.gubia-item:not([data-activo=true]){opacity:.64}.gubia-muestra{width:54px;height:54px;border-radius:10px;border:1px solid #ddd9d0;background:#e6e1d8}
+.gubia-item-contenido{min-width:0}.gubia-item-cabecera{display:flex;gap:10px;align-items:center;margin-bottom:8px}.gubia-item-cabecera label{display:flex;gap:8px;align-items:center;font-weight:700}
+.gubia-item-campos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.gubia-item-campos label{display:grid;gap:4px;font-size:.75rem;font-weight:600;color:#53594e;min-width:0}
+.gubia-item-campos input,.gubia-item-campos select{width:100%;min-width:0;min-height:40px;background:#fff;border:1px solid #d8ded2;border-radius:8px;padding:7px;font:inherit;font-size:.86rem;color:#232823}
+.gubia-origen{font-size:.75rem;color:#626960;margin:8px 0 0}
+.gubia-final{border-top:1px solid #e6e7de;padding-top:16px}.gubia-estado{margin-top:4px}
+.gubia-importador button:focus-visible,.gubia-importador input:focus-visible,.gubia-importador select:focus-visible{outline:3px solid #526939;outline-offset:2px}
+@media(max-width:600px){.gubia-item{grid-template-columns:42px minmax(0,1fr);gap:9px;padding:10px}.gubia-muestra{width:42px;height:42px}.gubia-item-campos{grid-template-columns:repeat(2,minmax(0,1fr))}.gubia-resumen label{width:100%}.gubia-resumen input[type=search]{flex:1;min-width:0}.gubia-final button{flex:1;min-height:48px}}
+</style>
+<script is:inline>
+(() => {
+  const form = document.getElementById('gubia-pdf-form');
+  if (!form) return;
+  const $ = id => document.getElementById(id);
+  const estado = $('gubia-estado'), boton = $('gubia-analizar');
+  const lista = $('gubia-lista'), resultado = $('gubia-resultado');
+  const categorias = ['tableros','macizos','chapas','cantos','encimeras','cristal','herrajes','tiradores','accesorios','iluminacion','consumibles','acabados'];
+  let articulos = [], trabajando = false, nombreArchivo = '';
+  const mensaje = (s) => {estado.textContent = s;};
+  const normal = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const field = (tag, key, value, etiqueta, opts) => {
+    const label = document.createElement('label'); label.textContent = etiqueta;
+    const input = document.createElement(tag);
+    if(tag==='select'){
+      opts.forEach(opt => {const o=document.createElement('option');o.value=opt;o.textContent=opt;input.append(o);});
+    } else {input.type='text';input.maxLength=key==='nombre'?120:100;}
+    input.value=value ?? '';
+    input.addEventListener('change', () => { const index = Number(label.closest('[data-index]').dataset.index); articulos[index].data[key]=input.value;});
+    label.append(input);return label;
+  };
+  function pintar(){
+    lista.replaceChildren();
+    const filtro = normal($('gubia-buscar').value);
+    let visibles=0;
+    articulos.forEach((a, i) => {
+      if(filtro && !normal(a.data.nombre+' '+a.data.referencia+' '+a.data.acabado+' '+a.data.codigoDecor).includes(filtro))return;
+      visibles++;
+      const article=document.createElement('article');article.className='gubia-item';article.dataset.index=String(i);article.dataset.activo=String(a.activo);
+      const muestra=document.createElement('span');muestra.className='gubia-muestra';
+      if(/^#[0-9a-fA-F]{6}$/.test(a.data.colorHex||''))muestra.style.backgroundColor=a.data.colorHex;
+      const inner=document.createElement('div');inner.className='gubia-item-contenido';
+      const head=document.createElement('div');head.className='gubia-item-cabecera';
+      const checkLabel=document.createElement('label'),check=document.createElement('input');
+      check.type='checkbox';check.checked=a.activo;
+      check.addEventListener('change',()=>{a.activo=check.checked;article.dataset.activo=String(check.checked);contar();});
+      checkLabel.append(check,document.createTextNode('Añadir al catálogo'));head.append(checkLabel);
+      const fields=document.createElement('div');fields.className='gubia-item-campos';
+      for(const [key,label] of [['nombre','Nombre'],['referencia','Referencia'],['acabado','Acabado'],['codigoDecor','Código de decor'],['soporte','Soporte'],['formato','Formato']]){
+        fields.append(field('input',key,a.data[key],label));
+      }
+      fields.append(field('select','categoria',a.data.categoria,'Categoría',categorias));
+      const span = document.createElement('p');span.className='gubia-origen';
+      span.textContent='Página original '+a.data.pagina+' · '+(a.data.espesorMm === null ? 'Espesor no especificado' : a.data.espesorMm+' mm')+' · Precio pendiente de validar';
+      inner.append(head,fields,span);article.append(muestra,inner);lista.append(article);
+    });
+    if(!visibles){const p=document.createElement('p');p.textContent='No hay resultados para esta búsqueda.';lista.append(p);}
+    contar();
+  }
+  function contar(){ $('gubia-total').textContent=articulos.filter(a=>a.activo).length+' seleccionados de '+articulos.length; }
+  function detener(value){trabajando=value;boton.disabled=value;$('gubia-confirmar').disabled=value;}
+  $('gubia-buscar').addEventListener('input',pintar);
+  $('gubia-todos').addEventListener('change',e=>{articulos.forEach(a=>a.activo=e.target.checked);pintar();});
+  $('gubia-cancelar').addEventListener('click',()=>{
+    articulos=[];resultado.hidden=true;mensaje('Revisión descartada. Los artículos existentes no se han modificado.');});
+  form.addEventListener('submit',async e=>{
+    e.preventDefault(); if(trabajando)return;
+    const file=$('gubia-pdf').files?.[0],proveedor=$('gubia-proveedor').value.trim();
+    if(!file||!proveedor)return;
+    if(file.size>8000000){mensaje('El archivo supera 8 MB.');return;}
+    nombreArchivo=file.name; articulos=[];resultado.hidden=true;detener(true);
+    try{
+      let inicio=1,paginas=0,lotes=0;
+      do{
+        mensaje('Gubia está analizando páginas '+inicio+'–'+(inicio+5)+'…');
+        const datos=new FormData();
+        datos.set('accion','analizar');datos.set('proveedor',proveedor);datos.set('inicio',String(inicio));datos.set('archivo',file);
+        const response=await fetch('/api/panel/catalogo-importar',{method:'POST',body:datos});
+        const body=await response.json().catch(()=>({}));
+        if(!response.ok||!body.ok)throw Error(body.error||'No se ha podido analizar el PDF.');
+        paginas=body.paginas;inicio=body.fin+1;lotes++;
+        const existentes=new Set(articulos.map(x=>[x.data.categoria,x.data.referencia||x.data.codigoDecor||x.data.nombre,x.data.espesorMm,x.data.formato].join('|').toLowerCase()));
+        for(const item of body.articulos||[]){
+          const k=[item.categoria,item.referencia||item.codigoDecor||item.nombre,item.espesorMm,item.formato].join('|').toLowerCase();
+          if(!existentes.has(k)){articulos.push({activo:true,data:item});existentes.add(k);}
+        }
+        mensaje('Analizadas '+Math.min(inicio-1,paginas)+' de '+paginas+' páginas · '+articulos.length+' fichas propuestas.');
+        if(articulos.length>=400){mensaje('Se alcanzó el límite de 400 fichas. Confirma este lote antes de procesar otro PDF.');break;}
+      }while(inicio<=paginas);
+      resultado.hidden=false;pintar();resultado.scrollIntoView({behavior:'smooth',block:'start'});
+    }catch(err){mensaje('Análisis interrumpido: '+(err?.message||'Error inesperado')+'. Se conservan las fichas de los bloques procesados para revisarlas.');if(articulos.length){resultado.hidden=false;pintar();}}
+    finally{detener(false);}
+  });
+  $('gubia-confirmar').addEventListener('click',async()=>{
+    if(trabajando)return;
+    const seleccion=articulos.filter(a=>a.activo).map(a=>a.data);
+    if(!seleccion.length){mensaje('Selecciona al menos un material.');return;}
+    if(!confirm('Crear '+seleccion.length+' artículos nuevos del proveedor '+$('gubia-proveedor').value+' sin precios confirmados?'))return;
+    detener(true);
+    mensaje('Guardando artículos seleccionados y comprobando duplicados…');
+    try{
+      const response=await fetch('/api/panel/catalogo-importar',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({accion:'confirmar',proveedor:$('gubia-proveedor').value,archivo:nombreArchivo,articulos:seleccion}),
+      });
+      const body=await response.json().catch(()=>({}));
+      if(!response.ok||!body.ok)throw Error(body.error||'No se ha podido importar.');
+      mensaje('Importación completada: '+body.creados+' nuevos, '+body.duplicados+' duplicados omitidos, '+body.rechazados+' rechazados. Revisa los artículos y completa sus precios.');
+      articulos=[];resultado.hidden=true;
+    }catch(err){mensaje('Error al guardar: '+(err?.message||'Error')+'. Comprueba el catálogo antes de reintentar.');}
+    finally{detener(false);}
+  });
+})();
+</script>
