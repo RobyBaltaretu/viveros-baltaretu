@@ -40,7 +40,7 @@
   "ia": {
     "asistente": ["groq", "workers-ai", "local"],
     "simulador": "gemini",
-    "modelos": { "groq": "openai/gpt-oss-120b", "gemini": "gemini-3.1-flash-image-preview" },
-    "simulacionesMes": 250
+    "modelos": { "groq": "openai/gpt-oss-120b", "gemini": "gemini-3.1-flash-image" },
+    "simulacionesMes": 50
   }
 }

@@ -54,11 +54,11 @@ describe('Simulador de Reformas con IA', () => {
 
   test('Gemini: la clave va en la cabecera (nunca en la URL), con la foto, la máscara y solo imagen de vuelta', async () => {
     const llamadas: Llamada[] = [];
-    const r = await generateRenovationImage(foto, dummyConfig, { apiKey: 'clave-secreta', modelo: 'gemini-3.1-flash-image-preview', mascara, fetch: falsoFetch(conImagen, llamadas) });
-    expect(r).toMatchObject({ ok: true, afterImage: 'data:image/png;base64,UkVTVUxU', provider: 'gemini:gemini-3.1-flash-image-preview' });
+    const r = await generateRenovationImage(foto, dummyConfig, { apiKey: 'clave-secreta', modelo: 'gemini-3.1-flash-image', mascara, fetch: falsoFetch(conImagen, llamadas) });
+    expect(r).toMatchObject({ ok: true, afterImage: 'data:image/png;base64,UkVTVUxU', provider: 'gemini:gemini-3.1-flash-image' });
     expect(llamadas).toHaveLength(1);
     const { url, init } = llamadas[0]!;
-    expect(url).toBe(`${URL_GEMINI}/gemini-3.1-flash-image-preview:generateContent`);
+    expect(url).toBe(`${URL_GEMINI}/gemini-3.1-flash-image:generateContent`);
     expect(url).not.toContain('clave-secreta');
     expect((init.headers as Record<string, string>)['x-goog-api-key']).toBe('clave-secreta');
     const cuerpo = JSON.parse(String(init.body));
