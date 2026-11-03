@@ -79,3 +79,13 @@ describe('portafolio privado', () => {
     expect((await repos.portafolio.listar({ incluirArchivados: true })).find((p) => p.id === lista[0].id)?.archivado).toBe(true);
   });
 });
+
+it('conserva las dos fotos privadas con un solo proyecto al reintentar el guardado', async () => {
+  const id = 'studio-ensayo';
+  await repos.portafolio.guardarSimulacion(id, 'Proyecto de ejemplo', JPEG, JPEG, yo);
+  await repos.portafolio.guardarSimulacion(id, 'Segundo intento', JPEG, JPEG, yo);
+  const proyecto = await repos.portafolio.obtener(id);
+  expect(proyecto).toMatchObject({titulo:'Proyecto de ejemplo', antes:[id+'-antes'], despues:[id+'-despues']});
+  expect(await repos.adjuntos.listar('portafolio',id)).toHaveLength(2);
+  expect((await fotoDeProyecto(repos,id+'-despues'))?.bytes).toEqual(JPEG);
+});

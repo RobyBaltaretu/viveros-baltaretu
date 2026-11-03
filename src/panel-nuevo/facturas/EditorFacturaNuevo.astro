@@ -8,6 +8,7 @@
  * - Añadir y quitar líneas sin recargar; sin JavaScript, con los botones de siempre.
  */
 import PdfEnNavegador from '../../components/panel/PdfEnNavegador.astro';
+import { moduloActivoAhora } from '../../plataforma/actual';
 import Icono from '../../components/panel/ui/Icono.astro';
 import SelectorCatalogo from '../SelectorCatalogo.astro';
 import type { ArticuloCatalogo, Factura, PlantillaCatalogo } from '../../server/data/tipos.ts';
@@ -218,10 +219,12 @@ const t = f.totales;
   </aside>
 </form>
 <SelectorCatalogo articulos={articulos} plantillas={plantillas} destino="factura" />
+<details class="nv-doc-acciones"><summary>Más acciones del borrador</summary><div class="nv-doc-opciones">
+  {f.tipo === 'ordinaria' && moduloActivoAhora('pedidosProveedor') && <a href={`/panel/pedidos/nuevo?factura=${f.id}`}>Preparar pedido con las líneas guardadas</a>}
 <form method="post" class="nv-acciones">
   <input type="hidden" name="accion" value="borrar" />
   <button class="enlace-panel nv-enlace-boton">Borrar este borrador</button>
-</form>
+</form></div></details>
 
 <script is:inline>
   (() => {

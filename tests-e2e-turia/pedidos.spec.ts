@@ -70,6 +70,7 @@ test('pedido: de un trabajo del catálogo, del catálogo y a mano; enviar sin pr
   await auditar(page);
   await controlesGrandes(page);
   // El mensaje para el proveedor no lleva precios.
+  await page.getByText('Más acciones del documento', {exact:true}).click();
   const wa = decodeURIComponent((await page.getByRole('link', { name: 'Enviar por WhatsApp' }).first().getAttribute('href')) ?? '');
   expect(wa).toContain('https://wa.me/34600000088?text=Hola Ana');
   expect(wa).toContain(`2 ud · Pomo ${p} (ref. POMO-1)`);

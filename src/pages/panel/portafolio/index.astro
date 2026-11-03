@@ -8,7 +8,7 @@ export const prerender = false;
 
 // Portafolio privado: lo ven el propietario y el gerente (mismo permiso que el inventario del vivero).
 const s = sesionCon(Astro.locals, 'inventario');
-const todos = s ? await s.repos.portafolio.listar() : [];
+const todos = s ? (await s.repos.portafolio.listar()).filter(p => !p.id.startsWith('studio_sim_')) : [];
 const ver = Astro.url.searchParams.get('categoria') ?? '';
 const lista = todos.filter((p) => !ver || p.categoria === ver).sort((a, b) => Number(b.destacado) - Number(a.destacado) || a.orden - b.orden);
 const grupos = categorias(todos);

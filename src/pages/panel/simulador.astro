@@ -9,7 +9,7 @@ import {
 // CSS propio, en línea (scripts/generar-css-simulador.mjs): el simulador está fuera del Tailwind de la web para que Baltaretu no cambie.
 import studioCss from '../../panel-nuevo/studio.css?raw';
 import estilosSimulador from '../../panel-nuevo/simulador.css?raw';
-import { clienteActual } from '../../plataforma/actual.ts';
+import { clienteActual, rutaDisponible } from '../../plataforma/actual.ts';
 import { iaDe } from '../../plataforma/configuracion.ts';
 import { sesionCon } from '../../server/panel/pagina.ts';
 import { AVISO_AGOTADA, estadoCuota, limitePresupuestado, mesDe } from '../../server/simulador/cuota.ts';
@@ -329,6 +329,13 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
             </span>
           </div>
 
+          {sesionCon(Astro.locals,'inventario') && sesionCon(Astro.locals,'facturas') && rutaDisponible('/panel/proyectos') && rutaDisponible('/panel/portafolio') && (
+            <form id="guardar-simulacion" class="studio-guardar">
+              <label>Nombre del proyecto<input name="titulo" class="campo-panel" maxlength="120" placeholder="Ej. Cocina de roble" required /></label>
+              <button class="studio-button">Guardar como proyecto borrador</button>
+              <p role="status"></p><a hidden href="/panel/proyectos?ver=simulaciones">Ver simulaciones guardadas</a>
+            </form>
+          )}
           <label class="grid gap-2 text-center text-sm text-gris">Comparar antes y después
             <input type="range" id="comparacion" min="0" max="100" value="50" class="min-h-12 w-full" />
           </label>
@@ -687,7 +694,41 @@ const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · qued
     });
 
     // ---- Comparador antes / después ----
+    const guardar = $('guardar-simulacion');
+    let resultadoId;
+    guardar?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const boton = guardar.querySelector('button');
+      if (boton.disabled) return;
+      boton.disabled = true;
+      const estado = guardar.querySelector('[role=status]');
+      estado.textContent = 'Guardando las dos imágenes…';
+      try {
+        const datos = new FormData(guardar);
+        datos.set('resultado', resultadoId);
+        const urls = [imgBefore.src, imgAfter.src];
+        for (const [i,lado] of ['antes','despues'].entries()) {
+          const imagen = await (await fetch(urls[i])).blob();
+          datos.set(lado, imagen, lado + '.jpg');
+        }
+        const respuesta = await fetch('/panel/proyectos?ver=simulaciones',{method:'POST',body:datos});
+        if (!respuesta.ok || !respuesta.headers.get('content-type')?.includes('application/json')) throw Error();
+        await respuesta.json();
+        estado.textContent = 'Proyecto guardado con su antes y después.';
+        guardar.querySelector('a').hidden = false;
+      } catch {
+        boton.disabled = false;
+        estado.textContent = 'No se pudo guardar. Puedes volver a intentarlo.';
+      }
+    });
+
     function showComparator(antesUrl, despuesUrl) {
+      resultadoId = crypto.randomUUID();
+      if (guardar) {
+        guardar.querySelector('button').disabled = false;
+        guardar.querySelector('a').hidden = true;
+        guardar.querySelector('[role=status]').textContent = '';
+      }
       imgBefore.src = antesUrl;
       imgAfter.src = despuesUrl;
       if (comparatorContainer) comparatorContainer.style.aspectRatio = `${ancho / alto}`;

@@ -2326,9 +2326,11 @@
 }
 @media (max-width: 47.99rem) {
   .nv-lineas-pedido tr {
-    grid-template-areas: 'concepto concepto concepto' 'cantidad unidad coste' 'importe importe quitar';
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas: 'concepto concepto' 'cantidad unidad' 'coste importe' '. quitar';
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .nv-lineas-pedido .nv-pareja {grid-template-columns: minmax(0,1fr)}
+  .nv-lineas-pedido :is(input,select) {width:100%;min-width:0;max-width:100%}
   .nv-lineas-pedido td:nth-child(3) {
     grid-area: unidad;
   }
@@ -2606,3 +2608,8 @@
 @media(min-width:48rem) and (max-width:80rem){.nv-taller .nv-estudio-metricas {grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(min-width:48rem) and (max-width:70rem){.nv-taller .nv-estudio-crear ul {grid-template-columns:repeat(5,minmax(0,1fr))}.nv-taller .nv-estudio-atajo {padding:.85rem;font-size:.88rem}}
 @media(prefers-reduced-motion:reduce){.nv-taller .nv-estudio-atajo:hover,.nv-taller .nv-estudio-metrica:hover {transform:none}}
+
+.nv-doc-acciones { margin: .75rem 0 1rem; border:1px solid var(--nv-borde); background:var(--nv-superficie); border-radius:14px }
+.nv-doc-acciones summary { min-height:48px; padding:.75rem 1rem; cursor:pointer; font-weight:650 }
+.nv-doc-opciones { padding:0 1rem 1rem; max-width:40rem }
+.nv-doc-opciones > a { display:inline-flex; min-height:48px; align-items:center }

@@ -26,11 +26,12 @@ const DATOS = p
   : [];
 ---
 
-<PaginaPanel titulo={p?.titulo ?? 'Proyecto'} permiso="inventario" volver="/panel/portafolio">
+<PaginaPanel titulo={p?.titulo ?? 'Proyecto'} permiso="inventario" volver={p?.id.startsWith('studio_sim_') ? '/panel/proyectos?ver=simulaciones' : '/panel/portafolio'}>
   {
     p && (
       <>
         <h1 class="titular-grande">{p.titulo}</h1>
+        {p.id.startsWith('studio_sim_') && <p>Simulación · Proyecto en borrador</p>}
         {p.archivado && <p class="mt-2 font-semibold text-terracota">Archivado: no sale en el portafolio.</p>}
         <Mensajes hecho={hecho} />
 

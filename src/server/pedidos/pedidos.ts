@@ -166,6 +166,20 @@ export function lineasDeTrabajo(e: Pick<ResultadoEscandallo, 'lineas'>, articulo
   return [...juntas.values()].map((l) => ({ ...l, cantidad: Math.ceil(tres(l.cantidad) * 100) / 100 }));
 }
 
+/** Los documentos antiguos guardan el concepto libre. Solo una coincidencia única identifica un artículo. */
+export function lineasDeVenta(lineas: ReadonlyArray<{concepto: string; cantidad: number; material?: string; extra?: boolean}>, articulos: ArticuloCatalogo[]): LineaPedido[] {
+  const clave = (texto: string) => texto.trim().toLocaleLowerCase('es');
+  return lineas.flatMap(l => {
+    if (l.extra || l.cantidad <= 0 || !l.concepto.trim()) return [];
+    const candidatas = articulos.filter(a => !a.archivado && [a.nombre, a.referencia, a.nombre + ' (' + a.unidad + ')'].some(t => t && clave(t) === clave(l.concepto)));
+    const a = candidatas.length === 1 ? candidatas[0] : undefined;
+    if (a && ['mano-obra','servicios'].includes(a.categoria)) return [];
+    return [{articuloId: a?.id ?? null, concepto: l.concepto, cantidad: l.cantidad,
+      unidad: a ? unidadDe(a) : 'ud', referencia: a?.referencia ?? '',
+      detalle: l.material || a?.acabado || '', coste: a?.coste ?? 0}];
+  });
+}
+
 /** El proveedor al que más se le compra de esas líneas (por el nombre escrito en cada artículo). */
 export function proveedorProbable(lineas: LineaPedido[], articulos: ArticuloCatalogo[], proveedores: Proveedor[]): Proveedor | null {
   const porId = new Map(articulos.map((a) => [a.id, a]));

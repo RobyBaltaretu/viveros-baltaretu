@@ -5,9 +5,35 @@ import { sesionCon } from '../../../server/panel/pagina';
 import { estadoEfectivo } from '../../../server/presupuestos-cliente/presupuestos';
 import { hoy } from '../../../server/gastos/gastos';
 import { proyectosDe } from '../../../panel-nuevo/resumen';
+import { cuerpoLimitado } from '../../../server/panel/cuerpo';
+import { MAXIMO_FOTO, tipoDeImagen } from '../../../server/panel/fotos';
+import { rutaDisponible } from '../../../plataforma/actual';
 export const prerender = false;
 const s = sesionCon(Astro.locals, 'facturas');
-const presupuestos = s ? await s.repos.presupuestosCliente.listar() : [];
+const simulacionesPermitidas = !!s && !!sesionCon(Astro.locals, 'inventario') && rutaDisponible('/panel/simulador') && rutaDisponible('/panel/portafolio');
+if (Astro.request.method === 'POST') {
+  if (!s || !simulacionesPermitidas || !sesionCon(Astro.locals,'editar')) return new Response(null,{status:403});
+  const body = await cuerpoLimitado(Astro.request, 2 * MAXIMO_FOTO + 32768);
+  if (!body) return new Response('Las imágenes son demasiado grandes.',{status:413});
+  const form = await body.formData().catch(() => null);
+  const token = form?.get('resultado');
+  const titulo = String(form?.get('titulo') ?? '').trim();
+  if (typeof token !== 'string' || !/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(token) || !titulo || titulo.length > 120) return new Response('Revisa el nombre del proyecto.',{status:400});
+  const fotos = await Promise.all(['antes','despues'].map(async lado => {
+    const file = form?.get(lado);
+    if (!(file instanceof File) || file.size > MAXIMO_FOTO) return null;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    return tipoDeImagen(bytes)?.tipo === 'image/jpeg' ? bytes : null;
+  }));
+  const [antes,despues] = fotos;
+  if (!antes || !despues) return new Response('Se necesitan dos imágenes JPEG válidas.',{status:400});
+  const id = 'studio_sim_' + token;
+  await s.repos.portafolio.guardarSimulacion(id,titulo,antes,despues,s.usuario.email);
+  return Response.json({href:'/panel/portafolio/' + id},{headers:{'Cache-Control':'no-store'}});
+}
+const verSimulaciones = simulacionesPermitidas && Astro.url.searchParams.get('ver') === 'simulaciones';
+const borradores = verSimulaciones && s ? (await s.repos.portafolio.listar()).filter(p => p.id.startsWith('studio_sim_')) : [];
+const presupuestos = s && !verSimulaciones ? await s.repos.presupuestosCliente.listar() : [];
 const todos = proyectosDe(presupuestos);
 const filtro = ['pendientes', 'finalizados'].includes(Astro.url.searchParams.get('ver') ?? '') ? Astro.url.searchParams.get('ver')! : 'curso';
 const pendientes = presupuestos.filter(p => ['borrador', 'enviado'].includes(estadoEfectivo(p, hoy())));
@@ -15,7 +41,11 @@ const lista = filtro === 'pendientes' ? [] : todos.filter(p => filtro === 'final
 ---
 <PaginaPanel titulo="Proyectos" permiso="facturas" ancho="amplio">
   <div class="nv-titulo"><div><h1>Proyectos</h1><p>Del presupuesto aceptado al último cobro. El avance representa los hitos administrativos, no la ejecución de obra.</p></div><a class="nv-boton" href="/panel/proyectos/nuevo"><Icono nombre="nuevo"/>Crear proyecto</a></div>
-  <nav class="nv-pestanas" aria-label="Estado de los proyectos">{[['curso','En curso'],['pendientes','Pendientes'],['finalizados','Finalizados']].map(([k,t]) => <a href={`/panel/proyectos?ver=${k}`} aria-current={filtro === k ? 'page' : undefined}>{t}</a>)}</nav>
-  {filtro === 'pendientes' ? <ul class="ux-lista-proyectos" role="list">{pendientes.map(p => <li class="ux-card"><a class="ux-proyecto" href={`/panel/presupuestos-cliente/${p.id}`}><Icono nombre="presupuestos"/><span class="ux-proyecto-datos"><strong>{p.concepto}</strong><span>{p.cliente.nombre} · {p.estado === 'borrador' ? 'Presupuesto por preparar' : 'Pendiente de aceptación'}</span></span><Icono nombre="siguiente"/></a></li>)}</ul> : <ul class="ux-lista-proyectos" role="list">{lista.map(p => <li class="ux-card"><a class="ux-proyecto" href={`/panel/presupuestos-cliente/${p.id}`}><span class="ux-proyecto-icono"><Icono nombre="inventario"/></span><span class="ux-proyecto-datos"><strong>{p.concepto} · {p.cliente.nombre}</strong><span class="ux-progreso"><progress max="100" value={p.avance} aria-label={`Avance administrativo: ${p.concepto}`}/><span>{p.avance} %</span></span><small>{p.etapa}</small></span><Icono nombre="siguiente"/></a></li>)}</ul>}
-  {(filtro === 'pendientes' ? pendientes.length === 0 : lista.length === 0) && <div class="ux-card ux-vacio"><Icono nombre="inventario"/><p><strong>No hay proyectos {filtro === 'curso' ? 'en curso' : filtro}.</strong><span>Empieza con un presupuesto. Al aceptarlo, aparecerá en curso.</span></p><a href="/panel/proyectos/nuevo" class="nv-boton">Crear proyecto</a></div>}
+  <nav class="nv-pestanas" aria-label="Estado de los proyectos">{[['curso','En curso'],['pendientes','Pendientes'],['finalizados','Finalizados']].map(([k,t]) => <a href={`/panel/proyectos?ver=${k}`} aria-current={!verSimulaciones && filtro === k ? 'page' : undefined}>{t}</a>)}{simulacionesPermitidas && <a href="/panel/proyectos?ver=simulaciones" aria-current={verSimulaciones ? 'page' : undefined}>Simulaciones</a>}</nav>
+  {verSimulaciones && <section><h2>Simulaciones en borrador</h2>
+    {borradores.length === 0 && <p>Cuando guardes una reforma desde el simulador, aparecerá aquí con su antes y después.</p>}
+    <ul class="ux-lista-proyectos" role="list">{borradores.map(p => <li class="ux-card"><a class="ux-proyecto" href={`/panel/portafolio/${p.id}`}>
+      <span class="ux-proyecto-datos"><strong>{p.titulo}</strong><small>Borrador · Ver antes y después</small></span><Icono nombre="siguiente"/></a></li>)}</ul></section>}
+  {!verSimulaciones && (filtro === 'pendientes' ? <ul class="ux-lista-proyectos" role="list">{pendientes.map(p => <li class="ux-card"><a class="ux-proyecto" href={`/panel/presupuestos-cliente/${p.id}`}><Icono nombre="presupuestos"/><span class="ux-proyecto-datos"><strong>{p.concepto}</strong><span>{p.cliente.nombre} · {p.estado === 'borrador' ? 'Presupuesto por preparar' : 'Pendiente de aceptación'}</span></span><Icono nombre="siguiente"/></a></li>)}</ul> : <ul class="ux-lista-proyectos" role="list">{lista.map(p => <li class="ux-card"><a class="ux-proyecto" href={`/panel/presupuestos-cliente/${p.id}`}><span class="ux-proyecto-icono"><Icono nombre="inventario"/></span><span class="ux-proyecto-datos"><strong>{p.concepto} · {p.cliente.nombre}</strong><span class="ux-progreso"><progress max="100" value={p.avance} aria-label={`Avance administrativo: ${p.concepto}`}/><span>{p.avance} %</span></span><small>{p.etapa}</small></span><Icono nombre="siguiente"/></a></li>)}</ul>)}
+  {!verSimulaciones && (filtro === 'pendientes' ? pendientes.length === 0 : lista.length === 0) && <div class="ux-card ux-vacio"><Icono nombre="inventario"/><p><strong>No hay proyectos {filtro === 'curso' ? 'en curso' : filtro}.</strong><span>Empieza con un presupuesto. Al aceptarlo, aparecerá en curso.</span></p><a href="/panel/proyectos/nuevo" class="nv-boton">Crear proyecto</a></div>}
 </PaginaPanel>

@@ -86,6 +86,21 @@ test('simulador: barra del mes, zona marcada y resultado cosido, sin claves en e
   await expect(page.getByRole('progressbar', { name: 'Simulaciones de este mes' })).toHaveAttribute('aria-valuenow', '40');
   await auditar(page);
 
+  const titulo = 'Simulación de prueba ' + crypto.randomUUID();
+  await page.getByLabel('Nombre del proyecto').fill(titulo);
+  await page.getByRole('button', { name: 'Guardar como proyecto borrador' }).click();
+  const guardados = page.getByRole('link', { name: 'Ver simulaciones guardadas' });
+  await expect(guardados).toBeVisible();
+  const proyectos = await page.context().newPage();
+  await proyectos.goto((await guardados.getAttribute('href'))!);
+  await proyectos.getByRole('link', { name: new RegExp(titulo) }).click();
+  await expect(proyectos.getByRole('heading', { name: titulo })).toBeVisible();
+  await expect(proyectos.locator(".comparador img")).toHaveCount(2);
+  for (const img of await proyectos.locator('.comparador img').all()) {
+    await expect.poll(() => img.evaluate(el => (el as HTMLImageElement).naturalWidth)).toBe(1024);
+  }
+  await proyectos.close();
+
   // Al llegar al tope, el botón se bloquea hasta el mes que viene.
   await page.unroute('**/api/panel/simulador');
   await page.route('**/api/panel/simulador', (ruta) => ruta.fulfill({ status: 403, json: { ok: false, error: 'Has llegado al tope de simulaciones de este mes. El servicio se reactiva el día 1 del mes que viene.', cuota: cuota(50) } }));

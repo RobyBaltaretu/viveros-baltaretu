@@ -4,6 +4,7 @@
  * envío, líneas, totales y otras acciones (hacer otra igual, rectificativa).
  * Mismas acciones que la vista de siempre (las procesa la página).
  */
+import { moduloActivoAhora } from '../../plataforma/actual';
 import PdfEnNavegador from '../../components/panel/PdfEnNavegador.astro';
 import Icono from '../../components/panel/ui/Icono.astro';
 import type { Factura } from '../../server/data/tipos.ts';
@@ -62,6 +63,40 @@ const lineas = f.lineas.filter((l) => l.concepto);
     </form>
   )
 }
+
+<details class="nv-doc-acciones">
+  <summary>Más acciones del documento</summary>
+  <div class="nv-doc-opciones">      <div class="nv-botones-columna nv-arriba">
+        <a href={pdf} class="nv-boton">
+          <Icono nombre="descargar" />
+          Ver el PDF
+        </a>
+        <a href={`${pdf}&descargar=1`} class="nv-boton nv-boton-secundario">
+          Descargar
+        </a>
+        <button type="button" class="nv-boton nv-boton-secundario" data-compartir={pdf} data-nombre={`${f.codigo}.pdf`} hidden>
+          <Icono nombre="enviar" />
+          Enviar (WhatsApp, correo…)
+        </button>
+      </div>
+      <div class="nv-botones-columna">
+        {f.tipo === 'ordinaria' && moduloActivoAhora('pedidosProveedor') && <a class="nv-boton nv-boton-secundario" href={`/panel/pedidos/nuevo?factura=${f.id}`}>Preparar pedido a proveedor</a>}
+        <form method="post">
+          <input type="hidden" name="accion" value="duplicar" />
+          <button class="nv-boton nv-boton-secundario nv-boton-ancho-total">Hacer otra igual</button>
+        </form>
+        {
+          f.tipo === 'ordinaria' && (
+            <form method="post">
+              <input type="hidden" name="accion" value="rectificar" />
+              <button class="nv-boton nv-boton-secundario nv-boton-ancho-total">Corregir o anular (rectificativa)</button>
+            </form>
+          )
+        }
+      </div>
+      <p class="nv-gris nv-nota-pie">Una factura emitida no se cambia ni se borra: los errores se corrigen con una rectificativa.</p>
+  </div>
+</details>
 
 <div class="nv-ficha">
   <section class="nv-tarjeta" aria-labelledby="lineas-factura">
@@ -126,39 +161,10 @@ const lineas = f.lineas.filter((l) => l.concepto);
         <span>Total</span>
         <strong>{dinero(f.totales.total)}</strong>
       </div>
-      <div class="nv-botones-columna nv-arriba">
-        <a href={pdf} class="nv-boton">
-          <Icono nombre="descargar" />
-          Ver el PDF
-        </a>
-        <a href={`${pdf}&descargar=1`} class="nv-boton nv-boton-secundario">
-          Descargar
-        </a>
-        <button type="button" class="nv-boton nv-boton-secundario" data-compartir={pdf} data-nombre={`${f.codigo}.pdf`} hidden>
-          <Icono nombre="enviar" />
-          Enviar (WhatsApp, correo…)
-        </button>
-      </div>
+
     </section>
 
-    <section class="nv-tarjeta nv-seccion" aria-labelledby="otras-acciones">
-      <h2 id="otras-acciones">Otras acciones</h2>
-      <div class="nv-botones-columna">
-        <form method="post">
-          <input type="hidden" name="accion" value="duplicar" />
-          <button class="nv-boton nv-boton-secundario nv-boton-ancho-total">Hacer otra igual</button>
-        </form>
-        {
-          f.tipo === 'ordinaria' && (
-            <form method="post">
-              <input type="hidden" name="accion" value="rectificar" />
-              <button class="nv-boton nv-boton-secundario nv-boton-ancho-total">Corregir o anular (rectificativa)</button>
-            </form>
-          )
-        }
-      </div>
-      <p class="nv-gris nv-nota-pie">Una factura emitida no se cambia ni se borra: los errores se corrigen con una rectificativa.</p>
-    </section>
+
   </div>
 </div>
 
