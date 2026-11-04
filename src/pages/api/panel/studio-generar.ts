@@ -63,8 +63,13 @@ export const POST:APIRoute=async({locals,request})=>{
   if(!(await sesion.repos.usoSimulador.reservar(tenant,mes,limite)))return json(403,{ok:false,error:'Presupuesto mensual agotado'});
   const generacion='studiogen_'+crypto.randomUUID(),fecha=new Date().toISOString();
   const solicitud=JSON.stringify({revision:row.revision,especificacion,referencias});
-  await e.DB.prepare('INSERT INTO studio_generaciones(id,boceto_id,cliente_id,revision,estado,solicitud,coste_estimado_cent,creado,actualizado) VALUES (?,?,?,?,?,?,?,?,?)')
-    .bind(generacion,id,tenant,row.revision,'procesando',solicitud,20,fecha,fecha).run();
+  try{
+    await e.DB.prepare('INSERT INTO studio_generaciones(id,boceto_id,cliente_id,revision,estado,solicitud,coste_estimado_cent,creado,actualizado) VALUES (?,?,?,?,?,?,?,?,?)')
+      .bind(generacion,id,tenant,row.revision,'procesando',solicitud,20,fecha,fecha).run();
+  }catch{
+    await sesion.repos.usoSimulador.devolver(tenant,mes);
+    return json(409,{ok:false,error:'Ya existe una generación activa o no se pudo reservar el trabajo'});
+  }
   const modelo=iaDe(clienteActual()).modelos.gemini;
   const prompt='Render fotográfico de carpintería. PRIMERA imagen: espacio real, SEGUNDA: boceto. Preservar el espacio, las instalaciones y el encuadre. Respetar exactamente los módulos y los acabados del diseño validado. No añadir elementos. Diseño estructurado: '+JSON.stringify({especificacion,referencias});
   let respuesta:Response;
