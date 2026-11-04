@@ -69,6 +69,26 @@ describe('artículos', () => {
   });
 });
 
+describe('familias y variantes D1',()=>{
+  it('conserva identidad comercial, dimensiones, decorativo y puente al artículo heredado',async()=>{
+    await repos.catalogo.guardarArticulo({id:'estructura-articulo',categoria:'tableros',nombre:'Roble Etna 19 mm',unidad:'m²',coste:0,merma:15,margen:30,precioFijo:null,referencia:'RE-19',proveedor:'Colomba',espesor:19,acabado:'Roble Etna',notas:''},yo);
+    const origen={proveedor:'Colomba',documento:'catalogo.pdf',pagina:3,metodo:'pdfjs' as const,confianza:1,revision:'verificado' as const};
+    await repos.catalogo.guardarFamilia!({id:'familia-roble-etna',codigo:'MEL-ETNA',nombre:'Melamina Roble Etna',descripcion:'',categoria:'tableros',subcategoria:'Melaminas',tipo:'producto-variantes',proveedor:'Colomba',fabricante:'Colomba',coleccion:'Melaminas',aplicaciones:['mobiliario'],estado:'activo',origen},yo);
+    await repos.catalogo.guardarDecorativo!({id:'decor-roble-etna',fabricante:'Colomba',coleccion:'Melaminas',codigo:'',nombre:'Roble Etna',familiaCromatica:'',colorDigital:null,muestra:'',textura:'',veta:null,brillo:null,acabadoSuperficial:'Melamina',especie:'',fuente:'',licencia:'',verificadoEl:null,origen},yo);
+    await repos.catalogo.guardarVariante!({id:'variante-roble-etna-19',familiaId:'familia-roble-etna',articuloId:'estructura-articulo',referencia:'RE-19',codigo:'',codigoDecorativo:'',soporte:'Aglomerado',dimensiones:{largoMm:2800,anchoMm:2070,altoMm:null,fondoMm:null,espesorMm:19,textoOriginal:'280 × 207 cm',unidadOriginal:'cm'},acabado:'Roble Etna',tratamiento:'',calidad:'',propiedades:{},unidadCompra:'tablero',unidadConsumo:'m²',unidadPresupuesto:'m²',unidadesPaquete:26,factorConversion:5.796,disponibilidad:'desconocida',estado:'activo',decorativoIds:['decor-roble-etna'],origen},yo);
+    expect(await repos.catalogo.familia!('familia-roble-etna')).toMatchObject({nombre:'Melamina Roble Etna'});
+    expect(await repos.catalogo.variantes!({familiaId:'familia-roble-etna'})).toEqual([expect.objectContaining({articuloId:'estructura-articulo',referencia:'RE-19',unidadesPaquete:26,dimensiones:expect.objectContaining({largoMm:2800,espesorMm:19})})]);
+    expect(await repos.catalogo.decorativos!({fabricante:'Colomba'})).toEqual([expect.objectContaining({nombre:'Roble Etna'})]);
+    await repos.catalogo.guardarImportacion!({id:'importacion-estructura',proveedor:'Colomba',documento:'catalogo.pdf',estado:'confirmando',detectados:805,seleccionados:805,validados:0,creados:0,actualizados:0,duplicados:0,rechazados:0,pendientes:805,errores:[]},yo);
+    expect(await repos.catalogo.reservarLoteImportacion!('importacion-estructura','lote-1',yo)).toBe(true);
+    expect(await repos.catalogo.reservarLoteImportacion!('importacion-estructura','lote-1',yo)).toBe(false);
+    await repos.catalogo.fallarLoteImportacion!('importacion-estructura','lote-1',yo);
+    expect(await repos.catalogo.reservarLoteImportacion!('importacion-estructura','lote-1',yo)).toBe(true);
+    await repos.catalogo.completarLoteImportacion!('importacion-estructura','lote-1',{creados:100},yo);
+    expect(await repos.catalogo.reservarLoteImportacion!('importacion-estructura','lote-1',yo)).toBe(false);
+  });
+});
+
 describe('catálogo de partida', () => {
   it('cada plantilla es válida, sus artículos existen y con las medidas propuestas da un escandallo sin avisos', () => {
     const articulos = articulosDePartida('', true).map((a) => ({ ...a, archivado: false, actualizado: '' })) as ArticuloCatalogo[];

@@ -34,7 +34,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   let config: RenovationConfig;
   try {
-    config = resolveRenovationConfig(body.config, materialesDelTaller(await s.repos.catalogo.articulos()));
+    const [articulos,variantes]=await Promise.all([s.repos.catalogo.articulos(),s.repos.catalogo.variantes?.() ?? Promise.resolve([])]);
+    config = resolveRenovationConfig(body.config, materialesDelTaller(articulos,variantes));
   } catch {
     return json(400, { ok: false, error: 'Revisa las medidas y selecciona materiales activos del catálogo del taller.' });
   }

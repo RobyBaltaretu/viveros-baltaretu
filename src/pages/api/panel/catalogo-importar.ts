@@ -21,6 +21,15 @@ export const MAX_VISION_DIA = 8;
 const dia = () => new Date().toISOString().slice(0,10);
 const dato = (valor: unknown, max=80) => typeof valor==='string' ? valor.slice(0,max) : '';
 
+export const GET: APIRoute=async({locals,url})=>{
+  if(clienteActual().id!=='turia')return json(404,{ok:false,error:'No disponible.'});
+  const s=sesionCon(locals,'facturas');if(!s)return json(403,{ok:false,error:'No tienes permiso para consultar importaciones.'});
+  const id=url.searchParams.get('id')??'';
+  if(!/^[a-zA-Z0-9_-]{8,100}$/.test(id)||!s.repos.catalogo.importacion)return json(400,{ok:false,error:'Importación no válida.'});
+  const importacion=await s.repos.catalogo.importacion(id);
+  return importacion?json(200,{ok:true,importacion}):json(404,{ok:false,error:'Importación no encontrada.'});
+};
+
 export const POST: APIRoute = async ({locals,request}) => {
   if (clienteActual().id!=='turia') return json(404,{ok:false,error:'No disponible.'});
   const s=sesionCon(locals,'facturas');
@@ -38,7 +47,10 @@ export const POST: APIRoute = async ({locals,request}) => {
   const accion=input.accion;
   try{
     if(accion==='confirmar'){
-      const result=await importarCandidatos(s.repos,dato(input.proveedor),dato(input.archivo,90),input.articulos,s.usuario.email,input.muestras);
+      const result=await importarCandidatos(s.repos,dato(input.proveedor),dato(input.archivo,90),input.articulos,s.usuario.email,input.muestras,{
+        importacionId:dato(input.importacionId,100),loteId:dato(input.loteId,100),
+        totalSeleccionados:typeof input.totalSeleccionados==='number' ? input.totalSeleccionados : undefined,
+      });
       return json(200,{ok:true,...result});
     }
     if(accion!=='interpretar' && accion!=='vision')
@@ -66,6 +78,9 @@ export const POST: APIRoute = async ({locals,request}) => {
     const resultado=await interpretarTextoConGroq(proveedor,input.paginas,{apiKey:clave});
     return json(200,{ok:true,...resultado});
   }catch(e){
+    const importacionId=dato(input?.importacionId,100),loteId=dato(input?.loteId,100);
+    if(importacionId&&loteId&&s.repos.catalogo.fallarLoteImportacion)
+      await s.repos.catalogo.fallarLoteImportacion(importacionId,loteId,s.usuario.email).catch(()=>undefined);
     if(e instanceof ErrorEspacioImagen)return json(507,{ok:false,error:e.message});
     if(e instanceof ErrorImportacion)return json(e.estado,{ok:false,error:e.message,reintentarEnMs:e.reintentarEnMs},
       e.reintentarEnMs?{'Retry-After':String(Math.max(1,Math.ceil(e.reintentarEnMs/1000)))}:{});

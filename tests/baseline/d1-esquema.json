@@ -1,5 +1,5 @@
 {
-  "version": 16,
+  "version": 17,
   "tablas": {
     "adjuntos": {
       "columnas": [
@@ -452,6 +452,325 @@
       ],
       "sql": "CREATE TABLE catalogo_articulos ( id TEXT PRIMARY KEY, categoria TEXT NOT NULL, nombre TEXT NOT NULL, unidad TEXT NOT NULL, coste REAL NOT NULL DEFAULT 0, datos TEXT NOT NULL, archivado INTEGER NOT NULL DEFAULT 0, creado TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL )"
     },
+    "catalogo_configurables": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "familia_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "nombre",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE catalogo_configurables ( id TEXT PRIMARY KEY, familia_id TEXT NOT NULL, nombre TEXT NOT NULL, datos TEXT NOT NULL, creado TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL, FOREIGN KEY (familia_id) REFERENCES catalogo_familias(id) )"
+    },
+    "catalogo_decorativos": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "identidad",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "fabricante",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "codigo",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "nombre",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE catalogo_decorativos ( id TEXT PRIMARY KEY, identidad TEXT NOT NULL UNIQUE, fabricante TEXT NOT NULL DEFAULT '', codigo TEXT NOT NULL DEFAULT '', nombre TEXT NOT NULL, datos TEXT NOT NULL, creado TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL )"
+    },
+    "catalogo_familias": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "identidad",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "codigo",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "nombre",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "categoria",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "tipo",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "proveedor",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "estado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "'pendiente'",
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE catalogo_familias ( id TEXT PRIMARY KEY, identidad TEXT NOT NULL UNIQUE, codigo TEXT NOT NULL DEFAULT '', nombre TEXT NOT NULL, categoria TEXT NOT NULL, tipo TEXT NOT NULL, proveedor TEXT NOT NULL DEFAULT '', datos TEXT NOT NULL, estado TEXT NOT NULL DEFAULT 'pendiente', creado TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL )"
+    },
+    "catalogo_importacion_lotes": {
+      "columnas": [
+        {
+          "nombre": "importacion_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "lote_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 2
+        },
+        {
+          "nombre": "estado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "'procesando'",
+          "clave": 0
+        },
+        {
+          "nombre": "resumen",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "'{}'",
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE catalogo_importacion_lotes ( importacion_id TEXT NOT NULL, lote_id TEXT NOT NULL, estado TEXT NOT NULL DEFAULT 'procesando', resumen TEXT NOT NULL DEFAULT '{}', actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL, PRIMARY KEY (importacion_id, lote_id), FOREIGN KEY (importacion_id) REFERENCES catalogo_importaciones(id) )"
+    },
+    "catalogo_importaciones": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "proveedor",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "documento",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "estado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "'revisando'",
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE catalogo_importaciones ( id TEXT PRIMARY KEY, proveedor TEXT NOT NULL, documento TEXT NOT NULL, estado TEXT NOT NULL DEFAULT 'revisando', datos TEXT NOT NULL, creado TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL )"
+    },
     "catalogo_plantillas": {
       "columnas": [
         {
@@ -519,6 +838,128 @@
         }
       ],
       "sql": "CREATE TABLE catalogo_plantillas ( id TEXT PRIMARY KEY, nombre TEXT NOT NULL, tipo_trabajo TEXT NOT NULL DEFAULT '', datos TEXT NOT NULL, orden INTEGER NOT NULL DEFAULT 0, archivado INTEGER NOT NULL DEFAULT 0, creado TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL )"
+    },
+    "catalogo_variante_decorativos": {
+      "columnas": [
+        {
+          "nombre": "variante_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "decorativo_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 2
+        },
+        {
+          "nombre": "rol",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "'principal'",
+          "clave": 3
+        }
+      ],
+      "sql": "CREATE TABLE catalogo_variante_decorativos ( variante_id TEXT NOT NULL, decorativo_id TEXT NOT NULL, rol TEXT NOT NULL DEFAULT 'principal', PRIMARY KEY (variante_id, decorativo_id, rol), FOREIGN KEY (variante_id) REFERENCES catalogo_variantes(id), FOREIGN KEY (decorativo_id) REFERENCES catalogo_decorativos(id) )"
+    },
+    "catalogo_variantes": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "identidad",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "familia_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "articulo_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "referencia",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "soporte",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "formato",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "''",
+          "clave": 0
+        },
+        {
+          "nombre": "espesor_mm",
+          "tipo": "REAL",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "datos",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "estado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": "'pendiente'",
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE catalogo_variantes ( id TEXT PRIMARY KEY, identidad TEXT NOT NULL UNIQUE, familia_id TEXT NOT NULL, articulo_id TEXT NOT NULL UNIQUE, referencia TEXT NOT NULL DEFAULT '', soporte TEXT NOT NULL DEFAULT '', formato TEXT NOT NULL DEFAULT '', espesor_mm REAL, datos TEXT NOT NULL, estado TEXT NOT NULL DEFAULT 'pendiente', creado TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL, FOREIGN KEY (familia_id) REFERENCES catalogo_familias(id) )"
     },
     "clientes": {
       "columnas": [
@@ -1569,6 +2010,31 @@
       "nombre": "catalogo_articulos_categoria",
       "tabla": "catalogo_articulos",
       "sql": "CREATE INDEX catalogo_articulos_categoria ON catalogo_articulos (categoria, nombre)"
+    },
+    {
+      "nombre": "catalogo_configurables_familia",
+      "tabla": "catalogo_configurables",
+      "sql": "CREATE INDEX catalogo_configurables_familia ON catalogo_configurables (familia_id)"
+    },
+    {
+      "nombre": "catalogo_decorativos_busqueda",
+      "tabla": "catalogo_decorativos",
+      "sql": "CREATE INDEX catalogo_decorativos_busqueda ON catalogo_decorativos (fabricante, codigo, nombre)"
+    },
+    {
+      "nombre": "catalogo_familias_busqueda",
+      "tabla": "catalogo_familias",
+      "sql": "CREATE INDEX catalogo_familias_busqueda ON catalogo_familias (categoria, proveedor, nombre)"
+    },
+    {
+      "nombre": "catalogo_variantes_familia",
+      "tabla": "catalogo_variantes",
+      "sql": "CREATE INDEX catalogo_variantes_familia ON catalogo_variantes (familia_id, estado)"
+    },
+    {
+      "nombre": "catalogo_variantes_filtro",
+      "tabla": "catalogo_variantes",
+      "sql": "CREATE INDEX catalogo_variantes_filtro ON catalogo_variantes (soporte, espesor_mm, formato)"
     },
     {
       "nombre": "facturas_cliente",

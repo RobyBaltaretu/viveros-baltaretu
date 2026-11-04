@@ -173,11 +173,12 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     articulos=[];sessionStorage.removeItem(BORRADOR);resultado.hidden=true;mensaje('Revisión descartada. Los artículos existentes no se han modificado.');});
   let documento = null;
   let siguientePagina = 1;
+  let importacionId = crypto.randomUUID().replace(/-/g,'');
   const textosPagina = new Map();
   const BORRADOR = 'gubia-turia-importacion-local-v1';
   function guardarBorrador() {
     try {
-      sessionStorage.setItem(BORRADOR,JSON.stringify({proveedor:$('gubia-proveedor').value,nombreArchivo,articulos,siguientePagina}));
+      sessionStorage.setItem(BORRADOR,JSON.stringify({proveedor:$('gubia-proveedor').value,nombreArchivo,articulos,siguientePagina,importacionId}));
     } catch { /* Memoria de sesión agotada: continúa en la pestaña. */ }
   }
   function juntarCandidatos(nuevos) {
@@ -223,7 +224,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     const comenzar=Number($('gubia-inicio').value)||1;
     if(!Number.isInteger(comenzar)||comenzar<1||comenzar>160){mensaje('La página de inicio debe estar entre 1 y 160.');return;}
     const continuar=comenzar>1 && nombreArchivo===file.name;
-    if(!continuar){articulos=[];sessionStorage.removeItem(BORRADOR);}
+    if(!continuar){articulos=[];importacionId=crypto.randomUUID().replace(/-/g,'');sessionStorage.removeItem(BORRADOR);}
     nombreArchivo=file.name;siguientePagina=comenzar;textosPagina.clear();
     resultado.hidden=true;detener(true);
     let fase='abrir PDF';
@@ -426,6 +427,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     const borrador=JSON.parse(sessionStorage.getItem(BORRADOR)||'null');
     if(borrador&&Array.isArray(borrador.articulos)){
       articulos=borrador.articulos;nombreArchivo=borrador.nombreArchivo||'catalogo.pdf';
+      importacionId=/^[a-zA-Z0-9_-]{8,100}$/.test(borrador.importacionId||'')?borrador.importacionId:crypto.randomUUID().replace(/-/g,'');
       siguientePagina=Math.max(1,Math.min(160,Number(borrador.siguientePagina)||1));
       $('gubia-inicio').value=String(siguientePagina);
       $('gubia-proveedor').value=borrador.proveedor||'';
@@ -444,11 +446,15 @@ const sesion = sesionCon(Astro.locals, 'facturas');
   const progreso=document.createElement('progress');
   progreso.max=100;progreso.value=0;progreso.style.width='100%';
   const detalle=document.createElement('p');
+  const metricas=document.createElement('p');
+  metricas.className='gubia-nota';
+  const listaErrores=document.createElement('ul');
+  listaErrores.setAttribute('aria-label','Errores por referencia');
   const enlace=document.createElement('a');
   enlace.href='/panel/catalogo';
   enlace.textContent='Abrir catálogo para comprobar los artículos guardados';
   enlace.hidden=true;
-  estadoConfirmacion.append(progreso,detalle,enlace);
+  estadoConfirmacion.append(progreso,detalle,metricas,listaErrores,enlace);
   confirmarBtn.insertAdjacentElement('afterend',estadoConfirmacion);
   const confirmarEstado=(texto,hechos,total)=>{
     detalle.textContent=texto;
@@ -458,13 +464,15 @@ const sesion = sesionCon(Astro.locals, 'facturas');
   };
   confirmarBtn.addEventListener('click',async()=>{
     if(trabajando)return;
+    const detectados=articulos.length;
     const seleccion=articulos.filter(a=>a.activo);
     if(!seleccion.length){confirmarEstado('Selecciona al menos un material.',0,1);return;}
     const proveedor=$('gubia-proveedor').value.trim();
     if(!proveedor){confirmarEstado('Indica el proveedor antes de confirmar.',0,1);return;}
     if(!confirm('Crear '+seleccion.length+' artículos del proveedor '+proveedor+' sin precios confirmados?'))return;
     detener(true);
-    const totales={creados:0,duplicados:0,rechazados:0};
+    const totales={creados:0,actualizados:0,duplicados:0,rechazados:0,validados:0};
+    const errores=[];
     let procesados=0;
     const total=seleccion.length;
     const tamanoLote=seleccion.some(a=>a.muestra)?3:8;
@@ -473,26 +481,33 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     try{
       for(let inicio=0;inicio<seleccion.length;inicio+=tamanoLote){
         const lote=seleccion.slice(inicio,inicio+tamanoLote);
+        const huella=lote.map(a=>window.gubiaPDF.identidadProveedor(a.data)).join('|');
+        let hash=2166136261;for(const char of huella){hash^=char.charCodeAt(0);hash=Math.imul(hash,16777619);}
+        const loteId='lote-'+(hash>>>0).toString(36);
         confirmarEstado('Guardando '+(procesados+1)+'–'+(procesados+lote.length)+' de '+total+' · '+totales.creados+' creados hasta ahora…',procesados,total);
         const response=await fetch('/api/panel/catalogo-importar',{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({accion:'confirmar',proveedor,archivo:nombreArchivo,
-            articulos:lote.map(a=>a.data),muestras:lote.map(a=>a.muestra||null)}),
+            articulos:lote.map(a=>a.data),muestras:lote.map(a=>a.muestra||null),
+            importacionId,loteId,totalSeleccionados:total}),
         });
         const body=await response.json().catch(()=>({}));
         if(!response.ok||!body.ok)throw Error(body.error||'No se ha podido importar el lote (HTTP '+response.status+').');
         for(const clave of Object.keys(totales))totales[clave]+=Number(body[clave]||0);
+        for(const error of body.errores||[])errores.push(error);
         procesados+=lote.length;
         // Persistir únicamente pendientes: el lote confirmado no se envía otra vez.
         const confirmados=new Set(lote);
         articulos=articulos.filter(a=>!confirmados.has(a));
         guardarBorrador();
-        confirmarEstado('Procesados '+procesados+' de '+total+' · '+totales.creados+' creados, '+totales.duplicados+' duplicados, '+totales.rechazados+' rechazados.',procesados,total);
+        confirmarEstado('Procesados '+procesados+' de '+total+' · '+totales.creados+' creados, '+totales.actualizados+' actualizados, '+totales.duplicados+' duplicados, '+totales.rechazados+' rechazados.',procesados,total);
+        metricas.textContent='Detectados: '+detectados+' · Seleccionados: '+total+' · Validados: '+totales.validados+' · Creados: '+totales.creados+' · Actualizados: '+totales.actualizados+' · Duplicados: '+totales.duplicados+' · Rechazados: '+totales.rechazados+' · Pendientes: '+(total-procesados);
         enlace.hidden=false;
         // Permitir repintado en Safari durante importaciones extensas.
         await esperar(0);
       }
-      confirmarEstado('Importación completada: '+totales.creados+' nuevos, '+totales.duplicados+' duplicados omitidos, '+totales.rechazados+' rechazados. Revisa los precios en el catálogo.',total,total);
+      confirmarEstado('Importación completada: '+totales.validados+' validados, '+totales.creados+' nuevos, '+totales.actualizados+' actualizados, '+totales.duplicados+' duplicados omitidos y '+totales.rechazados+' rechazados. Revisa los precios en el catálogo.',total,total);
+      listaErrores.replaceChildren(...errores.map(error=>{const li=document.createElement('li');li.textContent=(error.referencia||'Sin referencia')+' · página '+(error.pagina||'desconocida')+': '+error.mensaje;return li;}));
       if(articulos.length===0){sessionStorage.removeItem(BORRADOR);resultado.hidden=true;}
       else {guardarBorrador();pintar();}
     }catch(err){

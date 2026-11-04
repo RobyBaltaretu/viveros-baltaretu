@@ -28,6 +28,7 @@
     "contenido:copia": "tsx scripts/contenido/copia.ts",
     "contenido:restaurar": "tsx scripts/contenido/restaurar.ts",
     "asistente:banco": "tsx scripts/asistente-banco.ts",
+    "catalogo:auditar": "tsx scripts/catalogo/auditar-pdf.ts",
     "desplegar": "tsx scripts/contenido/desplegar.ts"
   },
   "dependencies": {

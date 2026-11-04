@@ -25,6 +25,8 @@ export const MARGEN_PROPUESTO = 30;
 export const CATEGORIAS: Categoria[] = [
   { id: 'tableros', nombre: 'Tableros', unidad: 'm²', merma: 15, grupo: 'Materiales' },
   { id: 'macizos', nombre: 'Madera maciza', unidad: 'm²', merma: 20, grupo: 'Materiales' },
+  { id: 'suelos', nombre: 'Tarimas y suelos', unidad: 'm²', merma: 10, grupo: 'Materiales' },
+  { id: 'mobiliario', nombre: 'Mobiliario configurable', unidad: 'ud', merma: 0, grupo: 'Materiales' },
   { id: 'chapas', nombre: 'Chapas y laminados', unidad: 'm²', merma: 15, grupo: 'Materiales' },
   { id: 'cantos', nombre: 'Cantos', unidad: 'ml', merma: 10, grupo: 'Materiales' },
   { id: 'encimeras', nombre: 'Encimeras', unidad: 'ml', merma: 5, grupo: 'Materiales' },

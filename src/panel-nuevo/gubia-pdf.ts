@@ -9,6 +9,7 @@ GlobalWorkerOptions.workerSrc = workerUrl;
 const MAX_PAGINAS = 160;
 const MAX_BYTES = 25_000_000;
 import {reconstruirFilas,sugerirMaterialesLocales,extraerVariantesTablero} from './filas-pdf';
+import { candidatosConfigurablesColomba } from '../server/catalogo/configurables-colomba';
 import {detectarPosicionesMuestras,construirMuestra,type MuestraPDF} from './muestras-pdf';
 export type PaginaLocal = { pagina: number; texto: string; caracteres: number; variantes: Array<Record<string,unknown>>; muestras: MuestraPDF[] };
 
@@ -46,7 +47,7 @@ export async function abrirPDFLocal(file: File): Promise<DocumentoLocal> {
         'str' in x && 'transform' in x
       );
       const texto = reconstruirFilas(items);
-      const variantes = extraerVariantesTablero(items,numero);
+      const variantes = [...extraerVariantesTablero(items,numero), ...candidatosConfigurablesColomba(texto,numero)];
       const posiciones = detectarPosicionesMuestras(items);
       const muestras: MuestraPDF[] = [];
       if(posiciones.length){

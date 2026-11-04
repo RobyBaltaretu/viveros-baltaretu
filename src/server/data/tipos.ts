@@ -636,6 +636,143 @@ export interface ArticuloCatalogo {
   actualizado: string;
 }
 
+export const TIPOS_PRODUCTO_CATALOGO = ['material', 'producto-variantes', 'configurable', 'a-medida', 'servicio'] as const;
+export type TipoProductoCatalogo = (typeof TIPOS_PRODUCTO_CATALOGO)[number];
+export type EstadoRevisionCatalogo = 'pendiente' | 'verificado' | 'ambiguo' | 'rechazado';
+
+/** Evidencia conservada de una afirmación extraída de un documento no fiable. */
+export interface OrigenCatalogo {
+  proveedor: string;
+  documento: string;
+  pagina: number | null;
+  metodo: 'manual' | 'pdfjs' | 'groq-texto' | 'groq-vision' | 'migracion';
+  confianza: number | null;
+  revision: EstadoRevisionCatalogo;
+  textoOriginal?: string;
+}
+
+/** Milímetros normalizados, sin perder cómo publicó las medidas el proveedor. */
+export interface DimensionesCatalogo {
+  largoMm: number | null;
+  anchoMm: number | null;
+  altoMm: number | null;
+  fondoMm: number | null;
+  espesorMm: number | null;
+  textoOriginal: string;
+  unidadOriginal: 'mm' | 'cm' | 'm' | '';
+  toleranciaMm?: number | null;
+}
+
+export interface FamiliaCatalogo {
+  id: string;
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  categoria: string;
+  subcategoria: string;
+  tipo: TipoProductoCatalogo;
+  proveedor: string;
+  fabricante: string;
+  coleccion: string;
+  aplicaciones: string[];
+  estado: 'activo' | 'descatalogado' | 'pendiente';
+  origen: OrigenCatalogo;
+  actualizado: string;
+}
+
+export interface DecorativoCatalogo {
+  id: string;
+  fabricante: string;
+  coleccion: string;
+  codigo: string;
+  nombre: string;
+  familiaCromatica: string;
+  colorDigital: string | null;
+  muestra: string;
+  textura: string;
+  veta: string | null;
+  brillo: string | null;
+  acabadoSuperficial: string;
+  especie: string;
+  fuente: string;
+  licencia: string;
+  verificadoEl: string | null;
+  origen: OrigenCatalogo;
+  actualizado: string;
+}
+
+export interface VarianteCatalogo {
+  id: string;
+  familiaId: string;
+  /** Puente de compatibilidad con presupuestos, escandallos, simulador y pedidos. */
+  articuloId: string;
+  referencia: string;
+  codigo: string;
+  codigoDecorativo: string;
+  soporte: string;
+  dimensiones: DimensionesCatalogo;
+  acabado: string;
+  tratamiento: string;
+  calidad: string;
+  propiedades: Record<string, string | number | boolean | null>;
+  unidadCompra: string;
+  unidadConsumo: string;
+  unidadPresupuesto: string;
+  unidadesPaquete: number | null;
+  factorConversion: number;
+  disponibilidad: 'disponible' | 'bajo-pedido' | 'sin-stock' | 'desconocida';
+  estado: 'activo' | 'descatalogado' | 'pendiente';
+  decorativoIds: string[];
+  origen: OrigenCatalogo;
+  actualizado: string;
+}
+
+export interface ReglaConfigurableCatalogo {
+  parametro: string;
+  operador: 'eq' | 'neq' | 'min' | 'max' | 'in';
+  valor: string | number | Array<string | number>;
+  mensaje: string;
+}
+
+export interface ConfigurableCatalogo {
+  id: string;
+  familiaId: string;
+  nombre: string;
+  parametros: Array<{
+    id: string;
+    nombre: string;
+    tipo: 'medida' | 'numero' | 'opcion' | 'texto' | 'archivo';
+    unidad?: string;
+    min?: number;
+    max?: number;
+    paso?: number;
+    opciones?: string[];
+    requerido?: boolean;
+  }>;
+  reglas: ReglaConfigurableCatalogo[];
+  plantillaId: string | null;
+  bajoProyecto: boolean;
+  origen: OrigenCatalogo;
+  actualizado: string;
+}
+
+export interface ImportacionCatalogo {
+  id: string;
+  proveedor: string;
+  documento: string;
+  estado: 'revisando' | 'confirmando' | 'parcial' | 'completada' | 'fallida';
+  detectados: number;
+  seleccionados: number;
+  validados: number;
+  creados: number;
+  actualizados: number;
+  duplicados: number;
+  rechazados: number;
+  pendientes: number;
+  errores: Array<{ referencia: string; mensaje: string; pagina: number | null }>;
+  actualizado: string;
+}
+
 /** Medida que se pide al usar una plantilla (en cm, o un número de unidades). */
 export interface ParametroPlantilla {
   /** Nombre en las fórmulas: ancho, alto, fondo, puertas… */
@@ -695,6 +832,22 @@ export interface RepositorioCatalogo {
   archivarPlantilla(id: string, archivado: boolean, email: string): Promise<boolean>;
   /** Quita los artículos y plantillas de prueba (id `prueba-…`). Devuelve cuántos. */
   borrarPruebas(): Promise<number>;
+  familias?(opciones?: { incluirDescatalogadas?: boolean }): Promise<FamiliaCatalogo[]>;
+  familia?(id: string): Promise<FamiliaCatalogo | null>;
+  guardarFamilia?(familia: Omit<FamiliaCatalogo, 'actualizado'>, email: string): Promise<void>;
+  variantes?(opciones?: { familiaId?: string; articuloId?: string; incluirDescatalogadas?: boolean }): Promise<VarianteCatalogo[]>;
+  variante?(id: string): Promise<VarianteCatalogo | null>;
+  guardarVariante?(variante: Omit<VarianteCatalogo, 'actualizado'>, email: string): Promise<void>;
+  decorativos?(opciones?: { fabricante?: string }): Promise<DecorativoCatalogo[]>;
+  guardarDecorativo?(decorativo: Omit<DecorativoCatalogo, 'actualizado'>, email: string): Promise<void>;
+  configurables?(): Promise<ConfigurableCatalogo[]>;
+  guardarConfigurable?(configurable: Omit<ConfigurableCatalogo, 'actualizado'>, email: string): Promise<void>;
+  importacion?(id: string): Promise<ImportacionCatalogo | null>;
+  guardarImportacion?(importacion: Omit<ImportacionCatalogo, 'actualizado'>, email: string): Promise<void>;
+  /** Devuelve false si el lote ya se confirmó: hace segura la reanudación. */
+  reservarLoteImportacion?(importacionId: string, loteId: string, email: string): Promise<boolean>;
+  completarLoteImportacion?(importacionId: string, loteId: string, resumen: Record<string, number>, email: string): Promise<void>;
+  fallarLoteImportacion?(importacionId: string, loteId: string, email: string): Promise<void>;
 }
 
 /** A quién se compra el material (módulo `proveedores`). Privado: no sale en nada que vea un cliente. */
