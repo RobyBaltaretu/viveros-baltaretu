@@ -24,7 +24,7 @@
   // Base de datos del panel. Las tablas las crea el Worker. El id lo da Cloudflare al crear la
   // base (docs/panel-propio/pasos-manuales.md): sustituir los ceros por ese id.
   // R2 temporalmente desactivado hasta crear el bucket en Cloudflare.\n  // Las operaciones que requieren IMAGENES_PRIVADAS no estarán disponibles.
-  // Crear el bucket privado en Cloudflare antes del despliegue de esta rama.\n  "r2_buckets": [{ "binding": "IMAGENES_PRIVADAS", "bucket_name": "creacionesturia-imagenes" }],\n  "d1_databases": [{ "binding": "DB", "database_name": "creacionesturia", "database_id": "e880608e-83b7-427a-a57f-088f1f061fa8" }],
+  // Crear el bucket privado en Cloudflare antes del despliegue de esta rama.\n  "r2_buckets": [{ "binding": "IMAGENES_PRIVADAS", "bucket_name": "creacionesturia" }],\n  "d1_databases": [{ "binding": "DB", "database_name": "creacionesturia", "database_id": "e880608e-83b7-427a-a57f-088f1f061fa8" }],
   // Conserva las variables y secretos definidos en el panel de Cloudflare
   // (EMAIL_DESTINO, EMAIL_REMITENTE, TURNSTILE_SECRET_KEY) al desplegar.
   "keep_vars": true,
