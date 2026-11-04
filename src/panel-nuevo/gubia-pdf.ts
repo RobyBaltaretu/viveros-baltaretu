@@ -7,8 +7,8 @@ import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 GlobalWorkerOptions.workerSrc = workerUrl;
 const MAX_PAGINAS = 160;
 const MAX_BYTES = 25_000_000;
-import {reconstruirFilas,sugerirMaterialesLocales} from './filas-pdf';
-export type PaginaLocal = { pagina: number; texto: string; caracteres: number };
+import {reconstruirFilas,sugerirMaterialesLocales,extraerVariantesTablero} from './filas-pdf';
+export type PaginaLocal = { pagina: number; texto: string; caracteres: number; variantes: Array<Record<string,unknown>> };
 
 export interface DocumentoLocal {
   paginas: number;
@@ -44,8 +44,9 @@ export async function abrirPDFLocal(file: File): Promise<DocumentoLocal> {
         'str' in x && 'transform' in x
       );
       const texto = reconstruirFilas(items);
+      const variantes = extraerVariantesTablero(items,numero);
       page.cleanup();
-      return { pagina: numero, texto, caracteres: texto.length };
+      return { pagina: numero, texto, caracteres: texto.length, variantes };
     },
     async imagen(numero: number) {
       if (!Number.isInteger(numero) || numero < 1 || numero > doc.numPages) throw new Error('Página no válida.');
