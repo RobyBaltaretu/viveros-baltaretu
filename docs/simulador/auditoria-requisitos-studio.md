@@ -46,3 +46,11 @@ Fecha: 2026-11-04. Rama: feature/turia-studio-boceto-multimodal. Estado: experim
 - Prueba de esquema: tests/simulador/studio-concurrencia.test.ts.
 - Pendiente: idempotency key por solicitud, reconciliación de fallos del proveedor, colas asíncronas, presupuesto/BOM y E2E.
 - Precaución: la migración 19 puede fallar si ya existen múltiples trabajos activos para el mismo boceto y revisión; sanear preview antes de aplicar.
+
+## Avance: despiece verificable
+- PiezaBoceto admite corte opcional con ancho/alto en mm, cantidad y espesor opcional; se valida el dominio.
+- prepararDespiece solo calcula m² cuando las medidas de corte son exactas y confirmadas. Nunca deriva el área de la pieza a partir de las dimensiones del módulo.
+- Nuevo GET /api/panel/studio-despiece protegido por sesión y tenant; UI de edición y revisión de despiece.
+- Pendiente: costes, mermas, unidades de compra, despieces de cantos y herrajes, generación de presupuesto y enlace a Proyectos/Simulaciones.
+- Importante: el boceto validado es inmutable; las cotas de corte deben revisarse antes de confirmarlo. El flujo de revisión/fork de versiones validadas sigue pendiente.
+- Revisión de calidad pendiente: CI, pruebas de D1/R2, Gemini real, accesibilidad y Safari. No hay confirmación de compilación de estos cambios.
