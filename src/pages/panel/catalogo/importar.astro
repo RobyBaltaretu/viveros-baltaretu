@@ -114,9 +114,9 @@ const sesion = sesionCon(Astro.locals, 'facturas');
     const input = document.createElement(tag);
     if(tag==='select'){
       opts.forEach(opt => {const o=document.createElement('option');o.value=opt;o.textContent=opt;input.append(o);});
-    } else {input.type=key==='espesorMm'?'number':'text';input.maxLength=key==='nombre'?120:100;if(key==='espesorMm'){input.min='0.01';input.max='1000';input.step='0.1';}}
+    } else {input.type=(key==='espesorMm'||key==='unidadesPaquete')?'number':'text';input.maxLength=key==='nombre'?120:100;if(key==='espesorMm'){input.min='0.01';input.max='1000';input.step='0.1';}if(key==='unidadesPaquete'){input.min='1';input.max='10000';input.step='1';}}
     input.value=value ?? '';
-    input.addEventListener('change', () => { const index = Number(label.closest('[data-index]').dataset.index); articulos[index].data[key]=key==='espesorMm' ? (input.value===''?null:Number(input.value)) : key==='colorHex' ? (input.value.trim()||null) : input.value; if(key==='colorHex'){const muestra=label.closest('.gubia-item').querySelector('.gubia-muestra');if(/^#[0-9a-fA-F]{6}$/.test(input.value))muestra.style.backgroundColor=input.value;}});
+    input.addEventListener('change', () => { const index = Number(label.closest('[data-index]').dataset.index); articulos[index].data[key]=(key==='espesorMm'||key==='unidadesPaquete') ? (input.value===''?null:Number(input.value)) : key==='colorHex' ? (input.value.trim()||null) : input.value; if(key==='colorHex'){const muestra=label.closest('.gubia-item').querySelector('.gubia-muestra');if(/^#[0-9a-fA-F]{6}$/.test(input.value))muestra.style.backgroundColor=input.value;}});
     label.append(input);return label;
   };
   let maxVisibles=20;
@@ -143,6 +143,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       }
       fields.append(field('select','categoria',a.data.categoria,'Categoría',categorias));
       fields.append(field('input','espesorMm',a.data.espesorMm,'Espesor (mm)'));
+      fields.append(field('input','unidadesPaquete',a.data.unidadesPaquete,'Unidades por paquete'));
       fields.append(field('input','colorHex',a.data.colorHex,'Color digital (#RRGGBB)'));
       const span = document.createElement('p');span.className='gubia-origen';
       span.textContent='Página original '+a.data.pagina+' · '+(a.data.espesorMm === null ? 'Espesor no especificado' : a.data.espesorMm+' mm')+' · Precio pendiente de validar';
@@ -248,7 +249,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         if (groqDisponible) {
           try {
             const response=await jsonPost({accion:'interpretar',proveedor,paginas:bloque});
-            interpretados=response.articulos;
+            interpretados=response.articulos.filter(c=> !(c.espesorMm == null && !c.formato && articulos.some(a=>a.data.pagina===c.pagina && a.data.espesorMm != null && normal(a.data.nombre).startsWith(normal(c.nombre)))));
             juntarCandidatos(interpretados);
             const espera=Math.min(25_000,Math.max(0,Number(response.limites?.esperarMs)||0));
             if(espera){
@@ -292,6 +293,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
           continue;
         }
         textosPagina.set(numero,pagina.texto);
+        if(pagina.variantes?.length){ juntarCandidatos(pagina.variantes); paginasLocales.add(numero); }
         // El resto de páginas (escaneos, páginas sin texto) se revisa visualmente cuando el usuario lo solicite.
         if(!pagina.texto.trim()){sinTexto.push(numero);continue;}
         // Conserva todo el texto local. Los trozos de una página se envían por separado
@@ -392,7 +394,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
   });
   $('gubia-crear-manual')?.addEventListener('click',()=>{
     articulos.push({activo:true,data:{categoria:'tableros',nombre:'Material por revisar',referencia:'',codigoDecor:'',
-      acabado:'',soporte:'',espesorMm:null,formato:'',unidad:'m²',colorHex:null,veta:null,brillo:null,pagina:Math.max(1,Number($('gubia-numero-pagina').value)||1)}});
+      acabado:'',soporte:'',espesorMm:null,formato:'',unidad:'m²',colorHex:null,veta:null,brillo:null,unidadesPaquete:null,pagina:Math.max(1,Number($('gubia-numero-pagina').value)||1)}});
     guardarBorrador();pintar();
   });
   try{
