@@ -233,6 +233,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       $('gubia-numero-pagina').max=String(documento.paginas);
       if(comenzar>documento.paginas)throw Error('La página de inicio supera las páginas del documento.');
       const paginasFallidas=[];
+      const muestrasDetectadas=[];
       let bloque=[],longitud=0;
       let groqDisponible=true;
       let errorGroq='';
@@ -293,6 +294,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
           continue;
         }
         textosPagina.set(numero,pagina.texto);
+        if(pagina.muestras?.length)muestrasDetectadas.push(...pagina.muestras);
         if(pagina.variantes?.length){
           // La matriz estructurada ya contiene las combinaciones verificables:
           // no duplicar con sugerencias genéricas de Groq ni gastar su cuota.
@@ -329,12 +331,28 @@ const sesion = sesionCon(Astro.locals, 'facturas');
           } catch(e) { avisoVision=' · Revisión visual detenida: '+e.message;break; }
         }
       }
+      // Asociar muestras oficiales del PDF por código decorativo, nunca por
+      // similitud visual o nombre. Preferir la página más cercana para no
+      // confundir el mismo código entre melamina, HPL y compacto.
+      let muestrasAsignadas=0;
+      for(const articulo of articulos){
+        const codigo=String(articulo.data.codigoDecor||articulo.data.referencia||'').toUpperCase().trim();
+        if(!codigo||articulo.muestra)continue;
+        const compatibles=muestrasDetectadas.filter(m=>m.codigo===codigo||(
+          /^\\d{3,4}$/.test(codigo)&&m.codigo===codigo.padStart(4,'0')));
+        const elegida=compatibles.sort((a,b)=>Math.abs(a.pagina-articulo.data.pagina)-Math.abs(b.pagina-articulo.data.pagina))[0];
+        if(!elegida||Math.abs(elegida.pagina-articulo.data.pagina)>2)continue;
+        articulo.muestra=elegida.muestra;
+        if(!articulo.data.colorHex)articulo.data.colorHex=elegida.colorHex;
+        muestrasAsignadas++;
+      }
+      if(muestrasAsignadas){guardarBorrador();pintar();}
       siguientePagina=documento.paginas+1;guardarBorrador();
       actualizarProgreso(documento.paginas,documento.paginas,'Análisis finalizado');
       mostrarRevision();
       mensaje(errorGroq
         ? 'PDF leído: '+documento.paginas+' páginas. Groq no ha podido analizar el documento: '+errorGroq+'. Se han recuperado '+fichasLocales+' posibles fichas mediante lectura local; REVISA sus datos antes de crearlas. Puedes consultar el PDF, añadir fichas manualmente o reintentar mañana.'
-        : 'PDF procesado localmente: '+documento.paginas+' páginas, '+articulos.length+' materiales. Puedes utilizar la revisión visual para las páginas con muestras.');
+        : 'PDF procesado localmente: '+documento.paginas+' páginas, '+articulos.length+' materiales; '+muestrasAsignadas+' fichas con muestra visual del PDF. Puedes utilizar la revisión visual para las páginas con muestras.');
       if (avisoVision) mensaje(estado.textContent+avisoVision);
       const pendientes=[...new Set([...sinTexto,...revisar])].filter(p=>!articulos.some(a=>a.data.pagina===p));
       if (pendientes.length) mensaje(estado.textContent+' · Páginas sin propuestas, disponibles en revisión visual: '+pendientes.join(', ')+'.');
