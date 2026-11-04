@@ -11,7 +11,7 @@ const MAX_BYTES = 25_000_000;
 import {reconstruirFilas,sugerirMaterialesLocales,extraerVariantesTablero} from './filas-pdf';
 import { candidatosConfigurablesColomba } from '../server/catalogo/configurables-colomba';
 import {detectarPosicionesMuestras,construirMuestra,type MuestraPDF} from './muestras-pdf';
-export type PaginaLocal = { pagina: number; texto: string; caracteres: number; variantes: Array<Record<string,unknown>>; muestras: MuestraPDF[] };
+export type PaginaLocal = { pagina: number; texto: string; caracteres: number; variantes: Array<Record<string,unknown>>; muestras: MuestraPDF[]; errorTexto?: string };
 
 export interface DocumentoLocal {
   paginas: number;
@@ -43,13 +43,40 @@ export async function abrirPDFLocal(file: File): Promise<DocumentoLocal> {
       if (!Number.isInteger(numero) || numero < 1 || numero > doc.numPages) throw new Error('Página no válida.');
       const page = await doc.getPage(numero);
       let texto = '';
+      let errorTexto: string | undefined;
       let variantes: Array<Record<string,unknown>> = [];
       let muestras: MuestraPDF[] = [];
       try {
         // En Safari/iOS, los errores de un parser secundario no deben
         // invalidar el texto que PDF.js ya haya conseguido extraer.
-        const content = await page.getTextContent();
-        const items = content.items.filter((x): x is typeof x & { str: string; transform: number[] } =>
+        let content: Awaited<ReturnType<typeof page.getTextContent>> | null = null;
+        try {
+          content = await page.getTextContent();
+        } catch (error) {
+          const detalle = error instanceof Error ? error.message : String(error);
+          console.warn('[Gubia PDF] getTextContent falló en página', numero, error);
+          // Safari puede fallar al construir el resultado completo. Intentar
+          // el lector incremental antes de recurrir a la imagen.
+          try {
+            const reader = page.streamTextContent().getReader();
+            const items: Awaited<ReturnType<typeof page.getTextContent>>['items'] = [];
+            try {
+              while (true) {
+                const chunk = await reader.read();
+                if (chunk.done) break;
+                if (chunk.value?.items) items.push(...chunk.value.items);
+              }
+            } finally {
+              reader.releaseLock();
+            }
+            content = { items, styles: Object.create(null), lang: null };
+          } catch (streamError) {
+            errorTexto = 'PDF.js: ' + detalle + '; streaming: ' +
+              (streamError instanceof Error ? streamError.message : String(streamError));
+            console.warn('[Gubia PDF] También falló streamTextContent en página',numero,streamError);
+          }
+        }
+        const items = (content?.items ?? []).filter((x): x is typeof x & { str: string; transform: number[] } =>
           'str' in x && 'transform' in x
         );
         try {
@@ -93,7 +120,7 @@ export async function abrirPDFLocal(file: File): Promise<DocumentoLocal> {
       } finally {
         page.cleanup();
       }
-      return { pagina: numero, texto, caracteres: texto.length, variantes, muestras };
+      return { pagina: numero, texto, caracteres: texto.length, variantes, muestras, errorTexto };
     },
     async imagen(numero: number) {
       if (!Number.isInteger(numero) || numero < 1 || numero > doc.numPages) throw new Error('Página no válida.');
