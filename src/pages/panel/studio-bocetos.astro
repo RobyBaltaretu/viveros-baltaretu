@@ -218,7 +218,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
       const r=await fetch('/api/panel/studio-despiece?id='+encodeURIComponent(id));
       const j=await r.json();if(!r.ok)throw Error('No se pudo consultar el despiece');
       const d=j.despiece;const zona=$('resultado-despiece');zona.replaceChildren();
-      const titulo=document.createElement('p');titulo.textContent='Piezas: '+d.partidas.length+' · '+(d.presupuestable?'Medidas completas':'Pendiente de mediciones');zona.append(titulo);
+      const titulo=document.createElement('p');titulo.textContent='Piezas: '+d.partidas.length+' · '+(d.despieceCompleto?'Despiece medido; falta valorar presupuesto':'Pendiente de mediciones');zona.append(titulo);
       for(const p of d.partidas){
         const linea=document.createElement('p');linea.textContent=p.tipo+' · '+p.varianteId+' · '+p.cantidad+' ud · '+(p.metrosCuadrados===null?'Superficie sin confirmar':p.metrosCuadrados.toFixed(3)+' m²');zona.append(linea);
       }
