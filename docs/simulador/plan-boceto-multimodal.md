@@ -46,4 +46,4 @@
 - [x] Rama aislada creada desde main.
 - [x] Contrato tipado de módulos/piezas/cotas/obstáculos e invariantes de validación.
 - [x] Pruebas unitarias del contrato añadidas (**pendientes de ejecución en CI**).
-- [ ] Persistencia, subida, APIs, interpretación real, editor, render, integración comercial y E2E.
+- [x] Migración D1 v18: bocetos, revisiones, referencias a archivos y generaciones.\n- [x] API de borradores con sesión, aislamiento de tenant y revisión optimista.\n- [x] API de subida y lectura de imágenes privadas en R2, bloquea cuando falta binding.\n- [x] Pantalla experimental para crear borrador, subir dos fotografías y guardar una cota manual.\n- [ ] Interpretación IA real, editor geométrico completo, render, integración comercial y E2E.\n- [ ] Ejecutar build, typecheck y tests: **NO verificados**.\n- [ ] Revisar UX: creación inicial guarda identificadores temporales de fotografías hasta que se suben; no permitir validación/render hasta completar ambas subidas.\n- [ ] Revisar almacenamiento: reconciliación de objetos R2 huérfanos y límite agregado de cuota.
