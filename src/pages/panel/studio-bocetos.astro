@@ -37,6 +37,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
   ) : <p>Esta herramienta solo está disponible para Creaciones Turia.</p>}
 </PaginaPanel>
 {permitido && <script>
+  import { calcularPlano, svgPlano } from '../../server/simulador/geometria-boceto.ts';
   const $ = (id: string) => document.getElementById(id) as HTMLElement;
   let id='',revision=1;
   let espacio='',dibujo='';
@@ -49,6 +50,9 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
   function mostrar(){
     const zona=$('resultado-boceto');zona.replaceChildren();if(!interpretacion)return;
     const titulo=document.createElement('h3');titulo.textContent='Distribución: '+interpretacion.modulos.length+' módulos';zona.append(titulo);
+    const plano=calcularPlano(interpretacion);
+    const visor=document.createElement('div');visor.className='overflow-x-auto rounded border bg-white p-2';visor.innerHTML=svgPlano(plano);zona.append(visor);
+    const aviso=document.createElement('p');aviso.className='text-sm';aviso.textContent=plano.advertencias.length?'Alzado provisional: '+plano.advertencias.join('; '):'Alzado basado en las cotas disponibles';zona.append(aviso);
     for(const m of interpretacion.modulos){
       const seccion=document.createElement('fieldset');seccion.className='rounded border p-3';
       const leyenda=document.createElement('legend');leyenda.textContent=m.tipo+' · '+m.id;seccion.append(leyenda);
