@@ -14,7 +14,9 @@ const json = (estado: number, cuerpo: unknown, extras: Record<string,string> = {
 
 // Los límites por usuario protegen la cuota Free compartida con el chat Gubia.
 // No hay ninguna ruta hacia Gemini, ni respaldo de pago.
-export const MAX_LOTES_DIA = 30;
+export const MAX_LOTES_DIA = 700;
+/** Máximo compartido de llamadas gpt-oss-120b para Turia; el límite externo de Groq prevalece. */
+export const GROQ_LLAMADAS_DIA = 1000;
 export const MAX_VISION_DIA = 8;
 const dia = () => new Date().toISOString().slice(0,10);
 const dato = (valor: unknown, max=80) => typeof valor==='string' ? valor.slice(0,max) : '';
@@ -44,13 +46,18 @@ export const POST: APIRoute = async ({locals,request}) => {
     const clave=(env as Record<string,unknown>).GROQ_API_KEY;
     if(typeof clave!=='string'||!clave.trim())
       return json(503,{ok:false,error:'Configura GROQ_API_KEY para utilizar la interpretación inteligente gratuita. Puedes seguir revisando el PDF localmente.'});
-    const fecha=dia(),tipo=accion==='vision'?'vision':'texto';
-    const cuenta=s.usuario.email+':gubia-local-'+tipo;
-    const limite=accion==='vision'?MAX_VISION_DIA:MAX_LOTES_DIA;
-    // Reserva atómica: dos peticiones simultáneas no pueden consumir el último uso.
-    // Una solicitud al proveedor cuenta incluso si después devuelve error.
-    if(!(await s.repos.usoAsistente.reservar(cuenta,fecha,limite)))
-      return json(429,{ok:false,error:'Has alcanzado el límite diario de Gubia Importador. Conserva tu revisión y continúa otro día.'});
+    const fecha=dia();
+    if (accion==='vision') {
+      // Vision usa otro modelo Groq: contador independiente.
+      const cuenta=s.usuario.email+':gubia-local-vision';
+      if (!(await s.repos.usoAsistente.reservar(cuenta,fecha,MAX_VISION_DIA)))
+        return json(429,{ok:false,error:'Has alcanzado el límite diario de revisión visual. Conserva las fichas.'});
+    } else {
+      // 70% del presupuesto del modelo de texto para la importación cuando hay
+      // cargas. Reserva atómica compartida con Gubia; sin llamadas artificiales.
+      if (!(await s.repos.usoAsistente.reservarGroq(fecha,'importador',GROQ_LLAMADAS_DIA)))
+        return json(429,{ok:false,error:'El presupuesto de Groq para importar está agotado. Conserva la revisión y continúa mañana.'});
+    }
     const proveedor=dato(input.proveedor);
     if(accion==='vision'){
       const articulos=await interpretarMuestraConGroq(proveedor,input.imagen,input.pagina,input.texto,{apiKey:clave});
