@@ -45,16 +45,16 @@ export const POST:APIRoute=async({locals,request})=>{
     soporte:x.variante!.soporte,espesorMm:x.variante!.dimensiones.espesorMm??x.articulo!.espesor}));
   let especificacion:ReturnType<typeof instruccionesRender>;
   try{especificacion=instruccionesRender(interpretacion);}catch{return json(422,{ok:false,error:'Boceto no válido'});}
-  const archivos=await e.DB.prepare('SELECT id,objeto_r2,mime FROM studio_boceto_archivos WHERE boceto_id=? AND cliente_id=? AND id IN (?,?)')
-    .bind(id,tenant,interpretacion.fotoEspacioId,interpretacion.fotoBocetoId).all<{id:string;objeto_r2:string;mime:string}>();
-  const cargar=async(fid:string)=>{
-    const a=archivos.results.find(x=>x.id===fid);if(!a)throw Error('Imagen ausente');
+  const archivos=await e.DB.prepare('SELECT id,objeto_r2,mime,clase FROM studio_boceto_archivos WHERE boceto_id=? AND cliente_id=? AND id IN (?,?)')
+    .bind(id,tenant,interpretacion.fotoEspacioId,interpretacion.fotoBocetoId).all<{id:string;objeto_r2:string;mime:string;clase:string}>();
+  const cargar=async(fid:string,clase:'espacio'|'boceto')=>{
+    const a=archivos.results.find(x=>x.id===fid);if(!a||a.clase!==clase)throw Error('Imagen ausente o clase incorrecta');
     const obj=await e.IMAGENES_PRIVADAS!.get(a.objeto_r2);if(!obj)throw Error('Imagen no disponible');
     const bytes=new Uint8Array(await obj.arrayBuffer());
     if(bytes.length>6_000_000||tipoDeImagen(bytes)?.tipo!==a.mime)throw Error('Imagen no válida');
     return {mimeType:a.mime,data:b64(bytes)};
   };
-  let foto,boceto;try{[foto,boceto]=await Promise.all([cargar(interpretacion.fotoEspacioId),cargar(interpretacion.fotoBocetoId)]);}
+  let foto,boceto;try{[foto,boceto]=await Promise.all([cargar(interpretacion.fotoEspacioId,'espacio'),cargar(interpretacion.fotoBocetoId,'boceto')]);}
   catch{return json(422,{ok:false,error:'Faltan imágenes originales'});}
   const activa=await e.DB.prepare('SELECT id FROM studio_generaciones WHERE boceto_id=? AND cliente_id=? AND revision=? AND estado=? LIMIT 1')
     .bind(id,tenant,row.revision,'procesando').first();
