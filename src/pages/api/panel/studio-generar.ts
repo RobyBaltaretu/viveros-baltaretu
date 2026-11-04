@@ -97,7 +97,10 @@ export const POST:APIRoute=async({locals,request})=>{
     await e.DB.prepare('UPDATE studio_generaciones SET estado=?,error=?,actualizado=? WHERE id=?').bind('fallida','Respuesta sin imagen',new Date().toISOString(),generacion).run();
     return json(502,{ok:false,error:'El proveedor no devolvió una imagen válida'});
   }
-  let bytes:Uint8Array;try{bytes=Uint8Array.from(atob(imagen.data),c=>c.charCodeAt(0));}catch{return json(502,{ok:false,error:'Imagen de proveedor ilegible'});}
+  let bytes:Uint8Array;try{bytes=Uint8Array.from(atob(imagen.data),c=>c.charCodeAt(0));}catch{
+    await e.DB.prepare('UPDATE studio_generaciones SET estado=?,error=?,actualizado=? WHERE id=?').bind('fallida','Imagen base64 ilegible',new Date().toISOString(),generacion).run();
+    return json(502,{ok:false,error:'Imagen de proveedor ilegible'});
+  }
   if(bytes.length>6_000_000||tipoDeImagen(bytes)?.tipo!==imagen.mimeType){
     await e.DB.prepare('UPDATE studio_generaciones SET estado=?,error=?,actualizado=? WHERE id=?')
       .bind('fallida','Imagen inválida',new Date().toISOString(),generacion).run();
@@ -115,7 +118,11 @@ export const POST:APIRoute=async({locals,request})=>{
       e.DB.prepare('UPDATE studio_generaciones SET estado=?,resultado_archivo_id=?,actualizado=? WHERE id=? AND cliente_id=?')
         .bind('completada',archivoId,new Date().toISOString(),generacion,tenant)
     ]);
-  }catch{await e.IMAGENES_PRIVADAS.delete(objetoR2).catch(()=>{});return json(500,{ok:false,error:'No se pudo guardar el resultado'});}
+  }catch{
+    await e.IMAGENES_PRIVADAS.delete(objetoR2).catch(()=>{});
+    await e.DB.prepare('UPDATE studio_generaciones SET estado=?,error=?,actualizado=? WHERE id=?').bind('fallida','Error guardando metadatos de resultado',new Date().toISOString(),generacion).run().catch(()=>{});
+    return json(500,{ok:false,error:'No se pudo guardar el resultado'});
+  }
   return json(200,{ok:true,generacion,archivoId,revision:row.revision});
 };
 export const GET:APIRoute=async({locals,url})=>{
