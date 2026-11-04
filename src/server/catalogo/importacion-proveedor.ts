@@ -24,6 +24,7 @@ export const candidatoProveedor = z.object({
   veta: z.enum(['sin-veta', 'vertical', 'horizontal', 'direccional']).nullable().default(null),
   brillo: z.enum(['mate', 'satinado', 'brillante']).nullable().default(null),
   pagina: z.number().int().min(1).max(MAX_PAGINAS_PDF),
+  unidadesPaquete: z.number().int().positive().max(10000).nullable().default(null),
 }).strict();
 export type CandidatoProveedor = z.infer<typeof candidatoProveedor>;
 
@@ -109,6 +110,7 @@ export async function importarCandidatos(repos: Repositorios, proveedor: string,
     const notas = [
       'Importado desde PDF', 'Documento: ' + nombreSeguro(filename), 'Página: ' + a.pagina,
       ...(a.formato ? ['Formato: ' + a.formato] : []),
+      ...(a.unidadesPaquete ? ['Unidades por paquete: ' + a.unidadesPaquete] : []),
       ...(a.colorHex ? ['Color digital aproximado; comprobar muestra física'] : []),
       'Precio pendiente de confirmar',
     ].join('; ').slice(0, 500);
