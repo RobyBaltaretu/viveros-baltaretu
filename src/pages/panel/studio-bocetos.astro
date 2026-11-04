@@ -231,10 +231,12 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
     try{
       claveGeneracion ||= crypto.randomUUID();
       const r=await fetch('/api/panel/studio-generar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,clave:claveGeneracion})});
-      const j=await r.json();if(!r.ok)throw Error(j.error||'Error al generar');
+      const j=await r.json();
+      if(j.estado==='fallida'){claveGeneracion='';throw Error(j.error||'La generación anterior falló; vuelve a intentarlo.');}
+      if(!r.ok)throw Error(j.error||'Error al generar');
       if(j.estado==='procesando'||r.status===202){estado('La generación sigue procesándose. Consulta el historial antes de reintentar.');return;}
       if(j.estado==='fallida'){claveGeneracion='';throw Error('La generación anterior falló; vuelve a intentarlo.');}
-      await cargarGeneraciones();estado('Imagen guardada en R2 privado.');
+      await cargarGeneraciones();claveGeneracion='';estado('Imagen guardada en R2 privado.');
     }catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
   });
   void cargarMateriales().catch(e=>estado(String(e)));
