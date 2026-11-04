@@ -44,6 +44,7 @@ export interface InterpretacionBoceto {
   confirmadaEn?: string;
 }
 export function validarCota(cota: CotaBoceto): string | null {
+  if (!cota || typeof cota !== 'object') return 'Cota inválida';
   if (!['exacta','aproximada','desconocida'].includes(cota.precision)) return 'Precisión inválida';
   if (!['boceto','usuario','medicion'].includes(cota.origen)) return 'Origen inválido';
   if (cota.precision === 'desconocida') return cota.valorMm === null && !cota.confirmada ? null : 'Una cota desconocida no puede confirmarse ni tener valor';
@@ -53,11 +54,13 @@ export function validarCota(cota: CotaBoceto): string | null {
 export function validarInterpretacion(b: InterpretacionBoceto): string[] {
   const errores: string[] = [];
   if (b.version !== 1) errores.push('Versión no admitida');
+  if (!b || !Array.isArray(b.modulos) || !Array.isArray(b.obstaculos) || !Array.isArray(b.preguntas)) return ['Estructura de interpretación inválida'];
   if (!b.fotoEspacioId || !b.fotoBocetoId) errores.push('Se requieren fotografía del espacio y del boceto');
-  if (!b.categoria.trim()) errores.push('Falta categoría');
+  if (typeof b.categoria !== 'string' || !b.categoria.trim()) errores.push('Falta categoría');
   if (!b.modulos.length) errores.push('Faltan módulos');
   const ids = new Set<string>();
   for (const modulo of b.modulos) {
+    if (!modulo || !Array.isArray(modulo.piezas) || !modulo.ancho || !modulo.alto || !modulo.fondo) { errores.push('Módulo incompleto'); continue; }
     if (!modulo.id || ids.has(modulo.id)) errores.push('ID de módulo duplicado o vacío');
     ids.add(modulo.id);
     if (!Number.isInteger(modulo.orden) || modulo.orden < 0) errores.push('Orden inválido: '+modulo.id);
