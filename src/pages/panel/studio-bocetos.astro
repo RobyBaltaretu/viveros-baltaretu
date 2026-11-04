@@ -29,6 +29,8 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
 
         <section id="resultado-boceto" class="space-y-2" aria-label="Interpretación del dibujo"></section>
         <button id="confirmar-boceto" type="button" class="rounded border px-4 py-2">Confirmar boceto revisado</button>
+        <button id="consultar-despiece" type="button" class="rounded border px-4 py-2">Revisar despiece</button>
+        <section id="resultado-despiece" class="text-sm" aria-live="polite"></section>
         <button id="generar-boceto" type="button" class="rounded bg-neutral-900 px-4 py-2 text-white">Generar imagen fotorrealista</button>
         <section id="comparador-boceto" hidden class="space-y-2" aria-label="Comparación de antes y después">
           <label class="block">Antes / después <input id="deslizador-boceto" type="range" min="0" max="100" value="50" class="w-full"/></label>
@@ -195,6 +197,19 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
   $('deslizador-boceto')?.addEventListener('input',()=>{
     const v=Number(($('deslizador-boceto') as HTMLInputElement).value);
     ($('recorte-despues') as HTMLElement).style.clipPath='inset(0 '+(100-v)+'% 0 0)';
+  });
+  $('consultar-despiece')?.addEventListener('click',async()=>{
+    if(!id)return;
+    try{
+      const r=await fetch('/api/panel/studio-despiece?id='+encodeURIComponent(id));
+      const j=await r.json();if(!r.ok)throw Error('No se pudo consultar el despiece');
+      const d=j.despiece;const zona=$('resultado-despiece');zona.replaceChildren();
+      const titulo=document.createElement('p');titulo.textContent='Piezas: '+d.partidas.length+' · '+(d.presupuestable?'Medidas completas':'Pendiente de mediciones');zona.append(titulo);
+      for(const p of d.partidas){
+        const linea=document.createElement('p');linea.textContent=p.tipo+' · '+p.varianteId+' · '+p.cantidad+' ud · '+(p.metrosCuadrados===null?'Superficie sin confirmar':p.metrosCuadrados.toFixed(3)+' m²');zona.append(linea);
+      }
+      for(const bloqueo of d.bloqueos){const linea=document.createElement('p');linea.textContent='Pendiente: '+bloqueo;zona.append(linea);}
+    }catch(e){estado(e instanceof Error?e.message:String(e));}
   });
   $('generar-boceto')?.addEventListener('click',async()=>{
     if(!id||!interpretacion||interpretacion.estado!=='validada'){estado('Valida primero el boceto y los materiales.');return;}
