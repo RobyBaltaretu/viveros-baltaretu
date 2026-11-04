@@ -85,11 +85,41 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
       for(const pieza of m.piezas){
         const etiqueta=document.createElement('label');etiqueta.className='block text-sm';
         etiqueta.textContent='Acabado de '+pieza.tipo+' ('+pieza.id+')';
+        const buscador=document.createElement('input');buscador.type='search';buscador.placeholder='Buscar referencia, acabado o material';buscador.className='block w-full rounded border p-2 mb-1';
+        buscador.setAttribute('aria-label','Buscar materiales para '+pieza.tipo);
+        etiqueta.append(buscador);
         const select=document.createElement('select');select.className='block w-full rounded border p-2';
         const vacia=document.createElement('option');vacia.value='';vacia.textContent='Sin asignar';select.append(vacia);
         for(const mat of materiales){const option=document.createElement('option');option.value=mat.id;
           option.textContent=[mat.nombre,mat.referencia,mat.acabado].filter(Boolean).join(' · ');select.append(option);}
         select.value=pieza.catalogoVarianteId||'';
+        let busquedaActual=0;
+        buscador.addEventListener('input',()=>{
+          const turno=++busquedaActual;
+          const termino=buscador.value.trim();
+          if(termino.length>0&&termino.length<2)return;
+          fetch('/api/panel/studio-materiales?q='+encodeURIComponent(termino)).then(r=>{
+            if(!r.ok)throw Error('Catálogo no disponible');return r.json();
+          }).then(j=>{
+            if(turno!==busquedaActual)return;
+            const seleccion=select.value;
+            select.replaceChildren();
+            const vacio=document.createElement('option');vacio.value='';vacio.textContent='Sin asignar';select.append(vacio);
+            const nuevos=j.variantes||[];
+            for(const mat of nuevos){
+              const option=document.createElement('option');option.value=mat.id;
+              option.textContent=[mat.nombre,mat.referencia,mat.acabado,mat.espesorMm?mat.espesorMm+' mm':''].filter(Boolean).join(' · ');
+              select.append(option);
+            }
+            if(seleccion&&!nuevos.some((m:{id:string})=>m.id===seleccion)){
+              const actual=materiales.find(m=>m.id===seleccion);
+              const opcion=document.createElement('option');opcion.value=seleccion;
+              opcion.textContent=actual?[actual.nombre,actual.referencia].join(' · '):'Material seleccionado anteriormente';
+              select.append(opcion);
+            }
+            select.value=seleccion;
+          }).catch(()=>estado('No se ha podido buscar en el catálogo'));
+        });
         select.addEventListener('change',()=>{pieza.catalogoVarianteId=select.value||null;pieza.acabadoId=select.value||null;});
         etiqueta.append(select);seccion.append(etiqueta);
         const tituloCorte=document.createElement('p');tituloCorte.className='mt-2 text-sm font-semibold';tituloCorte.textContent='Medidas de corte verificadas · '+pieza.tipo;seccion.append(tituloCorte);
