@@ -46,6 +46,24 @@ describe('Gubia Groq Free: importación local',()=>{
     expect(res).toHaveLength(1);
     await expect(interpretarMuestraConGroq('ONESTA','data:application/pdf;base64,Zg==',2,'',{apiKey:'test',fetch:fake as typeof fetch})).rejects.toBeInstanceOf(ErrorImportacion);
   });
+  it('aplica timeout a cada lote y clasifica una expiración como error recuperable',async()=>{
+    const fake=vi.fn(async (_url:string,opts?:RequestInit)=>{
+      expect(opts?.signal).toBeInstanceOf(AbortSignal);
+      expect(opts?.signal?.aborted).toBe(false);
+      throw new DOMException('El proveedor no responde','TimeoutError');
+    });
+    await expect(interpretarTextoConGroq('ONESTA',[{pagina:1,texto:'Referencia 100'}],{
+      apiKey:'test',fetch:fake as typeof fetch,
+    })).rejects.toMatchObject({estado:504});
+    expect(fake).toHaveBeenCalledOnce();
+  });
+  it('no reintenta automáticamente un 429 para evitar agotar la cuota',async()=>{
+    const fake=vi.fn(async()=>new Response('too many requests',{status:429}));
+    await expect(interpretarTextoConGroq('ONESTA',[{pagina:1,texto:'Referencia 100'}],{
+      apiKey:'test',fetch:fake as typeof fetch,
+    })).rejects.toMatchObject({estado:429});
+    expect(fake).toHaveBeenCalledOnce();
+  });
   it('si Groq Free llega a 429 no cambia de proveedor',async()=>{
     await expect(interpretarTextoConGroq('ONESTA',[{pagina:1,texto:'x'}],{
       apiKey:'test',fetch:vi.fn(async()=>new Response('quota',{status:429})) as typeof fetch,
