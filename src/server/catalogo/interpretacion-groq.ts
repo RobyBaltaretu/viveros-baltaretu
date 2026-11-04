@@ -36,7 +36,7 @@ export function validarPaginas(datos: unknown): Array<z.infer<typeof paginaExtra
   return lista;
 }
 
-const ficha = 'Campos OBLIGATORIOS por cada elemento: categoria, nombre, referencia, codigoDecor, acabado, soporte, espesorMm (número o null), formato, unidad, colorHex (hex o null), veta (sin-veta, vertical, horizontal, direccional o null), brillo (mate, satinado, brillante o null), pagina (original). Datos desconocidos: cadena vacía o null. No generes costes ni precios.';
+const ficha = 'Campos obligatorios: categoria, nombre, referencia, codigoDecor, acabado, soporte, espesorMm (número o null), formato, unidad, colorHex (hex o null), veta, brillo y pagina. Añade cuando el documento lo declare: familia, codigoFamilia, subcategoria, tipoProducto, coleccion, codigoVariante, tratamiento, calidad, formatoUnidad, unidadesPaquete, unidadCompra, unidadConsumo, unidadPresupuesto, factorConversion, disponibilidad, propiedades tipadas, aplicaciones, confianza, revision, evidencia, metodo="groq-texto" y configuracion {parametros, reglas, bajoProyecto}. Datos desconocidos: cadena vacía, objeto vacío o null. No generes costes ni precios.';
 const categorias = 'tableros, macizos, chapas, cantos, encimeras, cristal, herrajes, tiradores, accesorios, iluminacion, consumibles, acabados';
 const reglas = [
   'Eres Gubia: interpretas EXCLUSIVAMENTE fichas técnicas de productos de proveedores de carpintería.',
@@ -49,6 +49,9 @@ const reglas = [
   'Los códigos como B3002, 0101 o K519 pueden ser códigos de decorativo; B/BB, BB/BB y C1/C3 describen calidades o clases, no referencias comerciales de artículo.',
   'No rellenes referencia ni codigoDecor cuando el proveedor no declara un código. No inventes colorHex a partir de una descripción textual sin muestra de color.',
   'No fabriques variantes cruzando todas las medidas con todos los acabados. Si la relación es ambigua, conserva un solo decorativo y deja el espesor null.',
+  'Familia agrupa un producto base; cada combinación real de soporte, formato, espesor, acabado, tratamiento o calidad es una variante. No confundas color, decorativo, textura, especie, acabado superficial y tratamiento.',
+  'Conserva en propiedades solo afirmaciones técnicas explícitas. Una frase comercial no es una certificación.',
+  'Para productos configurables conserva rangos, pasos y restricciones en propiedades; marca tipoProducto configurable o a-medida. No inventes restricciones bajo proyecto.',
   'Omite índices, teléfonos, publicidad, servicios y contenido comercial sin fichas.',
   'Categorías admitidas: ' + categorias + '.',
   'No inventes códigos, precios, colores, imágenes o medidas no declaradas.',

@@ -374,6 +374,96 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       )`,
     ],
   },
+  {
+    version: 17,
+    nombre: 'catálogo estructurado de familias, variantes y configurables',
+    sql: [
+      `CREATE TABLE catalogo_familias (
+        id TEXT PRIMARY KEY,
+        identidad TEXT NOT NULL UNIQUE,
+        codigo TEXT NOT NULL DEFAULT '',
+        nombre TEXT NOT NULL,
+        categoria TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        proveedor TEXT NOT NULL DEFAULT '',
+        datos TEXT NOT NULL,
+        estado TEXT NOT NULL DEFAULT 'pendiente',
+        creado TEXT NOT NULL,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL
+      )`,
+      `CREATE INDEX catalogo_familias_busqueda ON catalogo_familias (categoria, proveedor, nombre)`,
+      `CREATE TABLE catalogo_decorativos (
+        id TEXT PRIMARY KEY,
+        identidad TEXT NOT NULL UNIQUE,
+        fabricante TEXT NOT NULL DEFAULT '',
+        codigo TEXT NOT NULL DEFAULT '',
+        nombre TEXT NOT NULL,
+        datos TEXT NOT NULL,
+        creado TEXT NOT NULL,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL
+      )`,
+      `CREATE INDEX catalogo_decorativos_busqueda ON catalogo_decorativos (fabricante, codigo, nombre)`,
+      `CREATE TABLE catalogo_variantes (
+        id TEXT PRIMARY KEY,
+        identidad TEXT NOT NULL UNIQUE,
+        familia_id TEXT NOT NULL,
+        articulo_id TEXT NOT NULL UNIQUE,
+        referencia TEXT NOT NULL DEFAULT '',
+        soporte TEXT NOT NULL DEFAULT '',
+        formato TEXT NOT NULL DEFAULT '',
+        espesor_mm REAL,
+        datos TEXT NOT NULL,
+        estado TEXT NOT NULL DEFAULT 'pendiente',
+        creado TEXT NOT NULL,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL,
+        FOREIGN KEY (familia_id) REFERENCES catalogo_familias(id)
+      )`,
+      `CREATE INDEX catalogo_variantes_familia ON catalogo_variantes (familia_id, estado)`,
+      `CREATE INDEX catalogo_variantes_filtro ON catalogo_variantes (soporte, espesor_mm, formato)`,
+      `CREATE TABLE catalogo_variante_decorativos (
+        variante_id TEXT NOT NULL,
+        decorativo_id TEXT NOT NULL,
+        rol TEXT NOT NULL DEFAULT 'principal',
+        PRIMARY KEY (variante_id, decorativo_id, rol),
+        FOREIGN KEY (variante_id) REFERENCES catalogo_variantes(id),
+        FOREIGN KEY (decorativo_id) REFERENCES catalogo_decorativos(id)
+      )`,
+      `CREATE TABLE catalogo_configurables (
+        id TEXT PRIMARY KEY,
+        familia_id TEXT NOT NULL,
+        nombre TEXT NOT NULL,
+        datos TEXT NOT NULL,
+        creado TEXT NOT NULL,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL,
+        FOREIGN KEY (familia_id) REFERENCES catalogo_familias(id)
+      )`,
+      `CREATE INDEX catalogo_configurables_familia ON catalogo_configurables (familia_id)`,
+      `CREATE TABLE catalogo_importaciones (
+        id TEXT PRIMARY KEY,
+        proveedor TEXT NOT NULL,
+        documento TEXT NOT NULL,
+        estado TEXT NOT NULL DEFAULT 'revisando',
+        datos TEXT NOT NULL,
+        creado TEXT NOT NULL,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL
+      )`,
+      `CREATE TABLE catalogo_importacion_lotes (
+        importacion_id TEXT NOT NULL,
+        lote_id TEXT NOT NULL,
+        estado TEXT NOT NULL DEFAULT 'procesando',
+        resumen TEXT NOT NULL DEFAULT '{}',
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL,
+        PRIMARY KEY (importacion_id, lote_id),
+        FOREIGN KEY (importacion_id) REFERENCES catalogo_importaciones(id)
+      )`,
+    ],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

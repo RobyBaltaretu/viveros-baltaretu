@@ -3,12 +3,15 @@ import { z } from 'astro/zod';
 import { CATEGORIAS, MARGEN_PROPUESTO, esquemaArticulo } from './catalogo.ts';
 import type { Repositorios } from '../data/tipos.ts';
 import { tipoDeImagen } from '../panel/fotos.ts';
+import { claveNormalizada, normalizarDimensiones } from './modelo.ts';
+import type { DecorativoCatalogo, FamiliaCatalogo, OrigenCatalogo, VarianteCatalogo } from '../data/tipos.ts';
 
 /** El PDF es entrada no fiable: Gubia solo propone, un humano aprueba. */
 export const MAX_PAGINAS_PDF = 160;
 export const PAGINAS_POR_LOTE = 6;
 export const MAX_CANDIDATOS_LOTE = 100;
-export const MAX_CANDIDATOS_IMPORTACION = 400;
+/** Límite por petición; una importación extensa se confirma en tantos lotes como necesite. */
+export const MAX_CANDIDATOS_IMPORTACION = 100;
 const categoriaId = z.enum(CATEGORIAS.map(c => c.id) as [string, ...string[]]);
 export const candidatoProveedor = z.object({
   categoria: categoriaId,
@@ -25,6 +28,39 @@ export const candidatoProveedor = z.object({
   brillo: z.enum(['mate', 'satinado', 'brillante']).nullable().default(null),
   pagina: z.number().int().min(1).max(MAX_PAGINAS_PDF),
   unidadesPaquete: z.number().int().positive().max(10000).nullable().default(null),
+  familia: z.string().trim().max(120).default(''),
+  codigoFamilia: z.string().trim().max(80).default(''),
+  subcategoria: z.string().trim().max(80).default(''),
+  tipoProducto: z.enum(['material', 'producto-variantes', 'configurable', 'a-medida', 'servicio']).default('material'),
+  coleccion: z.string().trim().max(100).default(''),
+  codigoVariante: z.string().trim().max(80).default(''),
+  tratamiento: z.string().trim().max(80).default(''),
+  calidad: z.string().trim().max(80).default(''),
+  formatoUnidad: z.enum(['mm', 'cm', 'm', '']).default(''),
+  unidadCompra: z.string().trim().max(30).default(''),
+  unidadConsumo: z.string().trim().max(30).default(''),
+  unidadPresupuesto: z.string().trim().max(30).default(''),
+  factorConversion: z.number().positive().max(1_000_000).default(1),
+  disponibilidad: z.enum(['disponible', 'bajo-pedido', 'sin-stock', 'desconocida']).default('desconocida'),
+  propiedades: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).default({}),
+  aplicaciones: z.array(z.string().trim().max(100)).max(30).default([]),
+  confianza: z.number().min(0).max(1).nullable().default(null),
+  revision: z.enum(['pendiente', 'verificado', 'ambiguo', 'rechazado']).default('pendiente'),
+  evidencia: z.string().trim().max(1000).default(''),
+  metodo: z.enum(['manual', 'pdfjs', 'groq-texto', 'groq-vision']).default('pdfjs'),
+  configuracion: z.object({
+    parametros: z.array(z.object({
+      id: z.string().regex(/^[a-z][a-z0-9_]{0,30}$/), nombre: z.string().trim().min(1).max(80),
+      tipo: z.enum(['medida', 'numero', 'opcion', 'texto', 'archivo']), unidad: z.string().max(20).optional(),
+      min: z.number().optional(), max: z.number().optional(), paso: z.number().positive().optional(),
+      opciones: z.array(z.string().max(80)).max(50).optional(), requerido: z.boolean().optional(),
+    })).max(30),
+    reglas: z.array(z.object({
+      parametro: z.string().max(30), operador: z.enum(['eq', 'neq', 'min', 'max', 'in']),
+      valor: z.union([z.string(), z.number(), z.array(z.union([z.string(), z.number()]))]), mensaje: z.string().max(200),
+    })).max(100).default([]),
+    bajoProyecto: z.boolean().default(false),
+  }).nullable().default(null),
 }).strict();
 export type CandidatoProveedor = z.infer<typeof candidatoProveedor>;
 
@@ -71,11 +107,14 @@ export function muestraWebp(valor: unknown): Uint8Array | null {
 
 /** Las fichas llegan del texto o imagen local interpretados por Groq, no del PDF original. */
 
-export async function importarCandidatos(repos: Repositorios, proveedor: string, filename: string, candidatos: unknown, email: string, muestras: unknown = []) {
+export async function importarCandidatos(
+  repos: Repositorios, proveedor: string, filename: string, candidatos: unknown, email: string, muestras: unknown = [],
+  lote?: { importacionId: string; loteId: string; totalSeleccionados?: number },
+) {
   const nombreProveedor = nombreSeguro(proveedor);
   if (nombreProveedor.length < 2 || nombreProveedor.length > 80) throw new ErrorImportacion('Indica un proveedor válido.');
   if (!Array.isArray(candidatos) || candidatos.length > MAX_CANDIDATOS_IMPORTACION)
-    throw new ErrorImportacion('El lote no puede superar 400 materiales.');
+    throw new ErrorImportacion(`Cada lote puede contener como máximo ${MAX_CANDIDATOS_IMPORTACION} materiales.`);
   if (!Array.isArray(muestras) || muestras.length > candidatos.length) throw new ErrorImportacion('Las muestras no coinciden con la selección.');
   const actuales = await repos.catalogo.articulos({ incluirArchivados: true });
   const conocidos = new Set(actuales.map(a => clave({
@@ -84,18 +123,77 @@ export async function importarCandidatos(repos: Repositorios, proveedor: string,
     formato: a.notas.match(/Formato: ([^;]+)/)?.[1] || '', acabado: a.acabado,
   }, a.proveedor)));
   const ids = new Set(actuales.map(a => a.id));
-  let creados = 0, duplicados = 0, rechazados = 0;
+  const importacionId = lote?.importacionId && /^[a-zA-Z0-9_-]{8,100}$/.test(lote.importacionId) ? lote.importacionId : '';
+  const loteId = lote?.loteId && /^[a-zA-Z0-9_-]{1,100}$/.test(lote.loteId) ? lote.loteId : '';
+  if ((lote?.importacionId || lote?.loteId) && (!importacionId || !loteId)) throw new ErrorImportacion('Identificador de lote no válido.');
+  if (importacionId && repos.catalogo.guardarImportacion) {
+    const anterior = await repos.catalogo.importacion?.(importacionId);
+    if(!anterior) await repos.catalogo.guardarImportacion({
+      id: importacionId, proveedor: nombreProveedor, documento: nombreSeguro(filename), estado: 'confirmando',
+      detectados: lote?.totalSeleccionados ?? candidatos.length, seleccionados: lote?.totalSeleccionados ?? candidatos.length,
+      validados: 0, creados: 0, actualizados: 0, duplicados: 0, rechazados: 0,
+      pendientes: lote?.totalSeleccionados ?? candidatos.length, errores: [],
+    }, email);
+    if (repos.catalogo.reservarLoteImportacion && !(await repos.catalogo.reservarLoteImportacion(importacionId, loteId, email)))
+      return { creados: 0, actualizados: 0, duplicados: 0, rechazados: 0, validados: 0, pendientes: 0, loteDuplicado: true };
+    if(anterior)await repos.catalogo.guardarImportacion({ ...anterior, estado: 'confirmando' },email);
+  }
+  let creados = 0, actualizados = 0, duplicados = 0, rechazados = 0, validados = 0;
+  const errores: Array<{ referencia: string; mensaje: string; pagina: number | null }> = [];
+
+  const guardarEstructura = async (a: CandidatoProveedor, articuloId: string) => {
+    if (!repos.catalogo.guardarFamilia || !repos.catalogo.guardarVariante) return;
+    const familiaNombre = (a.familia || a.soporte || a.nombre.replace(/\s+\d{3,4}\s*[x×]\s*\d{3,4}.*$/i, '').replace(/\s+\d+(?:[,.]\d+)?\s*mm.*$/i, '')).trim().slice(0, 120);
+    const familiaId = idEstable(claveNormalizada('familia', nombreProveedor, a.codigoFamilia || familiaNombre, a.categoria));
+    const origen: OrigenCatalogo = { proveedor: nombreProveedor, documento: nombreSeguro(filename), pagina: a.pagina,
+      metodo: a.metodo, confianza: a.confianza, revision: a.revision, ...(a.evidencia ? { textoOriginal: a.evidencia } : {}) };
+    const familia: Omit<FamiliaCatalogo, 'actualizado'> = {
+      id: familiaId, codigo: a.codigoFamilia, nombre: familiaNombre, descripcion: '', categoria: a.categoria,
+      subcategoria: a.subcategoria, tipo: a.tipoProducto, proveedor: nombreProveedor, fabricante: nombreProveedor,
+      coleccion: a.coleccion, aplicaciones: a.aplicaciones, estado: a.revision === 'verificado' ? 'activo' : 'pendiente', origen,
+    };
+    await repos.catalogo.guardarFamilia(familia, email);
+    const decorativoIds: string[] = [];
+    if ((a.codigoDecor || a.acabado) && repos.catalogo.guardarDecorativo) {
+      const decorativoId = idEstable(claveNormalizada('decorativo', nombreProveedor, a.coleccion, a.codigoDecor || a.acabado));
+      const decorativo: Omit<DecorativoCatalogo, 'actualizado'> = {
+        id: decorativoId, fabricante: nombreProveedor, coleccion: a.coleccion, codigo: a.codigoDecor,
+        nombre: a.acabado || a.nombre, familiaCromatica: '', colorDigital: a.colorHex, muestra: '', textura: '',
+        veta: a.veta, brillo: a.brillo, acabadoSuperficial: a.acabado, especie: '', fuente: '', licencia: '',
+        verificadoEl: a.revision === 'verificado' ? new Date().toISOString().slice(0, 10) : null, origen,
+      };
+      await repos.catalogo.guardarDecorativo(decorativo, email);
+      decorativoIds.push(decorativoId);
+    }
+    const dimensiones = normalizarDimensiones(a.formato, a.espesorMm, a.formatoUnidad);
+    const variante: Omit<VarianteCatalogo, 'actualizado'> = {
+      id: idEstable(claveNormalizada('variante', nombreProveedor, a.referencia, a.codigoVariante, familiaId, a.soporte,
+        dimensiones.largoMm, dimensiones.anchoMm, dimensiones.espesorMm, a.acabado, a.tratamiento, a.calidad)),
+      familiaId, articuloId, referencia: a.referencia, codigo: a.codigoVariante, codigoDecorativo: a.codigoDecor,
+      soporte: a.soporte, dimensiones, acabado: a.acabado, tratamiento: a.tratamiento, calidad: a.calidad,
+      propiedades: a.propiedades, unidadCompra: a.unidadCompra || a.unidad, unidadConsumo: a.unidadConsumo || a.unidad,
+      unidadPresupuesto: a.unidadPresupuesto || a.unidad, unidadesPaquete: a.unidadesPaquete,
+      factorConversion: a.factorConversion, disponibilidad: a.disponibilidad,
+      estado: a.revision === 'verificado' ? 'activo' : 'pendiente', decorativoIds, origen,
+    };
+    await repos.catalogo.guardarVariante(variante, email);
+    if (a.configuracion && repos.catalogo.guardarConfigurable) await repos.catalogo.guardarConfigurable({
+      id: idEstable(claveNormalizada('configurable', familiaId, a.codigoVariante || a.nombre)), familiaId,
+      nombre: a.nombre, parametros: a.configuracion.parametros, reglas: a.configuracion.reglas,
+      plantillaId: null, bajoProyecto: a.configuracion.bajoProyecto, origen,
+    }, email);
+  };
   for (const [indice, dato] of candidatos.entries()) {
     const r = candidatoProveedor.safeParse(dato);
-    if (!r.success) { rechazados++; continue; }
+    if (!r.success) { rechazados++; errores.push({referencia:'',mensaje:r.error.issues[0]?.message ?? 'Ficha no válida',pagina:null}); continue; }
     const a = r.data;
     const categoria = CATEGORIAS.find(c => c.id === a.categoria && !['mano-obra','servicios'].includes(c.id));
-    if (!categoria) { rechazados++; continue; }
+    if (!categoria) { rechazados++; errores.push({referencia:a.referencia,mensaje:'Categoría no importable',pagina:a.pagina}); continue; }
     const k = clave(a, nombreProveedor), id = idEstable(k);
-    if (conocidos.has(k) || ids.has(id)) { duplicados++; continue; }
+    if (conocidos.has(k) || ids.has(id)) { await guardarEstructura(a, id); duplicados++; validados++; continue; }
     let bytes: Uint8Array | null;
     try { bytes = muestraWebp(muestras[indice]); }
-    catch { rechazados++; continue; }
+    catch { rechazados++; errores.push({referencia:a.referencia,mensaje:'Muestra visual no válida',pagina:a.pagina}); continue; }
     const rutaMuestra = bytes ? 'catalogo-materiales/' + id + '/muestra.webp' : '';
     const visual = {
       fabricante: nombreProveedor,
@@ -120,7 +218,7 @@ export async function importarCandidatos(repos: Repositorios, proveedor: string,
       referencia: a.referencia, proveedor: nombreProveedor, espesor: a.espesorMm,
       acabado: a.acabado, notas, visual,
     });
-    if (!validado.success) { rechazados++; continue; }
+    if (!validado.success) { rechazados++; errores.push({referencia:a.referencia,mensaje:validado.error.issues[0]?.message ?? 'Artículo no válido',pagina:a.pagina}); continue; }
     // Crear primero el artículo de forma idempotente: no guardar imágenes
     // de IDs ya existentes, ni sobrescribir las muestras editadas manualmente.
     const insertado = repos.catalogo.insertarArticuloSiNuevo
@@ -129,11 +227,26 @@ export async function importarCandidatos(repos: Repositorios, proveedor: string,
     ids.add(id); conocidos.add(k);
     if (!insertado) { duplicados++; continue; }
     creados++;
+    validados++;
+    await guardarEstructura(a, id);
     // La ficha ya está creada, la muestra privada es un recurso complementario.
     // Un fallo aquí debe informarse, no reintentar la creación como un duplicado.
     if (bytes && rutaMuestra && !repos.catalogo.insertarArticuloSiNuevo)
       await repos.fotos.guardar({ruta:rutaMuestra,tipo:'image/webp',bytes},email);
   }
+  const resumen = {creados, actualizados, duplicados, rechazados, validados};
+  if (importacionId && repos.catalogo.completarLoteImportacion) await repos.catalogo.completarLoteImportacion(importacionId, loteId, resumen, email);
+  if (importacionId && repos.catalogo.guardarImportacion) {
+    const anterior = await repos.catalogo.importacion?.(importacionId);
+    if (anterior) {
+      const procesados = anterior.creados + anterior.actualizados + anterior.duplicados + anterior.rechazados + creados + actualizados + duplicados + rechazados;
+      const pendientes = Math.max(0, anterior.seleccionados - procesados);
+      await repos.catalogo.guardarImportacion({ ...anterior, estado: pendientes ? 'parcial' : 'completada',
+        validados: anterior.validados + validados, creados: anterior.creados + creados, actualizados: anterior.actualizados + actualizados,
+        duplicados: anterior.duplicados + duplicados, rechazados: anterior.rechazados + rechazados, pendientes,
+        errores: [...anterior.errores, ...errores].slice(-500) }, email);
+    }
+  }
   if (creados) await repos.auditoria.registrar(email, 'importación catálogo PDF', nombreProveedor + ': ' + creados + ' nuevos, ' + duplicados + ' duplicados, ' + rechazados + ' rechazados');
-  return {creados, duplicados, rechazados};
+  return {...resumen, pendientes: Math.max(0, candidatos.length - validados - rechazados), errores};
 }

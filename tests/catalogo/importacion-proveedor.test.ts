@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Repositorios } from '../../src/server/data/tipos.ts';
 import {
-  depurarCandidatos, importarCandidatos, muestraWebp,
+  depurarCandidatos, importarCandidatos, muestraWebp, MAX_CANDIDATOS_IMPORTACION,
 } from '../../src/server/catalogo/importacion-proveedor.ts';
 
 const candidato = {
@@ -46,7 +46,7 @@ describe('Gubia · PDF no fiable',()=>{
   it('crea solo artículos nuevos sin precio y con procedencia verificable',async()=>{
     const {repos,guardados,guardar}=reposMock();
     const r=await importarCandidatos(repos,'ONESTA','catalogo.pdf',[candidato,candidato,{...candidato,espesorMm:-2}],'propietario@example.test');
-    expect(r).toEqual({creados:1,duplicados:1,rechazados:1});
+    expect(r).toMatchObject({creados:1,actualizados:0,duplicados:1,rechazados:1,validados:2,pendientes:0});
     expect(guardar).toHaveBeenCalledTimes(1);
     expect(guardados[0]).toMatchObject({
       referencia:'DEC-01',coste:0,precioFijo:null,espesor:19,
@@ -56,6 +56,16 @@ describe('Gubia · PDF no fiable',()=>{
     const second=await importarCandidatos(repos,'ONESTA','catalogo.pdf',[candidato],'propietario@example.test');
     expect(second.creados).toBe(0);
     expect(second.duplicados).toBe(1);
+  });
+  it('procesa más de 800 variantes en lotes sin truncamiento silencioso',async()=>{
+    const {repos}=reposMock();
+    const candidatos=Array.from({length:805},(_,i)=>({...candidato,nombre:`Roble natural ${i}`,referencia:`DEC-${i}`,codigoDecor:`DEC-${i}`}));
+    let creados=0;
+    for(let i=0;i<candidatos.length;i+=MAX_CANDIDATOS_IMPORTACION){
+      const r=await importarCandidatos(repos,'ONESTA','catalogo.pdf',candidatos.slice(i,i+MAX_CANDIDATOS_IMPORTACION),'propietario@example.test');
+      creados+=r.creados;
+    }
+    expect(creados).toBe(805);
   });
 });
 
