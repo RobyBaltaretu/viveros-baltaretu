@@ -22,7 +22,7 @@ export function detectarPosicionesMuestras(items:TokenPDF[]):PosicionMuestra[] {
     if(codigoValido.test(t.s))return [{...t,codigo:normalizarCodigoMuestra(t.s),acabado:undefined as string|undefined,enToken:false}];
     // Algunos proveedores incluyen código, acabado y nombre en un solo
     // text-run de PDF.js: «B3002 MA Special White».
-    const completo=t.s.match(/^((?:[A-Z]\\d{3,5}|\\d{3,4}))\\s+(?:([A-Z]{2,4})\\s+)?([\\p{L}].{2,})$/u);
+    const completo=t.s.match(/^((?:[A-Z]\d{3,5}|\d{3,4}))\s+(?:([A-Z]{2,4})\s+)?([\p{L}].{2,})$/u);
     return completo?[{...t,codigo:normalizarCodigoMuestra(completo[1]),acabado:completo[2] as string|undefined,enToken:true}]:[];
   });
   const grupos=new Map<number,typeof candidatos>();
