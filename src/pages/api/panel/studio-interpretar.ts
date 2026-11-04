@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { clienteActual } from '../../../plataforma/actual.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
+import { cuerpoLimitado } from '../../../server/panel/cuerpo.ts';
 import { asegurarEsquema } from '../../../server/data/d1/migraciones.ts';
 import type { BaseD1 } from '../../../server/data/d1/base.ts';
 import { tipoDeImagen } from '../../../server/panel/fotos.ts';
@@ -19,7 +20,8 @@ export const POST:APIRoute=async({locals,request})=>{
   const key=claveGemini(e as unknown as Record<string,unknown>);
   if(!key||!e.IMAGENES_PRIVADAS)return json(503,{ok:false,error:'Falta configurar Gemini o R2 privado'});
   if(Number(request.headers.get('content-length')||0)>2000)return json(413,{ok:false});
-  let id='';try{id=String((await request.json() as {id?:string}).id||'');}catch{return json(400,{ok:false});}
+  const limitado=await cuerpoLimitado(request,2000);if(!limitado)return json(413,{ok:false});
+  let id='';try{id=String((await limitado.json() as {id?:string}).id||'');}catch{return json(400,{ok:false});}
   if(!/^studio_[a-z0-9-]{36}$/.test(id))return json(400,{ok:false});
   await asegurarEsquema(e.DB);
   const f=await e.DB.prepare('SELECT revision,interpretacion FROM studio_bocetos WHERE id=? AND cliente_id=?').bind(id,'turia').first<{revision:number;interpretacion:string}>();
