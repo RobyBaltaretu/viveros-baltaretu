@@ -37,10 +37,33 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
   let id='',revision=1;
   let espacio='',dibujo='';
   let interpretacion: any=null;
-  function mostrar(){const zona=$('resultado-boceto');zona.replaceChildren();if(!interpretacion)return;
-    const titulo=document.createElement('h3');titulo.textContent='Interpretación propuesta: '+interpretacion.modulos.length+' módulos';zona.append(titulo);
-    for(const m of interpretacion.modulos){const p=document.createElement('p');p.textContent=m.tipo+' · '+(m.ancho.valorMm??'?')+' mm de ancho · '+m.piezas.length+' piezas';zona.append(p);}
-    for(const q of interpretacion.preguntas||[]){const p=document.createElement('p');p.textContent='Por confirmar: '+q;zona.append(p);}
+  function mostrar(){
+    const zona=$('resultado-boceto');zona.replaceChildren();if(!interpretacion)return;
+    const titulo=document.createElement('h3');titulo.textContent='Distribución: '+interpretacion.modulos.length+' módulos';zona.append(titulo);
+    for(const m of interpretacion.modulos){
+      const seccion=document.createElement('fieldset');seccion.className='rounded border p-3';
+      const leyenda=document.createElement('legend');leyenda.textContent=m.tipo+' · '+m.id;seccion.append(leyenda);
+      for(const dimension of ['ancho','alto','fondo'] as const){
+        const etiqueta=document.createElement('label');etiqueta.className='block text-sm';
+        etiqueta.textContent=dimension+' (mm)';
+        const input=document.createElement('input');input.type='number';input.min='1';input.max='100000';input.className='block w-full rounded border p-2';
+        input.value=m[dimension].valorMm===null?'':String(m[dimension].valorMm);
+        input.addEventListener('change',()=>{
+          const n=input.value.trim()?Number(input.value):null;
+          m[dimension]={valorMm:n,precision:n===null?'desconocida':'exacta',origen:'usuario',confirmada:n!==null};
+        });
+        etiqueta.append(input);seccion.append(etiqueta);
+      }
+      for(const pieza of m.piezas){
+        const etiqueta=document.createElement('label');etiqueta.className='block text-sm';
+        etiqueta.textContent='Acabado de '+pieza.tipo+' ('+pieza.id+')';
+        const input=document.createElement('input');input.className='block w-full rounded border p-2';input.placeholder='Referencia de acabado (pendiente de validar con catálogo)';
+        input.value=pieza.acabadoId||'';input.addEventListener('change',()=>{pieza.acabadoId=input.value.trim()||null;});
+        etiqueta.append(input);seccion.append(etiqueta);
+      }
+      zona.append(seccion);
+    }
+    for(const q of interpretacion.preguntas||[]){const p=document.createElement('p');p.textContent='Pendiente: '+q;zona.append(p);}
   }
   async function abrir(bid:string){const r=await fetch('/api/panel/studio-bocetos?id='+encodeURIComponent(bid));const j=await r.json();if(!r.ok)throw Error('No se pudo abrir el boceto');
     id=j.boceto.id;revision=j.boceto.revision;interpretacion=j.boceto.interpretacion;
@@ -92,7 +115,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
       estado('Guardando imágenes…');
       if(espacio.startsWith('pendiente-'))espacio=await subir('foto-espacio','espacio');
       if(dibujo.startsWith('pendiente-'))dibujo=await subir('foto-dibujo','boceto');
-      const nueva=interpretacion && interpretacion.modulos?.length>1?{...interpretacion,fotoEspacioId:espacio,fotoBocetoId:dibujo}:modelo();
+      const nueva=interpretacion?{...interpretacion,fotoEspacioId:espacio,fotoBocetoId:dibujo}:modelo();
       const r=await fetch('/api/panel/studio-bocetos',{method:'PATCH',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({id,revision,interpretacion:nueva})});
       const j=await r.json();if(!r.ok)throw Error(j.error||JSON.stringify(j.errores));
