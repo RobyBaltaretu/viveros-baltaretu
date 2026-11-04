@@ -117,3 +117,9 @@ No fusionar ni desplegar hasta cerrar bloqueantes y verificar CI y pruebas reale
 - Hallazgo UX: la búsqueda es textual y el catálogo responde un máximo de 80 resultados; falta paginación, filtros por familia y miniaturas/color/texture visuales.
 - Hallazgo económico: el precio fijo y la merma tienen reglas de negocio que requieren validación con el cliente antes de crear un presupuesto real.
 - No hay CI verde ni validación E2E confirmada para estos cambios; no fusionar ni desplegar.
+
+## Revisión de cierre solicitada — 2026-11-04
+- Corregido el cálculo de precio fijo: el precio de venta fijo por m² no recibe merma adicional; la merma se sigue contabilizando en el coste base. Añadidas pruebas de regresión.
+- Disponibilidad desconocida y bajo pedido ahora requieren confirmación comercial.
+- Migración 21 y duplicación: persistencia de origen_boceto_id para reconstruir la relación entre revisiones derivadas.
+- **No considerar completado**: presupuesto completo, vínculo con Proyectos, selector visual paginado, colas Gemini, medición de coste real, QA E2E móvil y pruebas CI. Estas áreas siguen abiertas y requieren desarrollo y verificación; no cambiar el estado de aceptación a terminado sin evidencia.
