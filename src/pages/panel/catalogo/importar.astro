@@ -338,8 +338,10 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       for(const articulo of articulos){
         const codigo=String(articulo.data.codigoDecor||articulo.data.referencia||'').toUpperCase().trim();
         if(!codigo||articulo.muestra)continue;
-        const compatibles=muestrasDetectadas.filter(m=>m.codigo===codigo||(
-          /^\d{3,4}$/.test(codigo)&&m.codigo===codigo.padStart(4,'0')));
+        const compatibles=muestrasDetectadas.filter(m=>(m.codigo===codigo||(
+          /^\d{3,4}$/.test(codigo)&&m.codigo===codigo.padStart(4,'0')))&&(
+          !m.acabado||!articulo.data.acabado||m.acabado===String(articulo.data.acabado).trim().toUpperCase()
+        ));
         const elegida=compatibles.sort((a,b)=>Math.abs(a.pagina-articulo.data.pagina)-Math.abs(b.pagina-articulo.data.pagina))[0];
         if(!elegida||Math.abs(elegida.pagina-articulo.data.pagina)>2)continue;
         articulo.muestra=elegida.muestra;
