@@ -121,5 +121,7 @@ export const GET:APIRoute=async({locals,url})=>{
   await asegurarEsquema(e.DB);
   const r=await e.DB.prepare('SELECT id,estado,resultado_archivo_id,creado,error FROM studio_generaciones WHERE boceto_id=? AND cliente_id=? ORDER BY creado DESC LIMIT 20')
     .bind(id,clienteActual().id).all();
-  return json(200,{ok:true,generaciones:r.results});
+  const ahora=Date.now();
+  const generaciones=r.results.map((g:any)=>({...g,requiereRevision:g.estado==='procesando'&&ahora-Date.parse(g.creado)>15*60_000}));
+  return json(200,{ok:true,generaciones});
 };
