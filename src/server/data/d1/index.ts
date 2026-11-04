@@ -324,6 +324,14 @@ export function crearRepositoriosD1(db: BaseD1, bucket?: BucketPrivado, exigirR2
       },
     },
     usoAsistente: {
+      async reservar(email, dia, limite) {
+        if (!Number.isInteger(limite) || limite <= 0) return false;
+        const r = await db.prepare(
+          `INSERT INTO asistente_uso (email, dia, usos) VALUES (?, ?, 1)
+           ON CONFLICT (email, dia) DO UPDATE SET usos = usos + 1 WHERE usos < ?`
+        ).bind(email, dia, limite).run();
+        return (r.meta?.changes ?? 0) > 0;
+      },
       async sumar(email, dia, cantidad = 1) {
         const f = await db
           .prepare(
