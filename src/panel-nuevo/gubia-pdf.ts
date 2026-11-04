@@ -7,8 +7,9 @@ import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 GlobalWorkerOptions.workerSrc = workerUrl;
 const MAX_PAGINAS = 160;
 const MAX_BYTES = 25_000_000;
-import {reconstruirFilas,sugerirMaterialesLocales} from './filas-pdf';
-export type PaginaLocal = { pagina: number; texto: string; caracteres: number };
+import {reconstruirFilas,sugerirMaterialesLocales,extraerVariantesTablero} from './filas-pdf';
+import {detectarPosicionesMuestras,construirMuestra,type MuestraPDF} from './muestras-pdf';
+export type PaginaLocal = { pagina: number; texto: string; caracteres: number; variantes: Array<Record<string,unknown>>; muestras: MuestraPDF[] };
 
 export interface DocumentoLocal {
   paginas: number;
@@ -44,8 +45,32 @@ export async function abrirPDFLocal(file: File): Promise<DocumentoLocal> {
         'str' in x && 'transform' in x
       );
       const texto = reconstruirFilas(items);
+      const variantes = extraerVariantesTablero(items,numero);
+      const posiciones = detectarPosicionesMuestras(items);
+      const muestras: MuestraPDF[] = [];
+      if(posiciones.length){
+        // Rasterizar únicamente las cartas de muestras. Se conserva el PDF local.
+        const vp0=page.getViewport({scale:1});
+        const escala=Math.min(1.4,1200/Math.max(vp0.width,vp0.height));
+        const vp=page.getViewport({scale:escala});
+        const lienzo=document.createElement('canvas');
+        lienzo.width=Math.ceil(vp.width);lienzo.height=Math.ceil(vp.height);
+        try{
+          const ctx=lienzo.getContext('2d',{willReadFrequently:true});
+          if(ctx){
+            await page.render({canvasContext:ctx,viewport:vp,canvas:lienzo}).promise;
+            for(const posicion of posiciones){
+              const m=construirMuestra(ctx,posicion,escala,vp0.height,numero);
+              if(m)muestras.push(m);
+            }
+          }
+        }catch(error){
+          // Una muestra defectuosa jamás invalida los atributos técnicos del PDF.
+          console.warn('[Gubia] No se han podido extraer las muestras visuales',numero,error);
+        }finally{lienzo.width=0;lienzo.height=0;}
+      }
       page.cleanup();
-      return { pagina: numero, texto, caracteres: texto.length };
+      return { pagina: numero, texto, caracteres: texto.length, variantes, muestras };
     },
     async imagen(numero: number) {
       if (!Number.isInteger(numero) || numero < 1 || numero > doc.numPages) throw new Error('Página no válida.');
