@@ -17,7 +17,8 @@ describe('Despiece Studio',()=>{
    }]
   }]};
   const r=prepararDespiece(b as any);
-  expect(r.presupuestable).toBe(true);
+  expect(r.despieceCompleto).toBe(true);
+  expect(r.presupuestable).toBe(false);
   expect(r.partidas[0].metrosCuadrados).toBe(0.8);
  });
 });
