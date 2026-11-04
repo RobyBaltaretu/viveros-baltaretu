@@ -78,6 +78,9 @@ const numeroCabecera = (valor: string | null): number | null => {
 /** Convierte valores de Groq como `7.66s`, `2m59.56s` o `120ms` a milisegundos. */
 export function duracionGroqMs(valor: string | null): number {
   if (!valor) return 0;
+  // `Retry-After` usa segundos sin unidad; las cabeceras `reset` de Groq
+  // emplean duraciones como `7.66s` o `2m59.56s`.
+  if (/^\d+(?:\.\d+)?$/.test(valor.trim())) return Math.ceil(Number(valor)*1000);
   let total = 0;
   const patron = /(\d+(?:\.\d+)?)\s*(ms|s|m|h)/gi;
   for (const parte of valor.matchAll(patron)) {

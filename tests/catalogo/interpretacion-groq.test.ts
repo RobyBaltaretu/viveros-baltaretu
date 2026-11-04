@@ -16,6 +16,7 @@ const OK=(articulos:unknown[])=>new Response(JSON.stringify({
 describe('Gubia Groq Free: importación local',()=>{
   it('interpreta las duraciones que Groq envía en las cabeceras',()=>{
     expect(duracionGroqMs('7.66s')).toBe(7660);
+    expect(duracionGroqMs('2')).toBe(2000);
     expect(duracionGroqMs('2m59.56s')).toBe(179560);
     expect(duracionGroqMs('120ms')).toBe(120);
     expect(duracionGroqMs(null)).toBe(0);
