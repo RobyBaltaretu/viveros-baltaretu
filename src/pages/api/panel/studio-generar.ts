@@ -30,6 +30,19 @@ export const POST:APIRoute=async({locals,request})=>{
   if(!row)return json(409,{ok:false,error:'Valida el boceto antes de generar'});
   const interpretacion=JSON.parse(row.interpretacion) as InterpretacionBoceto;
   if(interpretacion.modulos.some(m=>m.piezas.some(p=>!p.catalogoVarianteId)))return json(409,{ok:false,error:'Asigna materiales a todas las piezas'});
+  const [variantes,articulos]=await Promise.all([sesion.repos.catalogo.variantes?.()??Promise.resolve([]),sesion.repos.catalogo.articulos()]);
+  const porVariante=new Map(variantes.map(v=>[v.id,v]));
+  const porArticulo=new Map(articulos.map(a=>[a.id,a]));
+  const acabados=interpretacion.modulos.flatMap(m=>m.piezas.map(p=>{
+    const v=porVariante.get(p.catalogoVarianteId||'');
+    const a=v?porArticulo.get(v.articuloId):undefined;
+    return {modulo:m.id,pieza:p.id,tipo:p.tipo,variante:v,articulo:a};
+  }));
+  if(acabados.some(x=>!x.variante||!x.articulo||x.variante.estado!=='activo'||x.articulo.archivado))
+    return json(409,{ok:false,error:'Hay materiales inexistentes, archivados o descatalogados'});
+  const referencias=acabados.map(x=>({modulo:x.modulo,pieza:x.pieza,tipo:x.tipo,
+    referencia:x.variante!.referencia,acabado:x.variante!.acabado||x.articulo!.acabado,
+    soporte:x.variante!.soporte,espesorMm:x.variante!.dimensiones.espesorMm??x.articulo!.espesor}));
   let especificacion:ReturnType<typeof instruccionesRender>;
   try{especificacion=instruccionesRender(interpretacion);}catch{return json(422,{ok:false,error:'Boceto no válido'});}
   const archivos=await e.DB.prepare('SELECT id,objeto_r2,mime FROM studio_boceto_archivos WHERE boceto_id=? AND cliente_id=? AND id IN (?,?)')
@@ -49,11 +62,11 @@ export const POST:APIRoute=async({locals,request})=>{
   const mes=mesDe(),limite=limitePresupuestado(iaDe(clienteActual()).simulacionesMes);
   if(!(await sesion.repos.usoSimulador.reservar(tenant,mes,limite)))return json(403,{ok:false,error:'Presupuesto mensual agotado'});
   const generacion='studiogen_'+crypto.randomUUID(),fecha=new Date().toISOString();
-  const solicitud=JSON.stringify({revision:row.revision,especificacion});
+  const solicitud=JSON.stringify({revision:row.revision,especificacion,referencias});
   await e.DB.prepare('INSERT INTO studio_generaciones(id,boceto_id,cliente_id,revision,estado,solicitud,coste_estimado_cent,creado,actualizado) VALUES (?,?,?,?,?,?,?,?,?)')
     .bind(generacion,id,tenant,row.revision,'procesando',solicitud,20,fecha,fecha).run();
   const modelo=iaDe(clienteActual()).modelos.gemini;
-  const prompt='Render fotográfico de carpintería. PRIMERA imagen: espacio real, SEGUNDA: boceto. Preservar el espacio, las instalaciones y el encuadre. Respetar exactamente los módulos y los acabados del diseño validado. No añadir elementos. Diseño estructurado: '+JSON.stringify(especificacion);
+  const prompt='Render fotográfico de carpintería. PRIMERA imagen: espacio real, SEGUNDA: boceto. Preservar el espacio, las instalaciones y el encuadre. Respetar exactamente los módulos y los acabados del diseño validado. No añadir elementos. Diseño estructurado: '+JSON.stringify({especificacion,referencias});
   let respuesta:Response;
   try{respuesta=await fetch(URL_GEMINI+'/'+encodeURIComponent(modelo)+':generateContent',{
     method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
