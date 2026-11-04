@@ -4,7 +4,7 @@ export interface PartidaStudio {
  anchoMm:number|null;altoMm:number|null;fondoMm:number|null;
  cantidad:number;metrosCuadrados:number|null;requiereMedicion:boolean;
 }
-export interface DespieceStudio {partidas:PartidaStudio[];bloqueos:string[];presupuestable:boolean}
+export interface DespieceStudio {partidas:PartidaStudio[];bloqueos:string[];despieceCompleto:boolean;presupuestable:boolean}
 /**
  * Prepara partidas para revisión, nunca calcula cortes ni costes desde una imagen.
  * Una pieza no tiene dimensiones propias en el esquema v1; por ello NO se le
@@ -31,5 +31,6 @@ export function prepararDespiece(b:InterpretacionBoceto):DespieceStudio {
     metrosCuadrados:medidas&&cantidad>0?(ancho!*alto!*cantidad)/1_000_000:null,requiereMedicion:!medidas});
   }
  }
- return {partidas,bloqueos,presupuestable:bloqueos.length===0&&partidas.length>0};
+ const despieceCompleto=bloqueos.length===0&&partidas.length>0;
+ return {partidas,bloqueos,despieceCompleto,presupuestable:false}; // pendiente de costes, mermas y unidades comerciales
 }
