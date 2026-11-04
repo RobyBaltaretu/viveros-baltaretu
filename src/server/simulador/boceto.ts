@@ -20,6 +20,7 @@ export interface PiezaBoceto {
   catalogoVarianteId: string | null;
   acabadoId: string | null;
   orientacionVeta?: 'vertical' | 'horizontal' | 'no-aplica';
+  corte?: { ancho: CotaBoceto; alto: CotaBoceto; cantidad: number; espesorMm?: number | null };
 }
 export interface ModuloBoceto {
   id: string;
@@ -70,6 +71,17 @@ export function validarInterpretacion(b: InterpretacionBoceto): string[] {
     }
     const piezas = new Set<string>();
     for (const pieza of modulo.piezas) {
+      if (!pieza || typeof pieza !== 'object') { errores.push('Pieza inválida: '+modulo.id); continue; }
+      if (pieza.corte) {
+        for (const campo of ['ancho','alto'] as const) {
+          const error=validarCota(pieza.corte[campo]);
+          if(error)errores.push('Corte '+pieza.id+'.'+campo+': '+error);
+        }
+        if(!Number.isSafeInteger(pieza.corte.cantidad)||pieza.corte.cantidad<1||pieza.corte.cantidad>1000)
+          errores.push('Cantidad de corte inválida: '+pieza.id);
+        if(pieza.corte.espesorMm!=null&&(!Number.isFinite(pieza.corte.espesorMm)||pieza.corte.espesorMm<=0||pieza.corte.espesorMm>1000))
+          errores.push('Espesor de corte inválido: '+pieza.id);
+      }
       if (!pieza.id || piezas.has(pieza.id)) errores.push('ID de pieza duplicado o vacío: '+modulo.id);
       piezas.add(pieza.id);
     }
