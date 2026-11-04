@@ -138,7 +138,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       check.addEventListener('change',()=>{a.activo=check.checked;article.dataset.activo=String(check.checked);contar();guardarBorrador();});
       checkLabel.append(check,document.createTextNode('Añadir al catálogo'));head.append(checkLabel);
       const fields=document.createElement('div');fields.className='gubia-item-campos';
-      for(const [key,label] of [['nombre','Nombre'],['referencia','Referencia'],['acabado','Acabado'],['codigoDecor','Código de decor'],['soporte','Soporte'],['formato','Formato']]){
+      for(const [key,label] of [['nombre','Nombre'],['referencia','Referencia'],['acabado','Acabado / calidad'],['codigoDecor','Código de decor'],['soporte','Soporte'],['formato','Formato']]){
         fields.append(field('input',key,a.data[key],label));
       }
       fields.append(field('select','categoria',a.data.categoria,'Categoría',categorias));
