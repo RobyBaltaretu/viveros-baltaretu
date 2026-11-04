@@ -76,6 +76,7 @@ export const PATCH: APIRoute = async ({locals,request}) => {
   }
   const errores=validarInterpretacion(b);if(errores.length)return json(400,{ok:false,errores});
   await asegurarEsquema(db());
+  if(b.estado==='validada' && (b.fotoEspacioId.startsWith('pendiente-') || b.fotoBocetoId.startsWith('pendiente-')))return json(409,{ok:false,error:'Guarda las dos fotografías antes de validar'});
   const anterior=await db().prepare('SELECT revision FROM studio_bocetos WHERE id=? AND cliente_id=?').bind(entrada.id,tenant()).first<{revision:number}>();
   if(!anterior)return json(404,{ok:false});
   if(anterior.revision!==entrada.revision)return json(409,{ok:false,error:'Otro cambio ha actualizado el boceto. Recarga antes de guardar.',revision:anterior.revision});
