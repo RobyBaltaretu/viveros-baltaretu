@@ -42,36 +42,57 @@ export async function abrirPDFLocal(file: File): Promise<DocumentoLocal> {
     async pagina(numero: number) {
       if (!Number.isInteger(numero) || numero < 1 || numero > doc.numPages) throw new Error('Página no válida.');
       const page = await doc.getPage(numero);
-      const content = await page.getTextContent();
-      const items = content.items.filter((x): x is typeof x & { str: string; transform: number[] } =>
-        'str' in x && 'transform' in x
-      );
-      const texto = reconstruirFilas(items);
-      const variantes = [...extraerVariantesTablero(items,numero), ...candidatosConfigurablesColomba(texto,numero)];
-      const posiciones = detectarPosicionesMuestras(items);
-      const muestras: MuestraPDF[] = [];
-      if(posiciones.length){
-        // Rasterizar únicamente las cartas de muestras. Se conserva el PDF local.
-        const vp0=page.getViewport({scale:1});
-        const escala=Math.min(1.4,1200/Math.max(vp0.width,vp0.height));
-        const vp=page.getViewport({scale:escala});
-        const lienzo=document.createElement('canvas');
-        lienzo.width=Math.ceil(vp.width);lienzo.height=Math.ceil(vp.height);
-        try{
-          const ctx=lienzo.getContext('2d',{willReadFrequently:true});
-          if(ctx){
-            await page.render({canvasContext:ctx,viewport:vp,canvas:lienzo}).promise;
-            for(const posicion of posiciones){
-              const m=construirMuestra(ctx,posicion,escala,vp0.height,numero);
-              if(m)muestras.push(m);
-            }
+      let texto = '';
+      let variantes: Array<Record<string,unknown>> = [];
+      let muestras: MuestraPDF[] = [];
+      try {
+        // En Safari/iOS, los errores de un parser secundario no deben
+        // invalidar el texto que PDF.js ya haya conseguido extraer.
+        const content = await page.getTextContent();
+        const items = content.items.filter((x): x is typeof x & { str: string; transform: number[] } =>
+          'str' in x && 'transform' in x
+        );
+        try {
+          texto = reconstruirFilas(items);
+        } catch (error) {
+          console.warn('[Gubia PDF] Reconstrucción de filas fallida, página',numero,error);
+          texto = items.map(item => item.str).filter(Boolean).join(' ');
+        }
+        try {
+          variantes = extraerVariantesTablero(items,numero);
+        } catch (error) {
+          console.warn('[Gubia PDF] Matriz no disponible, página',numero,error);
+        }
+        try {
+          variantes.push(...candidatosConfigurablesColomba(texto,numero));
+        } catch (error) {
+          console.warn('[Gubia PDF] Configurables no disponibles, página',numero,error);
+        }
+        try {
+          const posiciones = detectarPosicionesMuestras(items);
+          if(posiciones.length){
+            const vp0=page.getViewport({scale:1});
+            const escala=Math.min(1.4,1200/Math.max(vp0.width,vp0.height));
+            const vp=page.getViewport({scale:escala});
+            const lienzo=document.createElement('canvas');
+            lienzo.width=Math.ceil(vp.width);lienzo.height=Math.ceil(vp.height);
+            try{
+              const ctx=lienzo.getContext('2d',{willReadFrequently:true});
+              if(ctx){
+                await page.render({canvasContext:ctx,viewport:vp,canvas:lienzo}).promise;
+                for(const posicion of posiciones){
+                  const m=construirMuestra(ctx,posicion,escala,vp0.height,numero);
+                  if(m)muestras.push(m);
+                }
+              }
+            }finally{lienzo.width=0;lienzo.height=0;}
           }
         }catch(error){
-          // Una muestra defectuosa jamás invalida los atributos técnicos del PDF.
-          console.warn('[Gubia] No se han podido extraer las muestras visuales',numero,error);
-        }finally{lienzo.width=0;lienzo.height=0;}
+          console.warn('[Gubia PDF] Muestras no disponibles, página',numero,error);
+        }
+      } finally {
+        page.cleanup();
       }
-      page.cleanup();
       return { pagina: numero, texto, caracteres: texto.length, variantes, muestras };
     },
     async imagen(numero: number) {
