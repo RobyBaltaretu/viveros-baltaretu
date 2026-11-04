@@ -46,7 +46,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
     </main>
   ) : <p>Esta herramienta solo está disponible para Creaciones Turia.</p>}
 </PaginaPanel>
-{permitido && <script>
+<script>
   import { calcularPlano, svgPlano } from '../../server/simulador/geometria-boceto.ts';
   const $ = (id: string) => document.getElementById(id) as HTMLElement;
   let id='',revision=1;
@@ -327,6 +327,8 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
       await cargarGeneraciones();claveGeneracion='';estado('Imagen guardada en R2 privado.');
     }catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
   });
-  void cargarMateriales().catch(e=>estado(String(e)));
-  void cargar();
-</script>}
+  if(document.getElementById('nuevo-boceto')){
+    void cargarMateriales().catch(e=>estado(String(e)));
+    void cargar().catch(e=>estado(e instanceof Error?e.message:String(e)));
+  }
+</script>
