@@ -53,8 +53,8 @@ export function validarCota(cota: CotaBoceto): string | null {
 }
 export function validarInterpretacion(b: InterpretacionBoceto): string[] {
   const errores: string[] = [];
+  if (!b || typeof b !== 'object' || !Array.isArray(b.modulos) || !Array.isArray(b.obstaculos) || !Array.isArray(b.preguntas)) return ['Estructura de interpretación inválida'];
   if (b.version !== 1) errores.push('Versión no admitida');
-  if (!b || !Array.isArray(b.modulos) || !Array.isArray(b.obstaculos) || !Array.isArray(b.preguntas)) return ['Estructura de interpretación inválida'];
   if (!b.fotoEspacioId || !b.fotoBocetoId) errores.push('Se requieren fotografía del espacio y del boceto');
   if (typeof b.categoria !== 'string' || !b.categoria.trim()) errores.push('Falta categoría');
   if (!b.modulos.length) errores.push('Faltan módulos');
