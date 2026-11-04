@@ -37,3 +37,12 @@ Fecha: 2026-11-04. Rama: feature/turia-studio-boceto-multimodal. Estado: experim
 - Materiales correctos en todas las piezas y presupuesto calculado exclusivamente desde geometría confirmada.
 - Registro y límite del coste real con alarmas, sin prometer 10 EUR sin evidencia.
 - Revisión de seguridad de imágenes privadas y separación entre tenants.
+
+
+## Avance posterior — exclusión de concurrencia
+- Migración 19: índice único parcial en D1 para un trabajo activo por cliente, boceto y revisión.
+- API de generación: captura conflicto de inserción y devuelve reserva de cuota.
+- Historial: señala trabajos en procesando con más de 15 minutos para revisión humana, sin reintentar ni liberar automáticamente una cuota cuyo consumo externo es incierto.
+- Prueba de esquema: tests/simulador/studio-concurrencia.test.ts.
+- Pendiente: idempotency key por solicitud, reconciliación de fallos del proveedor, colas asíncronas, presupuesto/BOM y E2E.
+- Precaución: la migración 19 puede fallar si ya existen múltiples trabajos activos para el mismo boceto y revisión; sanear preview antes de aplicar.
