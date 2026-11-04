@@ -58,12 +58,16 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
   }
   function mostrar(){
     const zona=$('resultado-boceto');zona.replaceChildren();if(!interpretacion)return;
+    const soloLectura=interpretacion.estado==='validada';
+    for(const nombre of ['guardar-boceto','interpretar-boceto','confirmar-boceto','ancho-boceto','precision-boceto','foto-espacio','foto-dibujo']){
+      const control=$(nombre) as HTMLInputElement|HTMLButtonElement|null;if(control)control.disabled=soloLectura;
+    }
     const titulo=document.createElement('h3');titulo.textContent='Distribución: '+interpretacion.modulos.length+' módulos';zona.append(titulo);
     const plano=calcularPlano(interpretacion);
     const visor=document.createElement('div');visor.className='overflow-x-auto rounded border bg-white p-2';visor.innerHTML=svgPlano(plano);zona.append(visor);
     const aviso=document.createElement('p');aviso.className='text-sm';aviso.textContent=plano.advertencias.length?'Alzado provisional: '+plano.advertencias.join('; '):'Alzado basado en las cotas disponibles';zona.append(aviso);
     for(const m of interpretacion.modulos){
-      const seccion=document.createElement('fieldset');seccion.className='rounded border p-3';
+      const seccion=document.createElement('fieldset');seccion.className='rounded border p-3';seccion.disabled=soloLectura;
       const leyenda=document.createElement('legend');leyenda.textContent=m.tipo+' · '+m.id;seccion.append(leyenda);
       for(const dimension of ['ancho','alto','fondo'] as const){
         const etiqueta=document.createElement('label');etiqueta.className='block text-sm';
