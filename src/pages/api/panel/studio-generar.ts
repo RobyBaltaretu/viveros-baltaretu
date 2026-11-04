@@ -28,7 +28,7 @@ export const POST:APIRoute=async({locals,request})=>{
   await asegurarEsquema(e.DB);
   const anterior=await e.DB.prepare('SELECT id,revision,estado,resultado_archivo_id FROM studio_generaciones WHERE cliente_id=? AND boceto_id=? AND clave_idempotencia=?')
     .bind(tenant,id,clave).first<{id:string;revision:number;estado:string;resultado_archivo_id:string|null}>();
-  if(anterior)return json(200,{ok:true,reutilizada:true,generacion:anterior.id,estado:anterior.estado,archivoId:anterior.resultado_archivo_id,revision:anterior.revision});
+  if(anterior)return json(anterior.estado==='procesando'?202:200,{ok:anterior.estado==='completada',reutilizada:true,generacion:anterior.id,estado:anterior.estado,archivoId:anterior.resultado_archivo_id,revision:anterior.revision,error:anterior.estado==='fallida'?'La generación anterior falló; inicia una solicitud nueva':undefined});
   const row=await e.DB.prepare('SELECT revision,interpretacion FROM studio_bocetos WHERE id=? AND cliente_id=? AND estado=?')
     .bind(id,tenant,'validada').first<{revision:number;interpretacion:string}>();
   if(!row)return json(409,{ok:false,error:'Valida el boceto antes de generar'});
