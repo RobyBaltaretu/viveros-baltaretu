@@ -8,7 +8,8 @@ describe('Despiece Studio',()=>{
   expect(r.partidas[0].metrosCuadrados).toBeNull();
   expect(r.partidas[0].requiereMedicion).toBe(true);
   expect(r.presupuestable).toBe(false);
-  it('calcula área solo con cortes confirmados',()=>{
+ });
+ it('calcula área solo con cortes confirmados',()=>{
   const exacta={valorMm:500,precision:'exacta',origen:'medicion',confirmada:true};
   const b={estado:'validada',confirmadaPor:'operario',modulos:[{
    id:'m1',ancho:exacta,alto:exacta,fondo:exacta,piezas:[{
@@ -19,5 +20,4 @@ describe('Despiece Studio',()=>{
   expect(r.presupuestable).toBe(true);
   expect(r.partidas[0].metrosCuadrados).toBe(0.8);
  });
-});
 });
