@@ -224,6 +224,14 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
       for(const p of d.partidas){
         const linea=document.createElement('p');linea.textContent=p.tipo+' · '+p.varianteId+' · '+p.cantidad+' ud · '+(p.metrosCuadrados===null?'Superficie sin confirmar':p.metrosCuadrados.toFixed(3)+' m²');zona.append(linea);
       }
+      if(j.valoracion){
+        const v=j.valoracion;
+        const tituloValor=document.createElement('p');tituloValor.className='mt-3 font-semibold';
+        tituloValor.textContent='Estimación parcial de materiales (sin IVA): '+(v.subtotalSinIva===null?'sin datos suficientes':v.subtotalSinIva.toFixed(2)+' €');
+        zona.append(tituloValor);
+        const avisoValor=document.createElement('p');avisoValor.textContent='No es un presupuesto. No incluye mano de obra, herrajes, cantos ni mecanizados.';zona.append(avisoValor);
+        for(const bloqueo of v.bloqueos){const linea=document.createElement('p');linea.textContent='Valoración pendiente: '+bloqueo;zona.append(linea);}
+      }
       for(const bloqueo of d.bloqueos){const linea=document.createElement('p');linea.textContent='Pendiente: '+bloqueo;zona.append(linea);}
     }catch(e){estado(e instanceof Error?e.message:String(e));}
   });
