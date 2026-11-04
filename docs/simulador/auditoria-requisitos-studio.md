@@ -98,3 +98,12 @@ Se ha contrastado el código de las rutas Studio, dominio boceto, interpretació
 | CI verde, demo real, despliegue | No confirmado |
 
 No fusionar ni desplegar hasta cerrar bloqueantes y verificar CI y pruebas reales.
+
+## Iteración de consistencia y recuperación (2026-11-04)
+- studio-bocetos PATCH: UPDATE optimista y creación de versión ahora comparten un único lote D1; INSERT ... SELECT copia exactamente la interpretación persistida tras actualizar.
+- studio-generar: fallos de base64 y persistencia de metadatos pasan a estado fallida para liberar el índice único de trabajos activos.
+- Interfaz: rota clave de idempotencia tras resultado completado o fallido.
+- studio-recuperar: operador autorizado puede cerrar trabajos procesando de más de 15 minutos; no devuelve cuota porque Gemini podría haber consumido recursos. UI informa de ello.
+- Aún no hay cola asíncrona ni verificación con el proveedor del coste real. La conciliación requiere acción humana; no se debe considerar recuperación automática completa.
+- Falta confirmar build/CI y prueba real de D1, R2 y Gemini.
+- Sigue pendiente conversión a presupuestos, costes y merma por variante, vínculo a Proyectos/Simulaciones, selección visual de materiales y QA Safari.
