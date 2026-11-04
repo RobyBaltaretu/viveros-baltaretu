@@ -11,6 +11,14 @@ describe('Valoración parcial Studio',()=>{
   expect(r.listaParaPresupuesto).toBe(false);
   expect(r.bloqueos.length).toBeGreaterThan(0);
  });
+ it('does not add waste a second time to a fixed sale price',()=>{
+  const r=valorarDespiece(d as any,[{...a,precioFijo:40}] as any,[v] as any);
+  expect(r.subtotalSinIva).toBeCloseTo(40);
+ });
+ it('requires stock verification for made-to-order variants',()=>{
+  const r=valorarDespiece(d as any,[a] as any,[{...v,disponibilidad:'bajo-pedido'}] as any);
+  expect(r.bloqueos.join(' ')).toContain('confirmar disponibilidad');
+ });
  it('rejects unsupported units',()=>{
   const r=valorarDespiece(d as any,[{...a,unidad:'ud'}] as any,[v] as any);
   expect(r.lineas).toHaveLength(0);
