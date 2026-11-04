@@ -25,7 +25,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
         <label class="block">Anchura total (mm, opcional) <input id="ancho-boceto" type="number" min="1" max="100000" class="block w-full rounded border p-2" placeholder="Ej. 2330"/></label>
         <label class="block">Precisión de la medida <select id="precision-boceto" class="block w-full rounded border p-2"><option value="aproximada">Aproximada</option><option value="exacta">Exacta</option></select></label>
         <button id="guardar-boceto" type="button" class="rounded bg-neutral-900 px-4 py-2 text-white">Guardar interpretación manual</button>
-        <button id="interpretar-boceto" type="button" class="rounded border px-4 py-2">Interpretar dibujo con IA</button>\n        <button id="validar-boceto" type="button" class="rounded border px-4 py-2">Confirmar distribución revisada</button>\n        <section id="resultado-boceto" class="space-y-2" aria-label="Interpretación del dibujo"></section>\n        <p class="text-xs">Comprueba módulos y cotas antes de validar. El render de IA todavía no está habilitado en este flujo.</p>
+        <button id="interpretar-boceto" type="button" class="rounded border px-4 py-2">Interpretar dibujo con IA</button>\n\n        <section id="resultado-boceto" class="space-y-2" aria-label="Interpretación del dibujo"></section>\n        <p class="text-xs">Comprueba módulos y cotas antes de validar. El render de IA todavía no está habilitado en este flujo.</p>
       </section>
       <p id="estado-boceto" role="status" aria-live="polite"></p>
       <section><h2 class="font-bold">Borradores recientes</h2><ul id="lista-bocetos" class="space-y-2"></ul></section>
@@ -102,11 +102,6 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
   $('interpretar-boceto')?.addEventListener('click',async()=>{if(!id)return;estado('Interpretando fotografías…');const boton=$('interpretar-boceto') as HTMLButtonElement;boton.disabled=true;
     try{const r=await fetch('/api/panel/studio-interpretar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});const j=await r.json();if(!r.ok)throw Error(j.error||'Error de interpretación');revision=j.revision;interpretacion=j.interpretacion;mostrar();estado('Interpretación recibida. Revisa las medidas y los módulos.');}
     catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
-  });
-  $('validar-boceto')?.addEventListener('click',async()=>{if(!id||!interpretacion)return;
-    if(!confirm('¿Has comprobado la distribución y todas las cotas? El render debe respetar este diseño.'))return;
-    const validada={...interpretacion,estado:'validada',confirmadaPor:'',confirmadaEn:new Date().toISOString()};
-    estado('La confirmación requiere identificación del usuario; esta acción se habilitará al completar la validación en servidor.');
   });
   void cargar();
 </script>}
