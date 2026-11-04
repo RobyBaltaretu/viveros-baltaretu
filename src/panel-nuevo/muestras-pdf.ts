@@ -29,8 +29,10 @@ export function detectarPosicionesMuestras(items:TokenPDF[]):PosicionMuestra[] {
     if(ordenado.length<3)continue;
     const columnas=ordenado.filter((t,i)=>i===0||t.x-ordenado[i-1].x>42);
     if(columnas.length<3)continue;
-    const conNombre=columnas.filter(c=>tokens.some(n=>n.y<c.y-4&&n.y>c.y-23&&
-      Math.abs((n.x+n.w/2)-(c.x+c.w/2))<45&&/[\p{L}]{3,}/u.test(n.s)));
+    const conNombre=columnas.filter(c=>tokens.some(n=>/[\p{L}]{3,}/u.test(n.s)&&(
+      (n.y<c.y-4&&n.y>c.y-23&&Math.abs((n.x+n.w/2)-(c.x+c.w/2))<55)||
+      (Math.abs(n.y-c.y)<3&&n.x>c.x+c.w&&n.x<c.x+75)
+    )));
     if(conNombre.length<3)continue;
     for(const t of conNombre){
       const codigo=normalizarCodigoMuestra(t.s);
