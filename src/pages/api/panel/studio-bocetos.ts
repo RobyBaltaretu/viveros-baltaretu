@@ -75,6 +75,12 @@ export const PATCH: APIRoute = async ({locals,request}) => {
     if(b.modulos.some(m=>[m.ancho,m.alto,m.fondo].some(c=>c.precision==='aproximada'&&!c.confirmada)))return json(400,{ok:false,error:'Confirma las cotas aproximadas antes de validar'});
   }
   const errores=validarInterpretacion(b);if(errores.length)return json(400,{ok:false,errores});
+  const seleccionadas=b.modulos.flatMap(m=>m.piezas).filter(p=>p.catalogoVarianteId);
+  if(seleccionadas.length){
+    const variantes=await sesion.repos.catalogo.variantes?.()??[];
+    const activas=new Set(variantes.filter(v=>v.estado==='activo').map(v=>v.id));
+    if(seleccionadas.some(p=>!activas.has(p.catalogoVarianteId!)))return json(400,{ok:false,error:'Hay materiales descatalogados o inexistentes'});
+  }
   await asegurarEsquema(db());
   if(b.estado==='validada' && (b.fotoEspacioId.startsWith('pendiente-') || b.fotoBocetoId.startsWith('pendiente-')))return json(409,{ok:false,error:'Guarda las dos fotografías antes de validar'});
   const anterior=await db().prepare('SELECT revision,estado FROM studio_bocetos WHERE id=? AND cliente_id=?').bind(entrada.id,tenant()).first<{revision:number;estado:string}>();
