@@ -2,6 +2,7 @@ import { ErrorEspacioImagen } from '../data/tipos';
 import type { Gasto, Repositorios } from '../data/tipos.ts';
 import { avisosDe, gastoVacio, hoy } from '../gastos/gastos.ts';
 import { LIMITE_DIARIO_TICKETS, type LectorTickets } from '../gastos/lector.ts';
+import { limiteNeuronasCliente, NEURONAS_RESERVA_TICKET } from '../asistente/cuotas.ts';
 import { MAXIMO_FOTO, tipoDeImagen } from './fotos.ts';
 
 /**
@@ -29,6 +30,10 @@ export async function gastoDesdeTicket(repos: Repositorios, email: string, bytes
     // Mismo contador diario que el asistente, con su propia clave.
     const usos = await repos.usoAsistente.sumar(`tickets:${email}`, hoy());
     if (usos > LIMITE_DIARIO_TICKETS) leido = 'sin-cupo';
+    else if (!(await repos.usoAsistente.reservarCantidad(
+      '__neuronas__', new Date().toISOString().slice(0,10),
+      NEURONAS_RESERVA_TICKET, limiteNeuronasCliente(),
+    ))) leido = 'sin-cupo';
     else {
       const l = await lector.leer(bytes, tipo.tipo);
       leido = l ? 'si' : 'no';

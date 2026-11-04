@@ -28,8 +28,8 @@ export interface ModeloAsistente {
   avisoLimite?: string;
 }
 
-/** Cupo diario compartido del asistente (de las 10.000 neuronas gratuitas; el resto, para leer tickets). */
-export const LIMITE_NEURONAS_DIA = 7000;
+export { LIMITE_NEURONAS_DIA, LIMITE_NEURONAS_TURIA, limiteNeuronasCliente } from './cuotas.ts';
+import { limiteNeuronasCliente } from './cuotas.ts';
 /** Mensajes por persona y día. */
 export const LIMITE_MENSAJES_PERSONA = 80;
 /** Mensajes anteriores que ve el modelo. */
@@ -58,7 +58,8 @@ export async function usoDeHoy(repos: Contexto['repos'], email: string, ahora = 
   const manana = new Date(`${dia(ahora)}T00:00:00Z`);
   manana.setUTCDate(manana.getUTCDate() + 1);
   const renueva = manana.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
-  return { mensajes, limiteMensajes: LIMITE_MENSAJES_PERSONA, neuronas: Math.min(neuronas, LIMITE_NEURONAS_DIA), limiteNeuronas: LIMITE_NEURONAS_DIA, renueva };
+  const limite = limiteNeuronasCliente();
+  return { mensajes, limiteMensajes: LIMITE_MENSAJES_PERSONA, neuronas: Math.min(neuronas, limite), limiteNeuronas: limite, renueva };
 }
 
 /** Borra una conversación de la persona; las fotos que esperaban un «Sí» se borran también. */
@@ -215,11 +216,21 @@ export async function conversar(ctx: Contexto, texto: string, modelos: ModeloAsi
   let respuesta: Respuesta | null = null;
   const usadas = await repos.usoAsistente.obtener(CLAVE_NEURONAS, dia(ahora));
   const mios = await repos.usoAsistente.sumar(usuario.email, dia(ahora));
-  const conCupo = usadas < LIMITE_NEURONAS_DIA && mios <= LIMITE_MENSAJES_PERSONA;
+  const conCupo = mios <= LIMITE_MENSAJES_PERSONA;
+  const hayNeuronas = usadas < limiteNeuronasCliente();
 
   let avisoLimite: string | undefined;
   if (modelos.length && conCupo) {
     for (const m of modelos) {
+      // Los límites de Workers AI y Groq son distintos: agotar uno no debe
+      // desactivar el otro. Los modelos Workers se detienen en su cupo.
+      const esGroq = m.nombre.toLowerCase().startsWith('groq ');
+      if (m.neuronas.entrada > 0 && !hayNeuronas) continue;
+      if (esGroq && clienteActual().id==='turia') {
+        // Compartido con el importador en D1 Turia. Mientras no se importe,
+        // Gubia usa el total; en días de carga queda protegido el 70%.
+        if (!(await repos.usoAsistente.reservarGroq(dia(ahora),'asistente',1000))) continue;
+      }
       const propuestas: Propuesta[] = [];
       try {
         const herramientas = herramientasModelo(ctx, conversacion, propuestas, [...previos.slice(-3).map((x) => x.texto), mensaje].join(' '));
@@ -268,7 +279,7 @@ export async function conversar(ctx: Contexto, texto: string, modelos: ModeloAsi
       }
     }
   }
-  respuesta ??= await respaldoLocal(ctx, conversacion, mensaje, !modelos.length ? AVISO_SIN_MODELO : !conCupo ? AVISO_CUPO : (avisoLimite ?? AVISO_SIN_MODELO));
+  respuesta ??= await respaldoLocal(ctx, conversacion, mensaje, !modelos.length ? AVISO_SIN_MODELO : !conCupo || (!hayNeuronas && !avisoLimite) ? AVISO_CUPO : (avisoLimite ?? AVISO_SIN_MODELO));
   await repos.conversaciones.anadir({ conversacion, rol: 'asistente', texto: respuesta.texto, propuestas: respuesta.propuestas.map((p) => p.id) });
   return respuesta;
 }
