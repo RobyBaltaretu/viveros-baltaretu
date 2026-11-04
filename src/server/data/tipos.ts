@@ -170,6 +170,8 @@ export interface RepositorioPresupuestos {
 export interface RepositorioUsoAsistente {
   /** Reserva una llamada bajo un límite diario en una única operación atómica. */
   reservar(email: string, dia: string, limite: number): Promise<boolean>;
+  /** Reserva una cantidad estimada de neuronas sin superar el cupo de cliente. */
+  reservarCantidad(clave: string, dia: string, cantidad: number, limite: number): Promise<boolean>;
   /** Cuota compartida del modelo Groq en Turia: prioridad 70% tras empezar una importación. */
   reservarGroq(dia: string, canal: 'importador' | 'asistente', limiteDiario: number): Promise<boolean>;
   usoGroq(dia: string): Promise<{ importador: number; asistente: number }>;
