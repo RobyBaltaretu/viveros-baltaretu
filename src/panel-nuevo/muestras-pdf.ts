@@ -40,7 +40,7 @@ export function detectarPosicionesMuestras(items:TokenPDF[]):PosicionMuestra[] {
       const acabado=tokens.find(n=>Math.abs(n.y-c.y)<3&&
         n.x>c.x+c.w&&n.x<c.x+c.w+10&&/^[A-Z]{2,4}$/.test(n.s))?.s;
       return {codigo:normalizarCodigoMuestra(c.s),x:(minimo+maximo)/2,y:c.y,acabado};
-    }).filter((v):v is PosicionMuestra=>v!==null);
+    }).filter((v):v is {codigo:string;x:number;y:number;acabado:string|undefined}=>v!==null);
     if(etiquetas.length<3)continue;
     for(const t of etiquetas){
       if(resultado.some(p=>p.codigo===t.codigo&&p.acabado===t.acabado))continue;
