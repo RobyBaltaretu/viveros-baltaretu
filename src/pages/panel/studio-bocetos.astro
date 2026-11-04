@@ -93,7 +93,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
     $('editor-boceto').hidden=false;$('identificador-boceto').textContent='Borrador '+id;
     const ancho=interpretacion.modulos?.[0]?.ancho;
     ($('ancho-boceto') as HTMLInputElement).value=ancho?.valorMm?String(ancho.valorMm):'';
-    mostrar();}
+    mostrar();await cargarGeneraciones();}
 
   const estado=(s:string)=>{$('estado-boceto').textContent=s;};
   const desconocida=()=>({valorMm:null,precision:'desconocida',origen:'usuario',confirmada:false});
@@ -156,7 +156,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
       const validada={...interpretacion,estado:'validada'};
       const r=await fetch('/api/panel/studio-bocetos',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,revision,interpretacion:validada})});
       const j=await r.json();if(!r.ok)throw Error(j.error||JSON.stringify(j.errores));
-      revision=j.revision;interpretacion=validada;estado('Distribución confirmada. Las medidas desconocidas siguen pendientes de medir.');void cargar();
+      revision=j.revision;interpretacion={...validada,confirmadaPor:'usuario',confirmadaEn:new Date().toISOString()};mostrar();estado('Distribución confirmada. Las medidas desconocidas siguen pendientes de medir.');void cargar();
     }catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
   });
   async function cargarGeneraciones(){
