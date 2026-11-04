@@ -5,7 +5,8 @@ import { sesionCon } from '../../../server/panel/pagina.ts';
 import { asegurarEsquema } from '../../../server/data/d1/migraciones.ts';
 import type { BaseD1 } from '../../../server/data/d1/base.ts';
 import { tipoDeImagen } from '../../../server/panel/fotos.ts';
-import { claveGemini } from '../../../server/simulador/cuota.ts';
+import { claveGemini, mesDe, limitePresupuestado } from '../../../server/simulador/cuota.ts';
+import { iaDe } from '../../../plataforma/configuracion.ts';
 import { interpretarBoceto } from '../../../server/simulador/interpretar-boceto.ts';
 export const prerender=false;
 type Bucket={get(key:string):Promise<{arrayBuffer():Promise<ArrayBuffer>}|null>};
@@ -17,6 +18,7 @@ export const POST:APIRoute=async({locals,request})=>{
   const s=sesionCon(locals,'editar');if(!s)return json(403,{ok:false});
   const key=claveGemini(e as unknown as Record<string,unknown>);
   if(!key||!e.IMAGENES_PRIVADAS)return json(503,{ok:false,error:'Falta configurar Gemini o R2 privado'});
+  if(Number(request.headers.get('content-length')||0)>2000)return json(413,{ok:false});
   let id='';try{id=String((await request.json() as {id?:string}).id||'');}catch{return json(400,{ok:false});}
   if(!/^studio_[a-z0-9-]{36}$/.test(id))return json(400,{ok:false});
   await asegurarEsquema(e.DB);
@@ -34,7 +36,10 @@ export const POST:APIRoute=async({locals,request})=>{
     return {mime:tipo.tipo,base64:base64(bytes)};
   };
   let espacio,dibujo;try{[espacio,dibujo]=await Promise.all([leer(actual.fotoEspacioId),leer(actual.fotoBocetoId)]);}catch{return json(409,{ok:false,error:'Guarda primero las dos fotografías'});}
+  const mes=mesDe(),limite=limitePresupuestado(iaDe(clienteActual()).simulacionesMes);
+  if(!(await s.repos.usoSimulador.reservar('turia',mes,limite)))return json(403,{ok:false,error:'Cuota mensual de IA agotada'});
   const resultado=await interpretarBoceto(espacio,dibujo,{espacio:actual.fotoEspacioId,dibujo:actual.fotoBocetoId},key,'gemini-2.5-flash');
+  if(!resultado.ok && [400,403,429].includes(resultado.estado||0))await s.repos.usoSimulador.devolver('turia',mes);
   if(!resultado.ok)return json(resultado.estado===429?429:502,{ok:false,error:resultado.error});
   const revision=f.revision+1,fecha=new Date().toISOString(),texto=JSON.stringify(resultado.interpretacion);
   const cambio=await e.DB.prepare('UPDATE studio_bocetos SET interpretacion=?,estado=?,revision=?,actualizado=?,actualizado_por=? WHERE id=? AND cliente_id=? AND revision=?')
