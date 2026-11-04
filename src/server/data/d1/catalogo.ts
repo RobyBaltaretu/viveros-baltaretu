@@ -75,8 +75,8 @@ export function crearRepositorioCatalogo(db: BaseD1, imagenes: Imagenes): Pick<R
         try {
           if (muestra) {
             await imagenes.escribir([muestra], ([puntero]) => [insercion, db.prepare(
-              'INSERT INTO fotos (ruta,tipo,bytes,tamano,subida,subida_por) VALUES (?, ?, ?, ?, ?, ?)'
-            ).bind(muestra.ruta, 'image/webp', puntero, muestra.bytes.length, t, email)]);
+              'INSERT INTO adjuntos (id,ambito,ref,tipo,bytes,tamano,creado,creado_por) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+            ).bind(muestra.ruta, 'catalogo', a.id, 'image/webp', puntero, muestra.bytes.length, t, email)]);
           } else await insercion.run();
           return true;
         } catch (e) {

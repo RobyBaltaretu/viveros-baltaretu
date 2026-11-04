@@ -1,6 +1,6 @@
 import {describe,it,expect,vi} from 'vitest';
 import {
-  validarPaginas,interpretarTextoConGroq,interpretarMuestraConGroq,GROQ_TEXTO_MODELO,GROQ_VISION_MODELO,
+  validarPaginas,interpretarTextoConGroq,interpretarMuestraConGroq,duracionGroqMs,GROQ_TEXTO_MODELO,GROQ_VISION_MODELO,
 } from '../../src/server/catalogo/interpretacion-groq.ts';
 import {ErrorImportacion} from '../../src/server/catalogo/importacion-proveedor.ts';
 
@@ -14,6 +14,13 @@ const OK=(articulos:unknown[])=>new Response(JSON.stringify({
 }),{status:200,headers:{'Content-Type':'application/json'}});
 
 describe('Gubia Groq Free: importación local',()=>{
+  it('interpreta las duraciones que Groq envía en las cabeceras',()=>{
+    expect(duracionGroqMs('7.66s')).toBe(7660);
+    expect(duracionGroqMs('2')).toBe(2000);
+    expect(duracionGroqMs('2m59.56s')).toBe(179560);
+    expect(duracionGroqMs('120ms')).toBe(120);
+    expect(duracionGroqMs(null)).toBe(0);
+  });
   it('solo acepta grupos pequeños de páginas y limita texto; nunca acepta el PDF',()=>{
     expect(validarPaginas([{pagina:1,texto:'Roble'}])).toHaveLength(1);
     expect(()=>validarPaginas([{pagina:1,texto:'a'},{pagina:1,texto:'b'}])).toThrow(ErrorImportacion);
@@ -31,6 +38,7 @@ describe('Gubia Groq Free: importación local',()=>{
     const res=await interpretarTextoConGroq('ONESTA',[{pagina:2,texto:'Melamina roble DEC-001 19 mm'}],{apiKey:'test',fetch:fake as typeof fetch});
     expect(res.articulos).toHaveLength(2);
     expect(res.paginasProcesadas).toEqual([2]);
+    expect(res.limites.esperarMs).toBe(0);
     expect(fake).toHaveBeenCalledOnce();
   });
   it('manda solo un JPEG a Qwen Vision, sin reutilizar Gemini',async()=>{
@@ -46,9 +54,37 @@ describe('Gubia Groq Free: importación local',()=>{
     expect(res).toHaveLength(1);
     await expect(interpretarMuestraConGroq('ONESTA','data:application/pdf;base64,Zg==',2,'',{apiKey:'test',fetch:fake as typeof fetch})).rejects.toBeInstanceOf(ErrorImportacion);
   });
-  it('si Groq Free llega a 429 no cambia de proveedor',async()=>{
+  it('aplica timeout a cada lote y clasifica una expiración como error recuperable',async()=>{
+    const fake=vi.fn(async (_url:string,opts?:RequestInit)=>{
+      expect(opts?.signal).toBeInstanceOf(AbortSignal);
+      expect(opts?.signal?.aborted).toBe(false);
+      throw new DOMException('El proveedor no responde','TimeoutError');
+    });
+    await expect(interpretarTextoConGroq('ONESTA',[{pagina:1,texto:'Referencia 100'}],{
+      apiKey:'test',fetch:fake as typeof fetch,
+    })).rejects.toMatchObject({estado:504});
+    expect(fake).toHaveBeenCalledOnce();
+  });
+  it('si Groq Free llega a 429 sin Retry-After no repite ni cambia de proveedor',async()=>{
+    const fake=vi.fn(async()=>new Response('quota',{status:429}));
     await expect(interpretarTextoConGroq('ONESTA',[{pagina:1,texto:'x'}],{
-      apiKey:'test',fetch:vi.fn(async()=>new Response('quota',{status:429})) as typeof fetch,
+      apiKey:'test',fetch:fake as typeof fetch,
     })).rejects.toThrow(/Groq Free/);
+    expect(fake).toHaveBeenCalledOnce();
+  });
+  it('respeta Retry-After y recupera un límite temporal',async()=>{
+    const fake=vi.fn()
+      .mockResolvedValueOnce(new Response('rate',{status:429,headers:{'retry-after':'0.01s'}}))
+      .mockResolvedValueOnce(OK([candidato]));
+    const res=await interpretarTextoConGroq('ONESTA',[{pagina:2,texto:'DEC-001'}],{apiKey:'test',fetch:fake as typeof fetch});
+    expect(res.articulos).toHaveLength(1);
+    expect(fake).toHaveBeenCalledTimes(2);
+  });
+  it('recomienda esperar antes del lote siguiente cuando quedan pocos tokens',async()=>{
+    const fake=vi.fn(async()=>new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({articulos:[candidato]})}}]}),{
+      status:200,headers:{'Content-Type':'application/json','x-ratelimit-remaining-tokens':'1200','x-ratelimit-reset-tokens':'1.5s'},
+    }));
+    const res=await interpretarTextoConGroq('ONESTA',[{pagina:2,texto:'DEC-001'}],{apiKey:'test',fetch:fake as typeof fetch});
+    expect(res.limites.esperarMs).toBe(1750);
   });
 });
