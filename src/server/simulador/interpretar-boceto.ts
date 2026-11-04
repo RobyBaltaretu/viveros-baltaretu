@@ -16,10 +16,12 @@ export function normalizarInterpretacion(raw:unknown,espacio:string,dibujo:strin
     const x=m&&typeof m==='object'?m as Record<string,unknown>:{};
     const tipos=['armario','cajonera','balda','hueco-electrodomestico','encimera','panel','otro'] as const;
     const tipo=tipos.find(t=>t===x.tipo)||'otro';
-    const piezas=Array.isArray(x.piezas)?x.piezas.slice(0,60).map((p,j)=>({
-      id:'pieza-'+i+'-'+j,tipo:'otra' as const,catalogoVarianteId:null,acabadoId:null,
-      notas:typeof p==='string'?p.slice(0,100):''
-    })):[];
+    const tiposPieza=['puerta','costado','interior','balda','cajon','encimera','canto','trasera','otra'] as const;
+    const piezas=Array.isArray(x.piezas)?x.piezas.slice(0,60).map((p,j)=>{
+      const raw=typeof p==='string'?p:(p&&typeof p==='object'?(p as Record<string,unknown>).tipo:'');
+      const tipo=tiposPieza.find(t=>t===raw)||'otra';
+      return {id:'pieza-'+i+'-'+j,tipo,catalogoVarianteId:null,acabadoId:null};
+    }):[];
     return {id:'modulo-'+i,tipo,orden:i,ancho:cota(x.ancho),alto:cota(x.alto),fondo:cota(x.fondo),piezas,
       notas:typeof x.notas==='string'?x.notas.slice(0,500):''};
   });
