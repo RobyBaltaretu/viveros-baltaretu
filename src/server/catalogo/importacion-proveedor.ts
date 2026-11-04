@@ -28,7 +28,12 @@ export const candidatoProveedor = z.object({
 export type CandidatoProveedor = z.infer<typeof candidatoProveedor>;
 
 export class ErrorImportacion extends Error {
-  constructor(mensaje: string, public readonly estado = 400) { super(mensaje); }
+  constructor(
+    mensaje: string,
+    public readonly estado = 400,
+    /** Espera indicada por el proveedor externo antes de repetir la operación. */
+    public readonly reintentarEnMs = 0,
+  ) { super(mensaje); }
 }
 
 const nombreSeguro = (s: string) => s.trim().replace(/[^\p{L}\p{N}._\- ]/gu, '').slice(0, 90);

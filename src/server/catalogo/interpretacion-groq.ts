@@ -9,6 +9,16 @@ export const GROQ_VISION_MODELO = 'qwen/qwen3.8-27b';
 export const MAX_TEXTO_GROQ = 10_000;
 export const MAX_IMAGEN_GROQ = 800_000;
 export const MAX_PAGINAS_LOTE = 3;
+/** Máximo por bloque para que la API no quede pendiente indefinidamente. */
+export const GROQ_TIMEOUT_MS = 25_000;
+const REINTENTOS_LIMITE = 2;
+const ESPERA_MAXIMA_REINTENTO_MS = 25_000;
+
+export type LimitesGroq = {
+  esperarMs: number;
+  tokensRestantes: number | null;
+  solicitudesRestantes: number | null;
+};
 
 export const paginaExtraida = z.object({
   pagina: z.number().int().min(1).max(MAX_PAGINAS_PDF),
@@ -61,19 +71,65 @@ function normalizarGroq(body: unknown, paginas: number[]): CandidatoProveedor[] 
     .filter(a=>paginas.includes(a.pagina));
 }
 
+const numeroCabecera = (valor: string | null): number | null => {
+  if (valor === null || valor.trim() === '') return null;
+  const n = Number(valor);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+};
+
+/** Convierte valores de Groq como `7.66s`, `2m59.56s` o `120ms` a milisegundos. */
+export function duracionGroqMs(valor: string | null): number {
+  if (!valor) return 0;
+  // `Retry-After` usa segundos sin unidad; las cabeceras `reset` de Groq
+  // emplean duraciones como `7.66s` o `2m59.56s`.
+  if (/^\d+(?:\.\d+)?$/.test(valor.trim())) return Math.ceil(Number(valor)*1000);
+  let total = 0;
+  const patron = /(\d+(?:\.\d+)?)\s*(ms|s|m|h)/gi;
+  for (const parte of valor.matchAll(patron)) {
+    const n = Number(parte[1]);
+    total += n * ({ms:1,s:1000,m:60_000,h:3_600_000}[parte[2].toLowerCase() as 'ms'|'s'|'m'|'h']);
+  }
+  return Math.max(0,Math.ceil(total));
+}
+
+function limitesDe(res: Response): LimitesGroq {
+  const tokensRestantes=numeroCabecera(res.headers.get('x-ratelimit-remaining-tokens'));
+  const solicitudesRestantes=numeroCabecera(res.headers.get('x-ratelimit-remaining-requests'));
+  // Un lote nuevo suele necesitar varios miles de tokens. Si quedan menos de
+  // 3.000, esperar al reinicio evita provocar el siguiente 429.
+  const esperarMs=tokensRestantes!==null && tokensRestantes<3_000
+    ? Math.min(ESPERA_MAXIMA_REINTENTO_MS,duracionGroqMs(res.headers.get('x-ratelimit-reset-tokens'))+250)
+    : 0;
+  return {esperarMs,tokensRestantes,solicitudesRestantes};
+}
+
+const esperar = (ms: number) => new Promise<void>(resolve=>setTimeout(resolve,ms));
+
 async function solicitarGroq(
   body: Record<string, unknown>, apiKey: string, pedir: typeof fetch,
-): Promise<unknown> {
-  let res: Response;
-  try {
-    res = await pedir('https://api.groq.com/openai/v1/chat/completions',{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+apiKey,'Content-Type':'application/json'},
-      body:JSON.stringify(body),
-    });
-  } catch {
-    throw new ErrorImportacion('No se puede conectar con Groq. Conserva tus fichas y reintenta este bloque.',502);
+): Promise<{body:unknown;limites:LimitesGroq}> {
+  let res: Response | null = null;
+  for(let intento=0;intento<=REINTENTOS_LIMITE;intento++){
+    try {
+      res = await pedir('https://api.groq.com/openai/v1/chat/completions',{
+        method:'POST',
+        signal:AbortSignal.timeout(GROQ_TIMEOUT_MS),
+        headers:{'Authorization':'Bearer '+apiKey,'Content-Type':'application/json'},
+        body:JSON.stringify(body),
+      });
+    } catch (error) {
+      if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError'))
+        throw new ErrorImportacion('Groq ha tardado demasiado en responder. Conserva las fichas y reintenta solo este bloque.', 504);
+      throw new ErrorImportacion('No se puede conectar con Groq. Conserva tus fichas y reintenta este bloque.',502);
+    }
+    if(res.status!==429)break;
+    const indicada=duracionGroqMs(res.headers.get('retry-after'));
+    // Sin una espera breve y explícita puede tratarse del cupo diario. No
+    // bloquear el Worker hasta el día siguiente ni repetir inútilmente.
+    if(intento===REINTENTOS_LIMITE || indicada<=0 || indicada>ESPERA_MAXIMA_REINTENTO_MS)break;
+    await esperar(indicada+150+Math.floor(Math.random()*200));
   }
+  if(!res)throw new ErrorImportacion('Groq no ha respondido.',502);
   if (!res.ok) {
     const mensajes: Record<number,string> = {
       400:'Groq ha rechazado este bloque; prueba con menos texto o una imagen más pequeña.',
@@ -84,16 +140,17 @@ async function solicitarGroq(
       429:'Groq Free ha alcanzado su límite de solicitudes o tokens. Conserva el progreso y reintenta más tarde.',
       503:'Groq está temporalmente saturado. Reintenta el bloque.',
     };
-    throw new ErrorImportacion(mensajes[res.status]??('Groq no ha podido interpretar este bloque (HTTP '+res.status+').'),res.status===429?429:502);
+    const reintentarEnMs=res.status===429?duracionGroqMs(res.headers.get('retry-after')):0;
+    throw new ErrorImportacion(mensajes[res.status]??('Groq no ha podido interpretar este bloque (HTTP '+res.status+').'),res.status===429?429:502,reintentarEnMs);
   }
-  return res.json().catch(()=>null);
+  return {body:await res.json().catch(()=>null),limites:limitesDe(res)};
 }
 
 export async function interpretarTextoConGroq(
   proveedor: string,
   paginasDesconocidas: unknown,
   opciones: {apiKey:string; fetch?:typeof fetch},
-): Promise<{articulos:CandidatoProveedor[]; paginasProcesadas:number[]}> {
+): Promise<{articulos:CandidatoProveedor[]; paginasProcesadas:number[]; limites:LimitesGroq}> {
   const paginas=validarPaginas(paginasDesconocidas);
   if (!proveedor.trim() || proveedor.length>80) throw new ErrorImportacion('Indica un proveedor válido.');
   const datos=paginas.map(p=>({pagina:p.pagina,texto:p.texto})); // nunca llega el PDF al servidor
@@ -108,7 +165,7 @@ export async function interpretarTextoConGroq(
     max_completion_tokens:3500,
     temperature:0.1,
   },opciones.apiKey,opciones.fetch??fetch);
-  return {articulos:normalizarGroq(response,paginas.map(p=>p.pagina)),paginasProcesadas:paginas.map(p=>p.pagina)};
+  return {articulos:normalizarGroq(response.body,paginas.map(p=>p.pagina)),paginasProcesadas:paginas.map(p=>p.pagina),limites:response.limites};
 }
 
 export async function interpretarMuestraConGroq(
@@ -135,5 +192,5 @@ export async function interpretarMuestraConGroq(
     reasoning_effort:'none',
     max_completion_tokens:3200,
   },opciones.apiKey,opciones.fetch??fetch);
-  return normalizarGroq(response,[numero]);
+  return normalizarGroq(response.body,[numero]);
 }
