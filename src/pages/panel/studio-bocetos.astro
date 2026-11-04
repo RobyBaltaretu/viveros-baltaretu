@@ -25,7 +25,11 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
         <label class="block">Anchura total (mm, opcional) <input id="ancho-boceto" type="number" min="1" max="100000" class="block w-full rounded border p-2" placeholder="Ej. 2330"/></label>
         <label class="block">Precisión de la medida <select id="precision-boceto" class="block w-full rounded border p-2"><option value="aproximada">Aproximada</option><option value="exacta">Exacta</option></select></label>
         <button id="guardar-boceto" type="button" class="rounded bg-neutral-900 px-4 py-2 text-white">Guardar interpretación manual</button>
-        <button id="interpretar-boceto" type="button" class="rounded border px-4 py-2">Interpretar dibujo con IA</button>\n\n        <section id="resultado-boceto" class="space-y-2" aria-label="Interpretación del dibujo"></section>\n        <button id="confirmar-boceto" type="button" class="rounded border px-4 py-2">Confirmar boceto revisado</button>\n        <p class="text-xs">Comprueba módulos y cotas antes de validar. El render de IA todavía no está habilitado en este flujo.</p>
+        <button id="interpretar-boceto" type="button" class="rounded border px-4 py-2">Interpretar dibujo con IA</button>
+
+        <section id="resultado-boceto" class="space-y-2" aria-label="Interpretación del dibujo"></section>
+        <button id="confirmar-boceto" type="button" class="rounded border px-4 py-2">Confirmar boceto revisado</button>
+        <p class="text-xs">Comprueba módulos y cotas antes de validar. El render de IA todavía no está habilitado en este flujo.</p>
       </section>
       <p id="estado-boceto" role="status" aria-live="polite"></p>
       <section><h2 class="font-bold">Borradores recientes</h2><ul id="lista-bocetos" class="space-y-2"></ul></section>
@@ -37,6 +41,11 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
   let id='',revision=1;
   let espacio='',dibujo='';
   let interpretacion: any=null;
+  let materiales: Array<{id:string;nombre:string;referencia:string;acabado:string;colorHex:string|null}> = [];
+  async function cargarMateriales(){
+    const r=await fetch('/api/panel/studio-materiales');if(!r.ok)throw Error('No se ha podido cargar el catálogo');
+    const j=await r.json();materiales=j.variantes||[];
+  }
   function mostrar(){
     const zona=$('resultado-boceto');zona.replaceChildren();if(!interpretacion)return;
     const titulo=document.createElement('h3');titulo.textContent='Distribución: '+interpretacion.modulos.length+' módulos';zona.append(titulo);
@@ -57,9 +66,13 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
       for(const pieza of m.piezas){
         const etiqueta=document.createElement('label');etiqueta.className='block text-sm';
         etiqueta.textContent='Acabado de '+pieza.tipo+' ('+pieza.id+')';
-        const input=document.createElement('input');input.className='block w-full rounded border p-2';input.placeholder='Referencia de acabado (pendiente de validar con catálogo)';
-        input.value=pieza.acabadoId||'';input.addEventListener('change',()=>{pieza.acabadoId=input.value.trim()||null;});
-        etiqueta.append(input);seccion.append(etiqueta);
+        const select=document.createElement('select');select.className='block w-full rounded border p-2';
+        const vacia=document.createElement('option');vacia.value='';vacia.textContent='Sin asignar';select.append(vacia);
+        for(const mat of materiales){const option=document.createElement('option');option.value=mat.id;
+          option.textContent=[mat.nombre,mat.referencia,mat.acabado].filter(Boolean).join(' · ');select.append(option);}
+        select.value=pieza.catalogoVarianteId||'';
+        select.addEventListener('change',()=>{pieza.catalogoVarianteId=select.value||null;pieza.acabadoId=select.value||null;});
+        etiqueta.append(select);seccion.append(etiqueta);
       }
       zona.append(seccion);
     }
@@ -97,7 +110,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
     const r=await fetch('/api/panel/studio-bocetos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({titulo,interpretacion:modelo()})});
     const j=await r.json();if(!r.ok){estado(j.error||JSON.stringify(j.errores));return;}
     id=j.id;revision=j.revision;interpretacion=modelo();$('editor-boceto').hidden=false;$('identificador-boceto').textContent='Borrador '+id;
-    estado('Borrador creado. Sube ambas fotografías y guarda los cambios.');void cargar();
+    await cargarMateriales().catch(e=>estado(String(e)));mostrar();estado('Borrador creado. Sube ambas fotografías y guarda los cambios.');void cargar();
   });
   async function subir(inputId:string,clase:'espacio'|'boceto'){
     const input=$(inputId) as HTMLInputElement;const archivo=input.files?.[0];
@@ -137,5 +150,6 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
       revision=j.revision;interpretacion=validada;estado('Distribución confirmada. Las medidas desconocidas siguen pendientes de medir.');void cargar();
     }catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
   });
+  void cargarMateriales().catch(e=>estado(String(e)));
   void cargar();
 </script>}
