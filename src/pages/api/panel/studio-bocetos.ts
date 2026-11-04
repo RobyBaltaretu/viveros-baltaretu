@@ -69,8 +69,12 @@ export const PATCH: APIRoute = async ({locals,request}) => {
   try {entrada=await limitado.json();}catch{return json(400,{ok:false,error:'JSON inválido'});}
   if (!validoId(entrada.id) || !Number.isSafeInteger(entrada.revision) || Number(entrada.revision)<1)return json(400,{ok:false,error:'ID o revisión inválida'});
   const b=interpretar(entrada.interpretacion);if(!b)return json(400,{ok:false,error:'Boceto inválido'});
+  if(b.estado==='validada'){
+    b.confirmadaPor=sesion.usuario.email;
+    b.confirmadaEn=ahora();
+    if(b.modulos.some(m=>[m.ancho,m.alto,m.fondo].some(c=>c.precision==='aproximada'&&!c.confirmada)))return json(400,{ok:false,error:'Confirma las cotas aproximadas antes de validar'});
+  }
   const errores=validarInterpretacion(b);if(errores.length)return json(400,{ok:false,errores});
-  if(b.estado==='validada' && b.confirmadaPor!==sesion.usuario.email)return json(400,{ok:false,error:'La confirmación debe pertenecer al usuario autenticado'});
   await asegurarEsquema(db());
   const anterior=await db().prepare('SELECT revision FROM studio_bocetos WHERE id=? AND cliente_id=?').bind(entrada.id,tenant()).first<{revision:number}>();
   if(!anterior)return json(404,{ok:false});
