@@ -87,3 +87,84 @@ export function sugerirMaterialesLocales(paginas: Array<{pagina:number;texto:str
   return salida;
 }
 
+
+
+/**
+ * Extrae variantes REALES de matrices técnicas. Una columna es un espesor
+ * y una fila un formato; los números del cruce son Uds/paq (NO espesores).
+ * Se usan las coordenadas PDF.js para conservar las celdas vacías de la tabla.
+ * En una celda vacía no se crea artículo.
+ */
+export function extraerVariantesTablero(items: Array<{str:string;transform:number[];width?:number}>, pagina:number): Array<Record<string,unknown>> {
+  type Celda = {x:number;y:number;texto:string;ancho:number};
+  const lineas = new Map<number,Celda[]>();
+  for (const item of items) {
+    const texto = item.str?.replace(/\s+/g,' ').trim();
+    if (!texto || !item.transform) continue;
+    const y = item.transform[5], x = item.transform[4];
+    const key = Math.round(y/3);
+    const linea = lineas.get(key) || [];
+    linea.push({x,y,texto,ancho:item.width || 0});
+    lineas.set(key,linea);
+  }
+  const filas = [...lineas.values()].map(c=>c.sort((a,b)=>a.x-b.x))
+    .sort((a,b)=>b[0].y-a[0].y);
+  const texto = (fila:Celda[]) => fila.map(c=>c.texto).join(' ').replace(/\s+/g,' ').trim();
+  const expresionFormato = /\b(\d{3,4})\s*[x×]\s*(\d{3,4})\b/i;
+  const titulos = /\b(?:CONTRACHAPADO|AGLOMERADO|MELAMINA|TABLERO|MDF|HDF|OSB|ALISTONADO|NOVOLAC|SUPERLAC|VIROC|TRICAPA|PANEL SANDWICH)\b/i;
+  const salida: Array<Record<string,unknown>> = [];
+  const vistos = new Set<string>();
+  for (let i=0;i<filas.length;i++) {
+    const header = filas[i], cabecera = texto(header);
+    if (!/\b(?:ESPESOR|GRUESO)\s*(?:\(?mm\)?)?/i.test(cabecera) || !/\bFORMATOS?\b/i.test(cabecera)) continue;
+    const titulo = filas.slice(Math.max(0,i-5),i).reverse()
+      .filter(f=>header[0].y-f[0].y < 0 || f[0].y-header[0].y < 105)
+      .map(texto).find(t=>titulos.test(t) && !/CATÁLOGO|CARACTERÍSTICAS|APLICACIONES|FORMATOS|ESPESOR/i.test(t));
+    if (!titulo) continue;
+    const marca = header.find(c=>/\b(?:ESPESOR|GRUESO)\b/i.test(c.texto));
+    if (!marca) continue;
+    const umbral = marca.x + Math.max(30,marca.ancho * .8);
+    const espesores = header.flatMap(c => {
+      if (c.x < umbral || !/^\d{1,3}(?:[,.]\d+)?$/.test(c.texto)) return [];
+      const valor = Number(c.texto.replace(',','.'));
+      return valor>0 && valor<=150 ? [{x:c.x+c.ancho/2,valor}] : [];
+    });
+    if (!espesores.length) continue;
+    const cod = titulo.match(/\b([A-Z]\d{3,5}|K\d{3,5}|\d{4}\s+(?=[A-Z]{2,4}\b))\b/);
+    const decor = cod?.[1]?.trim() || '';
+    const calidades = titulo.match(/\b(?:[ABCD+]{1,3}\/[ABCD+]{1,3}|C[123]|MA\/SC|PE\/SM)\b/g) || [];
+    const acabado = calidades.join(' ').slice(0,80);
+    const soporte = titulo.replace(/\b(?:[ABCD+]{1,3}\/[ABCD+]{1,3}|C[123]|MA\/SC|PE\/SM)\b/g,'')
+      .replace(/\b(?:[A-Z]\d{3,5}|K\d{3,5})\b/g,'').replace(/\s+/g,' ').trim().slice(0,100);
+    const nombreBase = titulo.replace(/\s+/g,' ').trim();
+    // Solo los renglones consecutivos de ESTA tabla, hasta otro título o cabecera.
+    for (let j=i+1;j<filas.length;j++) {
+      const fila = filas[j], linea = texto(fila);
+      if (header[0].y-fila[0].y > 95 || /\b(?:ESPESOR|GRUESO)\b.*\b\d{1,3}\b/i.test(linea)) break;
+      const formato = linea.match(expresionFormato);
+      if (!formato) {
+        if (j>i+1 && titulos.test(linea) && !/Uds\/paq/i.test(linea)) break;
+        continue;
+      }
+      const formatoNormal = formato[1]+' x '+formato[2]+' mm';
+      // Los valores solo se aceptan si quedan centrados bajo una cabecera.
+      const valores = fila.filter(c=>c.x>=umbral && /^(?:\d{1,3}|[xX])$/.test(c.texto));
+      for (const esp of espesores) {
+        const cell = valores.find(c=>Math.abs((c.x+c.ancho/2)-esp.x) <= 9);
+        if (!cell) continue;
+        const unidadesPaquete = /^\d+$/.test(cell.texto) ? Number(cell.texto) : null;
+        if (unidadesPaquete !== null && unidadesPaquete<=0) continue;
+        const nombre = (nombreBase+' '+formato[1]+'x'+formato[2]+' '+esp.valor+'mm').slice(0,120);
+        const clave = [nombreBase,formatoNormal,esp.valor].join('|');
+        if (vistos.has(clave)) continue;
+        vistos.add(clave);
+        salida.push({
+          categoria:'tableros',nombre,referencia:decor,codigoDecor:decor,acabado,soporte,
+          espesorMm:esp.valor,formato:formatoNormal,unidad:'m²',
+          colorHex:null,veta:null,brillo:null,pagina,unidadesPaquete,
+        });
+      }
+    }
+  }
+  return salida;
+}
