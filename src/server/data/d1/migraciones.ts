@@ -525,6 +525,10 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
     `ALTER TABLE studio_generaciones ADD COLUMN clave_idempotencia TEXT`,
     `CREATE UNIQUE INDEX studio_generaciones_clave ON studio_generaciones(cliente_id,boceto_id,clave_idempotencia)`,
   ] },
+  { version: 21, nombre: 'Studio: trazabilidad de revisiones derivadas', sql: [
+    `ALTER TABLE studio_bocetos ADD COLUMN origen_boceto_id TEXT`,
+    `CREATE INDEX studio_bocetos_origen ON studio_bocetos(cliente_id,origen_boceto_id)`,
+  ] },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;
