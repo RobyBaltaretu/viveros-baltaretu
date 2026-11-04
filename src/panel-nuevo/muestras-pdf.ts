@@ -29,15 +29,20 @@ export function detectarPosicionesMuestras(items:TokenPDF[]):PosicionMuestra[] {
     if(ordenado.length<3)continue;
     const columnas=ordenado.filter((t,i)=>i===0||t.x-ordenado[i-1].x>42);
     if(columnas.length<3)continue;
-    const conNombre=columnas.filter(c=>tokens.some(n=>/[\p{L}]{3,}/u.test(n.s)&&(
-      (n.y<c.y-4&&n.y>c.y-23&&Math.abs((n.x+n.w/2)-(c.x+c.w/2))<55)||
-      (Math.abs(n.y-c.y)<3&&n.x>c.x+c.w&&n.x<c.x+75)
-    )));
-    if(conNombre.length<3)continue;
-    for(const t of conNombre){
-      const codigo=normalizarCodigoMuestra(t.s);
-      if(resultado.some(p=>p.codigo===codigo))continue;
-      resultado.push({codigo,x:t.x+t.w/2,y:t.y});
+    const etiquetas=columnas.map(c=>{
+      const palabras=tokens.filter(n=>/[\p{L}]{3,}/u.test(n.s)&&(
+        (n.y<c.y-4&&n.y>c.y-23&&Math.abs((n.x+n.w/2)-(c.x+c.w/2))<55)||
+        (Math.abs(n.y-c.y)<3&&n.x>c.x+c.w&&n.x<c.x+75)
+      ));
+      if(!palabras.length)return null;
+      const minimo=Math.min(c.x,...palabras.map(n=>n.x));
+      const maximo=Math.max(c.x+c.w,...palabras.map(n=>n.x+n.w));
+      return {codigo:normalizarCodigoMuestra(c.s),x:(minimo+maximo)/2,y:c.y};
+    }).filter((v):v is PosicionMuestra=>v!==null);
+    if(etiquetas.length<3)continue;
+    for(const t of etiquetas){
+      if(resultado.some(p=>p.codigo===t.codigo))continue;
+      resultado.push(t);
     }
   }
   return resultado.slice(0,100);
@@ -51,9 +56,9 @@ export function construirMuestra(
   ctx:CanvasRenderingContext2D, punto:PosicionMuestra, escala:number,
   altoPagina:number, pagina:number,
 ):MuestraPDF|null {
-  const ancho=68,alto=25;
+  const ancho=68,alto=28;
   const sx=Math.round((punto.x-ancho/2)*escala);
-  const sy=Math.round((altoPagina-punto.y-37)*escala);
+  const sy=Math.round((altoPagina-punto.y-43)*escala);
   const sw=Math.round(ancho*escala),sh=Math.round(alto*escala);
   if(sx<0||sy<0||sx+sw>ctx.canvas.width||sy+sh>ctx.canvas.height)return null;
   const muestra=document.createElement('canvas');
