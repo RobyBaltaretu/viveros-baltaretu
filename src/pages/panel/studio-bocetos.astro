@@ -83,6 +83,27 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
         select.value=pieza.catalogoVarianteId||'';
         select.addEventListener('change',()=>{pieza.catalogoVarianteId=select.value||null;pieza.acabadoId=select.value||null;});
         etiqueta.append(select);seccion.append(etiqueta);
+        const tituloCorte=document.createElement('p');tituloCorte.className='mt-2 text-sm font-semibold';tituloCorte.textContent='Medidas de corte verificadas · '+pieza.tipo;seccion.append(tituloCorte);
+        for(const dimension of ['ancho','alto'] as const){
+          const etiquetaCorte=document.createElement('label');etiquetaCorte.className='block text-sm';
+          etiquetaCorte.textContent='Corte '+dimension+' (mm)';
+          const campo=document.createElement('input');campo.type='number';campo.min='1';campo.max='100000';campo.className='block w-full rounded border p-2';
+          campo.value=pieza.corte?.[dimension]?.valorMm==null?'':String(pieza.corte[dimension].valorMm);
+          campo.addEventListener('change',()=>{
+            const n=campo.value.trim()?Number(campo.value):null;
+            pieza.corte??={ancho:desconocida(),alto:desconocida(),cantidad:1};
+            pieza.corte[dimension]={valorMm:n,precision:n===null?'desconocida':'exacta',origen:'medicion',confirmada:n!==null};
+          });
+          etiquetaCorte.append(campo);seccion.append(etiquetaCorte);
+        }
+        const cantidadLabel=document.createElement('label');cantidadLabel.className='block text-sm';cantidadLabel.textContent='Cantidad de piezas';
+        const cantidadInput=document.createElement('input');cantidadInput.type='number';cantidadInput.min='1';cantidadInput.max='1000';cantidadInput.step='1';cantidadInput.className='block w-full rounded border p-2';
+        cantidadInput.value=String(pieza.corte?.cantidad??1);
+        cantidadInput.addEventListener('change',()=>{
+          pieza.corte??={ancho:desconocida(),alto:desconocida(),cantidad:1};
+          pieza.corte.cantidad=Number(cantidadInput.value);
+        });
+        cantidadLabel.append(cantidadInput);seccion.append(cantidadLabel);
       }
       zona.append(seccion);
     }
