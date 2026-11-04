@@ -28,7 +28,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
         <button id="interpretar-boceto" type="button" class="rounded border px-4 py-2">Interpretar dibujo con IA</button>
 
         <section id="resultado-boceto" class="space-y-2" aria-label="Interpretación del dibujo"></section>
-        <button id="confirmar-boceto" type="button" class="rounded border px-4 py-2">Confirmar boceto revisado</button>
+        <button id="confirmar-boceto" type="button" class="rounded border px-4 py-2">Confirmar boceto revisado</button>\n        <button id="generar-boceto" type="button" class="rounded bg-neutral-900 px-4 py-2 text-white">Generar imagen fotorrealista</button>\n        <section id="comparador-boceto" hidden class="space-y-2" aria-label="Comparación de antes y después">\n          <label class="block">Antes / después <input id="deslizador-boceto" type="range" min="0" max="100" value="50" class="w-full"/></label>\n          <div id="comparador-marco" class="relative overflow-hidden rounded-lg"><img id="imagen-antes" alt="Espacio original" class="block w-full"/><div id="recorte-despues" class="absolute inset-0 overflow-hidden" style="clip-path:inset(0 50% 0 0)"><img id="imagen-despues" alt="Resultado fotorrealista" class="block h-full w-full object-cover"/></div></div>\n        </section>
         <p class="text-xs">Comprueba módulos y cotas antes de validar. El render de IA todavía no está habilitado en este flujo.</p>
       </section>
       <p id="estado-boceto" role="status" aria-live="polite"></p>
@@ -152,6 +152,30 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
       const r=await fetch('/api/panel/studio-bocetos',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,revision,interpretacion:validada})});
       const j=await r.json();if(!r.ok)throw Error(j.error||JSON.stringify(j.errores));
       revision=j.revision;interpretacion=validada;estado('Distribución confirmada. Las medidas desconocidas siguen pendientes de medir.');void cargar();
+    }catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
+  });
+  async function cargarGeneraciones(){
+    if(!id)return;
+    const r=await fetch('/api/panel/studio-generar?id='+encodeURIComponent(id));
+    if(!r.ok)return;
+    const j=await r.json();
+    const ultima=(j.generaciones||[]).find((g:any)=>g.estado==='completada'&&g.resultado_archivo_id);
+    if(!ultima)return;
+    const marco=$('comparador-boceto');marco.hidden=false;
+    ($('imagen-antes') as HTMLImageElement).src='/api/panel/studio-archivos?id='+encodeURIComponent(espacio);
+    ($('imagen-despues') as HTMLImageElement).src='/api/panel/studio-archivos?id='+encodeURIComponent(ultima.resultado_archivo_id);
+  }
+  $('deslizador-boceto')?.addEventListener('input',()=>{
+    const v=Number(($('deslizador-boceto') as HTMLInputElement).value);
+    ($('recorte-despues') as HTMLElement).style.clipPath='inset(0 '+(100-v)+'% 0 0)';
+  });
+  $('generar-boceto')?.addEventListener('click',async()=>{
+    if(!id||!interpretacion||interpretacion.estado!=='validada'){estado('Valida primero el boceto y los materiales.');return;}
+    const boton=$('generar-boceto') as HTMLButtonElement;boton.disabled=true;estado('Generando imagen…');
+    try{
+      const r=await fetch('/api/panel/studio-generar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+      const j=await r.json();if(!r.ok)throw Error(j.error||'Error al generar');
+      await cargarGeneraciones();estado('Imagen guardada en R2 privado.');
     }catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
   });
   void cargarMateriales().catch(e=>estado(String(e)));
