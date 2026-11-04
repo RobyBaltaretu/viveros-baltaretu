@@ -8,8 +8,8 @@ import { importarCandidatos, ErrorImportacion } from '../../../server/catalogo/i
 import { interpretarTextoConGroq, interpretarMuestraConGroq } from '../../../server/catalogo/interpretacion-groq.ts';
 
 export const prerender = false;
-const json = (estado: number, cuerpo: unknown) => new Response(JSON.stringify(cuerpo),{
-  status:estado,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'},
+const json = (estado: number, cuerpo: unknown, extras: Record<string,string> = {}) => new Response(JSON.stringify(cuerpo),{
+  status:estado,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff',...extras},
 });
 
 // Los límites por usuario protegen la cuota Free compartida con el chat Gubia.
@@ -47,10 +47,10 @@ export const POST: APIRoute = async ({locals,request}) => {
     const fecha=dia(),tipo=accion==='vision'?'vision':'texto';
     const cuenta=s.usuario.email+':gubia-local-'+tipo;
     const limite=accion==='vision'?MAX_VISION_DIA:MAX_LOTES_DIA;
-    if(await s.repos.usoAsistente.obtener(cuenta,fecha)>=limite)
+    // La suma atómica evita que dos pestañas superen el límite mediante una
+    // carrera entre `obtener` y `sumar`.
+    if(await s.repos.usoAsistente.sumar(cuenta,fecha)>limite)
       return json(429,{ok:false,error:'Has alcanzado el límite diario de Gubia Importador. Conserva tu revisión y continúa otro día.'});
-    // Se contabiliza antes de la solicitud, incluso cuando la API externa falla.
-    await s.repos.usoAsistente.sumar(cuenta,fecha);
     const proveedor=dato(input.proveedor);
     if(accion==='vision'){
       const articulos=await interpretarMuestraConGroq(proveedor,input.imagen,input.pagina,input.texto,{apiKey:clave});
@@ -60,7 +60,8 @@ export const POST: APIRoute = async ({locals,request}) => {
     return json(200,{ok:true,...resultado});
   }catch(e){
     if(e instanceof ErrorEspacioImagen)return json(507,{ok:false,error:e.message});
-    if(e instanceof ErrorImportacion)return json(e.estado,{ok:false,error:e.message});
+    if(e instanceof ErrorImportacion)return json(e.estado,{ok:false,error:e.message,reintentarEnMs:e.reintentarEnMs},
+      e.reintentarEnMs?{'Retry-After':String(Math.max(1,Math.ceil(e.reintentarEnMs/1000)))}:{});
     console.error('[Gubia Local] Error de análisis o confirmación',e instanceof Error?e.name:'desconocido');
     return json(500,{ok:false,error:'No se ha completado la operación. Conserva los materiales revisados y reintenta.'});
   }

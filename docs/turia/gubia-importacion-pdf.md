@@ -6,11 +6,18 @@
 - Groq Free procesa solo texto de las páginas o una página en JPEG si el usuario lo solicita.
 - El plan Free no factura por llamadas dentro de sus cuotas, pero devuelve HTTP 429 cuando se agotan. No hay respaldo de pago.
 - Clave `GROQ_API_KEY` en Cloudflare Workers; no se envía al navegador. El chat Gubia utiliza la misma organización, pero el flujo de importación es puntual y serial.
+- Groq aplica los límites a toda la organización. En `openai/gpt-oss-120b`
+  el cuello de botella habitual es la cuota de tokens por minuto, compartida
+  con el chat, y no el número de peticiones.
+- Ante un 429 temporal el Worker respeta `Retry-After` y hace como máximo dos
+  reintentos breves. Tras una respuesta con pocos tokens disponibles, el
+  navegador espera al reinicio indicado por Groq antes del lote siguiente. Un
+  límite diario no se reintenta en bucle: se conserva el borrador local.
 
 ## Flujo implementado
 1. `/panel/catalogo/importar`: subir el PDF original, hasta **25 MB** y **160 páginas**, indicar proveedor.
 2. PDF.js lee y reconstruye las filas de texto y tablas en el dispositivo. Guarda el texto temporalmente en memoria.
-3. Groq `openai/gpt-oss-120b` interpreta grupos de hasta **3 páginas o 9.000 caracteres**, como máximo 30 grupos/día por usuario. Páginas sin texto se pueden consultar mediante la opción visual.
+3. Groq `openai/gpt-oss-120b` interpreta grupos de hasta **3 páginas o 9.000 caracteres**, en una cola secuencial y como máximo 30 grupos/día por usuario. Páginas sin texto se pueden consultar mediante la opción visual.
 4. Para páginas escaneadas, tablas de color o dudas de relación, el usuario pulsa **Ver página** y **Analizar imagen con Groq**. PDF.js la renderiza localmente como JPEG; `qwen/qwen3.8-27b` la interpreta con un máximo de **8 peticiones/día por usuario**.
 5. El resultado se valida con Zod, se deduplica, se muestra editable y queda en `sessionStorage` de la pestaña. El usuario puede **seleccionar un artículo y tocar su textura en la página renderizada**, creando un pequeño recorte WebP sin llamada adicional de IA. No se guardan materiales sin confirmación humana.
 6. Solo al pulsar **Crear artículos seleccionados** se importan candidatos al catálogo existente de Turia en lotes de 20 (4 si hay muestras), con inserción idempotente y `coste=0`, `precioFijo=null`, con revisión paginada en grupos de 20. Las muestras recortadas válidas (WebP, hasta 24 KB por material) se guardan en el almacén privado de Turia, accesibles solo con la sesión del panel.
