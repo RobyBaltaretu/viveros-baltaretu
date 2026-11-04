@@ -17,7 +17,14 @@ export const normalizarCodigoMuestra=(s:string):string=>{
 export function detectarPosicionesMuestras(items:TokenPDF[]):PosicionMuestra[] {
   const tokens=items.filter(t=>t.str?.trim() && Array.isArray(t.transform))
     .map(t=>({s:t.str.trim(),x:t.transform[4],y:t.transform[5],w:t.width||0}));
-  const candidatos=tokens.filter(t=>codigoValido.test(t.s)&&t.x>=45&&t.x<=550&&t.y>60);
+  const candidatos=tokens.flatMap(t=>{
+    if(t.x<45||t.x>550||t.y<=60)return [];
+    if(codigoValido.test(t.s))return [{...t,codigo:normalizarCodigoMuestra(t.s),acabado:undefined as string|undefined,enToken:false}];
+    // Algunos proveedores incluyen código, acabado y nombre en un solo
+    // text-run de PDF.js: «B3002 MA Special White».
+    const completo=t.s.match(/^((?:[A-Z]\\d{3,5}|\\d{3,4}))\\s+(?:([A-Z]{2,4})\\s+)?([\\p{L}].{2,})$/u);
+    return completo?[{...t,codigo:normalizarCodigoMuestra(completo[1]),acabado:completo[2] as string|undefined,enToken:true}]:[];
+  });
   const grupos=new Map<number,typeof candidatos>();
   for(const t of candidatos){
     const k=Math.round(t.y/3);
@@ -34,12 +41,12 @@ export function detectarPosicionesMuestras(items:TokenPDF[]):PosicionMuestra[] {
         (n.y<c.y-4&&n.y>c.y-23&&Math.abs((n.x+n.w/2)-(c.x+c.w/2))<55)||
         (Math.abs(n.y-c.y)<3&&n.x>c.x+c.w&&n.x<c.x+75)
       ));
-      if(!palabras.length)return null;
+      if(!palabras.length&&!c.enToken)return null;
       const minimo=Math.min(c.x,...palabras.map(n=>n.x));
       const maximo=Math.max(c.x+c.w,...palabras.map(n=>n.x+n.w));
-      const acabado=tokens.find(n=>Math.abs(n.y-c.y)<3&&
+      const acabado=c.acabado || tokens.find(n=>Math.abs(n.y-c.y)<3&&
         n.x>c.x+c.w&&n.x<c.x+c.w+10&&/^[A-Z]{2,4}$/.test(n.s))?.s;
-      return {codigo:normalizarCodigoMuestra(c.s),x:(minimo+maximo)/2,y:c.y,acabado};
+      return {codigo:c.codigo,x:(minimo+maximo)/2,y:c.y,acabado};
     }).filter((v):v is {codigo:string;x:number;y:number;acabado:string|undefined}=>v!==null);
     if(etiquetas.length<3)continue;
     for(const t of etiquetas){
