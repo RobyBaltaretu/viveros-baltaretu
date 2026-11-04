@@ -104,10 +104,14 @@ export const PATCH: APIRoute = async ({locals,request}) => {
   if(anterior.revision!==entrada.revision)return json(409,{ok:false,error:'Otro cambio ha actualizado el boceto. Recarga antes de guardar.',revision:anterior.revision});
   const revision=anterior.revision+1,fecha=ahora(),texto=JSON.stringify(b);
   const titulo=typeof entrada.titulo==='string' && entrada.titulo.trim()?entrada.titulo.trim().slice(0,120):null;
-  const resultado=await db().prepare('UPDATE studio_bocetos SET interpretacion=?,estado=?,revision=?,titulo=COALESCE(?,titulo),actualizado=?,actualizado_por=? WHERE id=? AND cliente_id=? AND revision=?')
-    .bind(texto,b.estado==='validada'?'validada':'borrador',revision,titulo,fecha,sesion.usuario.email,entrada.id,tenant(),anterior.revision).run();
-  if(!resultado.meta?.changes)return json(409,{ok:false,error:'Conflicto de edición'});
-  await db().prepare('INSERT INTO studio_boceto_versiones(boceto_id,revision,interpretacion,creado,creado_por) VALUES (?,?,?,?,?)')
-    .bind(entrada.id,revision,texto,fecha,sesion.usuario.email).run();
+  // El historial y la actualización se confirman en un mismo lote transaccional.
+  // INSERT ... SELECT solo crea la versión si el UPDATE optimista tuvo éxito.
+  const resultados=await db().batch([
+    db().prepare('UPDATE studio_bocetos SET interpretacion=?,estado=?,revision=?,titulo=COALESCE(?,titulo),actualizado=?,actualizado_por=? WHERE id=? AND cliente_id=? AND revision=? AND estado<>?')
+      .bind(texto,b.estado==='validada'?'validada':'borrador',revision,titulo,fecha,sesion.usuario.email,entrada.id,tenant(),anterior.revision,'validada'),
+    db().prepare('INSERT INTO studio_boceto_versiones(boceto_id,revision,interpretacion,creado,creado_por) SELECT id,revision,interpretacion,?,? FROM studio_bocetos WHERE id=? AND cliente_id=? AND revision=?')
+      .bind(fecha,sesion.usuario.email,entrada.id,tenant(),revision)
+  ]);
+  if(!resultados[0]?.meta?.changes)return json(409,{ok:false,error:'Conflicto de edición'});
   return json(200,{ok:true,id:entrada.id,revision});
 };
