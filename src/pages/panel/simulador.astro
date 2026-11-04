@@ -19,7 +19,8 @@ import {PERFILES} from '../../server/simulador/perfiles';
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'editar');
-const materiales = materialesDelTaller(s ? await s.repos.catalogo.articulos() : []);
+const [articulosCatalogo,variantesCatalogo]=s ? await Promise.all([s.repos.catalogo.articulos(),s.repos.catalogo.variantes?.() ?? Promise.resolve([])]) : [[],[]];
+const materiales = materialesDelTaller(articulosCatalogo,variantesCatalogo);
 const MATERIALES_MUEBLE = materiales.filter(m=>m.categoria==='mueble');
 const MATERIALES_ENCIMERA = materiales.filter(m=>m.categoria==='encimera');
 const MATERIALES_SUELO = materiales.filter(m=>m.categoria==='suelo');

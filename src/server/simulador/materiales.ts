@@ -2,6 +2,8 @@ import {resolverPerfil} from './perfiles';
 import { detallesProyecto, type DetallesProyecto } from './catalogo';
 export interface MaterialOption {
   id: string;
+  /** Variante estructurada conservada durante simulación, presupuesto y pedido. */
+  varianteId?: string;
   nombre: string;
   descripcion: string;
   promptDescriptor: string;

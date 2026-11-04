@@ -11,18 +11,31 @@ import { CATEGORIAS, precioVenta, sinPrecio } from '../../../server/catalogo/cat
 import { cargarCatalogoDePartida } from '../../../server/catalogo/partida.ts';
 import { dinero } from '../../../server/facturas/importes.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
+import { migrarArticulosEstructurados } from '../../../server/catalogo/migracion-estructurada.ts';
 
 export const prerender = false;
 
 const s = sesionCon(Astro.locals, 'facturas');
 if (s && Astro.request.method === 'POST') {
+  const form=await Astro.request.formData();
+  if(form.get('accion')==='migrar-estructura'){
+    const r=await migrarArticulosEstructurados(s.repos,s.usuario.email);
+    return Astro.redirect(`/panel/catalogo?hecho=estructura&f=${r.familias}&v=${r.variantes}`,303);
+  }
   const r = await cargarCatalogoDePartida(s.repos, s.usuario.email);
   return Astro.redirect(`/panel/catalogo?hecho=partida&a=${r.articulos}&p=${r.plantillas}`, 303);
 }
 const url = Astro.url.searchParams;
 const [articulos, plantillas] = s ? await Promise.all([s.repos.catalogo.articulos(), s.repos.catalogo.plantillas()]) : [[], []];
+const [familias, variantes, decorativos, configurables] = s ? await Promise.all([
+  s.repos.catalogo.familias?.() ?? Promise.resolve([]),
+  s.repos.catalogo.variantes?.() ?? Promise.resolve([]),
+  s.repos.catalogo.decorativos?.() ?? Promise.resolve([]),
+  s.repos.catalogo.configurables?.() ?? Promise.resolve([]),
+]) : [[], [], [], []];
 const faltan = articulos.filter(sinPrecio);
-const ver = url.get('ver') === 'articulos' || url.get('ver') === 'sin-precio' ? url.get('ver')! : 'trabajos';
+const vistas = ['trabajos','familias','variantes','decorativos','configurables','articulos','sin-precio'];
+const ver = vistas.includes(url.get('ver') ?? '') ? url.get('ver')! : 'trabajos';
 const q = (url.get('q') ?? '').trim();
 // Desde un presupuesto en borrador: la calculadora lo propone como destino.
 const para = /^[a-z0-9-]+$/.test(url.get('para') ?? '') ? url.get('para')! : '';
@@ -42,7 +55,7 @@ const faltanEn = (p: (typeof plantillas)[number]) => {
     return !a || sinPrecio(a);
   });
 };
-const hecho = url.get('hecho') === 'partida' ? `Catálogo de partida cargado: ${url.get('p')} trabajos y ${url.get('a')} artículos. Ahora pon tus precios.` : url.get('hecho') === 'precios' ? `Precios guardados (${url.get('n')}).` : url.get('hecho') === 'archivado' ? 'Artículo archivado: ya no sale en el catálogo.' : undefined;
+const hecho = url.get('hecho') === 'partida' ? `Catálogo de partida cargado: ${url.get('p')} trabajos y ${url.get('a')} artículos. Ahora pon tus precios.` : url.get('hecho') === 'estructura' ? `Compatibilidad creada: ${url.get('f')} familias y ${url.get('v')} variantes pendientes de revisión.` : url.get('hecho') === 'precios' ? `Precios guardados (${url.get('n')}).` : url.get('hecho') === 'archivado' ? 'Artículo archivado: ya no sale en el catálogo.' : undefined;
 const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
 ---
 
@@ -68,6 +81,7 @@ const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
     }
   </div>
   <div class="nv-acciones"><a href="/panel/catalogo/importar" class="nv-boton nv-boton-secundario"><Icono nombre="catalogo" /> Importar PDF con Gubia</a></div>
+  {articulos.length>0 && familias.length===0 && <form method="post" class="nv-acciones"><input type="hidden" name="accion" value="migrar-estructura"/><button class="nv-boton nv-boton-secundario">Crear familias y variantes de los artículos actuales</button></form>}
   <Mensajes hecho={hecho} />
 
   {
@@ -115,6 +129,18 @@ const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
           <a href="/panel/catalogo?ver=articulos" aria-current={ver === 'articulos' ? 'page' : undefined}>
             Artículos <span class="nv-chip">{articulos.length}</span>
           </a>
+          <a href="/panel/catalogo?ver=familias" aria-current={ver === 'familias' ? 'page' : undefined}>
+            Familias <span class="nv-chip">{familias.length}</span>
+          </a>
+          <a href="/panel/catalogo?ver=variantes" aria-current={ver === 'variantes' ? 'page' : undefined}>
+            Variantes <span class="nv-chip">{variantes.length}</span>
+          </a>
+          <a href="/panel/catalogo?ver=decorativos" aria-current={ver === 'decorativos' ? 'page' : undefined}>
+            Decorativos <span class="nv-chip">{decorativos.length}</span>
+          </a>
+          <a href="/panel/catalogo?ver=configurables" aria-current={ver === 'configurables' ? 'page' : undefined}>
+            Configurables <span class="nv-chip">{configurables.length}</span>
+          </a>
           {faltan.length > 0 && (
             <a href="/panel/catalogo?ver=sin-precio" aria-current={ver === 'sin-precio' ? 'page' : undefined}>
               Sin precio <span class="nv-chip nv-chip-naranja">{faltan.length}</span>
@@ -122,7 +148,36 @@ const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
           )}
         </nav>
 
-        {ver === 'trabajos' ? (
+        {ver === 'familias' ? (
+          familias.length === 0 ? <p>Todavía no hay familias estructuradas. Impórtalas desde un PDF y valida las propuestas.</p> :
+          <ul class="nv-trabajos" role="list">{familias.map((f)=><li><article class="nv-tarjeta nv-trabajo">
+            <span class="nv-tipo-trabajo">{f.categoria} · {f.tipo}</span><h3>{f.nombre}</h3>
+            <p>{[f.fabricante || f.proveedor,f.coleccion,f.codigo && `Código ${f.codigo}`].filter(Boolean).join(' · ') || 'Sin fabricante declarado'}</p>
+            <div class="nv-etiquetas"><span class="nv-chip">{variantes.filter(v=>v.familiaId===f.id).length} variantes</span><span class="nv-chip">{f.estado}</span></div>
+            <a class="nv-boton" href={`/panel/catalogo/familias/${f.id}`}>Abrir ficha</a>
+          </article></li>)}</ul>
+        ) : ver === 'variantes' ? (
+          variantes.length === 0 ? <p>Todavía no hay variantes estructuradas.</p> :
+          <div class="nv-tarjeta nv-tabla-caja" tabindex="0" role="region" aria-label="Variantes comerciales"><table class="nv-tabla"><thead><tr><th>Variante</th><th>Soporte</th><th>Formato</th><th>Espesor</th><th>Compra</th><th>Estado</th></tr></thead><tbody>{variantes.map(v=><tr>
+            <td><a href={`/panel/catalogo/articulos/${v.articuloId}`}>{v.referencia || v.codigo || 'Sin referencia'}</a><small>{familias.find(f=>f.id===v.familiaId)?.nombre}</small></td>
+            <td>{v.soporte || '—'}</td><td>{v.dimensiones.textoOriginal || '—'}</td><td>{v.dimensiones.espesorMm == null ? '—' : `${v.dimensiones.espesorMm} mm`}</td>
+            <td>{v.unidadesPaquete ? `${v.unidadesPaquete} ${v.unidadCompra}/paq` : v.unidadCompra}</td><td>{v.estado}</td>
+          </tr>)}</tbody></table></div>
+        ) : ver === 'decorativos' ? (
+          decorativos.length === 0 ? <p>Todavía no hay decorativos estructurados.</p> :
+          <ul class="nv-trabajos" role="list">{decorativos.map(d=><li><article class="nv-tarjeta nv-trabajo">
+            <div style={`width:100%;height:4rem;border-radius:12px;background:${d.colorDigital || '#e8e8e4'};border:1px solid #d7d7d0`} aria-label={d.colorDigital ? `Color digital aproximado ${d.colorDigital}` : 'Sin muestra verificada'}></div>
+            <span class="nv-tipo-trabajo">{d.fabricante}{d.codigo ? ` · ${d.codigo}` : ''}</span><h3>{d.nombre}</h3>
+            <p>{[d.coleccion,d.textura,d.acabadoSuperficial,d.especie].filter(Boolean).join(' · ') || 'Muestra pendiente de verificación'}</p>
+            <span class="nv-chip">{d.origen.revision}</span>
+          </article></li>)}</ul>
+        ) : ver === 'configurables' ? (
+          configurables.length === 0 ? <p>Todavía no hay productos configurables. El importador reconoce los modelos de cajonera y zapatero del catálogo de Colomba.</p> :
+          <ul class="nv-trabajos" role="list">{configurables.map(c=><li><article class="nv-tarjeta nv-trabajo">
+            <span class="nv-tipo-trabajo">{c.bajoProyecto ? 'Bajo proyecto' : 'Configuración validada'}</span><h3>{c.nombre}</h3>
+            <p>{c.parametros.map(p=>p.nombre).join(' · ')}</p><div class="nv-etiquetas"><span class="nv-chip">{c.parametros.length} parámetros</span><span class="nv-chip">{c.reglas.length} restricciones</span></div>
+          </article></li>)}</ul>
+        ) : ver === 'trabajos' ? (
           plantillas.length === 0 ? (
             <p>Todavía no hay trabajos. Carga el catálogo de partida para tener los más habituales.</p>
           ) : (

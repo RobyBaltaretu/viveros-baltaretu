@@ -1,11 +1,13 @@
-import type { ArticuloCatalogo } from '../data/tipos';
+import type { ArticuloCatalogo, VarianteCatalogo } from '../data/tipos';
 import type { MaterialOption } from './materiales';
 
 /** Solo datos descriptivos: nunca enviamos costes, márgenes o contactos al proveedor de IA. */
-export function materialesDelTaller(articulos: ArticuloCatalogo[]): MaterialOption[] {
+export function materialesDelTaller(articulos: ArticuloCatalogo[], variantes: VarianteCatalogo[] = []): MaterialOption[] {
+  const variantePorArticulo=new Map(variantes.map(v=>[v.articuloId,v]));
   return articulos.filter(a => !a.archivado).flatMap(a => {
-    const categorias: MaterialOption['categoria'][] = a.visual?.uso?.length ? a.visual.uso : a.categoria === 'encimeras' ? ['encimera'] : ['tableros','macizos','chapas','acabados'].includes(a.categoria) ? ['mueble', ...(/suelo|tarima|parquet/i.test(a.nombre) || a.categoria === 'macizos' ? ['suelo' as const] : [])] : [];
-    return categorias.map(categoria => ({id:`catalogo:${a.id}`,nombre:a.nombre,descripcion:[a.referencia && `Ref. ${a.referencia}`, a.acabado, a.espesor && `${a.espesor} mm`, a.visual?.brillo, a.visual?.coleccion, a.visual?.codigoDecor].filter(Boolean).join(' · '),promptDescriptor:JSON.stringify({material:a.nombre,referencia:a.referencia,acabado:a.acabado,espesorMm:a.espesor,visual:a.visual}),finish:a.acabado || 'Acabado no especificado: no inventar textura de fabricante',categoria,previewTexture:a.visual?.textura, colorRegistrado:!!a.visual?.colorHex,previewColor: a.visual?.colorHex ?? (/blanc/i.test(a.acabado+' '+a.nombre) ? '#eeeae1' : /negr|antracita/i.test(a.acabado+' '+a.nombre) ? '#383835' : /nogal/i.test(a.nombre) ? '#70523d' : '#bda17c')}));
+    const v=variantePorArticulo.get(a.id);
+    const categorias: MaterialOption['categoria'][] = a.visual?.uso?.length ? a.visual.uso : a.categoria === 'encimeras' ? ['encimera'] : a.categoria === 'suelos' ? ['suelo'] : ['tableros','macizos','chapas','acabados','mobiliario'].includes(a.categoria) ? ['mueble', ...(/suelo|tarima|parquet/i.test(a.nombre) || a.categoria === 'macizos' ? ['suelo' as const] : [])] : [];
+    return categorias.map(categoria => ({id:`catalogo:${a.id}`,varianteId:v?.id,nombre:a.nombre,descripcion:[a.referencia && `Ref. ${a.referencia}`, a.acabado, (v?.dimensiones.espesorMm ?? a.espesor) && `${v?.dimensiones.espesorMm ?? a.espesor} mm`, v?.dimensiones.textoOriginal, v?.soporte, a.visual?.brillo, a.visual?.coleccion, a.visual?.codigoDecor].filter(Boolean).join(' · '),promptDescriptor:JSON.stringify({material:a.nombre,referencia:a.referencia,varianteId:v?.id,acabado:a.acabado,espesorMm:v?.dimensiones.espesorMm ?? a.espesor,formato:v?.dimensiones.textoOriginal,soporte:v?.soporte,visual:a.visual}),finish:a.acabado || 'Acabado no especificado: no inventar textura de fabricante',categoria,previewTexture:a.visual?.textura, colorRegistrado:!!a.visual?.colorHex,previewColor: a.visual?.colorHex ?? (/blanc/i.test(a.acabado+' '+a.nombre) ? '#eeeae1' : /negr|antracita/i.test(a.acabado+' '+a.nombre) ? '#383835' : /nogal/i.test(a.nombre) ? '#70523d' : '#bda17c')}));
   });
 }
 export const DISTRIBUCIONES = ['Conservar distribución', 'Lineal', 'En L', 'En U', 'Con isla', 'Frente de armario', 'Mueble independiente'] as const;

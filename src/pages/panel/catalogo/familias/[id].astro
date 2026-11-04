@@ -1,0 +1,25 @@
+---
+import PaginaPanel from '../../../../components/panel/PaginaPanel.astro';
+import { sesionCon } from '../../../../server/panel/pagina.ts';
+
+export const prerender = false;
+const s=sesionCon(Astro.locals,'facturas');
+const id=Astro.params.id ?? '';
+const familia=s && s.repos.catalogo.familia ? await s.repos.catalogo.familia(id) : null;
+if(s && !familia)return Astro.redirect('/panel/catalogo?ver=familias',302);
+const variantes=s && familia && s.repos.catalogo.variantes ? await s.repos.catalogo.variantes({familiaId:familia.id,incluirDescatalogadas:true}) : [];
+const decorativos=s && s.repos.catalogo.decorativos ? await s.repos.catalogo.decorativos({fabricante:familia?.fabricante || familia?.proveedor}) : [];
+---
+<PaginaPanel titulo={familia?.nombre || 'Familia'} permiso="facturas" ancho="amplio">
+  {familia && <>
+    <p><a href="/panel/catalogo?ver=familias">← Volver a familias</a></p>
+    <div class="nv-titulo"><div><span class="nv-chip">{familia.tipo}</span><h1>{familia.nombre}</h1><p>{[familia.fabricante || familia.proveedor,familia.coleccion,familia.codigo].filter(Boolean).join(' · ')}</p></div></div>
+    <section class="nv-tarjeta nv-seccion"><h2>Información general</h2><dl class="nv-detalles">
+      <div><dt>Categoría</dt><dd>{familia.categoria}{familia.subcategoria ? ` · ${familia.subcategoria}` : ''}</dd></div>
+      <div><dt>Estado</dt><dd>{familia.estado}</dd></div><div><dt>Aplicaciones</dt><dd>{familia.aplicaciones.join(', ') || 'No declaradas'}</dd></div>
+      <div><dt>Origen</dt><dd>{familia.origen.documento} · página {familia.origen.pagina ?? 'sin página'} · {familia.origen.revision}</dd></div>
+    </dl></section>
+    <section class="nv-seccion"><h2>Variantes válidas ({variantes.length})</h2>{variantes.length===0?<p>Sin variantes confirmadas.</p>:<div class="nv-tarjeta nv-tabla-caja" tabindex="0"><table class="nv-tabla"><thead><tr><th>Referencia</th><th>Soporte</th><th>Formato</th><th>Espesor</th><th>Acabado / tratamiento</th><th>Disponibilidad</th></tr></thead><tbody>{variantes.map(v=><tr><td><a href={`/panel/catalogo/articulos/${v.articuloId}`}>{v.referencia || v.codigo || 'Sin referencia'}</a></td><td>{v.soporte || '—'}</td><td>{v.dimensiones.textoOriginal || '—'}</td><td>{v.dimensiones.espesorMm==null?'—':`${v.dimensiones.espesorMm} mm`}</td><td>{[v.acabado,v.tratamiento,v.calidad].filter(Boolean).join(' · ') || '—'}</td><td>{v.disponibilidad}</td></tr>)}</tbody></table></div>}</section>
+    <section class="nv-seccion"><h2>Decorativos del fabricante</h2><p>{decorativos.length ? decorativos.map(d=>`${d.codigo ? `${d.codigo} `:''}${d.nombre}`).join(' · ') : 'No hay decorativos verificados asociados.'}</p></section>
+  </>}
+</PaginaPanel>
