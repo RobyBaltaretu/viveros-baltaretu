@@ -362,6 +362,18 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       )`,
     ],
   },
+  {
+    version: 16,
+    nombre: 'cuota Groq distribuida por funcionalidad',
+    sql: [
+      `CREATE TABLE groq_uso_diario (
+        dia TEXT NOT NULL PRIMARY KEY,
+        importador INTEGER NOT NULL DEFAULT 0,
+        asistente INTEGER NOT NULL DEFAULT 0,
+        CHECK (importador >= 0 AND asistente >= 0)
+      )`,
+    ],
+  },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;
