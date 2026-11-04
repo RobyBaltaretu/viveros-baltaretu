@@ -521,7 +521,11 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
   { version: 19, nombre: 'Studio: exclusión de renders simultáneos', sql: [
     `CREATE UNIQUE INDEX studio_generaciones_activa ON studio_generaciones(cliente_id,boceto_id,revision) WHERE estado IN ('pendiente','procesando')`,
   ] },
-]; 
+  { version: 20, nombre: 'Studio: identificador estable de solicitud', sql: [
+    `ALTER TABLE studio_generaciones ADD COLUMN clave_idempotencia TEXT`,
+    `CREATE UNIQUE INDEX studio_generaciones_clave ON studio_generaciones(cliente_id,boceto_id,clave_idempotencia)`,
+  ] },
+];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;
 
