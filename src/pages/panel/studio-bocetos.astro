@@ -25,7 +25,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
         <label class="block">Anchura total (mm, opcional) <input id="ancho-boceto" type="number" min="1" max="100000" class="block w-full rounded border p-2" placeholder="Ej. 2330"/></label>
         <label class="block">Precisión de la medida <select id="precision-boceto" class="block w-full rounded border p-2"><option value="aproximada">Aproximada</option><option value="exacta">Exacta</option></select></label>
         <button id="guardar-boceto" type="button" class="rounded bg-neutral-900 px-4 py-2 text-white">Guardar interpretación manual</button>
-        <p class="text-xs">Las fotografías se almacenan de forma privada. El render de IA todavía no está habilitado en este flujo.</p>
+        <button id="interpretar-boceto" type="button" class="rounded border px-4 py-2">Interpretar dibujo con IA</button>\n        <button id="validar-boceto" type="button" class="rounded border px-4 py-2">Confirmar distribución revisada</button>\n        <section id="resultado-boceto" class="space-y-2" aria-label="Interpretación del dibujo"></section>\n        <p class="text-xs">Comprueba módulos y cotas antes de validar. El render de IA todavía no está habilitado en este flujo.</p>
       </section>
       <p id="estado-boceto" role="status" aria-live="polite"></p>
       <section><h2 class="font-bold">Borradores recientes</h2><ul id="lista-bocetos" class="space-y-2"></ul></section>
@@ -36,6 +36,20 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
   const $ = (id: string) => document.getElementById(id) as HTMLElement;
   let id='',revision=1;
   let espacio='',dibujo='';
+  let interpretacion: any=null;
+  function mostrar(){const zona=$('resultado-boceto');zona.replaceChildren();if(!interpretacion)return;
+    const titulo=document.createElement('h3');titulo.textContent='Interpretación propuesta: '+interpretacion.modulos.length+' módulos';zona.append(titulo);
+    for(const m of interpretacion.modulos){const p=document.createElement('p');p.textContent=m.tipo+' · '+(m.ancho.valorMm??'?')+' mm de ancho · '+m.piezas.length+' piezas';zona.append(p);}
+    for(const q of interpretacion.preguntas||[]){const p=document.createElement('p');p.textContent='Por confirmar: '+q;zona.append(p);}
+  }
+  async function abrir(bid:string){const r=await fetch('/api/panel/studio-bocetos?id='+encodeURIComponent(bid));const j=await r.json();if(!r.ok)throw Error('No se pudo abrir el boceto');
+    id=j.boceto.id;revision=j.boceto.revision;interpretacion=j.boceto.interpretacion;
+    espacio=interpretacion.fotoEspacioId;dibujo=interpretacion.fotoBocetoId;
+    $('editor-boceto').hidden=false;$('identificador-boceto').textContent='Borrador '+id;
+    const ancho=interpretacion.modulos?.[0]?.ancho;
+    ($('ancho-boceto') as HTMLInputElement).value=ancho?.valorMm?String(ancho.valorMm):'';
+    mostrar();}
+
   const estado=(s:string)=>{$('estado-boceto').textContent=s;};
   const desconocida=()=>({valorMm:null,precision:'desconocida',origen:'usuario',confirmada:false});
   function modelo(){
@@ -50,7 +64,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
   async function cargar(){
     const r=await fetch('/api/panel/studio-bocetos');if(!r.ok)return;
     const j=await r.json();const ul=$('lista-bocetos');ul.replaceChildren();
-    for(const b of j.bocetos||[]){const li=document.createElement('li');li.textContent=b.titulo+' · '+b.estado+' · revisión '+b.revision;ul.append(li);}
+    for(const b of j.bocetos||[]){const li=document.createElement('li');const boton=document.createElement('button');boton.type='button';boton.className='rounded border p-2 text-left';boton.textContent=b.titulo+' · '+b.estado+' · revisión '+b.revision;boton.addEventListener('click',()=>{void abrir(b.id).catch(e=>estado(String(e)));});li.append(boton);ul.append(li);}
   }
   $('nuevo-boceto')?.addEventListener('submit',async ev=>{
     ev.preventDefault();estado('Creando borrador…');
@@ -59,7 +73,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
     espacio='pendiente-espacio';dibujo='pendiente-boceto';
     const r=await fetch('/api/panel/studio-bocetos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({titulo,interpretacion:modelo()})});
     const j=await r.json();if(!r.ok){estado(j.error||JSON.stringify(j.errores));return;}
-    id=j.id;revision=j.revision;$('editor-boceto').hidden=false;$('identificador-boceto').textContent='Borrador '+id;
+    id=j.id;revision=j.revision;interpretacion=modelo();$('editor-boceto').hidden=false;$('identificador-boceto').textContent='Borrador '+id;
     estado('Borrador creado. Sube ambas fotografías y guarda los cambios.');void cargar();
   });
   async function subir(inputId:string,clase:'espacio'|'boceto'){
@@ -78,11 +92,21 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
       estado('Guardando imágenes…');
       if(espacio.startsWith('pendiente-'))espacio=await subir('foto-espacio','espacio');
       if(dibujo.startsWith('pendiente-'))dibujo=await subir('foto-dibujo','boceto');
+      const nueva=interpretacion && interpretacion.modulos?.length>1?{...interpretacion,fotoEspacioId:espacio,fotoBocetoId:dibujo}:modelo();
       const r=await fetch('/api/panel/studio-bocetos',{method:'PATCH',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id,revision,interpretacion:modelo()})});
+        body:JSON.stringify({id,revision,interpretacion:nueva})});
       const j=await r.json();if(!r.ok)throw Error(j.error||JSON.stringify(j.errores));
-      revision=j.revision;estado('Fotografías e interpretación guardadas.');void cargar();
+      revision=j.revision;interpretacion=nueva;mostrar();estado('Fotografías e interpretación guardadas.');void cargar();
     }catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
+  });
+  $('interpretar-boceto')?.addEventListener('click',async()=>{if(!id)return;estado('Interpretando fotografías…');const boton=$('interpretar-boceto') as HTMLButtonElement;boton.disabled=true;
+    try{const r=await fetch('/api/panel/studio-interpretar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});const j=await r.json();if(!r.ok)throw Error(j.error||'Error de interpretación');revision=j.revision;interpretacion=j.interpretacion;mostrar();estado('Interpretación recibida. Revisa las medidas y los módulos.');}
+    catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
+  });
+  $('validar-boceto')?.addEventListener('click',async()=>{if(!id||!interpretacion)return;
+    if(!confirm('¿Has comprobado la distribución y todas las cotas? El render debe respetar este diseño.'))return;
+    const validada={...interpretacion,estado:'validada',confirmadaPor:'',confirmadaEn:new Date().toISOString()};
+    estado('La confirmación requiere identificación del usuario; esta acción se habilitará al completar la validación en servidor.');
   });
   void cargar();
 </script>}
