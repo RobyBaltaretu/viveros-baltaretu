@@ -13,7 +13,7 @@ const codigo = (texto: string) => {
   return /^\d{3}$/.test(valor) ? valor.padStart(4, '0') : valor;
 };
 const acabados = (texto: string) => texto.toUpperCase().trim()
-  .split(/\s*[\/+;,]\s*/).map(x => x.trim()).filter(Boolean);
+  .split(/\s*[/+;,]\s*/).map(x => x.trim()).filter(Boolean);
 
 /**
  * Una muestra puede estar en la carta de colores varias páginas después de
