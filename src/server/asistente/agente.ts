@@ -28,12 +28,8 @@ export interface ModeloAsistente {
   avisoLimite?: string;
 }
 
-/** Presupuesto de Workers AI para el asistente de Baltaretu (40% de 10.000). */
-export const LIMITE_NEURONAS_DIA = 4000;
-/** Presupuesto de Workers AI de Turia (60% de 10.000). */
-export const LIMITE_NEURONAS_TURIA = 6000;
-/** Los límites de Cloudflare son por cuenta, no por Worker. */
-export const limiteNeuronasCliente = () => clienteActual().id === 'turia' ? LIMITE_NEURONAS_TURIA : LIMITE_NEURONAS_DIA;
+export { LIMITE_NEURONAS_DIA, LIMITE_NEURONAS_TURIA, limiteNeuronasCliente } from './cuotas.ts';
+import { limiteNeuronasCliente } from './cuotas.ts';
 /** Mensajes por persona y día. */
 export const LIMITE_MENSAJES_PERSONA = 80;
 /** Mensajes anteriores que ve el modelo. */
