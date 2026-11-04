@@ -324,6 +324,29 @@ export function crearRepositoriosD1(db: BaseD1, bucket?: BucketPrivado, exigirR2
       },
     },
     usoAsistente: {
+      async reservarGroq(dia, canal, limiteDiario) {
+        if (!Number.isInteger(limiteDiario) || limiteDiario<=0) return false;
+        // Cada reserva modifica una fila D1 mediante UNA sentencia atómica.
+        // Gubia puede usar todo el presupuesto mientras no se haya importado.
+        // Después de la primera importación, protege el 70% para el importador.
+        const columna = canal === 'importador' ? 'importador' : 'asistente';
+        const maxImportador=Math.floor(limiteDiario*.7);
+        const maxAsistente=limiteDiario-maxImportador;
+        const filtro=canal==='importador'
+          ? 'importador < ?'
+          : '(importador = 0 OR asistente < ?)';
+        const tope=canal==='importador'?maxImportador:maxAsistente;
+        const sentencia=`INSERT INTO groq_uso_diario (dia, ${columna}) VALUES (?, 1)
+          ON CONFLICT(dia) DO UPDATE SET ${columna} = ${columna} + 1
+          WHERE importador + asistente < ? AND ${filtro}`;
+        const resultado=await db.prepare(sentencia).bind(dia,limiteDiario,tope).run();
+        return (resultado.meta?.changes??0)>0;
+      },
+      async usoGroq(dia) {
+        const fila=await db.prepare('SELECT importador, asistente FROM groq_uso_diario WHERE dia = ?')
+          .bind(dia).first<{importador:number;asistente:number}>();
+        return {importador:fila?.importador??0,asistente:fila?.asistente??0};
+      },
       async reservar(email, dia, limite) {
         if (!Number.isInteger(limite) || limite <= 0) return false;
         const r = await db.prepare(
