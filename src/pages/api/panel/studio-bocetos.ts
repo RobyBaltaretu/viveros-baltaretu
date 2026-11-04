@@ -91,6 +91,13 @@ export const PATCH: APIRoute = async ({locals,request}) => {
   }
   await asegurarEsquema(db());
   if(b.estado==='validada' && (b.fotoEspacioId.startsWith('pendiente-') || b.fotoBocetoId.startsWith('pendiente-')))return json(409,{ok:false,error:'Guarda las dos fotografías antes de validar'});
+  if(b.estado==='validada'){
+    const fotos=await db().prepare('SELECT id,clase FROM studio_boceto_archivos WHERE boceto_id=? AND cliente_id=? AND id IN (?,?)')
+      .bind(entrada.id,tenant(),b.fotoEspacioId,b.fotoBocetoId).all<{id:string;clase:string}>();
+    if(!fotos.results.some(f=>f.id===b.fotoEspacioId&&f.clase==='espacio')||
+       !fotos.results.some(f=>f.id===b.fotoBocetoId&&f.clase==='boceto'))
+      return json(409,{ok:false,error:'Las dos fotografías deben pertenecer al boceto y tener el tipo correcto'});
+  }
   const anterior=await db().prepare('SELECT revision,estado FROM studio_bocetos WHERE id=? AND cliente_id=?').bind(entrada.id,tenant()).first<{revision:number;estado:string}>();
   if(!anterior)return json(404,{ok:false});
   if(anterior.estado==='validada')return json(409,{ok:false,error:'El diseño validado es inmutable; crea una nueva versión de trabajo'});
