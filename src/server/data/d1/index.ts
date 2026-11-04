@@ -347,6 +347,13 @@ export function crearRepositoriosD1(db: BaseD1, bucket?: BucketPrivado, exigirR2
           .bind(dia).first<{importador:number;asistente:number}>();
         return {importador:fila?.importador??0,asistente:fila?.asistente??0};
       },
+      async reservarCantidad(clave, dia, cantidad, limite) {
+        if (!Number.isInteger(cantidad) || cantidad <= 0 || !Number.isInteger(limite) || limite <= 0 || cantidad > limite) return false;
+        const resultado=await db.prepare(`INSERT INTO asistente_uso(email,dia,usos) VALUES(?,?,?)
+          ON CONFLICT(email,dia) DO UPDATE SET usos = usos + excluded.usos WHERE usos + excluded.usos <= ?`
+        ).bind(clave,dia,cantidad,limite).run();
+        return (resultado.meta?.changes??0)>0;
+      },
       async reservar(email, dia, limite) {
         if (!Number.isInteger(limite) || limite <= 0) return false;
         const r = await db.prepare(
