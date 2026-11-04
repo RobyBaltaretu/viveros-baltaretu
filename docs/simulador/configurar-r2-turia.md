@@ -4,7 +4,7 @@ Este documento aplica únicamente a Creaciones Turia y a la rama de prueba `feat
 
 ## 1. Crear bucket en Cloudflare
 En Cloudflare Dashboard, entrar en **R2 Object Storage** > **Create bucket**.
-Nombre exacto: `creacionesturia-imagenes`.
+Nombre exacto: `creacionesturia`.
 Seleccionar región automática o la jurisdicción de datos exigida por el proyecto. Confirmar creación.
 **No habilitar acceso público, dominio personalizado ni r2.dev público.**
 
@@ -12,15 +12,15 @@ Seleccionar región automática o la jurisdicción de datos exigida por el proye
 El archivo `wrangler.creacionesturia.jsonc` de esta rama declara:
 ```json
 "r2_buckets": [
-  {"binding": "IMAGENES_PRIVADAS", "bucket_name": "creacionesturia-imagenes"}
+  {"binding": "IMAGENES_PRIVADAS", "bucket_name": "creacionesturia"}
 ]
 ```
 Al desplegar desde esta rama, el binding se aplicará al Worker `creacionesturia` si el despliegue utiliza este fichero.
-Si se despliega desde el Dashboard o un pipeline diferente, revisar **Workers & Pages > creacionesturia > Settings > Bindings** y confirmar que existe un binding R2 llamado exactamente `IMAGENES_PRIVADAS` que apunta a `creacionesturia-imagenes`.
+Si se despliega desde el Dashboard o un pipeline diferente, revisar **Workers & Pages > creacionesturia > Settings > Bindings** y confirmar que existe un binding R2 llamado exactamente `IMAGENES_PRIVADAS` que apunta a `creacionesturia`.
 No crear tokens de API R2 ni exponer credenciales en el navegador: el Worker accede mediante el binding.
 
 ## 3. Separar entornos
-El entorno local ya usa `creacionesturia-imagenes-local`. Para preview remoto, crear un bucket independiente, por ejemplo `creacionesturia-imagenes-preview`, y configurar el binding del Worker preview con ese bucket. No usar el bucket de producción para pruebas.
+El entorno local ya usa `creacionesturia-local`. Para preview remoto, crear un bucket independiente, por ejemplo `creacionesturia-preview`, y configurar el binding del Worker preview con ese bucket. No usar el bucket de producción para pruebas.
 La configuración de la rama declara el bucket de producción en la raíz: no desplegar preview con ese fichero sin sobrescribir el binding con el bucket de preview.
 
 ## 4. Comprobación
