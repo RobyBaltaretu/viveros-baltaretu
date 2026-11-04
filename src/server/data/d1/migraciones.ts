@@ -518,7 +518,10 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       `CREATE INDEX studio_generaciones_boceto ON studio_generaciones(boceto_id,creado DESC)`,
     ],
   },
-];
+  { version: 19, nombre: 'Studio: exclusión de renders simultáneos', sql: [
+    `CREATE UNIQUE INDEX studio_generaciones_activa ON studio_generaciones(cliente_id,boceto_id,revision) WHERE estado IN ('pendiente','procesando')`,
+  ] },
+]; 
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;
 
