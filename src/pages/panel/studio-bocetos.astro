@@ -39,7 +39,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
           <label class="block">Antes / después <input id="deslizador-boceto" type="range" min="0" max="100" value="50" class="w-full"/></label>
           <div id="comparador-marco" class="relative overflow-hidden rounded-lg"><img id="imagen-antes" alt="Espacio original" class="block w-full"/><div id="recorte-despues" class="absolute inset-0 overflow-hidden" style="clip-path:inset(0 50% 0 0)"><img id="imagen-despues" alt="Resultado fotorrealista" class="block h-full w-full object-cover"/></div></div>
         </section>
-        <p class="text-xs">Comprueba módulos y cotas antes de validar. El render de IA todavía no está habilitado en este flujo.</p>
+        <p class="text-xs">Comprueba módulos y cotas antes de validar. El render utiliza IA generativa y requiere revisar visualmente las proporciones y acabados; no es un plano de fabricación.</p>
       </section>
       <p id="estado-boceto" role="status" aria-live="polite"></p>
       <section><h2 class="font-bold">Borradores recientes</h2><ul id="lista-bocetos" class="space-y-2"></ul></section>
@@ -121,7 +121,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
   async function abrir(bid:string){const r=await fetch('/api/panel/studio-bocetos?id='+encodeURIComponent(bid));const j=await r.json();if(!r.ok)throw Error('No se pudo abrir el boceto');
     id=j.boceto.id;revision=j.boceto.revision;interpretacion=j.boceto.interpretacion;claveGeneracion='';
     espacio=interpretacion.fotoEspacioId;dibujo=interpretacion.fotoBocetoId;
-    $('editor-boceto').hidden=false;$('identificador-boceto').textContent='Borrador '+id;
+    $('editor-boceto').hidden=false;$('identificador-boceto').textContent=(interpretacion.estado==='validada'?'Diseño aprobado ':'Borrador ')+id;
     const ancho=interpretacion.modulos?.[0]?.ancho;
     ($('ancho-boceto') as HTMLInputElement).value=ancho?.valorMm?String(ancho.valorMm):'';
     mostrar();await cargarGeneraciones();}
