@@ -93,6 +93,9 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
         for(const mat of materiales){const option=document.createElement('option');option.value=mat.id;
           option.textContent=[mat.nombre,mat.referencia,mat.acabado].filter(Boolean).join(' · ');select.append(option);}
         select.value=pieza.catalogoVarianteId||'';
+        const siguiente=document.createElement('button');siguiente.type='button';siguiente.className='mt-1 rounded border px-3 py-2 text-sm';
+        siguiente.textContent='Cargar más materiales';siguiente.hidden=true;
+        let paginaActual=1;
         let busquedaActual=0;
         let temporizadorBusqueda:ReturnType<typeof setTimeout>|undefined;
         buscador.addEventListener('input',()=>{
@@ -100,7 +103,8 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
           const termino=buscador.value.trim();
           if(termino.length>0&&termino.length<2)return;
           if(temporizadorBusqueda)clearTimeout(temporizadorBusqueda);
-          temporizadorBusqueda=setTimeout(()=>fetch('/api/panel/studio-materiales?q='+encodeURIComponent(termino)).then(r=>{
+          paginaActual=1;
+          temporizadorBusqueda=setTimeout(()=>fetch('/api/panel/studio-materiales?pagina=1&q='+encodeURIComponent(termino)).then(r=>{
             if(!r.ok)throw Error('Catálogo no disponible');return r.json();
           }).then(j=>{
             if(turno!==busquedaActual)return;
@@ -120,10 +124,29 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
               select.append(opcion);
             }
             select.value=seleccion;
+            siguiente.hidden=!j.hayMas;
           }).catch(()=>estado('No se ha podido buscar en el catálogo')),250);
         });
+        siguiente.addEventListener('click',async()=>{
+          const turno=busquedaActual;
+          siguiente.disabled=true;
+          try{
+            const pagina=paginaActual+1;
+            const r=await fetch('/api/panel/studio-materiales?pagina='+pagina+'&q='+encodeURIComponent(buscador.value.trim()));
+            if(!r.ok)throw Error('No se pudo cargar la página');
+            const j=await r.json();
+            if(turno!==busquedaActual)return;
+            for(const mat of j.variantes||[]){
+              if(Array.from(select.options).some(o=>o.value===mat.id))continue;
+              const option=document.createElement('option');option.value=mat.id;
+              option.textContent=[mat.nombre,mat.referencia,mat.acabado].filter(Boolean).join(' · ');select.append(option);
+            }
+            paginaActual=pagina;siguiente.hidden=!j.hayMas;
+          }catch{estado('No se pudo cargar más materiales');}
+          finally{siguiente.disabled=false;}
+        });
         select.addEventListener('change',()=>{pieza.catalogoVarianteId=select.value||null;pieza.acabadoId=select.value||null;});
-        etiqueta.append(select);seccion.append(etiqueta);
+        etiqueta.append(select);etiqueta.append(siguiente);seccion.append(etiqueta);
         const tituloCorte=document.createElement('p');tituloCorte.className='mt-2 text-sm font-semibold';tituloCorte.textContent='Medidas de corte verificadas · '+pieza.tipo;seccion.append(tituloCorte);
         for(const dimension of ['ancho','alto'] as const){
           const etiquetaCorte=document.createElement('label');etiquetaCorte.className='block text-sm';
