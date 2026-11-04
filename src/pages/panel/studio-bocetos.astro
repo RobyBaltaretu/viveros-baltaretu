@@ -29,6 +29,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
 
         <section id="resultado-boceto" class="space-y-2" aria-label="Interpretación del dibujo"></section>
         <button id="confirmar-boceto" type="button" class="rounded border px-4 py-2">Confirmar boceto revisado</button>
+        <button id="duplicar-boceto" type="button" class="rounded border px-4 py-2">Nueva revisión editable</button>
         <button id="consultar-despiece" type="button" class="rounded border px-4 py-2">Revisar despiece</button>
         <section id="resultado-despiece" class="text-sm" aria-live="polite"></section>
         <button id="generar-boceto" type="button" class="rounded bg-neutral-900 px-4 py-2 text-white">Generar imagen fotorrealista</button>
@@ -197,6 +198,15 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
   $('deslizador-boceto')?.addEventListener('input',()=>{
     const v=Number(($('deslizador-boceto') as HTMLInputElement).value);
     ($('recorte-despues') as HTMLElement).style.clipPath='inset(0 '+(100-v)+'% 0 0)';
+  });
+  $('duplicar-boceto')?.addEventListener('click',async()=>{
+    if(!id||interpretacion?.estado!=='validada'){estado('Solo se puede crear una nueva revisión de un diseño aprobado.');return;}
+    if(!window.confirm('Se creará un borrador independiente. Deberás subir las fotografías otra vez.'))return;
+    try{
+      const r=await fetch('/api/panel/studio-duplicar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+      const j=await r.json();if(!r.ok)throw Error(j.error||'No se pudo crear la revisión');
+      await abrir(j.id);await cargar();estado('Nueva revisión editable creada. Vuelve a subir las dos fotografías.');
+    }catch(e){estado(e instanceof Error?e.message:String(e));}
   });
   $('consultar-despiece')?.addEventListener('click',async()=>{
     if(!id)return;
