@@ -32,6 +32,8 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
         <button id="duplicar-boceto" type="button" class="rounded border px-4 py-2">Nueva revisión editable</button>
         <button id="consultar-despiece" type="button" class="rounded border px-4 py-2">Revisar despiece</button>
         <section id="resultado-despiece" class="text-sm" aria-live="polite"></section>
+        <button id="revisar-generaciones" type="button" class="rounded border px-4 py-2">Revisar generaciones bloqueadas</button>
+        <section id="estado-generaciones" class="text-sm" aria-live="polite"></section>
         <button id="generar-boceto" type="button" class="rounded bg-neutral-900 px-4 py-2 text-white">Generar imagen fotorrealista</button>
         <section id="comparador-boceto" hidden class="space-y-2" aria-label="Comparación de antes y después">
           <label class="block">Antes / después <input id="deslizador-boceto" type="range" min="0" max="100" value="50" class="w-full"/></label>
@@ -223,6 +225,29 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
         const linea=document.createElement('p');linea.textContent=p.tipo+' · '+p.varianteId+' · '+p.cantidad+' ud · '+(p.metrosCuadrados===null?'Superficie sin confirmar':p.metrosCuadrados.toFixed(3)+' m²');zona.append(linea);
       }
       for(const bloqueo of d.bloqueos){const linea=document.createElement('p');linea.textContent='Pendiente: '+bloqueo;zona.append(linea);}
+    }catch(e){estado(e instanceof Error?e.message:String(e));}
+  });
+  $('revisar-generaciones')?.addEventListener('click',async()=>{
+    if(!id)return;
+    try{
+      const r=await fetch('/api/panel/studio-generar?id='+encodeURIComponent(id));
+      if(!r.ok)throw Error('No se pudo consultar el historial');
+      const j=await r.json();const zona=$('estado-generaciones');zona.replaceChildren();
+      for(const g of j.generaciones||[]){
+        const fila=document.createElement('div');fila.className='rounded border p-2 my-2';
+        const texto=document.createElement('span');texto.textContent=g.estado+' · '+g.id;fila.append(texto);
+        if(g.requiereRevision){
+          const boton=document.createElement('button');boton.type='button';boton.className='ml-2 underline';
+          boton.textContent='Cerrar trabajo bloqueado (sin devolver cuota)';
+          boton.addEventListener('click',async()=>{
+            if(!window.confirm('Solo cerrar trabajos bloqueados. El coste del proveedor podría haberse consumido. ¿Continuar?'))return;
+            const respuesta=await fetch('/api/panel/studio-recuperar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:g.id})});
+            const salida=await respuesta.json();if(!respuesta.ok){estado(salida.error||'No se pudo cerrar');return;}
+            claveGeneracion='';estado('Trabajo cerrado. El consumo de Gemini queda pendiente de conciliación.');boton.disabled=true;
+          });fila.append(boton);
+        }
+        zona.append(fila);
+      }
     }catch(e){estado(e instanceof Error?e.message:String(e));}
   });
   $('generar-boceto')?.addEventListener('click',async()=>{
