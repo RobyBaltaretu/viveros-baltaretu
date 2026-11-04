@@ -9,6 +9,8 @@ export const GROQ_VISION_MODELO = 'qwen/qwen3.8-27b';
 export const MAX_TEXTO_GROQ = 10_000;
 export const MAX_IMAGEN_GROQ = 800_000;
 export const MAX_PAGINAS_LOTE = 3;
+/** Máximo por bloque para que la API no quede pendiente indefinidamente. */
+export const GROQ_TIMEOUT_MS = 25_000;
 
 export const paginaExtraida = z.object({
   pagina: z.number().int().min(1).max(MAX_PAGINAS_PDF),
@@ -68,10 +70,13 @@ async function solicitarGroq(
   try {
     res = await pedir('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
+      signal:AbortSignal.timeout(GROQ_TIMEOUT_MS),
       headers:{'Authorization':'Bearer '+apiKey,'Content-Type':'application/json'},
       body:JSON.stringify(body),
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError'))
+      throw new ErrorImportacion('Groq ha tardado demasiado en responder. Conserva las fichas y reintenta solo este bloque.', 504);
     throw new ErrorImportacion('No se puede conectar con Groq. Conserva tus fichas y reintenta este bloque.',502);
   }
   if (!res.ok) {
