@@ -168,6 +168,8 @@ export interface RepositorioPresupuestos {
 }
 
 export interface RepositorioUsoAsistente {
+  /** Reserva una llamada bajo un límite diario en una única operación atómica. */
+  reservar(email: string, dia: string, limite: number): Promise<boolean>;
   /** Suma `cantidad` usos (1 por defecto) y devuelve el total del día. */
   sumar(email: string, dia: string, cantidad?: number): Promise<number>;
   obtener(email: string, dia: string): Promise<number>;
