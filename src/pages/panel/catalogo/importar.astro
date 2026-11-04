@@ -293,7 +293,16 @@ const sesion = sesionCon(Astro.locals, 'facturas');
           continue;
         }
         textosPagina.set(numero,pagina.texto);
-        if(pagina.variantes?.length){ juntarCandidatos(pagina.variantes); paginasLocales.add(numero); }
+        if(pagina.variantes?.length){
+          // La matriz estructurada ya contiene las combinaciones verificables:
+          // no duplicar con sugerencias genéricas de Groq ni gastar su cuota.
+          await enviar();
+          juntarCandidatos(pagina.variantes);
+          paginasLocales.add(numero);
+          siguientePagina=numero+1;
+          actualizarProgreso(numero,documento.paginas,'Matriz técnica: '+pagina.variantes.length+' variantes comprobadas en página '+numero);
+          continue;
+        }
         // El resto de páginas (escaneos, páginas sin texto) se revisa visualmente cuando el usuario lo solicite.
         if(!pagina.texto.trim()){sinTexto.push(numero);continue;}
         // Conserva todo el texto local. Los trozos de una página se envían por separado
