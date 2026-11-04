@@ -24,8 +24,9 @@ export const POST:APIRoute=async({locals,request})=>{
   const url=new URL(request.url),bocetoId=url.searchParams.get('bocetoId'),clase=url.searchParams.get('clase');
   if(!idValido(bocetoId)||!['espacio','boceto','referencia'].includes(clase||''))return json(400,{ok:false,error:'Boceto o tipo de imagen inválido'});
   await asegurarEsquema(entorno.DB);
-  const existe=await entorno.DB.prepare('SELECT id FROM studio_bocetos WHERE id=? AND cliente_id=?').bind(bocetoId,tenant()).first();
+  const existe=await entorno.DB.prepare('SELECT id,estado FROM studio_bocetos WHERE id=? AND cliente_id=?').bind(bocetoId,tenant()).first<{id:string;estado:string}>();
   if(!existe)return json(404,{ok:false});
+  if(existe.estado==='validada'||existe.estado==='archivada')return json(409,{ok:false,error:'Diseño inmutable; crea una revisión editable'});
   // Subida binaria, no multipart; límite real aun cuando no se informa Content-Length.
   const reader=request.body?.getReader();if(!reader)return json(400,{ok:false});
   const bloques:Uint8Array[]=[];let tamano=0;
