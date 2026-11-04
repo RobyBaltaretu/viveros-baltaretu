@@ -94,11 +94,13 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
           option.textContent=[mat.nombre,mat.referencia,mat.acabado].filter(Boolean).join(' · ');select.append(option);}
         select.value=pieza.catalogoVarianteId||'';
         let busquedaActual=0;
+        let temporizadorBusqueda:ReturnType<typeof setTimeout>|undefined;
         buscador.addEventListener('input',()=>{
           const turno=++busquedaActual;
           const termino=buscador.value.trim();
           if(termino.length>0&&termino.length<2)return;
-          fetch('/api/panel/studio-materiales?q='+encodeURIComponent(termino)).then(r=>{
+          if(temporizadorBusqueda)clearTimeout(temporizadorBusqueda);
+          temporizadorBusqueda=setTimeout(()=>fetch('/api/panel/studio-materiales?q='+encodeURIComponent(termino)).then(r=>{
             if(!r.ok)throw Error('Catálogo no disponible');return r.json();
           }).then(j=>{
             if(turno!==busquedaActual)return;
@@ -118,7 +120,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
               select.append(opcion);
             }
             select.value=seleccion;
-          }).catch(()=>estado('No se ha podido buscar en el catálogo'));
+          }).catch(()=>estado('No se ha podido buscar en el catálogo')),250);
         });
         select.addEventListener('change',()=>{pieza.catalogoVarianteId=select.value||null;pieza.acabadoId=select.value||null;});
         etiqueta.append(select);seccion.append(etiqueta);
