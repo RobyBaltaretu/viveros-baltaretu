@@ -35,3 +35,18 @@ it('no trata cabeceras de espesor sin etiquetas como muestras',()=>{
     ...[100,85,75,70,60,50].map((n,i)=>t(String(n),220+i*45,730,12))];
   expect(detectarPosicionesMuestras(items)).toEqual([]);
 });
+
+
+it('acepta los text-runs combinados de PDF.js código + acabado + nombre',()=>{
+  const tokens=[
+    t('B3002 MA Special White',62,700,73),
+    t('B3002 SC Special White',161,700,73),
+    t('B3002 WRP Special White',260,700,77),
+    t('B4402 SMA Pure White',359,700,73),
+    t('0112 PE Stone Grey',460,700,72),
+  ];
+  const resultado=detectarPosicionesMuestras(tokens);
+  expect(resultado).toHaveLength(5);
+  expect(resultado.map(x=>x.acabado)).toEqual(['MA','SC','WRP','SMA','PE']);
+  expect(resultado.map(x=>x.codigo)).toEqual(['B3002','B3002','B3002','B4402','0112']);
+});
