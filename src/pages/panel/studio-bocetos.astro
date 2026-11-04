@@ -45,6 +45,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
   import { calcularPlano, svgPlano } from '../../server/simulador/geometria-boceto.ts';
   const $ = (id: string) => document.getElementById(id) as HTMLElement;
   let id='',revision=1;
+  let claveGeneracion='';
   let espacio='',dibujo='';
   let interpretacion: any=null;
   let materiales: Array<{id:string;nombre:string;referencia:string;acabado:string;colorHex:string|null}> = [];
@@ -88,7 +89,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
     for(const q of interpretacion.preguntas||[]){const p=document.createElement('p');p.textContent='Pendiente: '+q;zona.append(p);}
   }
   async function abrir(bid:string){const r=await fetch('/api/panel/studio-bocetos?id='+encodeURIComponent(bid));const j=await r.json();if(!r.ok)throw Error('No se pudo abrir el boceto');
-    id=j.boceto.id;revision=j.boceto.revision;interpretacion=j.boceto.interpretacion;
+    id=j.boceto.id;revision=j.boceto.revision;interpretacion=j.boceto.interpretacion;claveGeneracion='';
     espacio=interpretacion.fotoEspacioId;dibujo=interpretacion.fotoBocetoId;
     $('editor-boceto').hidden=false;$('identificador-boceto').textContent='Borrador '+id;
     const ancho=interpretacion.modulos?.[0]?.ancho;
@@ -178,7 +179,8 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
     if(!id||!interpretacion||interpretacion.estado!=='validada'){estado('Valida primero el boceto y los materiales.');return;}
     const boton=$('generar-boceto') as HTMLButtonElement;boton.disabled=true;estado('Generando imagen…');
     try{
-      const r=await fetch('/api/panel/studio-generar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+      claveGeneracion ||= crypto.randomUUID();
+      const r=await fetch('/api/panel/studio-generar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,clave:claveGeneracion})});
       const j=await r.json();if(!r.ok)throw Error(j.error||'Error al generar');
       await cargarGeneraciones();estado('Imagen guardada en R2 privado.');
     }catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
