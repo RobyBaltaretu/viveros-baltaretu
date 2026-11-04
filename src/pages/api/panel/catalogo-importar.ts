@@ -47,10 +47,10 @@ export const POST: APIRoute = async ({locals,request}) => {
     const fecha=dia(),tipo=accion==='vision'?'vision':'texto';
     const cuenta=s.usuario.email+':gubia-local-'+tipo;
     const limite=accion==='vision'?MAX_VISION_DIA:MAX_LOTES_DIA;
-    if(await s.repos.usoAsistente.obtener(cuenta,fecha)>=limite)
+    // Reserva atómica: dos peticiones simultáneas no pueden consumir el último uso.
+    // Una solicitud al proveedor cuenta incluso si después devuelve error.
+    if(!(await s.repos.usoAsistente.reservar(cuenta,fecha,limite)))
       return json(429,{ok:false,error:'Has alcanzado el límite diario de Gubia Importador. Conserva tu revisión y continúa otro día.'});
-    // Se contabiliza antes de la solicitud, incluso cuando la API externa falla.
-    await s.repos.usoAsistente.sumar(cuenta,fecha);
     const proveedor=dato(input.proveedor);
     if(accion==='vision'){
       const articulos=await interpretarMuestraConGroq(proveedor,input.imagen,input.pagina,input.texto,{apiKey:clave});
