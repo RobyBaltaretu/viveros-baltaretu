@@ -6,7 +6,7 @@
 export type TokenPDF = {str:string;transform:number[];width?:number};
 export type PosicionMuestra = {codigo:string;x:number;y:number};
 export type MuestraPDF = {codigo:string;pagina:number;colorHex:string;muestra:string};
-const codigoValido=/^(?:[A-Z]\d{3,5}|\d{4})$/;
+const codigoValido=/^(?:[A-Z]\d{3,5}|\d{3,4})$/;
 
 export const normalizarCodigoMuestra=(s:string):string=>{
   const t=s.trim().toUpperCase();
