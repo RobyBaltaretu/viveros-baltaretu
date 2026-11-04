@@ -107,3 +107,13 @@ No fusionar ni desplegar hasta cerrar bloqueantes y verificar CI y pruebas reale
 - Aún no hay cola asíncrona ni verificación con el proveedor del coste real. La conciliación requiere acción humana; no se debe considerar recuperación automática completa.
 - Falta confirmar build/CI y prueba real de D1, R2 y Gemini.
 - Sigue pendiente conversión a presupuestos, costes y merma por variante, vínculo a Proyectos/Simulaciones, selección visual de materiales y QA Safari.
+
+## Contraste incremental — valoración y búsqueda (2026-11-04)
+- Añadida valoración conservadora de materiales del despiece usando coste, merma y margen del artículo vinculado a cada variante. Solo admite unidades m² en artículo, consumo y presupuesto; referencias sin precio, stock o unidades compatibles se bloquean.
+- El endpoint de despiece devuelve la valoración parcial y la UI la presenta expresamente como estimación de materiales sin IVA, no como presupuesto final.
+- Añadidas pruebas unitarias de subtotal, unidades no soportadas y artículos sin coste.
+- El selector de piezas permite búsqueda remota por referencia, nombre y acabado, con espera de 250 ms y conservación del material seleccionado.
+- Sigue pendiente: compra por formatos y paquetes, conversión de unidades, cantos, herrajes, mecanizados, mano de obra, impuestos, integración en presupuestos y Proyectos.
+- Hallazgo UX: la búsqueda es textual y el catálogo responde un máximo de 80 resultados; falta paginación, filtros por familia y miniaturas/color/texture visuales.
+- Hallazgo económico: el precio fijo y la merma tienen reglas de negocio que requieren validación con el cliente antes de crear un presupuesto real.
+- No hay CI verde ni validación E2E confirmada para estos cambios; no fusionar ni desplegar.
