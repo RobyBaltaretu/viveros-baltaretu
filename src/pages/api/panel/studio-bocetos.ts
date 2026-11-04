@@ -5,6 +5,7 @@ import { sesionCon } from '../../../server/panel/pagina.ts';
 import { cuerpoLimitado } from '../../../server/panel/cuerpo.ts';
 import { asegurarEsquema } from '../../../server/data/d1/migraciones.ts';
 import type { BaseD1 } from '../../../server/data/d1/base.ts';
+import { compatibilidadPieza } from '../../../server/simulador/compatibilidad-materiales.ts';
 import { validarInterpretacion, type InterpretacionBoceto } from '../../../server/simulador/boceto.ts';
 
 export const prerender = false;
@@ -77,9 +78,16 @@ export const PATCH: APIRoute = async ({locals,request}) => {
   const errores=validarInterpretacion(b);if(errores.length)return json(400,{ok:false,errores});
   const seleccionadas=b.modulos.flatMap(m=>m.piezas).filter(p=>p.catalogoVarianteId);
   if(seleccionadas.length){
-    const variantes=await sesion.repos.catalogo.variantes?.()??[];
-    const activas=new Set(variantes.filter(v=>v.estado==='activo').map(v=>v.id));
-    if(seleccionadas.some(p=>!activas.has(p.catalogoVarianteId!)))return json(400,{ok:false,error:'Hay materiales descatalogados o inexistentes'});
+    const [variantes,articulos]=await Promise.all([sesion.repos.catalogo.variantes?.()??Promise.resolve([]),sesion.repos.catalogo.articulos()]);
+    const porId=new Map(variantes.map(v=>[v.id,v]));
+    const porArticulo=new Map(articulos.map(a=>[a.id,a]));
+    for(const pieza of seleccionadas){
+      const variante=porId.get(pieza.catalogoVarianteId!);
+      const articulo=variante?porArticulo.get(variante.articuloId):undefined;
+      if(!variante||!articulo)return json(400,{ok:false,error:'La referencia del material no existe en el catálogo'});
+      const resultado=compatibilidadPieza(pieza,articulo,variante);
+      if(!resultado.compatible)return json(400,{ok:false,error:'Material incompatible con '+pieza.tipo,detalles:resultado.errores});
+    }
   }
   await asegurarEsquema(db());
   if(b.estado==='validada' && (b.fotoEspacioId.startsWith('pendiente-') || b.fotoBocetoId.startsWith('pendiente-')))return json(409,{ok:false,error:'Guarda las dos fotografías antes de validar'});
