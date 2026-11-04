@@ -94,7 +94,11 @@ export const POST:APIRoute=async({locals,request})=>{
     return json(502,{ok:false,error:'El proveedor no devolvió una imagen válida'});
   }
   let bytes:Uint8Array;try{bytes=Uint8Array.from(atob(imagen.data),c=>c.charCodeAt(0));}catch{return json(502,{ok:false,error:'Imagen de proveedor ilegible'});}
-  if(bytes.length>6_000_000||tipoDeImagen(bytes)?.tipo!==imagen.mimeType)return json(502,{ok:false,error:'Imagen resultante no válida'});
+  if(bytes.length>6_000_000||tipoDeImagen(bytes)?.tipo!==imagen.mimeType){
+    await e.DB.prepare('UPDATE studio_generaciones SET estado=?,error=?,actualizado=? WHERE id=?')
+      .bind('fallida','Imagen inválida',new Date().toISOString(),generacion).run();
+    return json(502,{ok:false,error:'Imagen resultante no válida'});
+  }
   const archivoId='studiofile_'+crypto.randomUUID(),objetoR2='privado/studio/'+tenant+'/'+id+'/'+archivoId;
   try{await e.IMAGENES_PRIVADAS.put(objetoR2,bytes);}catch{
     await e.DB.prepare('UPDATE studio_generaciones SET estado=?,error=?,actualizado=? WHERE id=?').bind('fallida','R2 no disponible',new Date().toISOString(),generacion).run();
