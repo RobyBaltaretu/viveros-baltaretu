@@ -22,9 +22,13 @@ export const POST:APIRoute=async({locals,request})=>{
   if(!e.IMAGENES_PRIVADAS)return json(503,{ok:false,error:'R2 privado no configurado'});
   const key=claveGemini(env as Record<string,unknown>);if(!key)return json(503,{ok:false,error:'Gemini no configurado'});
   const body=await cuerpoLimitado(request,2048);if(!body)return json(413,{ok:false});
-  let id='';try{id=String((await body.json() as {id?:string}).id||'');}catch{return json(400,{ok:false});}
+  let id='',clave='';try{const entrada=await body.json() as {id?:string;clave?:string};id=String(entrada.id||'');clave=String(entrada.clave||'');}catch{return json(400,{ok:false});}
+  if(!/^[a-f0-9-]{36}$/.test(clave))return json(400,{ok:false,error:'Falta identificador de solicitud válido'});
   if(!/^studio_[a-f0-9-]{36}$/.test(id))return json(400,{ok:false,error:'ID inválido'});
   await asegurarEsquema(e.DB);
+  const anterior=await e.DB.prepare('SELECT id,revision,estado,resultado_archivo_id FROM studio_generaciones WHERE cliente_id=? AND boceto_id=? AND clave_idempotencia=?')
+    .bind(tenant,id,clave).first<{id:string;revision:number;estado:string;resultado_archivo_id:string|null}>();
+  if(anterior)return json(200,{ok:true,reutilizada:true,generacion:anterior.id,estado:anterior.estado,archivoId:anterior.resultado_archivo_id,revision:anterior.revision});
   const row=await e.DB.prepare('SELECT revision,interpretacion FROM studio_bocetos WHERE id=? AND cliente_id=? AND estado=?')
     .bind(id,tenant,'validada').first<{revision:number;interpretacion:string}>();
   if(!row)return json(409,{ok:false,error:'Valida el boceto antes de generar'});
@@ -64,8 +68,8 @@ export const POST:APIRoute=async({locals,request})=>{
   const generacion='studiogen_'+crypto.randomUUID(),fecha=new Date().toISOString();
   const solicitud=JSON.stringify({revision:row.revision,especificacion,referencias});
   try{
-    await e.DB.prepare('INSERT INTO studio_generaciones(id,boceto_id,cliente_id,revision,estado,solicitud,coste_estimado_cent,creado,actualizado) VALUES (?,?,?,?,?,?,?,?,?)')
-      .bind(generacion,id,tenant,row.revision,'procesando',solicitud,20,fecha,fecha).run();
+    await e.DB.prepare('INSERT INTO studio_generaciones(id,boceto_id,cliente_id,revision,estado,solicitud,coste_estimado_cent,creado,actualizado,clave_idempotencia) VALUES (?,?,?,?,?,?,?,?,?,?)')
+      .bind(generacion,id,tenant,row.revision,'procesando',solicitud,20,fecha,fecha,clave).run();
   }catch{
     await sesion.repos.usoSimulador.devolver(tenant,mes);
     return json(409,{ok:false,error:'Ya existe una generación activa o no se pudo reservar el trabajo'});
