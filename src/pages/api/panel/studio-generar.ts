@@ -43,6 +43,9 @@ export const POST:APIRoute=async({locals,request})=>{
   };
   let foto,boceto;try{[foto,boceto]=await Promise.all([cargar(interpretacion.fotoEspacioId),cargar(interpretacion.fotoBocetoId)]);}
   catch{return json(422,{ok:false,error:'Faltan imágenes originales'});}
+  const activa=await e.DB.prepare('SELECT id FROM studio_generaciones WHERE boceto_id=? AND cliente_id=? AND revision=? AND estado=? LIMIT 1')
+    .bind(id,tenant,row.revision,'procesando').first();
+  if(activa)return json(409,{ok:false,error:'Ya hay una generación en curso. Consulta el historial antes de reintentar'});
   const mes=mesDe(),limite=limitePresupuestado(iaDe(clienteActual()).simulacionesMes);
   if(!(await sesion.repos.usoSimulador.reservar(tenant,mes,limite)))return json(403,{ok:false,error:'Presupuesto mensual agotado'});
   const generacion='studiogen_'+crypto.randomUUID(),fecha=new Date().toISOString();
@@ -66,13 +69,19 @@ export const POST:APIRoute=async({locals,request})=>{
       .bind('fallida','Proveedor HTTP '+respuesta.status,new Date().toISOString(),generacion).run();
     return json(respuesta.status===429?429:502,{ok:false,error:'El proveedor no pudo generar la imagen'});
   }
-  const resultado=await respuesta.json() as {candidates?:{content?:{parts?:{inlineData?:{mimeType:string;data:string}}[]}}[]};
-  const imagen=resultado.candidates?.[0]?.content?.parts?.find(p=>p.inlineData?.data)?.inlineData;
-  if(!imagen||!['image/jpeg','image/png','image/webp'].includes(imagen.mimeType))return json(502,{ok:false,error:'El proveedor no devolvió una imagen válida'});
+  const resultado=await respuesta.json().catch(()=>null) as {candidates?:{content?:{parts?:{inlineData?:{mimeType:string;data:string}}[]}}[]}|null;
+  const imagen=resultado?.candidates?.[0]?.content?.parts?.find(p=>p.inlineData?.data)?.inlineData;
+  if(!imagen||!['image/jpeg','image/png','image/webp'].includes(imagen.mimeType)){
+    await e.DB.prepare('UPDATE studio_generaciones SET estado=?,error=?,actualizado=? WHERE id=?').bind('fallida','Respuesta sin imagen',new Date().toISOString(),generacion).run();
+    return json(502,{ok:false,error:'El proveedor no devolvió una imagen válida'});
+  }
   let bytes:Uint8Array;try{bytes=Uint8Array.from(atob(imagen.data),c=>c.charCodeAt(0));}catch{return json(502,{ok:false,error:'Imagen de proveedor ilegible'});}
   if(bytes.length>6_000_000||tipoDeImagen(bytes)?.tipo!==imagen.mimeType)return json(502,{ok:false,error:'Imagen resultante no válida'});
   const archivoId='studiofile_'+crypto.randomUUID(),objetoR2='privado/studio/'+tenant+'/'+id+'/'+archivoId;
-  await e.IMAGENES_PRIVADAS.put(objetoR2,bytes);
+  try{await e.IMAGENES_PRIVADAS.put(objetoR2,bytes);}catch{
+    await e.DB.prepare('UPDATE studio_generaciones SET estado=?,error=?,actualizado=? WHERE id=?').bind('fallida','R2 no disponible',new Date().toISOString(),generacion).run();
+    return json(503,{ok:false,error:'No se pudo almacenar la imagen generada'});
+  }
   try{
     await e.DB.batch([
       e.DB.prepare('INSERT INTO studio_boceto_archivos(id,boceto_id,cliente_id,clase,objeto_r2,mime,tamano,creado) VALUES (?,?,?,?,?,?,?,?)')
