@@ -226,17 +226,19 @@ export async function conversar(ctx: Contexto, texto: string, modelos: ModeloAsi
       // desactivar el otro. Los modelos Workers se detienen en su cupo.
       const esGroq = m.nombre.toLowerCase().startsWith('groq ');
       if (m.neuronas.entrada > 0 && !hayNeuronas) continue;
-      if (esGroq && clienteActual().id==='turia') {
-        // Compartido con el importador en D1 Turia. Mientras no se importe,
-        // Gubia usa el total; en días de carga queda protegido el 70%.
-        if (!(await repos.usoAsistente.reservarGroq(dia(ahora),'asistente',1000))) continue;
-      }
       const propuestas: Propuesta[] = [];
       try {
         const herramientas = herramientasModelo(ctx, conversacion, propuestas, [...previos.slice(-3).map((x) => x.texto), mensaje].join(' '));
         const mensajes: ModelMessage[] = [...historial(previos, conocidas), { role: 'user', content: mensaje }];
-        const pedir = (lista: ModelMessage[]) =>
-          generateText({ model: m.modelo, system: instruccionesDe(ctx), messages: lista, tools: herramientas, stopWhen: isStepCount(PASOS), temperature: 0.2, maxOutputTokens: 1600 });
+        const pedir = async (lista: ModelMessage[]) => {
+          if (esGroq && clienteActual().id==='turia') {
+            // Una conversación puede invocar Groq varias veces (herramientas,
+            // consultas y continuación). Reservar cada petición explícita.
+            if (!(await repos.usoAsistente.reservarGroq(dia(ahora),'asistente',1000)))
+              throw new Error('Presupuesto Groq reservado para el importador');
+          }
+          return generateText({ model: m.modelo, system: instruccionesDe(ctx), messages: lista, tools: herramientas, stopWhen: isStepCount(PASOS), temperature: 0.2, maxOutputTokens: 1600 });
+        };
         let r = await pedir(mensajes);
         let gastadas = r.totalUsage;
         let texto = r.text;
