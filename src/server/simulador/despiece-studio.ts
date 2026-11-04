@@ -19,10 +19,17 @@ export function prepararDespiece(b:InterpretacionBoceto):DespieceStudio {
     bloqueos.push('Módulo '+m.id+': cotas incompletas o no exactas');
   for(const p of m.piezas){
    if(!p.catalogoVarianteId)bloqueos.push('Pieza '+p.id+': falta material');
-   bloqueos.push('Pieza '+p.id+': falta despiece y medidas de corte por pieza');
+   const corte=p.corte;
+   const medidaValida=(c:typeof m.ancho|undefined)=>!!c&&c.precision==='exacta'&&c.confirmada&&c.valorMm!==null&&Number.isFinite(c.valorMm)&&c.valorMm>0;
+   const medidas=medidaValida(corte?.ancho)&&medidaValida(corte?.alto);
+   if(!medidas)bloqueos.push('Pieza '+p.id+': faltan medidas exactas y confirmadas de corte');
+   if(!corte||!Number.isSafeInteger(corte.cantidad)||corte.cantidad<1)bloqueos.push('Pieza '+p.id+': cantidad no confirmada');
+   const ancho=medidas?corte!.ancho.valorMm:null,alto=medidas?corte!.alto.valorMm:null;
+   const cantidad=corte?.cantidad??0;
    partidas.push({moduloId:m.id,piezaId:p.id,tipo:p.tipo,varianteId:p.catalogoVarianteId||'',
-    anchoMm:null,altoMm:null,fondoMm:null,cantidad:1,metrosCuadrados:null,requiereMedicion:true});
+    anchoMm:ancho,altoMm:alto,fondoMm:null,cantidad,
+    metrosCuadrados:medidas&&cantidad>0?(ancho!*alto!*cantidad)/1_000_000:null,requiereMedicion:!medidas});
   }
  }
- return {partidas,bloqueos,presupuestable:false};
+ return {partidas,bloqueos,presupuestable:bloqueos.length===0&&partidas.length>0};
 }
