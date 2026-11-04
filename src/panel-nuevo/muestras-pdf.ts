@@ -4,8 +4,8 @@
  * no desde números fijos de página o imágenes genéricas de internet.
  */
 export type TokenPDF = {str:string;transform:number[];width?:number};
-export type PosicionMuestra = {codigo:string;x:number;y:number};
-export type MuestraPDF = {codigo:string;pagina:number;colorHex:string;muestra:string};
+export type PosicionMuestra = {codigo:string;x:number;y:number;acabado?:string};
+export type MuestraPDF = {codigo:string;pagina:number;colorHex:string;muestra:string;acabado?:string};
 const codigoValido=/^(?:[A-Z]\d{3,5}|\d{3,4})$/;
 
 export const normalizarCodigoMuestra=(s:string):string=>{
@@ -37,11 +37,13 @@ export function detectarPosicionesMuestras(items:TokenPDF[]):PosicionMuestra[] {
       if(!palabras.length)return null;
       const minimo=Math.min(c.x,...palabras.map(n=>n.x));
       const maximo=Math.max(c.x+c.w,...palabras.map(n=>n.x+n.w));
-      return {codigo:normalizarCodigoMuestra(c.s),x:(minimo+maximo)/2,y:c.y};
+      const acabado=tokens.find(n=>Math.abs(n.y-c.y)<3&&
+        n.x>c.x+c.w&&n.x<c.x+c.w+10&&/^[A-Z]{2,4}$/.test(n.s))?.s;
+      return {codigo:normalizarCodigoMuestra(c.s),x:(minimo+maximo)/2,y:c.y,acabado};
     }).filter((v):v is PosicionMuestra=>v!==null);
     if(etiquetas.length<3)continue;
     for(const t of etiquetas){
-      if(resultado.some(p=>p.codigo===t.codigo))continue;
+      if(resultado.some(p=>p.codigo===t.codigo&&p.acabado===t.acabado))continue;
       resultado.push(t);
     }
   }
@@ -79,5 +81,5 @@ export function construirMuestra(
   const webp=muestra.toDataURL('image/webp',.62);
   muestra.width=0;muestra.height=0;
   if(!webp.startsWith('data:image/webp;base64,')||webp.length>35000)return null;
-  return {codigo:punto.codigo,pagina,colorHex,muestra:webp};
+  return {codigo:punto.codigo,pagina,colorHex,muestra:webp,acabado:punto.acabado};
 }
