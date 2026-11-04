@@ -38,6 +38,8 @@ const RUTAS: [prefijo: string, modulo: Modulo, sector?: Sector][] = [
   // Pedidos de material a proveedor.
   ['/panel/pedidos', 'pedidosProveedor', 'carpinteria'],
   // Simulador de reformas en vivo con IA.
+  ['/panel/studio-bocetos', 'simulador', 'carpinteria'],
+  ['/api/panel/studio-', 'simulador', 'carpinteria'],
   ['/panel/simulador', 'simulador', 'carpinteria'],
   ['/api/panel/simulador', 'simulador', 'carpinteria'],
   ['/panel/gastos', 'gastos'],
