@@ -1,0 +1,88 @@
+---
+import PaginaPanel from '../../components/panel/PaginaPanel.astro';
+import { sesionCon } from '../../server/panel/pagina.ts';
+import { clienteActual } from '../../plataforma/actual.ts';
+export const prerender = false;
+const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar');
+---
+<PaginaPanel titulo="Turia Studio — Bocetos" permiso="editar" ancho="amplio">
+  {permitido ? (
+    <main class="mx-auto max-w-4xl space-y-6 p-4">
+      <header><h1 class="text-2xl font-bold">Diseñar desde boceto</h1><p class="text-sm">Flujo experimental: guarda el proyecto y sube las fotografías. La interpretación automática y el render se incorporarán en las próximas fases.</p></header>
+      <form id="nuevo-boceto" class="space-y-3 rounded-xl border p-4">
+        <label for="titulo-boceto" class="block font-semibold">Nombre del proyecto</label>
+        <input id="titulo-boceto" required maxlength="120" class="w-full rounded border p-2" placeholder="Lavadero del cliente"/>
+        <button class="rounded bg-neutral-900 px-4 py-2 text-white" type="submit">Crear borrador</button>
+      </form>
+      <section id="editor-boceto" hidden class="space-y-4 rounded-xl border p-4">
+        <h2 class="font-bold">Fotografías y medidas</h2>
+        <p id="identificador-boceto" class="text-xs"></p>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label class="block">Fotografía del espacio vacío <input id="foto-espacio" type="file" accept="image/jpeg,image/png,image/webp" class="block w-full"/></label>
+          <label class="block">Fotografía del boceto en papel <input id="foto-dibujo" type="file" accept="image/jpeg,image/png,image/webp" class="block w-full"/></label>
+        </div>
+        <p class="text-sm">Confirma las cotas en milímetros. No se deducirán medidas de la fotografía.</p>
+        <label class="block">Anchura total (mm, opcional) <input id="ancho-boceto" type="number" min="1" max="100000" class="block w-full rounded border p-2" placeholder="Ej. 2330"/></label>
+        <label class="block">Precisión de la medida <select id="precision-boceto" class="block w-full rounded border p-2"><option value="aproximada">Aproximada</option><option value="exacta">Exacta</option></select></label>
+        <button id="guardar-boceto" type="button" class="rounded bg-neutral-900 px-4 py-2 text-white">Guardar interpretación manual</button>
+        <p class="text-xs">Las fotografías se almacenan de forma privada. El render de IA todavía no está habilitado en este flujo.</p>
+      </section>
+      <p id="estado-boceto" role="status" aria-live="polite"></p>
+      <section><h2 class="font-bold">Borradores recientes</h2><ul id="lista-bocetos" class="space-y-2"></ul></section>
+    </main>
+  ) : <p>Esta herramienta solo está disponible para Creaciones Turia.</p>}
+</PaginaPanel>
+{permitido && <script>
+  const $ = (id: string) => document.getElementById(id) as HTMLElement;
+  let id='',revision=1;
+  let espacio='',dibujo='';
+  const estado=(s:string)=>{$('estado-boceto').textContent=s;};
+  const desconocida=()=>({valorMm:null,precision:'desconocida',origen:'usuario',confirmada:false});
+  function modelo(){
+    const ancho=Number(($('ancho-boceto') as HTMLInputElement).value);
+    const precision=($('precision-boceto') as HTMLSelectElement).value;
+    return {version:1,estado:'pendiente',categoria:'lavadero',fotoEspacioId:espacio,fotoBocetoId:dibujo,
+      obstaculos:[],preguntas:['Confirmar distribución y obstáculos antes de generar'],
+      modulos:[{id:'modulo-principal',tipo:'otro',orden:0,
+        ancho:ancho>0?{valorMm:ancho,precision,origen:'usuario',confirmada:precision==='exacta'}:desconocida(),
+        alto:desconocida(),fondo:desconocida(),piezas:[]}]};
+  }
+  async function cargar(){
+    const r=await fetch('/api/panel/studio-bocetos');if(!r.ok)return;
+    const j=await r.json();const ul=$('lista-bocetos');ul.replaceChildren();
+    for(const b of j.bocetos||[]){const li=document.createElement('li');li.textContent=b.titulo+' · '+b.estado+' · revisión '+b.revision;ul.append(li);}
+  }
+  $('nuevo-boceto')?.addEventListener('submit',async ev=>{
+    ev.preventDefault();estado('Creando borrador…');
+    const titulo=($('titulo-boceto') as HTMLInputElement).value;
+    // IDs de archivo pendientes se asignan tras subir las imágenes; se usan marcadores internos válidos.
+    espacio='pendiente-espacio';dibujo='pendiente-boceto';
+    const r=await fetch('/api/panel/studio-bocetos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({titulo,interpretacion:modelo()})});
+    const j=await r.json();if(!r.ok){estado(j.error||JSON.stringify(j.errores));return;}
+    id=j.id;revision=j.revision;$('editor-boceto').hidden=false;$('identificador-boceto').textContent='Borrador '+id;
+    estado('Borrador creado. Sube ambas fotografías y guarda los cambios.');void cargar();
+  });
+  async function subir(inputId:string,clase:'espacio'|'boceto'){
+    const input=$(inputId) as HTMLInputElement;const archivo=input.files?.[0];
+    if(!archivo)throw Error('Falta fotografía de '+clase);
+    if(archivo.size>6_000_000)throw Error('La imagen supera los 6 MB; comprímela antes de subirla.');
+    const r=await fetch('/api/panel/studio-archivos?bocetoId='+encodeURIComponent(id)+'&clase='+clase,{
+      method:'POST',headers:{'Content-Type':archivo.type},body:archivo
+    });
+    const j=await r.json();if(!r.ok)throw Error(j.error||'Error al subir imagen');
+    return j.id as string;
+  }
+  $('guardar-boceto')?.addEventListener('click',async()=>{
+    if(!id)return;const boton=$('guardar-boceto') as HTMLButtonElement;boton.disabled=true;
+    try{
+      estado('Guardando imágenes…');
+      if(espacio.startsWith('pendiente-'))espacio=await subir('foto-espacio','espacio');
+      if(dibujo.startsWith('pendiente-'))dibujo=await subir('foto-dibujo','boceto');
+      const r=await fetch('/api/panel/studio-bocetos',{method:'PATCH',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id,revision,interpretacion:modelo()})});
+      const j=await r.json();if(!r.ok)throw Error(j.error||JSON.stringify(j.errores));
+      revision=j.revision;estado('Fotografías e interpretación guardadas.');void cargar();
+    }catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
+  });
+  void cargar();
+</script>}
