@@ -1,5 +1,5 @@
 {
-  "version": 15,
+  "version": 16,
   "tablas": {
     "adjuntos": {
       "columnas": [
@@ -885,6 +885,32 @@
         }
       ],
       "sql": "CREATE TABLE gastos ( id TEXT PRIMARY KEY, estado TEXT NOT NULL CHECK (estado IN ('revisar', 'confirmado')), fecha TEXT NOT NULL, proveedor TEXT NOT NULL DEFAULT '', categoria TEXT NOT NULL DEFAULT '', total REAL NOT NULL DEFAULT 0, ticket_id TEXT, datos TEXT NOT NULL, creado TEXT NOT NULL, creado_por TEXT NOT NULL, actualizado TEXT NOT NULL )"
+    },
+    "groq_uso_diario": {
+      "columnas": [
+        {
+          "nombre": "dia",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "importador",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "asistente",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE groq_uso_diario ( dia TEXT NOT NULL PRIMARY KEY, importador INTEGER NOT NULL DEFAULT 0, asistente INTEGER NOT NULL DEFAULT 0, CHECK (importador >= 0 AND asistente >= 0) )"
     },
     "inventario_movimientos": {
       "columnas": [
