@@ -166,5 +166,91 @@ export function extraerVariantesTablero(items: Array<{str:string;transform:numbe
       }
     }
   }
+  return [...salida,...extraerDecorativosDeMatriz(filas,pagina),...extraerCompactosDeTabla(filas,pagina)];
+}
+
+
+type FilaPosicion = Array<{x:number;y:number;texto:string;ancho:number}>;
+const leerFila = (fila:FilaPosicion) => fila.map(x=>x.texto).join(' ').replace(/\s+/g,' ').trim();
+
+/** Matrices de melamina: X en celda = espesor disponible para un decor y un formato. */
+function extraerDecorativosDeMatriz(filas:FilaPosicion[],pagina:number): Array<Record<string,unknown>> {
+  const resultado:Array<Record<string,unknown>>=[];
+  for(let i=1;i<filas.length;i++){
+    const cabecera=leerFila(filas[i]);
+    if(!/\bESPESOR\b/i.test(cabecera)||!/\bmm\b/i.test(cabecera))continue;
+    const anterior=filas[i-1];
+    if(!/\bFORMATO\b/i.test(leerFila(anterior)))continue;
+    const grupos=anterior.flatMap(c=>{
+      const m=c.texto.match(/\b(\d{3,4})\s*[x×]\s*(\d{3,4})\b/i);
+      return m?[{x:c.x,formato:m[1]+' x '+m[2]+' mm'}]:[];
+    }).sort((a,b)=>a.x-b.x);
+    if(grupos.length<1)continue;
+    const espesores=filas[i].flatMap(c=>/^\d{1,3}$/.test(c.texto)&&Number(c.texto)>0&&c.x>180
+      ?[{x:c.x+c.ancho/2,mm:Number(c.texto)}]:[]);
+    if(!espesores.length)continue;
+    // Los formatos están centrados en el grupo; cada grupo comienza un poco
+    // antes del rótulo. Para el primero se admite desde el inicio del cuadro.
+    const formatoDe=(x:number)=>{
+      let elegido=grupos[0].formato;
+      for(let g=1;g<grupos.length;g++)if(x>=grupos[g].x-16)elegido=grupos[g].formato;
+      return elegido;
+    };
+    for(let j=i+1;j<filas.length;j++){
+      const fila=filas[j];
+      if(filas[i][0].y-fila[0].y>730)break;
+      const contenido=leerFila(fila);
+      if(/\b(?:CATÁLOGO|MELAMINA SOBRE|CONSULTE|CARACTERÍSTICAS)\b/i.test(contenido))break;
+      const primera=fila.filter(c=>c.x<195);
+      const datos=leerFila(primera);
+      const decor=datos.match(/^([A-Z]?\d{3,5}|K\d{3,5}|F\d{3,5}|M\d{3,5})\s+([A-Z]{2,4})\s+(.+)$/);
+      if(!decor)continue;
+      const [ ,referencia,acabado,designacion ]=decor;
+      if(designacion.length>75)continue;
+      const marcas=fila.filter(c=>c.x>=195&&/^[xX]$/.test(c.texto));
+      for(const mark of marcas){
+        const grosor=espesores.find(e=>Math.abs(e.x-(mark.x+mark.ancho/2))<8);
+        if(!grosor)continue;
+        const formato=formatoDe(grosor.x);
+        resultado.push({
+          categoria:'tableros',
+          nombre:('AGLOMERADO MELAMINA '+designacion+' '+formato+' '+grosor.mm+'mm').slice(0,120),
+          referencia,codigoDecor:referencia,acabado,soporte:'AGLOMERADO MELAMINA',
+          espesorMm:grosor.mm,formato,unidad:'m²',colorHex:null,veta:null,brillo:null,
+          unidadesPaquete:null,pagina,
+        });
+      }
+    }
+  }
+  return resultado;
+}
+
+/** Filas de diseño, acabado, núcleo, formato y espesor (compacto de cocina/baño). */
+function extraerCompactosDeTabla(filas:FilaPosicion[],pagina:number): Array<Record<string,unknown>> {
+  const salida:Array<Record<string,unknown>>=[];
+  let indice=-1;
+  for(let i=0;i<filas.length;i++){
+    const s=leerFila(filas[i]);
+    if(/\bDISEÑO\b.*\bACABADO\b.*\bNÚCLEO\b.*\bFORMATO\b.*\bESPESOR\b/i.test(s)){indice=i;break;}
+  }
+  if(indice<0)return salida;
+  for(const fila of filas.slice(indice+1)){
+    const code=fila.find(c=>c.x<140&&/^\d{4}$/.test(c.texto));
+    const format=fila.find(c=>/\b\d{4}\s*[x×]\s*\d{4}\b/.test(c.texto));
+    const thickness=fila.find(c=>c.x>(format?.x??Infinity)&&/^\d{1,3}$/.test(c.texto));
+    if(!code||!format||!thickness)continue;
+    const acabado=fila.find(c=>c.x>code.x&&c.x<format.x&&/^[A-Z]{2,3}$/.test(c.texto));
+    if(!acabado)continue;
+    const nombre=fila.filter(c=>c.x>code.x&&c.x<acabado.x).map(c=>c.texto).join(' ').trim();
+    const nucleo=fila.filter(c=>c.x>acabado.x&&c.x<format.x).map(c=>c.texto).join(' ').trim();
+    if(!nombre||!nucleo)continue;
+    const dimensiones=format.texto.match(/(\d{4})\s*[x×]\s*(\d{4})/)!;
+    const formato=dimensiones[1]+' x '+dimensiones[2]+' mm';
+    const mm=Number(thickness.texto);
+    salida.push({categoria:'tableros',nombre:('COMPACTO '+nombre+' '+formato+' '+mm+'mm').slice(0,120),
+      referencia:code.texto,codigoDecor:code.texto,acabado:acabado.texto,soporte:'COMPACTO · Núcleo '+nucleo,
+      espesorMm:mm,formato,unidad:'m²',colorHex:null,veta:null,brillo:null,
+      unidadesPaquete:null,pagina});
+  }
   return salida;
 }
