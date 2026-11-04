@@ -26,8 +26,8 @@ export const POST:APIRoute=async({locals,request})=>{
  const errores=validarInterpretacion(nueva);if(errores.length)return json(422,{ok:false,errores});
  const nuevoId='studio_'+crypto.randomUUID(),fecha=new Date().toISOString(),texto=JSON.stringify(nueva);
  await db.batch([
-  db.prepare('INSERT INTO studio_bocetos(id,cliente_id,titulo,estado,interpretacion,revision,creado,actualizado,actualizado_por) VALUES (?,?,?,?,?,1,?,?,?)')
-    .bind(nuevoId,'turia',original.titulo+' · revisión', 'borrador',texto,fecha,fecha,sesion.usuario.email),
+  db.prepare('INSERT INTO studio_bocetos(id,cliente_id,titulo,estado,interpretacion,revision,creado,actualizado,actualizado_por,origen_boceto_id) VALUES (?,?,?,?,?,1,?,?,?,?)')
+    .bind(nuevoId,'turia',original.titulo+' · revisión', 'borrador',texto,fecha,fecha,sesion.usuario.email,id),
   db.prepare('INSERT INTO studio_boceto_versiones(boceto_id,revision,interpretacion,creado,creado_por) VALUES (?,1,?,?,?)')
     .bind(nuevoId,texto,fecha,sesion.usuario.email)
  ]);
