@@ -24,6 +24,7 @@ export function valorarDespiece(
    bloqueos.push('Pieza '+p.piezaId+': conversión de unidades no verificada');continue;
   }
   if(v.disponibilidad==='sin-stock'){bloqueos.push('Pieza '+p.piezaId+': sin stock');continue;}
+  if(v.disponibilidad==='desconocida'||v.disponibilidad==='bajo-pedido')bloqueos.push('Pieza '+p.piezaId+': confirmar disponibilidad y plazo');
   if(!Number.isFinite(a.coste)||a.coste<=0||!Number.isFinite(a.merma)||a.merma<0||a.merma>100||
      !Number.isFinite(a.margen)||a.margen<0||a.margen>1000||
      (a.precioFijo!==null&&(!Number.isFinite(a.precioFijo)||a.precioFijo<=0))){
@@ -31,8 +32,9 @@ export function valorarDespiece(
   }
   const costeBase=p.metrosCuadrados*a.coste;
   const costeConMerma=costeBase*(1+a.merma/100);
+  // Precio fijo es precio de venta por unidad, no coste: no añadir merma ni margen dos veces.
   const precioSinIva=a.precioFijo!==null
-    ?p.metrosCuadrados*a.precioFijo*(1+a.merma/100)
+    ?p.metrosCuadrados*a.precioFijo
     :costeConMerma*(1+a.margen/100);
   lineas.push({piezaId:p.piezaId,referencia:v.referencia||a.referencia,cantidad:p.cantidad,
    superficieM2:p.metrosCuadrados,costeBase,mermaPorcentaje:a.merma,costeConMerma,precioSinIva});
