@@ -294,6 +294,10 @@ const sesion = sesionCon(Astro.locals, 'facturas');
           siguientePagina=numero+1;
           continue;
         }
+        if(pagina.errorTexto){
+          paginasFallidas.push({pagina:numero,detalle:pagina.errorTexto});
+          console.warn('[Gubia Importador] Lectura de texto degradada en página '+numero,pagina.errorTexto);
+        }
         textosPagina.set(numero,pagina.texto);
         if(pagina.muestras?.length)muestrasDetectadas.push(...pagina.muestras);
         if(pagina.variantes?.length){
@@ -319,11 +323,11 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         }
       }
       await enviar();
-      if(paginasFallidas.length && !articulos.length && paginasFallidas.length===documento.paginas-comenzar+1)
-        throw Error('No se ha podido leer ninguna página. Primer error: '+paginasFallidas[0].detalle);
+      // No abortar toda la importación por fallos del motor PDF.js en Safari.
+      // Las páginas sin texto se pueden recuperar mediante la revisión visual.
       let avisoVision='';
-      if ($('gubia-vision-auto').checked) {
-        const prioridades=[...new Set([...sinTexto,...revisar])].filter(p=>!articulos.some(a=>a.data.pagina===p)).slice(0,8);
+      if ($('gubia-vision-auto').checked || paginasFallidas.length) {
+        const prioridades=[...new Set([...paginasFallidas.map(p=>p.pagina),...($('gubia-vision-auto').checked ? [...sinTexto,...revisar] : [])])].filter(p=>!articulos.some(a=>a.data.pagina===p)).slice(0,8);
         for (const pagina of prioridades) {
           actualizarProgreso(pagina,documento.paginas,'Interpretando imagen de la página '+pagina);
           try {
@@ -355,7 +359,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       if (avisoVision) mensaje(estado.textContent+avisoVision);
       const pendientes=[...new Set([...sinTexto,...revisar])].filter(p=>!articulos.some(a=>a.data.pagina===p));
       if (pendientes.length) mensaje(estado.textContent+' · Páginas sin propuestas, disponibles en revisión visual: '+pendientes.join(', ')+'.');
-      if (paginasFallidas.length) mensaje(estado.textContent+' · Páginas con errores de extracción: '+paginasFallidas.map(p=>p.pagina).join(', ')+'. Primer error: '+paginasFallidas[0].detalle+'.');
+      if (paginasFallidas.length) mensaje(estado.textContent+' · ATENCIÓN: páginas con texto no recuperado: '+paginasFallidas.map(p=>p.pagina).join(', ')+'. Se ha intentado revisión visual (máximo 8 páginas); comprueba las fichas y reanuda las restantes. Primer error: '+paginasFallidas[0].detalle+'.');
 
     }catch(err){
       const detalle=err?.message||String(err)||'Error desconocido';
