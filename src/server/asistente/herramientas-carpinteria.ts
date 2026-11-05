@@ -13,6 +13,8 @@ import { proveedorVacio } from '../proveedores/proveedores.ts';
 import { nifValido } from '../facturas/nif.ts';
 import { normalizar } from './coincidencia.ts';
 import type { Cambio, Consulta, Herramienta } from './herramientas.ts';
+import { LIMITE_MENSAJES_PERSONA, limitesGroq, PRESUPUESTO_GROQ_DIA, quedanParaGubia } from './estado-ia.ts';
+import { iaDe } from '../../plataforma/configuracion.ts';
 
 /**
  * Herramientas de la carpintería (Gubia, en Turia): presupuestos a cliente,
@@ -121,6 +123,30 @@ const LINEA_PEDIDO = z.object({
 type LineaPe = z.infer<typeof LINEA_PEDIDO> & { articuloId?: string | null };
 
 export const HERRAMIENTAS_CARPINTERIA: Herramienta[] = [
+  consulta({
+    nombre: 'estado_ia',
+    descripcion: 'Qué modelo de inteligencia artificial estás usando ahora mismo, los de respaldo y cuánto límite aproximado queda hoy (peticiones de Groq del panel, mensajes de la persona y, si Groq lo ha dicho, sus límites).',
+    permiso: 'asistente',
+    esquema: z.object({}),
+    async consultar(ctx) {
+      const { repos, usuario, hoy } = ctx;
+      const modelos = iaDe(clienteActual()).modelos;
+      const cadena = [modelos.groq, ...(modelos.groqRespaldo ?? [])].map((id) => `groq ${id.replace(/^(openai|meta-llama)\//, '')}`);
+      const uso = await repos.usoAsistente.usoGroq(hoy);
+      const mensajes = await repos.usoAsistente.obtener(usuario.email, hoy);
+      const actual = ctx.modeloActual ?? cadena[0] ?? 'modo básico';
+      const groq = limitesGroq(actual);
+      return {
+        modeloActual: actual,
+        respaldo: cadena.filter((n) => n !== actual),
+        panelHoy: { peticionesGroqUsadas: uso.importador + uso.asistente, presupuestoDiario: PRESUPUESTO_GROQ_DIA, quedanParaGubia: quedanParaGubia(uso), usadasPorElImportador: uso.importador },
+        mensajesPersona: { usados: mensajes, limite: LIMITE_MENSAJES_PERSONA },
+        ...(groq ? { segunGroq: { peticionesRestantesHoy: groq.peticionesRestantes, peticionesLimiteHoy: groq.peticionesLimite, tokensRestantesEsteMinuto: groq.tokensRestantesMinuto, tokensLimitePorMinuto: groq.tokensLimiteMinuto, leido: groq.leido } } : {}),
+        renueva: 'Los cupos diarios se renuevan a medianoche UTC (la 1:00 o las 2:00 en España).',
+        aviso: 'Cifras aproximadas: Groq comparte su límite con el importador de catálogos y cuenta tokens por minuto. Si un modelo se agota, paso al siguiente de respaldo y, sin ninguno, al modo básico.',
+      };
+    },
+  }),
   consulta({
     nombre: 'ver_presupuestos_cliente',
     descripcion: 'Presupuestos a cliente (de obras y trabajos): estado, total, anticipo, cobros y qué falta por facturar. Filtra por estado, cliente o texto.',
@@ -438,6 +464,7 @@ export const NOMBRES_CARPINTERIA = HERRAMIENTAS_CARPINTERIA.map((h) => h.nombre)
 
 /** Temas para elegir qué herramientas se mandan al modelo (solo en la carpintería). */
 export const TEMAS_CARPINTERIA: { palabras: RegExp; herramientas: string[] }[] = [
+  { palabras: /modelo|limite|cupo|inteligencia artificial|\bia\b|groq|llama|gpt/, herramientas: ['estado_ia'] },
   { palabras: /presupuest|obra|trabajo|anticip|acept|rechaz|envi/, herramientas: ['ver_presupuestos_cliente', 'crear_presupuesto_cliente', 'gestionar_presupuesto_cliente', 'buscar_catalogo', 'ver_clientes'] },
   { palabras: /catalog|articul|material|tabler|herraj|canto|precio|coste|margen|melamin|madera|mano de obra/, herramientas: ['buscar_catalogo', 'cambiar_articulos'] },
   { palabras: /proveedor|suministr|comercial/, herramientas: ['ver_proveedores', 'guardar_proveedor'] },

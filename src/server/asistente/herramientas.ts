@@ -35,6 +35,8 @@ export interface Contexto {
   usuario: Usuario;
   hoy: string;
   env: EntornoPublicar;
+  /** Modelo que atiende el mensaje en este momento (lo pone el agente). */
+  modeloActual?: string;
 }
 
 type Preparado<A> = { ok: true; resumen: string; argumentos: A } | { ok: false; error: string };

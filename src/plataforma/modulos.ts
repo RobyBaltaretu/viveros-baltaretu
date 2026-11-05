@@ -92,6 +92,7 @@ const DEL_CATALOGO = new Set(['buscar_plantas', 'cambiar_planta', 'crear_planta'
 
 /** Herramientas de la carpintería (src/server/asistente/herramientas-carpinteria.ts) y su módulo. */
 const DE_LA_CARPINTERIA: Record<string, Modulo> = {
+  estado_ia: 'asistente',
   ver_presupuestos_cliente: 'presupuestosCliente',
   crear_presupuesto_cliente: 'presupuestosCliente',
   gestionar_presupuesto_cliente: 'presupuestosCliente',
