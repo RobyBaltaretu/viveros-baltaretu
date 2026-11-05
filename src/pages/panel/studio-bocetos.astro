@@ -4,6 +4,9 @@ import { sesionCon } from '../../server/panel/pagina.ts';
 import { clienteActual } from '../../plataforma/actual.ts';
 export const prerender = false;
 const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar');
+// Commit con el que se construyó esta versión (Workers Builds): para comprobar qué código está desplegado.
+const commit=(import.meta.env.WORKERS_CI_COMMIT_SHA||'').slice(0,7);
+const rama=import.meta.env.WORKERS_CI_BRANCH||'';
 ---
 <PaginaPanel titulo="Turia Studio — Bocetos" permiso="editar" ancho="amplio">
   {permitido ? (
@@ -43,6 +46,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
       </section>
       <p id="estado-boceto" role="status" aria-live="polite">Inicializando Turia Studio… Si este mensaje no cambia, el JavaScript de la página no se ha cargado.</p>
       <section><h2 class="font-bold">Borradores recientes</h2><ul id="lista-bocetos" class="space-y-2"></ul></section>
+      <p class="text-xs" data-version-codigo>Versión del código: {commit ? `${commit}${rama ? ` (rama ${rama})` : ''}` : 'build local'}</p>
     </main>
   ) : <p>Esta herramienta solo está disponible para Creaciones Turia.</p>}
 </PaginaPanel>
@@ -52,6 +56,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
   let id='',revision=1;
   let claveGeneracion='';
   let espacio='',dibujo='';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- el editor cambia la interpretación en el navegador; el servidor la valida al guardar.
   let interpretacion: any=null;
   let materiales: Array<{id:string;nombre:string;referencia:string;acabado:string;colorHex:string|null}> = [];
   async function cargarMateriales(){
@@ -65,9 +70,12 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
       const control=$(nombre) as HTMLInputElement|HTMLButtonElement|null;if(control)control.disabled=soloLectura;
     }
     const titulo=document.createElement('h3');titulo.textContent='Distribución: '+interpretacion.modulos.length+' módulos';zona.append(titulo);
-    const plano=calcularPlano(interpretacion);
-    const visor=document.createElement('div');visor.className='overflow-x-auto rounded border bg-white p-2';visor.innerHTML=svgPlano(plano);zona.append(visor);
-    const aviso=document.createElement('p');aviso.className='text-sm';aviso.textContent=plano.advertencias.length?'Alzado provisional: '+plano.advertencias.join('; '):'Alzado basado en las cotas disponibles';zona.append(aviso);
+    const visor=document.createElement('div');visor.className='overflow-x-auto rounded border bg-white p-2';visor.dataset.plano='';zona.append(visor);
+    const aviso=document.createElement('p');aviso.className='text-sm';zona.append(aviso);
+    // El alzado se vuelve a dibujar cada vez que cambia una cota (sin rehacer los campos: no se pierde el foco).
+    const redibujar=()=>{const plano=calcularPlano(interpretacion);visor.innerHTML=svgPlano(plano);
+      aviso.textContent=plano.advertencias.length?'Alzado provisional: '+plano.advertencias.join('; '):'Alzado basado en las cotas disponibles';};
+    redibujar();
     for(const m of interpretacion.modulos){
       const seccion=document.createElement('fieldset');seccion.className='rounded border p-3';seccion.disabled=soloLectura;
       const leyenda=document.createElement('legend');leyenda.textContent=m.tipo+' · '+m.id;seccion.append(leyenda);
@@ -79,6 +87,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
         input.addEventListener('change',()=>{
           const n=input.value.trim()?Number(input.value):null;
           m[dimension]={valorMm:n,precision:n===null?'desconocida':'exacta',origen:'usuario',confirmada:n!==null};
+          redibujar();
         });
         etiqueta.append(input);seccion.append(etiqueta);
       }
@@ -263,7 +272,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
     const r=await fetch('/api/panel/studio-generar?id='+encodeURIComponent(id));
     if(!r.ok)return;
     const j=await r.json();
-    const ultima=(j.generaciones||[]).find((g:any)=>g.estado==='completada'&&g.resultado_archivo_id);
+    const ultima=(j.generaciones||[]).find((g:{estado:string;resultado_archivo_id?:string})=>g.estado==='completada'&&g.resultado_archivo_id);
     if(!ultima)return;
     const marco=$('comparador-boceto');marco.hidden=false;
     ($('imagen-antes') as HTMLImageElement).src='/api/panel/studio-archivos?id='+encodeURIComponent(espacio);
