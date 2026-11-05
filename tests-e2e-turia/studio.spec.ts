@@ -67,8 +67,8 @@ test('Studio: crear, subir fotos, leer el boceto, revisar medidas y recuperar el
 
   // Escribir una medida la confirma y redibuja el alzado.
   const svgAntes = await page.locator('#plano').innerHTML();
-  const alto = page.locator('#modulos fieldset').nth(1).getByLabel('Alto (mm)');
-  await alto.fill('2100');
+  const alto = page.locator('#modulos fieldset').nth(1).getByLabel('Alto (cm)');
+  await alto.fill('210');
   await alto.dispatchEvent('change');
   await expect(page.locator('#aviso-plano')).toHaveText('Alzado con todas las medidas.');
   await expect(page.locator('#modulos fieldset').nth(1).getByText('Confirmada')).toBeVisible();
@@ -91,7 +91,7 @@ test('Studio: crear, subir fotos, leer el boceto, revisar medidas y recuperar el
   await expect(page.locator('#nombre-proyecto')).toHaveText(titulo);
   await expect(page.locator('#vista-espacio')).toBeVisible();
   await expect(page.locator('#modulos fieldset')).toHaveCount(2);
-  await expect(page.locator('#modulos fieldset').nth(1).getByLabel('Alto (mm)')).toHaveValue('2100');
+  await expect(page.locator('#modulos fieldset').nth(1).getByLabel('Alto (cm)')).toHaveValue('210');
   expect(errores).toEqual([]);
 });
 
@@ -102,17 +102,20 @@ test('Studio: sin IA, se ponen las medidas a mano y se elige el material del cat
   if (await cargar.isVisible()) await cargar.click();
   await page.goto('/panel/studio-bocetos');
   await expect(page.locator('#estado-boceto')).toHaveText(/Turia Studio listo/);
-  await page.getByLabel('Nombre del proyecto').fill(`Armario ${Date.now()}`);
+  const nombre = `Armario ${Date.now()}`;
+  await page.getByLabel('Nombre del proyecto').fill(nombre);
   await page.getByRole('button', { name: 'Crear proyecto' }).click();
   await expect(page.locator('#editor-boceto')).toBeVisible();
   await page.getByRole('button', { name: 'Poner yo las medidas' }).click();
   await expect(page.locator('#modulos fieldset')).toHaveCount(1);
-  for (const [d, v] of [['Ancho (mm)', '1200'], ['Alto (mm)', '2400'], ['Fondo (mm)', '600']]) {
+  for (const [d, v] of [['Ancho (cm)', '120'], ['Alto (cm)', '240'], ['Fondo (cm)', '60']]) {
     const campo = page.locator('#modulos fieldset').first().getByLabel(d);
     await campo.fill(v);
     await campo.dispatchEvent('change');
   }
   await expect(page.locator('#aviso-plano')).toHaveText('Alzado con todas las medidas.');
+  await page.locator('#modulos fieldset').first().getByLabel('Qué lleva').fill('lavadora y secadora apiladas, altillo encima');
+  await page.locator('#modulos fieldset').first().getByLabel('Qué lleva').dispatchEvent('change');
   await page.getByRole('button', { name: 'Añadir una pieza' }).click();
   await expect(page.locator('#modulos .st-pieza')).toHaveCount(1);
   // Elegir material: carga el catálogo al abrirlo, también los artículos sin variantes.
@@ -125,7 +128,23 @@ test('Studio: sin IA, se ponen las medidas a mano y se elige el material del cat
   await materiales.first().click();
   await expect(materiales.first()).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#modulos .st-elegido')).toContainText(/melamina/i);
+  // Una puerta no ofrece cantos ni encimeras.
+  await page.getByLabel('Buscar material').fill('canto');
+  await expect(page.getByRole('group', { name: 'Materiales del catálogo' })).toContainText('No hay materiales para esta pieza');
   await page.getByRole('button', { name: 'Guardar cambios' }).click();
   await expect(page.locator('#estado-boceto')).toHaveText('Cambios guardados.');
+  // Al recargar, se conservan las medidas en cm y lo que lleva el módulo.
+  await page.reload();
+  await expect(page.locator('#estado-boceto')).toHaveText(/Turia Studio listo/);
+  await page.locator('#lista-bocetos button', { hasText: nombre }).click();
+  await expect(page.locator('#modulos fieldset').first().getByLabel('Ancho (cm)')).toHaveValue('120');
+  await expect(page.locator('#modulos fieldset').first().getByLabel('Qué lleva')).toHaveValue('lavadora y secadora apiladas, altillo encima');
+  // Si la pieza pasa a ser un canto, solo se ofrecen cantos.
+  await page.locator('#modulos .st-pieza').first().getByLabel('Pieza').selectOption('canto');
+  await expect(page.locator('#modulos .st-elegido')).toContainText('Sin material');
+  await page.getByRole('button', { name: 'Elegir material' }).click();
+  const cantos = page.getByRole('group', { name: 'Materiales del catálogo' }).locator('.st-material');
+  await expect(cantos.first()).toBeVisible();
+  for (const texto of await cantos.allInnerTexts()) expect(texto).toMatch(/canto/i);
   await auditar(page);
 });

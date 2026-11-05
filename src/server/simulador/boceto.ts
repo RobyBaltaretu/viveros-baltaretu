@@ -31,6 +31,8 @@ export interface ModuloBoceto {
   fondo: CotaBoceto;
   piezas: PiezaBoceto[];
   notas?: string;
+  /** Qué lleva el módulo (electrodomésticos, fregadero, barra, baldas…), en palabras del carpintero. */
+  contenido?: string;
 }
 export interface InterpretacionBoceto {
   version: 1;
@@ -65,6 +67,7 @@ export function validarInterpretacion(b: InterpretacionBoceto): string[] {
     if (!modulo.id || ids.has(modulo.id)) errores.push('ID de módulo duplicado o vacío');
     ids.add(modulo.id);
     if (!Number.isInteger(modulo.orden) || modulo.orden < 0) errores.push('Orden inválido: '+modulo.id);
+    if (modulo.contenido !== undefined && (typeof modulo.contenido !== 'string' || modulo.contenido.length > 300)) errores.push('Contenido inválido: '+modulo.id);
     for (const [campo, cota] of [['ancho',modulo.ancho],['alto',modulo.alto],['fondo',modulo.fondo]] as const) {
       const error = validarCota(cota);
       if (error) errores.push(modulo.id+'.'+campo+': '+error);

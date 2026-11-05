@@ -494,15 +494,17 @@ const PASOS = ['Proyecto', 'Fotos', 'Revisar', 'Imagen'];
   function campoMedida(m: ModuloBoceto, d: 'ancho' | 'alto' | 'fondo', soloLectura: boolean) {
     const etiqueta = document.createElement('label');
     etiqueta.className = 'nv-campo st-medida';
-    etiqueta.append(`${{ ancho: 'Ancho', alto: 'Alto', fondo: 'Fondo' }[d]} (mm)`);
+    etiqueta.append(`${{ ancho: 'Ancho', alto: 'Alto', fondo: 'Fondo' }[d]} (cm)`);
+    // En cm, como en el boceto del carpintero; se guarda en mm.
     const input = document.createElement('input');
     input.type = 'number';
-    input.inputMode = 'numeric';
-    input.min = '1';
-    input.max = '100000';
+    input.inputMode = 'decimal';
+    input.min = '0.1';
+    input.max = '10000';
+    input.step = '0.1';
     input.className = 'campo-panel';
     input.disabled = soloLectura;
-    input.value = m[d].valorMm === null ? '' : String(m[d].valorMm);
+    input.value = m[d].valorMm === null ? '' : String(m[d].valorMm / 10);
     const nota = document.createElement('small');
     const pintarNota = () => {
       nota.dataset.precision = m[d].precision;
@@ -510,8 +512,8 @@ const PASOS = ['Proyecto', 'Fotos', 'Revisar', 'Imagen'];
     };
     pintarNota();
     input.addEventListener('change', () => {
-      const n = input.value.trim() ? Number(input.value) : null;
-      m[d] = n === null || !(n > 0) ? desconocida() : { valorMm: Math.round(n), precision: 'exacta', origen: 'usuario', confirmada: true };
+      const n = input.value.trim() ? Number(input.value.replace(',', '.')) : null;
+      m[d] = n === null || !(n > 0) ? desconocida() : { valorMm: Math.round(n * 10), precision: 'exacta', origen: 'usuario', confirmada: true };
       pintarNota();
       redibujarPlano();
     });
@@ -595,7 +597,7 @@ const PASOS = ['Proyecto', 'Fotos', 'Revisar', 'Imagen'];
         });
         rejilla.append(b);
       }
-      if (!rejilla.children.length) rejilla.textContent = 'No hay materiales con esa búsqueda. Añádelos en «Catálogo».';
+      if (!rejilla.children.length) rejilla.textContent = 'No hay materiales para esta pieza con esa búsqueda. Añádelos en «Catálogo».';
     };
     const mas = boton('Cargar más', () => {
       pagina++;
@@ -604,7 +606,7 @@ const PASOS = ['Proyecto', 'Fotos', 'Revisar', 'Imagen'];
     mas.hidden = true;
     const cargar = async (sumar: boolean) => {
       const t = ++turno;
-      const j = await pedir<{ variantes: Material[]; hayMas: boolean }>(`/api/panel/studio-materiales?pagina=${pagina}&q=${encodeURIComponent(buscador.value.trim())}`);
+      const j = await pedir<{ variantes: Material[]; hayMas: boolean }>(`/api/panel/studio-materiales?pagina=${pagina}&tipo=${p.tipo}&q=${encodeURIComponent(buscador.value.trim())}`);
       if (t !== turno) return;
       pintar(j.variantes || [], sumar);
       mas.hidden = !j.hayMas;
@@ -651,7 +653,21 @@ const PASOS = ['Proyecto', 'Fotos', 'Revisar', 'Imagen'];
     div.className = 'st-pieza';
     const cabeza = document.createElement('div');
     cabeza.className = 'st-pieza-cabeza';
-    cabeza.append(selector(TIPOS_PIEZA, p.tipo, (v) => (p.tipo = v as TipoPieza), 'Pieza', soloLectura));
+    // Cambiar la pieza cambia los materiales que valen: se quita el elegido y se vuelve a filtrar.
+    cabeza.append(
+      selector(
+        TIPOS_PIEZA,
+        p.tipo,
+        (v) => {
+          p.tipo = v as TipoPieza;
+          p.catalogoVarianteId = null;
+          p.acabadoId = null;
+          dibujar();
+        },
+        'Pieza',
+        soloLectura,
+      ),
+    );
     if (!soloLectura)
       cabeza.append(
         boton('Quitar pieza', () => {
@@ -720,6 +736,19 @@ const PASOS = ['Proyecto', 'Fotos', 'Revisar', 'Imagen'];
       medidas.className = 'st-medidas';
       for (const d of ['ancho', 'alto', 'fondo'] as const) medidas.append(campoMedida(m, d, soloLectura));
       f.append(medidas);
+      const lleva = document.createElement('label');
+      lleva.className = 'nv-campo';
+      lleva.append('Qué lleva');
+      const llevaInput = document.createElement('input');
+      llevaInput.type = 'text';
+      llevaInput.className = 'campo-panel';
+      llevaInput.maxLength = 300;
+      llevaInput.placeholder = 'Por ejemplo: lavadora y secadora apiladas, altillo encima';
+      llevaInput.disabled = soloLectura;
+      llevaInput.value = m.contenido || '';
+      llevaInput.addEventListener('change', () => (m.contenido = llevaInput.value.trim().slice(0, 300) || undefined));
+      lleva.append(llevaInput);
+      f.append(lleva);
       if (m.notas) {
         const n = document.createElement('p');
         n.className = 'nv-nota';
