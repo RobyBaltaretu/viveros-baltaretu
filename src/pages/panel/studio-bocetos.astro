@@ -1,357 +1,919 @@
 ---
+/**
+ * Turia Studio: de un boceto en papel a una imagen del mueble terminado.
+ * Cuatro pasos (proyecto, fotos, revisar medidas y materiales, imagen) con el
+ * diseño nuevo del panel (clases nv-* y CSS en línea): esta página queda fuera
+ * del Tailwind de la web (global.css) y su JS no va en el build de Baltaretu.
+ */
 import PaginaPanel from '../../components/panel/PaginaPanel.astro';
 import { sesionCon } from '../../server/panel/pagina.ts';
 import { clienteActual } from '../../plataforma/actual.ts';
 export const prerender = false;
-const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar');
+const permitido = clienteActual().id === 'turia' && !!sesionCon(Astro.locals, 'editar');
 // Commit con el que se construyó esta versión (Workers Builds): para comprobar qué código está desplegado.
-const commit=(import.meta.env.WORKERS_CI_COMMIT_SHA||'').slice(0,7);
-const rama=import.meta.env.WORKERS_CI_BRANCH||'';
+const commit = (import.meta.env.WORKERS_CI_COMMIT_SHA || '').slice(0, 7);
+const rama = import.meta.env.WORKERS_CI_BRANCH || '';
+const PASOS = ['Proyecto', 'Fotos', 'Revisar', 'Imagen'];
 ---
-<PaginaPanel titulo="Turia Studio — Bocetos" permiso="editar" ancho="amplio">
-  {permitido ? (
-    <main class="mx-auto max-w-4xl space-y-6 p-4">
-      <header><h1 class="text-2xl font-bold">Diseñar desde boceto</h1><p class="text-sm">Flujo experimental: guarda el proyecto y sube las fotografías. La interpretación y el render están en fase experimental; confirma cada medida y material antes de generar.</p></header>
-      <form id="nuevo-boceto" class="space-y-3 rounded-xl border p-4">
-        <label for="titulo-boceto" class="block font-semibold">Nombre del proyecto</label>
-        <input id="titulo-boceto" required maxlength="120" class="w-full rounded border p-2" placeholder="Lavadero del cliente"/>
-        <button class="rounded bg-neutral-900 px-4 py-2 text-white" type="submit">Crear borrador</button>
-      </form>
-      <section id="editor-boceto" hidden class="space-y-4 rounded-xl border p-4">
-        <h2 class="font-bold">Fotografías y medidas</h2>
-        <p id="identificador-boceto" class="text-xs"></p>
-        <div class="grid gap-3 sm:grid-cols-2">
-          <label class="block">Fotografía del espacio vacío <input id="foto-espacio" type="file" accept="image/jpeg,image/png,image/webp" class="block w-full"/></label>
-          <label class="block">Fotografía del boceto en papel <input id="foto-dibujo" type="file" accept="image/jpeg,image/png,image/webp" class="block w-full"/></label>
-        </div>
-        <p class="text-sm">Confirma las cotas en milímetros. No se deducirán medidas de la fotografía.</p>
-        <label class="block">Anchura total (mm, opcional) <input id="ancho-boceto" type="number" min="1" max="100000" class="block w-full rounded border p-2" placeholder="Ej. 2330"/></label>
-        <label class="block">Precisión de la medida <select id="precision-boceto" class="block w-full rounded border p-2"><option value="aproximada">Aproximada</option><option value="exacta">Exacta</option></select></label>
-        <button id="guardar-boceto" type="button" class="rounded bg-neutral-900 px-4 py-2 text-white">Guardar interpretación manual</button>
-        <button id="interpretar-boceto" type="button" class="rounded border px-4 py-2">Interpretar dibujo con IA</button>
 
-        <section id="resultado-boceto" class="space-y-2" aria-label="Interpretación del dibujo"></section>
-        <button id="confirmar-boceto" type="button" class="rounded border px-4 py-2">Confirmar boceto revisado</button>
-        <button id="duplicar-boceto" type="button" class="rounded border px-4 py-2">Nueva revisión editable</button>
-        <button id="consultar-despiece" type="button" class="rounded border px-4 py-2">Revisar despiece</button>
-        <section id="resultado-despiece" class="text-sm" aria-live="polite"></section>
-        <button id="revisar-generaciones" type="button" class="rounded border px-4 py-2">Revisar generaciones bloqueadas</button>
-        <section id="estado-generaciones" class="text-sm" aria-live="polite"></section>
-        <button id="generar-boceto" type="button" class="rounded bg-neutral-900 px-4 py-2 text-white">Generar imagen fotorrealista</button>
-        <section id="comparador-boceto" hidden class="space-y-2" aria-label="Comparación de antes y después">
-          <label class="block">Antes / después <input id="deslizador-boceto" type="range" min="0" max="100" value="50" class="w-full"/></label>
-          <div id="comparador-marco" class="relative overflow-hidden rounded-lg"><img id="imagen-antes" alt="Espacio original" class="block w-full"/><div id="recorte-despues" class="absolute inset-0 overflow-hidden" style="clip-path:inset(0 50% 0 0)"><img id="imagen-despues" alt="Resultado fotorrealista" class="block h-full w-full object-cover"/></div></div>
+<PaginaPanel titulo="Turia Studio" permiso="editar">
+  {
+    permitido ? (
+      <div class="st" data-studio>
+        <div class="nv-titulo">
+          <div>
+            <h1>Turia Studio</h1>
+            <p>Del boceto en papel a una imagen del mueble terminado. Tú confirmas cada medida y material antes de generar nada.</p>
+          </div>
+        </div>
+
+        <ol class="st-pasos" aria-label="Pasos">
+          {PASOS.map((p, i) => (
+            <li data-paso-indicador={i + 1} aria-current={i === 0 ? 'step' : undefined}>
+              <span class="st-num" aria-hidden="true">
+                {i + 1}
+              </span>
+              <span>{p}</span>
+            </li>
+          ))}
+        </ol>
+
+        <p id="estado-boceto" class="st-estado" role="status" aria-live="polite">
+          Cargando Turia Studio… Si este mensaje no cambia, el JavaScript de la página no se ha cargado.
+        </p>
+
+        <section id="paso-1" class="nv-tarjeta nv-seccion" aria-labelledby="t-paso-1">
+          <h2 id="t-paso-1">1. Proyecto</h2>
+          <form id="nuevo-boceto" class="st-fila">
+            <label class="nv-campo st-crece">
+              Nombre del proyecto
+              <input id="titulo-boceto" class="campo-panel" required maxlength="120" placeholder="Por ejemplo: armario del pasillo de Laura" autocomplete="off" />
+            </label>
+            <button class="nv-boton" type="submit">Crear proyecto</button>
+          </form>
+          <div id="zona-lista" hidden>
+            <h3 class="st-sub">O sigue con uno anterior</h3>
+            <ul id="lista-bocetos" class="st-lista" role="list"></ul>
+          </div>
         </section>
-        <p class="text-xs">Comprueba módulos y cotas antes de validar. El render utiliza IA generativa y requiere revisar visualmente las proporciones y acabados; no es un plano de fabricación.</p>
-      </section>
-      <p id="estado-boceto" role="status" aria-live="polite">Inicializando Turia Studio… Si este mensaje no cambia, el JavaScript de la página no se ha cargado.</p>
-      <section><h2 class="font-bold">Borradores recientes</h2><ul id="lista-bocetos" class="space-y-2"></ul></section>
-      <p class="text-xs" data-version-codigo>Versión del código: {commit ? `${commit}${rama ? ` (rama ${rama})` : ''}` : 'build local'}</p>
-    </main>
-  ) : <p>Esta herramienta solo está disponible para Creaciones Turia.</p>}
+
+        <div id="editor-boceto" hidden>
+          <div class="nv-tarjeta st-cabecera">
+            <div>
+              <strong id="nombre-proyecto"></strong>
+              <span id="estado-proyecto" class="nv-chip"></span>
+            </div>
+            <button id="cambiar-proyecto" type="button" class="nv-boton nv-boton-secundario">Cambiar de proyecto</button>
+          </div>
+
+          <section id="paso-2" class="nv-tarjeta nv-seccion" aria-labelledby="t-paso-2">
+            <h2 id="t-paso-2">2. Fotos</h2>
+            <p class="nv-nota">Una foto del espacio donde irá el mueble y otra del boceto en papel, con las cotas en milímetros si puedes.</p>
+            <div class="st-fotos">
+              <label class="st-foto" for="foto-espacio">
+                <img id="vista-espacio" alt="Foto del espacio" hidden />
+                <span class="st-foto-titulo">Foto del espacio</span>
+                <span id="estado-espacio" class="nv-nota">Toca para hacer o elegir la foto</span>
+                <input id="foto-espacio" type="file" accept="image/*" class="st-archivo" />
+              </label>
+              <label class="st-foto" for="foto-dibujo">
+                <img id="vista-dibujo" alt="Foto del boceto" hidden />
+                <span class="st-foto-titulo">Foto del boceto</span>
+                <span id="estado-dibujo" class="nv-nota">Toca para hacer o elegir la foto</span>
+                <input id="foto-dibujo" type="file" accept="image/*" class="st-archivo" />
+              </label>
+            </div>
+            <div class="st-acciones">
+              <button id="interpretar-boceto" type="button" class="nv-boton" disabled>Leer el boceto con IA</button>
+              <button id="manual-boceto" type="button" class="nv-boton nv-boton-secundario">Poner yo las medidas</button>
+            </div>
+            <p id="ayuda-interpretar" class="nv-nota nv-gris">Sube las dos fotos para leer el boceto. También puedes poner tú las medidas.</p>
+          </section>
+
+          <section id="paso-3" class="nv-tarjeta nv-seccion" aria-labelledby="t-paso-3" hidden>
+            <h2 id="t-paso-3">3. Revisar medidas y materiales</h2>
+            <p class="nv-nota">
+              Las medidas que lee la IA son <strong>aproximadas</strong> hasta que las escribes tú. Sin medida no se calcula nada.
+            </p>
+            <div id="plano" class="st-plano" data-plano role="img" aria-label="Alzado del diseño"></div>
+            <p id="aviso-plano" class="nv-nota"></p>
+            <div id="modulos" class="st-modulos"></div>
+            <button id="anadir-modulo" type="button" class="nv-boton nv-boton-secundario">Añadir un módulo</button>
+            <ul id="preguntas" class="st-preguntas" role="list"></ul>
+            <div class="st-acciones">
+              <button id="guardar-boceto" type="button" class="nv-boton nv-boton-secundario">Guardar cambios</button>
+              <button id="confirmar-boceto" type="button" class="nv-boton">Aprobar el diseño</button>
+            </div>
+          </section>
+
+          <section id="paso-4" class="nv-tarjeta nv-seccion" aria-labelledby="t-paso-4" hidden>
+            <h2 id="t-paso-4">4. Imagen y despiece</h2>
+            <p class="nv-nota">La imagen es orientativa para enseñarla al cliente; no es un plano de fabricación.</p>
+            <div class="st-acciones">
+              <button id="generar-boceto" type="button" class="nv-boton">Generar la imagen</button>
+              <button id="consultar-despiece" type="button" class="nv-boton nv-boton-secundario">Ver despiece</button>
+            </div>
+            <section id="comparador-boceto" hidden aria-label="Antes y después">
+              <div id="comparador-marco" class="st-comparador">
+                <img id="imagen-antes" alt="Espacio antes" />
+                <div id="recorte-despues" class="st-recorte" style="clip-path:inset(0 50% 0 0)">
+                  <img id="imagen-despues" alt="Diseño generado" />
+                </div>
+              </div>
+              <label class="nv-campo">
+                Antes / después
+                <input id="deslizador-boceto" type="range" min="0" max="100" value="50" />
+              </label>
+            </section>
+            <div id="resultado-despiece" class="st-despiece" aria-live="polite"></div>
+            <details class="st-mas">
+              <summary>Más opciones</summary>
+              <div class="st-acciones">
+                <button id="duplicar-boceto" type="button" class="nv-boton nv-boton-secundario">Crear una revisión nueva</button>
+                <button id="revisar-generaciones" type="button" class="nv-boton nv-boton-secundario">Ver generaciones</button>
+              </div>
+              <div id="estado-generaciones" class="nv-nota" aria-live="polite"></div>
+            </details>
+          </section>
+        </div>
+
+        <p class="nv-nota nv-gris" data-version-codigo>
+          Versión del código: {commit ? `${commit}${rama ? ` (rama ${rama})` : ''}` : 'build local'}
+        </p>
+      </div>
+    ) : (
+      <p>Esta herramienta solo está disponible para Creaciones Turia.</p>
+    )
+  }
 </PaginaPanel>
+
+<style is:inline>
+  .st { display: grid; gap: 1rem; }
+  .st [hidden] { display: none !important; }
+  .st-pasos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
+  .st-pasos li { white-space: nowrap; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9375rem; color: var(--nv-gris); }
+  .st-pasos li[aria-current='step'] { color: var(--nv-tinta); font-weight: 600; }
+  .st-num { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 999px; border: 1px solid var(--nv-borde-fuerte); flex: none; }
+  .st-pasos li[data-hecho] .st-num { background: var(--nv-acento); border-color: var(--nv-acento); color: #fff; }
+  .st-pasos li[aria-current='step'] .st-num { border: 2px solid var(--nv-acento); color: var(--nv-tinta); }
+  .st-estado { margin: 0; padding: 0.75rem 1rem; border-radius: var(--nv-radio-control); background: var(--nv-hover); font-weight: 600; }
+  .st-estado[data-tipo='error'] { background: var(--nv-rojo-suave); color: var(--nv-rojo); }
+  .st-estado[data-tipo='bien'] { background: color-mix(in oklab, var(--nv-verde) 12%, white); color: var(--nv-verde); }
+  .st-fila { display: flex; flex-wrap: wrap; align-items: end; gap: 0.75rem; }
+  .st-crece { flex: 1 1 16rem; }
+  .st-sub { font-size: 1rem; margin: 1.25rem 0 0.5rem; }
+  .st-lista { display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+  .st-lista button { width: 100%; min-height: 3rem; text-align: left; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem; padding: 0.75rem 1rem; border: 1px solid var(--nv-borde); border-radius: var(--nv-radio-control); background: var(--nv-superficie); color: var(--nv-tinta); font: inherit; cursor: pointer; }
+  .st-lista button:hover { border-color: var(--nv-acento); }
+  .st-lista small { color: var(--nv-gris); }
+  .st-cabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.75rem 1rem; margin-bottom: 1rem; }
+  .st-cabecera strong { margin-right: 0.5rem; }
+  .st-fotos { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); margin-top: 0.75rem; }
+  .st-foto { position: relative; display: grid; place-items: center; align-content: center; gap: 0.25rem; min-height: 11rem; padding: 1rem; border: 2px dashed var(--nv-borde-fuerte); border-radius: var(--nv-radio); text-align: center; cursor: pointer; overflow: hidden; }
+  .st-foto:focus-within { outline: 3px solid var(--nv-acento); outline-offset: 2px; }
+  .st-foto[data-lista] { border-style: solid; border-color: var(--nv-acento); }
+  .st-foto img { max-height: 9rem; max-width: 100%; border-radius: 0.5rem; object-fit: contain; }
+  .st-foto-titulo { font-weight: 600; }
+  .st-archivo { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .st-acciones { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+  .st-acciones + .nv-nota { margin-top: 0.75rem; }
+  .st .nv-boton:disabled { opacity: 0.45; cursor: not-allowed; }
+  .st-plano { margin-top: 0.75rem; padding: 0.75rem; border: 1px solid var(--nv-borde); border-radius: var(--nv-radio-control); background: #fff; overflow-x: auto; }
+  .st-plano svg { display: block; max-width: 100%; max-height: 22rem; height: auto; margin: 0 auto; }
+  .st-modulos { display: grid; gap: 0.75rem; margin: 1rem 0; }
+  .st-modulo { border: 1px solid var(--nv-borde); border-radius: var(--nv-radio-control); padding: 0.75rem 1rem 1rem; margin: 0; display: grid; gap: 0.75rem; }
+  .st-modulo legend { font-weight: 600; padding: 0 0.25rem; }
+  .st-medidas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+  .st-medida small { display: block; font-weight: 400; color: var(--nv-gris); }
+  .st-medida small[data-precision='aproximada'] { color: var(--nv-naranja); }
+  .st-medida small[data-precision='exacta'] { color: var(--nv-verde); }
+  .st-pieza { border-top: 1px solid var(--nv-borde); padding-top: 0.75rem; display: grid; gap: 0.5rem; }
+  .st-pieza-cabeza { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: end; }
+  .st-pieza details summary { min-height: 3rem; display: flex; align-items: center; cursor: pointer; color: var(--nv-gris); }
+  .st-elegido { display: flex; align-items: center; gap: 0.5rem; margin: 0; }
+  .st-muestra { width: 2rem; height: 2rem; border-radius: 0.375rem; border: 1px solid rgb(0 0 0 / 0.15); flex: none; background: repeating-linear-gradient(45deg, #eee, #eee 4px, #fff 4px, #fff 8px); }
+  .st-material-caja { display: grid; gap: 0.5rem; justify-items: start; }
+  .st-material-caja > div { display: grid; gap: 0.5rem; width: 100%; }
+  .st-materiales { display: grid; gap: 0.375rem; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); max-height: 20rem; overflow-y: auto; padding: 0.125rem; }
+  .st-material { display: flex; align-items: center; gap: 0.5rem; min-height: 3rem; padding: 0.5rem; border: 1px solid var(--nv-borde); border-radius: 0.5rem; background: #fff; color: var(--nv-tinta); font: inherit; text-align: left; cursor: pointer; }
+  .st-material[aria-pressed='true'] { border: 2px solid var(--nv-acento); background: var(--nv-acento-suave); }
+  .st-material small { display: block; color: var(--nv-gris); }
+  .st-mini { min-height: 3rem; padding: 0 0.875rem; border: 1px solid var(--nv-borde-fuerte); border-radius: var(--nv-radio-control); background: #fff; color: var(--nv-tinta); font: inherit; cursor: pointer; }
+  .st-mini:hover { background: var(--nv-hover); }
+  .st-preguntas { margin: 0.5rem 0 0; padding-left: 1.25rem; }
+  .st-comparador { position: relative; overflow: hidden; border-radius: var(--nv-radio-control); margin-top: 1rem; }
+  .st-comparador img { display: block; width: 100%; }
+  .st-recorte { position: absolute; inset: 0; }
+  .st-recorte img { width: 100%; height: 100%; object-fit: cover; }
+  .st-despiece { margin-top: 1rem; display: grid; gap: 0.25rem; }
+  .st-despiece p { margin: 0; }
+  .st-mas { margin-top: 1rem; }
+  .st-mas summary { min-height: 3rem; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+  @media (max-width: 40rem) {
+    .st-pasos li span:last-child { display: none; }
+    .st-pasos li[aria-current='step'] span:last-child { display: inline; }
+    .st-medidas { grid-template-columns: 1fr; }
+    .st-acciones .nv-boton { flex: 1 1 100%; }
+  }
+</style>
+
 <script>
   import { calcularPlano, svgPlano } from '../../server/simulador/geometria-boceto.ts';
-  const $ = (id: string) => document.getElementById(id) as HTMLElement;
-  let id='',revision=1;
-  let claveGeneracion='';
-  let espacio='',dibujo='';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- el editor cambia la interpretación en el navegador; el servidor la valida al guardar.
-  let interpretacion: any=null;
-  let materiales: Array<{id:string;nombre:string;referencia:string;acabado:string;colorHex:string|null}> = [];
-  async function cargarMateriales(){
-    const r=await fetch('/api/panel/studio-materiales');if(!r.ok)throw Error('No se ha podido cargar el catálogo');
-    const j=await r.json();materiales=j.variantes||[];
-  }
-  function mostrar(){
-    const zona=$('resultado-boceto');zona.replaceChildren();if(!interpretacion)return;
-    const soloLectura=interpretacion.estado==='validada';
-    for(const nombre of ['guardar-boceto','interpretar-boceto','confirmar-boceto','ancho-boceto','precision-boceto','foto-espacio','foto-dibujo']){
-      const control=$(nombre) as HTMLInputElement|HTMLButtonElement|null;if(control)control.disabled=soloLectura;
-    }
-    const titulo=document.createElement('h3');titulo.textContent='Distribución: '+interpretacion.modulos.length+' módulos';zona.append(titulo);
-    const visor=document.createElement('div');visor.className='overflow-x-auto rounded border bg-white p-2';visor.dataset.plano='';zona.append(visor);
-    const aviso=document.createElement('p');aviso.className='text-sm';zona.append(aviso);
-    // El alzado se vuelve a dibujar cada vez que cambia una cota (sin rehacer los campos: no se pierde el foco).
-    const redibujar=()=>{const plano=calcularPlano(interpretacion);visor.innerHTML=svgPlano(plano);
-      aviso.textContent=plano.advertencias.length?'Alzado provisional: '+plano.advertencias.join('; '):'Alzado basado en las cotas disponibles';};
-    redibujar();
-    for(const m of interpretacion.modulos){
-      const seccion=document.createElement('fieldset');seccion.className='rounded border p-3';seccion.disabled=soloLectura;
-      const leyenda=document.createElement('legend');leyenda.textContent=m.tipo+' · '+m.id;seccion.append(leyenda);
-      for(const dimension of ['ancho','alto','fondo'] as const){
-        const etiqueta=document.createElement('label');etiqueta.className='block text-sm';
-        etiqueta.textContent=dimension+' (mm)';
-        const input=document.createElement('input');input.type='number';input.min='1';input.max='100000';input.className='block w-full rounded border p-2';
-        input.value=m[dimension].valorMm===null?'':String(m[dimension].valorMm);
-        input.addEventListener('change',()=>{
-          const n=input.value.trim()?Number(input.value):null;
-          m[dimension]={valorMm:n,precision:n===null?'desconocida':'exacta',origen:'usuario',confirmada:n!==null};
-          redibujar();
-        });
-        etiqueta.append(input);seccion.append(etiqueta);
-      }
-      for(const pieza of m.piezas){
-        const etiqueta=document.createElement('label');etiqueta.className='block text-sm';
-        etiqueta.textContent='Acabado de '+pieza.tipo+' ('+pieza.id+')';
-        const buscador=document.createElement('input');buscador.type='search';buscador.placeholder='Buscar referencia, acabado o material';buscador.className='block w-full rounded border p-2 mb-1';
-        buscador.setAttribute('aria-label','Buscar materiales para '+pieza.tipo);
-        etiqueta.append(buscador);
-        const select=document.createElement('select');select.className='block w-full rounded border p-2';
-        const vacia=document.createElement('option');vacia.value='';vacia.textContent='Sin asignar';select.append(vacia);
-        for(const mat of materiales){const option=document.createElement('option');option.value=mat.id;
-          option.textContent=[mat.nombre,mat.referencia,mat.acabado].filter(Boolean).join(' · ');select.append(option);}
-        select.value=pieza.catalogoVarianteId||'';
-        const siguiente=document.createElement('button');siguiente.type='button';siguiente.className='mt-1 rounded border px-3 py-2 text-sm';
-        siguiente.textContent='Cargar más materiales';siguiente.hidden=true;
-        let paginaActual=1;
-        let busquedaActual=0;
-        let temporizadorBusqueda:ReturnType<typeof setTimeout>|undefined;
-        buscador.addEventListener('input',()=>{
-          const turno=++busquedaActual;
-          const termino=buscador.value.trim();
-          if(termino.length>0&&termino.length<2)return;
-          if(temporizadorBusqueda)clearTimeout(temporizadorBusqueda);
-          paginaActual=1;
-          temporizadorBusqueda=setTimeout(()=>fetch('/api/panel/studio-materiales?pagina=1&q='+encodeURIComponent(termino)).then(r=>{
-            if(!r.ok)throw Error('Catálogo no disponible');return r.json();
-          }).then(j=>{
-            if(turno!==busquedaActual)return;
-            const seleccion=select.value;
-            select.replaceChildren();
-            const vacio=document.createElement('option');vacio.value='';vacio.textContent='Sin asignar';select.append(vacio);
-            const nuevos=j.variantes||[];
-            for(const mat of nuevos){
-              const option=document.createElement('option');option.value=mat.id;
-              option.textContent=[mat.nombre,mat.referencia,mat.acabado,mat.espesorMm?mat.espesorMm+' mm':''].filter(Boolean).join(' · ');
-              select.append(option);
-            }
-            if(seleccion&&!nuevos.some((m:{id:string})=>m.id===seleccion)){
-              const actual=materiales.find(m=>m.id===seleccion);
-              const opcion=document.createElement('option');opcion.value=seleccion;
-              opcion.textContent=actual?[actual.nombre,actual.referencia].join(' · '):'Material seleccionado anteriormente';
-              select.append(opcion);
-            }
-            select.value=seleccion;
-            siguiente.hidden=!j.hayMas;
-          }).catch(()=>estado('No se ha podido buscar en el catálogo')),250);
-        });
-        siguiente.addEventListener('click',async()=>{
-          const turno=busquedaActual;
-          siguiente.disabled=true;
-          try{
-            const pagina=paginaActual+1;
-            const r=await fetch('/api/panel/studio-materiales?pagina='+pagina+'&q='+encodeURIComponent(buscador.value.trim()));
-            if(!r.ok)throw Error('No se pudo cargar la página');
-            const j=await r.json();
-            if(turno!==busquedaActual)return;
-            for(const mat of j.variantes||[]){
-              if(Array.from(select.options).some(o=>o.value===mat.id))continue;
-              const option=document.createElement('option');option.value=mat.id;
-              option.textContent=[mat.nombre,mat.referencia,mat.acabado].filter(Boolean).join(' · ');select.append(option);
-            }
-            paginaActual=pagina;siguiente.hidden=!j.hayMas;
-          }catch{estado('No se pudo cargar más materiales');}
-          finally{siguiente.disabled=false;}
-        });
-        select.addEventListener('change',()=>{pieza.catalogoVarianteId=select.value||null;pieza.acabadoId=select.value||null;});
-        etiqueta.append(select);etiqueta.append(siguiente);seccion.append(etiqueta);
-        const tituloCorte=document.createElement('p');tituloCorte.className='mt-2 text-sm font-semibold';tituloCorte.textContent='Medidas de corte verificadas · '+pieza.tipo;seccion.append(tituloCorte);
-        for(const dimension of ['ancho','alto'] as const){
-          const etiquetaCorte=document.createElement('label');etiquetaCorte.className='block text-sm';
-          etiquetaCorte.textContent='Corte '+dimension+' (mm)';
-          const campo=document.createElement('input');campo.type='number';campo.min='1';campo.max='100000';campo.className='block w-full rounded border p-2';
-          campo.value=pieza.corte?.[dimension]?.valorMm==null?'':String(pieza.corte[dimension].valorMm);
-          campo.addEventListener('change',()=>{
-            const n=campo.value.trim()?Number(campo.value):null;
-            pieza.corte??={ancho:desconocida(),alto:desconocida(),cantidad:1};
-            pieza.corte[dimension]={valorMm:n,precision:n===null?'desconocida':'exacta',origen:'medicion',confirmada:n!==null};
-          });
-          etiquetaCorte.append(campo);seccion.append(etiquetaCorte);
-        }
-        const cantidadLabel=document.createElement('label');cantidadLabel.className='block text-sm';cantidadLabel.textContent='Cantidad de piezas';
-        const cantidadInput=document.createElement('input');cantidadInput.type='number';cantidadInput.min='1';cantidadInput.max='1000';cantidadInput.step='1';cantidadInput.className='block w-full rounded border p-2';
-        cantidadInput.value=String(pieza.corte?.cantidad??1);
-        cantidadInput.addEventListener('change',()=>{
-          pieza.corte??={ancho:desconocida(),alto:desconocida(),cantidad:1};
-          pieza.corte.cantidad=Number(cantidadInput.value);
-        });
-        cantidadLabel.append(cantidadInput);seccion.append(cantidadLabel);
-      }
-      zona.append(seccion);
-    }
-    for(const q of interpretacion.preguntas||[]){const p=document.createElement('p');p.textContent='Pendiente: '+q;zona.append(p);}
-  }
-  async function abrir(bid:string){const r=await fetch('/api/panel/studio-bocetos?id='+encodeURIComponent(bid));const j=await r.json();if(!r.ok)throw Error('No se pudo abrir el boceto');
-    id=j.boceto.id;revision=j.boceto.revision;interpretacion=j.boceto.interpretacion;claveGeneracion='';
-    espacio=interpretacion.fotoEspacioId;dibujo=interpretacion.fotoBocetoId;
-    $('editor-boceto').hidden=false;$('identificador-boceto').textContent=(interpretacion.estado==='validada'?'Diseño aprobado ':'Borrador ')+id;
-    const ancho=interpretacion.modulos?.[0]?.ancho;
-    ($('ancho-boceto') as HTMLInputElement).value=ancho?.valorMm?String(ancho.valorMm):'';
-    mostrar();await cargarGeneraciones();}
+  import type { CotaBoceto, InterpretacionBoceto, ModuloBoceto, PiezaBoceto, TipoModulo, TipoPieza } from '../../server/simulador/boceto.ts';
 
-  const estado=(s:string)=>{$('estado-boceto').textContent=s;};
-  const leerRespuesta=async(r:Response)=>{
-    const tipo=r.headers.get('content-type')||'';
-    if(!tipo.includes('application/json'))throw Error('El servidor devolvió '+r.status+' sin JSON. Comprueba el Worker y el inicio de sesión.');
-    return r.json();
-  };
-  const desconocida=()=>({valorMm:null,precision:'desconocida',origen:'usuario',confirmada:false});
-  function modelo(){
-    const ancho=Number(($('ancho-boceto') as HTMLInputElement).value);
-    const precision=($('precision-boceto') as HTMLSelectElement).value;
-    return {version:1,estado:'pendiente',categoria:'lavadero',fotoEspacioId:espacio,fotoBocetoId:dibujo,
-      obstaculos:[],preguntas:['Confirmar distribución y obstáculos antes de generar'],
-      modulos:[{id:'modulo-principal',tipo:'otro',orden:0,
-        ancho:ancho>0?{valorMm:ancho,precision,origen:'usuario',confirmada:precision==='exacta'}:desconocida(),
-        alto:desconocida(),fondo:desconocida(),piezas:[]}]};
+  type Material = { id: string; nombre: string; referencia: string; acabado: string; colorHex: string | null; espesorMm?: number | null };
+  type Clase = 'espacio' | 'boceto';
+  const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+  const TIPOS_MODULO: [TipoModulo, string][] = [['armario', 'Armario'], ['cajonera', 'Cajonera'], ['balda', 'Balda'], ['hueco-electrodomestico', 'Hueco de electrodoméstico'], ['encimera', 'Encimera'], ['panel', 'Panel'], ['otro', 'Otro']];
+  const TIPOS_PIEZA: [TipoPieza, string][] = [['puerta', 'Puerta'], ['costado', 'Costado'], ['interior', 'Interior'], ['balda', 'Balda'], ['cajon', 'Cajón'], ['encimera', 'Encimera'], ['canto', 'Canto'], ['trasera', 'Trasera'], ['otra', 'Otra']];
+  const nombreTipo = (lista: [string, string][], t: string) => lista.find(([k]) => k === t)?.[1] ?? t;
+
+  let id = '';
+  let revision = 1;
+  let titulo = '';
+  let claveGeneracion = '';
+  let interpretacion: InterpretacionBoceto | null = null;
+  const fotos: Record<Clase, string> = { espacio: '', boceto: '' };
+  const conocidos = new Map<string, Material>();
+
+  // ---------- Estado y pasos ----------
+  function estado(texto: string, tipo: '' | 'error' | 'bien' = '') {
+    const e = $('estado-boceto');
+    e.textContent = texto;
+    if (tipo) e.dataset.tipo = tipo;
+    else delete e.dataset.tipo;
   }
-  async function cargar(){
-    const r=await fetch('/api/panel/studio-bocetos');if(!r.ok)return;
-    const j=await r.json();const ul=$('lista-bocetos');ul.replaceChildren();
-    for(const b of j.bocetos||[]){const li=document.createElement('li');const boton=document.createElement('button');boton.type='button';boton.className='rounded border p-2 text-left';boton.textContent=b.titulo+' · '+b.estado+' · revisión '+b.revision;boton.addEventListener('click',()=>{void abrir(b.id).catch(e=>estado(String(e)));});li.append(boton);ul.append(li);}
-  }
-  $('nuevo-boceto')?.addEventListener('submit',async ev=>{
-    ev.preventDefault();
-    const boton=($('nuevo-boceto') as HTMLFormElement).querySelector('button[type="submit"]') as HTMLButtonElement;
-    boton.disabled=true;estado('Creando borrador…');
-    try{
-      const titulo=($('titulo-boceto') as HTMLInputElement).value;
-      espacio='pendiente-espacio';dibujo='pendiente-boceto';
-      const r=await fetch('/api/panel/studio-bocetos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({titulo,interpretacion:modelo()})});
-      const j=await leerRespuesta(r);
-      if(!r.ok)throw Error(j.error||JSON.stringify(j.errores)||'No se pudo crear el borrador');
-      id=j.id;revision=j.revision;interpretacion=modelo();
-      $('editor-boceto').hidden=false;$('identificador-boceto').textContent='Borrador '+id;
-      mostrar();estado('Borrador creado. Sube las fotografías y guarda los cambios.');
-      void cargarMateriales().then(()=>mostrar()).catch(e=>estado('Borrador creado, pero el catálogo no está disponible: '+String(e)));
-      void cargar().catch(e=>estado('Borrador creado; no se pudo actualizar la lista: '+String(e)));
-    }catch(e){estado('Error al crear borrador: '+(e instanceof Error?e.message:String(e)));}
-    finally{boton.disabled=false;}
-  });
-  async function subir(inputId:string,clase:'espacio'|'boceto'){
-    const input=$(inputId) as HTMLInputElement;const archivo=input.files?.[0];
-    if(!archivo)throw Error('Falta fotografía de '+clase);
-    if(archivo.size>6_000_000)throw Error('La imagen supera los 6 MB; comprímela antes de subirla.');
-    const r=await fetch('/api/panel/studio-archivos?bocetoId='+encodeURIComponent(id)+'&clase='+clase,{
-      method:'POST',headers:{'Content-Type':archivo.type},body:archivo
+  const error = (e: unknown) => estado(e instanceof Error ? e.message : String(e), 'error');
+  function paso(n: number) {
+    document.querySelectorAll<HTMLElement>('[data-paso-indicador]').forEach((li) => {
+      const i = Number(li.dataset.pasoIndicador);
+      if (i === n) li.setAttribute('aria-current', 'step');
+      else li.removeAttribute('aria-current');
+      if (i < n) li.dataset.hecho = '';
+      else delete li.dataset.hecho;
     });
-    const j=await r.json();if(!r.ok)throw Error(j.error||'Error al subir imagen');
-    return j.id as string;
   }
-  $('guardar-boceto')?.addEventListener('click',async()=>{
-    if(!id)return;const boton=$('guardar-boceto') as HTMLButtonElement;boton.disabled=true;
-    try{
-      estado('Guardando imágenes…');
-      if(espacio.startsWith('pendiente-'))espacio=await subir('foto-espacio','espacio');
-      if(dibujo.startsWith('pendiente-'))dibujo=await subir('foto-dibujo','boceto');
-      const nueva=interpretacion?{...interpretacion,fotoEspacioId:espacio,fotoBocetoId:dibujo}:modelo();
-      const r=await fetch('/api/panel/studio-bocetos',{method:'PATCH',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id,revision,interpretacion:nueva})});
-      const j=await r.json();if(!r.ok)throw Error(j.error||JSON.stringify(j.errores));
-      revision=j.revision;interpretacion=nueva;mostrar();estado('Fotografías e interpretación guardadas.');void cargar();
-    }catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
-  });
-  $('interpretar-boceto')?.addEventListener('click',async()=>{if(!id)return;estado('Interpretando fotografías…');const boton=$('interpretar-boceto') as HTMLButtonElement;boton.disabled=true;
-    try{const r=await fetch('/api/panel/studio-interpretar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});const j=await r.json();if(!r.ok)throw Error(j.error||'Error de interpretación');revision=j.revision;interpretacion=j.interpretacion;mostrar();estado('Interpretación recibida. Revisa las medidas y los módulos.');}
-    catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
-  });
-  $('confirmar-boceto')?.addEventListener('click',async()=>{
-    if(!id||!interpretacion)return;
-    if(!window.confirm('¿Has revisado cada módulo y sus medidas? Las cotas desconocidas no son válidas para fabricación.'))return;
-    const boton=$('confirmar-boceto') as HTMLButtonElement;boton.disabled=true;
-    try{
-      const validada={...interpretacion,estado:'validada'};
-      const r=await fetch('/api/panel/studio-bocetos',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,revision,interpretacion:validada})});
-      const j=await r.json();if(!r.ok)throw Error(j.error||JSON.stringify(j.errores));
-      revision=j.revision;interpretacion={...validada,confirmadaPor:'usuario',confirmadaEn:new Date().toISOString()};mostrar();estado('Distribución confirmada. Las medidas desconocidas siguen pendientes de medir.');void cargar();
-    }catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
-  });
-  async function cargarGeneraciones(){
-    if(!id)return;
-    const r=await fetch('/api/panel/studio-generar?id='+encodeURIComponent(id));
-    if(!r.ok)return;
-    const j=await r.json();
-    const ultima=(j.generaciones||[]).find((g:{estado:string;resultado_archivo_id?:string})=>g.estado==='completada'&&g.resultado_archivo_id);
-    if(!ultima)return;
-    const marco=$('comparador-boceto');marco.hidden=false;
-    ($('imagen-antes') as HTMLImageElement).src='/api/panel/studio-archivos?id='+encodeURIComponent(espacio);
-    ($('imagen-despues') as HTMLImageElement).src='/api/panel/studio-archivos?id='+encodeURIComponent(ultima.resultado_archivo_id);
+  function actualizarVista() {
+    const hay = !!id;
+    $('paso-1').hidden = hay;
+    $('editor-boceto').hidden = !hay;
+    if (!hay) return paso(1);
+    const validada = interpretacion?.estado === 'validada';
+    $('nombre-proyecto').textContent = titulo;
+    $('estado-proyecto').textContent = validada ? 'Diseño aprobado' : 'Borrador';
+    const listas = !!fotos.espacio && !!fotos.boceto;
+    ($('interpretar-boceto') as HTMLButtonElement).disabled = !listas || validada;
+    ($('manual-boceto') as HTMLButtonElement).disabled = validada;
+    $('ayuda-interpretar').textContent = validada
+      ? 'El diseño está aprobado: para cambiarlo, crea una revisión nueva.'
+      : listas
+        ? 'Listo para leer el boceto. La IA usa una simulación del mes; si falla, no cuenta.'
+        : 'Sube las dos fotos para leer el boceto. También puedes poner tú las medidas.';
+    for (const c of ['foto-espacio', 'foto-dibujo']) ($(c) as HTMLInputElement).disabled = validada;
+    const revisando = !!interpretacion && interpretacion.modulos.length > 0;
+    $('paso-3').hidden = !revisando;
+    $('paso-4').hidden = !validada;
+    paso(validada ? 4 : revisando ? 3 : 2);
   }
-  $('deslizador-boceto')?.addEventListener('input',()=>{
-    const v=Number(($('deslizador-boceto') as HTMLInputElement).value);
-    ($('recorte-despues') as HTMLElement).style.clipPath='inset(0 '+(100-v)+'% 0 0)';
+
+  // ---------- Peticiones ----------
+  async function pedir<T>(url: string, init?: RequestInit): Promise<T> {
+    const r = await fetch(url, init);
+    const tipo = r.headers.get('content-type') || '';
+    if (!tipo.includes('application/json')) throw new Error(`El servidor ha respondido ${r.status} sin datos. Comprueba que sigues dentro del panel (Cloudflare Access) y recarga.`);
+    const j = (await r.json()) as T & { error?: string; errores?: unknown };
+    if (!r.ok) throw new Error(j.error || (j.errores ? `Revisa los datos: ${JSON.stringify(j.errores)}` : `Error ${r.status}`));
+    return j;
+  }
+  const json = (method: string, body: unknown): RequestInit => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+  // ---------- Modelo ----------
+  const desconocida = (): CotaBoceto => ({ valorMm: null, precision: 'desconocida', origen: 'usuario', confirmada: false });
+  const moduloVacio = (orden: number): ModuloBoceto => ({ id: `modulo-${Date.now().toString(36)}-${orden}`, tipo: 'armario', orden, ancho: desconocida(), alto: desconocida(), fondo: desconocida(), piezas: [] });
+  const base = (): InterpretacionBoceto => ({ version: 1, estado: 'pendiente', categoria: 'mueble', fotoEspacioId: fotos.espacio || 'pendiente-espacio', fotoBocetoId: fotos.boceto || 'pendiente-boceto', obstaculos: [], preguntas: [], modulos: [] });
+  const conFotos = (b: InterpretacionBoceto): InterpretacionBoceto => ({ ...b, fotoEspacioId: fotos.espacio || b.fotoEspacioId, fotoBocetoId: fotos.boceto || b.fotoBocetoId });
+  /** Un borrador recién creado lleva un módulo vacío (el servidor pide al menos uno): se trata como sin revisar. */
+  const soloElDelAlta = (b: InterpretacionBoceto) => b.estado !== 'validada' && b.modulos.length === 1 && !b.modulos[0]!.piezas.length && (['ancho', 'alto', 'fondo'] as const).every((d) => b.modulos[0]![d].valorMm === null) && !b.preguntas.length;
+
+  async function guardar(mensaje = 'Cambios guardados.') {
+    if (!id || !interpretacion) return;
+    const datos = conFotos(interpretacion.modulos.length ? interpretacion : { ...interpretacion, modulos: [moduloVacio(0)] });
+    const j = await pedir<{ revision: number }>('/api/panel/studio-bocetos', json('PATCH', { id, revision, interpretacion: datos }));
+    revision = j.revision;
+    interpretacion = interpretacion.modulos.length ? datos : { ...datos, modulos: [] };
+    estado(mensaje, 'bien');
+  }
+
+  // ---------- Paso 1: proyecto ----------
+  async function cargarLista() {
+    const j = await pedir<{ bocetos?: { id: string; titulo: string; estado: string; actualizado: string }[] }>('/api/panel/studio-bocetos');
+    const ul = $('lista-bocetos');
+    ul.replaceChildren();
+    for (const b of j.bocetos || []) {
+      const li = document.createElement('li');
+      const boton = document.createElement('button');
+      boton.type = 'button';
+      const nombre = document.createElement('span');
+      nombre.textContent = b.titulo;
+      const dato = document.createElement('small');
+      dato.textContent = `${b.estado === 'validada' ? 'Aprobado' : 'Borrador'} · ${new Date(b.actualizado).toLocaleDateString('es-ES')}`;
+      boton.append(nombre, dato);
+      boton.addEventListener('click', () => void abrir(b.id).catch(error));
+      li.append(boton);
+      ul.append(li);
+    }
+    $('zona-lista').hidden = !(j.bocetos || []).length;
+  }
+
+  $('nuevo-boceto')?.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const boton = ($('nuevo-boceto') as HTMLFormElement).querySelector('button') as HTMLButtonElement;
+    const nombre = ($('titulo-boceto') as HTMLInputElement).value.trim();
+    if (!nombre) return estado('Escribe un nombre para el proyecto.', 'error');
+    boton.disabled = true;
+    estado('Creando el proyecto…');
+    try {
+      fotos.espacio = '';
+      fotos.boceto = '';
+      const inicial = { ...base(), modulos: [moduloVacio(0)] };
+      const j = await pedir<{ id: string; revision: number }>('/api/panel/studio-bocetos', json('POST', { titulo: nombre, interpretacion: inicial }));
+      id = j.id;
+      revision = j.revision;
+      titulo = nombre;
+      interpretacion = { ...inicial, modulos: [] };
+      limpiarFotos();
+      dibujar();
+      actualizarVista();
+      estado('Proyecto creado. Ahora sube las dos fotos.', 'bien');
+      void cargarLista().catch(() => undefined);
+    } catch (e) {
+      error(e);
+    } finally {
+      boton.disabled = false;
+    }
   });
-  $('duplicar-boceto')?.addEventListener('click',async()=>{
-    if(!id||interpretacion?.estado!=='validada'){estado('Solo se puede crear una nueva revisión de un diseño aprobado.');return;}
-    if(!window.confirm('Se creará un borrador independiente. Deberás subir las fotografías otra vez.'))return;
-    try{
-      const r=await fetch('/api/panel/studio-duplicar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
-      const j=await r.json();if(!r.ok)throw Error(j.error||'No se pudo crear la revisión');
-      await abrir(j.id);await cargar();estado('Nueva revisión editable creada. Vuelve a subir las dos fotografías.');
-    }catch(e){estado(e instanceof Error?e.message:String(e));}
+
+  async function abrir(bid: string) {
+    estado('Abriendo el proyecto…');
+    const j = await pedir<{ boceto: { id: string; titulo: string; revision: number; interpretacion: InterpretacionBoceto } }>('/api/panel/studio-bocetos?id=' + encodeURIComponent(bid));
+    id = j.boceto.id;
+    revision = j.boceto.revision;
+    titulo = j.boceto.titulo;
+    claveGeneracion = '';
+    const b = j.boceto.interpretacion;
+    fotos.espacio = b.fotoEspacioId?.startsWith('pendiente-') ? '' : b.fotoEspacioId;
+    fotos.boceto = b.fotoBocetoId?.startsWith('pendiente-') ? '' : b.fotoBocetoId;
+    interpretacion = soloElDelAlta(b) ? { ...b, modulos: [] } : b;
+    limpiarFotos();
+    for (const clase of ['espacio', 'boceto'] as const) if (fotos[clase]) mostrarFoto(clase, '/api/panel/studio-archivos?id=' + encodeURIComponent(fotos[clase]), 'Foto guardada');
+    $('resultado-despiece').replaceChildren();
+    dibujar();
+    actualizarVista();
+    estado(interpretacion.estado === 'validada' ? 'Diseño aprobado: genera la imagen o consulta el despiece.' : 'Proyecto abierto.', 'bien');
+    await cargarGeneraciones().catch(() => undefined);
+  }
+
+  $('cambiar-proyecto')?.addEventListener('click', () => {
+    id = '';
+    interpretacion = null;
+    ($('titulo-boceto') as HTMLInputElement).value = '';
+    $('comparador-boceto').hidden = true;
+    $('resultado-despiece').replaceChildren();
+    actualizarVista();
+    estado('Elige un proyecto o crea uno nuevo.');
+    void cargarLista().catch(error);
   });
-  $('consultar-despiece')?.addEventListener('click',async()=>{
-    if(!id)return;
-    try{
-      const r=await fetch('/api/panel/studio-despiece?id='+encodeURIComponent(id));
-      const j=await r.json();if(!r.ok)throw Error('No se pudo consultar el despiece');
-      const d=j.despiece;const zona=$('resultado-despiece');zona.replaceChildren();
-      const titulo=document.createElement('p');titulo.textContent='Piezas: '+d.partidas.length+' · '+(d.despieceCompleto?'Despiece medido; falta valorar presupuesto':'Pendiente de mediciones');zona.append(titulo);
-      for(const p of d.partidas){
-        const linea=document.createElement('p');linea.textContent=p.tipo+' · '+p.varianteId+' · '+p.cantidad+' ud · '+(p.metrosCuadrados===null?'Superficie sin confirmar':p.metrosCuadrados.toFixed(3)+' m²');zona.append(linea);
+
+  // ---------- Paso 2: fotos (se reducen en el móvil y se suben al elegirlas) ----------
+  const VISTA: Record<Clase, string> = { espacio: 'vista-espacio', boceto: 'vista-dibujo' };
+  const TEXTO: Record<Clase, string> = { espacio: 'estado-espacio', boceto: 'estado-dibujo' };
+  function limpiarFotos() {
+    for (const clase of ['espacio', 'boceto'] as const) {
+      const img = $<HTMLImageElement>(VISTA[clase]);
+      img.hidden = true;
+      img.removeAttribute('src');
+      img.closest('label')?.removeAttribute('data-lista');
+      $(TEXTO[clase]).textContent = 'Toca para hacer o elegir la foto';
+    }
+  }
+  function mostrarFoto(clase: Clase, src: string, texto: string) {
+    const img = $<HTMLImageElement>(VISTA[clase]);
+    img.src = src;
+    img.hidden = false;
+    img.closest('label')?.setAttribute('data-lista', '');
+    $(TEXTO[clase]).textContent = texto;
+  }
+  /** Las fotos del móvil pesan mucho: se reducen a 2000 px (JPEG) antes de subirlas. */
+  async function reducir(archivo: File): Promise<Blob> {
+    if (!('createImageBitmap' in window)) return archivo;
+    try {
+      const imagen = await createImageBitmap(archivo, { imageOrientation: 'from-image' });
+      const escala = Math.min(1, 2000 / Math.max(imagen.width, imagen.height));
+      const lienzo = document.createElement('canvas');
+      lienzo.width = Math.round(imagen.width * escala);
+      lienzo.height = Math.round(imagen.height * escala);
+      lienzo.getContext('2d')!.drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+      imagen.close?.();
+      return await new Promise<Blob>((ok, mal) => lienzo.toBlob((b) => (b ? ok(b) : mal(new Error('sin imagen'))), 'image/jpeg', 0.85));
+    } catch {
+      return archivo;
+    }
+  }
+  for (const [entrada, clase] of [['foto-espacio', 'espacio'], ['foto-dibujo', 'boceto']] as const) {
+    $(entrada)?.addEventListener('change', async () => {
+      const input = $<HTMLInputElement>(entrada);
+      const archivo = input.files?.[0];
+      if (!archivo || !id) return;
+      $(TEXTO[clase]).textContent = 'Subiendo…';
+      estado('Subiendo la foto…');
+      try {
+        const foto = await reducir(archivo);
+        if (foto.size > 6_000_000) throw new Error('La foto es demasiado grande. Prueba con otra.');
+        const j = await pedir<{ id: string }>('/api/panel/studio-archivos?bocetoId=' + encodeURIComponent(id) + '&clase=' + clase, { method: 'POST', headers: { 'Content-Type': foto.type || 'image/jpeg' }, body: foto });
+        fotos[clase] = j.id;
+        mostrarFoto(clase, URL.createObjectURL(foto), 'Foto lista');
+        interpretacion ??= base();
+        await guardar(fotos.espacio && fotos.boceto ? 'Fotos guardadas. Ya puedes leer el boceto.' : 'Foto guardada. Falta la otra.');
+        actualizarVista();
+      } catch (e) {
+        $(TEXTO[clase]).textContent = 'No se ha subido. Toca para probar otra vez.';
+        error(e);
+      } finally {
+        input.value = '';
       }
-      if(j.valoracion){
-        const v=j.valoracion;
-        const tituloValor=document.createElement('p');tituloValor.className='mt-3 font-semibold';
-        tituloValor.textContent='Estimación parcial de materiales (sin IVA): '+(v.subtotalSinIva===null?'sin datos suficientes':v.subtotalSinIva.toFixed(2)+' €');
-        zona.append(tituloValor);
-        const avisoValor=document.createElement('p');avisoValor.textContent='No es un presupuesto. No incluye mano de obra, herrajes, cantos ni mecanizados.';zona.append(avisoValor);
-        for(const bloqueo of v.bloqueos){const linea=document.createElement('p');linea.textContent='Valoración pendiente: '+bloqueo;zona.append(linea);}
-      }
-      for(const bloqueo of d.bloqueos){const linea=document.createElement('p');linea.textContent='Pendiente: '+bloqueo;zona.append(linea);}
-    }catch(e){estado(e instanceof Error?e.message:String(e));}
+    });
+  }
+
+  $('interpretar-boceto')?.addEventListener('click', async () => {
+    if (!id) return;
+    $<HTMLButtonElement>('interpretar-boceto').disabled = true;
+    estado('Leyendo el boceto con IA… puede tardar unos 20 segundos.');
+    try {
+      const j = await pedir<{ revision: number; interpretacion: InterpretacionBoceto }>('/api/panel/studio-interpretar', json('POST', { id }));
+      revision = j.revision;
+      interpretacion = j.interpretacion;
+      dibujar();
+      actualizarVista();
+      const n = interpretacion.modulos.length;
+      estado(`He encontrado ${n} ${n === 1 ? 'módulo' : 'módulos'}. Revisa las medidas y elige los materiales.`, 'bien');
+      $('paso-3').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      error(e);
+    } finally {
+      actualizarVista();
+    }
   });
-  $('revisar-generaciones')?.addEventListener('click',async()=>{
-    if(!id)return;
-    try{
-      const r=await fetch('/api/panel/studio-generar?id='+encodeURIComponent(id));
-      if(!r.ok)throw Error('No se pudo consultar el historial');
-      const j=await r.json();const zona=$('estado-generaciones');zona.replaceChildren();
-      for(const g of j.generaciones||[]){
-        const fila=document.createElement('div');fila.className='rounded border p-2 my-2';
-        const texto=document.createElement('span');texto.textContent=g.estado+' · '+g.id;fila.append(texto);
-        if(g.requiereRevision){
-          const boton=document.createElement('button');boton.type='button';boton.className='ml-2 underline';
-          boton.textContent='Cerrar trabajo bloqueado (sin devolver cuota)';
-          boton.addEventListener('click',async()=>{
-            if(!window.confirm('Solo cerrar trabajos bloqueados. El coste del proveedor podría haberse consumido. ¿Continuar?'))return;
-            const respuesta=await fetch('/api/panel/studio-recuperar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:g.id})});
-            const salida=await respuesta.json();if(!respuesta.ok){estado(salida.error||'No se pudo cerrar');return;}
-            claveGeneracion='';estado('Trabajo cerrado. El consumo de Gemini queda pendiente de conciliación.');boton.disabled=true;
-          });fila.append(boton);
+
+  $('manual-boceto')?.addEventListener('click', () => {
+    interpretacion ??= base();
+    if (!interpretacion.modulos.length) interpretacion.modulos.push(moduloVacio(0));
+    dibujar();
+    actualizarVista();
+    estado('Escribe las medidas de cada módulo y guarda.');
+    $('paso-3').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // ---------- Paso 3: revisar ----------
+  function redibujarPlano() {
+    if (!interpretacion?.modulos.length) return;
+    const conAlgunaMedida = interpretacion.modulos.some((m) => m.ancho.valorMm !== null || m.alto.valorMm !== null);
+    // Sin ninguna medida no se dibuja nada: un alzado inventado confunde más que ayuda.
+    $('plano').hidden = !conAlgunaMedida;
+    if (conAlgunaMedida) $('plano').innerHTML = svgPlano(calcularPlano(interpretacion));
+    const faltan = interpretacion.modulos.flatMap((m, i) =>
+      (['ancho', 'alto', 'fondo'] as const).filter((d) => m[d].valorMm === null).map((d) => `${d} del módulo ${i + 1}`),
+    );
+    $('aviso-plano').textContent = !conAlgunaMedida
+      ? 'Escribe el ancho y el alto de cada módulo para ver el alzado.'
+      : faltan.length
+        ? 'Faltan medidas: ' + faltan.join(', ') + '.'
+        : 'Alzado con todas las medidas.';
+  }
+  function campoMedida(m: ModuloBoceto, d: 'ancho' | 'alto' | 'fondo', soloLectura: boolean) {
+    const etiqueta = document.createElement('label');
+    etiqueta.className = 'nv-campo st-medida';
+    etiqueta.append(`${{ ancho: 'Ancho', alto: 'Alto', fondo: 'Fondo' }[d]} (mm)`);
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.inputMode = 'numeric';
+    input.min = '1';
+    input.max = '100000';
+    input.className = 'campo-panel';
+    input.disabled = soloLectura;
+    input.value = m[d].valorMm === null ? '' : String(m[d].valorMm);
+    const nota = document.createElement('small');
+    const pintarNota = () => {
+      nota.dataset.precision = m[d].precision;
+      nota.textContent = m[d].valorMm === null ? 'Sin medida' : m[d].precision === 'exacta' ? 'Confirmada' : 'Aproximada (IA)';
+    };
+    pintarNota();
+    input.addEventListener('change', () => {
+      const n = input.value.trim() ? Number(input.value) : null;
+      m[d] = n === null || !(n > 0) ? desconocida() : { valorMm: Math.round(n), precision: 'exacta', origen: 'usuario', confirmada: true };
+      pintarNota();
+      redibujarPlano();
+    });
+    etiqueta.append(input, nota);
+    return etiqueta;
+  }
+  function selector(lista: [string, string][], valor: string, alCambiar: (v: string) => void, texto: string, soloLectura: boolean) {
+    const etiqueta = document.createElement('label');
+    etiqueta.className = 'nv-campo';
+    etiqueta.append(texto);
+    const s = document.createElement('select');
+    s.className = 'campo-panel';
+    s.disabled = soloLectura;
+    for (const [k, t] of lista) s.append(new Option(t, k, false, k === valor));
+    s.addEventListener('change', () => alCambiar(s.value));
+    etiqueta.append(s);
+    return etiqueta;
+  }
+  function muestra(color: string | null) {
+    const m = document.createElement('span');
+    m.className = 'st-muestra';
+    m.setAttribute('aria-hidden', 'true');
+    if (color) m.style.background = color;
+    return m;
+  }
+  const boton = (texto: string, accion: () => void) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'st-mini';
+    b.textContent = texto;
+    b.addEventListener('click', accion);
+    return b;
+  };
+  /** Material de una pieza: buscador y tarjetas con su color, de 40 en 40. */
+  function selectorMaterial(p: PiezaBoceto, soloLectura: boolean) {
+    const caja = document.createElement('div');
+    caja.className = 'st-material-caja';
+    const elegido = document.createElement('p');
+    elegido.className = 'st-elegido';
+    const pintarElegido = () => {
+      const m = p.catalogoVarianteId ? conocidos.get(p.catalogoVarianteId) : null;
+      elegido.replaceChildren(muestra(m?.colorHex ?? null), p.catalogoVarianteId ? (m ? `${m.nombre}${m.referencia ? ' · ' + m.referencia : ''}` : 'Material elegido') : 'Sin material');
+    };
+    pintarElegido();
+    caja.append(elegido);
+    if (soloLectura) return caja;
+    const panel = document.createElement('div');
+    panel.hidden = true;
+    const buscador = document.createElement('input');
+    buscador.type = 'search';
+    buscador.className = 'campo-panel';
+    buscador.placeholder = 'Buscar por nombre, referencia o acabado';
+    buscador.setAttribute('aria-label', 'Buscar material');
+    const rejilla = document.createElement('div');
+    rejilla.className = 'st-materiales';
+    rejilla.setAttribute('role', 'group');
+    rejilla.setAttribute('aria-label', 'Materiales del catálogo');
+    let pagina = 1;
+    let turno = 0;
+    let espera: ReturnType<typeof setTimeout> | undefined;
+    const pintar = (lista: Material[], sumar: boolean) => {
+      if (!sumar) rejilla.replaceChildren();
+      for (const m of lista) {
+        conocidos.set(m.id, m);
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'st-material';
+        b.setAttribute('aria-pressed', String(m.id === p.catalogoVarianteId));
+        const texto = document.createElement('span');
+        texto.append(m.nombre);
+        const detalle = document.createElement('small');
+        detalle.textContent = [m.referencia, m.acabado, m.espesorMm ? m.espesorMm + ' mm' : ''].filter(Boolean).join(' · ');
+        texto.append(detalle);
+        b.append(muestra(m.colorHex), texto);
+        b.addEventListener('click', () => {
+          p.catalogoVarianteId = m.id;
+          p.acabadoId = m.id;
+          rejilla.querySelectorAll('.st-material').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+          b.setAttribute('aria-pressed', 'true');
+          pintarElegido();
+        });
+        rejilla.append(b);
+      }
+      if (!rejilla.children.length) rejilla.textContent = 'No hay materiales con esa búsqueda. Añádelos en «Catálogo».';
+    };
+    const mas = boton('Cargar más', () => {
+      pagina++;
+      void cargar(true).catch(error);
+    });
+    mas.hidden = true;
+    const cargar = async (sumar: boolean) => {
+      const t = ++turno;
+      const j = await pedir<{ variantes: Material[]; hayMas: boolean }>(`/api/panel/studio-materiales?pagina=${pagina}&q=${encodeURIComponent(buscador.value.trim())}`);
+      if (t !== turno) return;
+      pintar(j.variantes || [], sumar);
+      mas.hidden = !j.hayMas;
+    };
+    const abrirBoton = boton('Elegir material', () => {
+      panel.hidden = !panel.hidden;
+      abrirBoton.textContent = panel.hidden ? 'Elegir material' : 'Cerrar';
+      abrirBoton.setAttribute('aria-expanded', String(!panel.hidden));
+      if (!panel.hidden && !rejilla.children.length) void cargar(false).catch(error);
+    });
+    abrirBoton.setAttribute('aria-expanded', 'false');
+    buscador.addEventListener('input', () => {
+      clearTimeout(espera);
+      espera = setTimeout(() => {
+        pagina = 1;
+        void cargar(false).catch(error);
+      }, 250);
+    });
+    panel.append(buscador, rejilla, mas);
+    caja.append(abrirBoton, panel);
+    return caja;
+  }
+  function campoCorte(p: PiezaBoceto, d: 'ancho' | 'alto', soloLectura: boolean) {
+    const l = document.createElement('label');
+    l.className = 'nv-campo';
+    l.append(`Corte ${d} (mm)`);
+    const i = document.createElement('input');
+    i.type = 'number';
+    i.inputMode = 'numeric';
+    i.min = '1';
+    i.className = 'campo-panel';
+    i.disabled = soloLectura;
+    i.value = p.corte?.[d]?.valorMm == null ? '' : String(p.corte[d].valorMm);
+    i.addEventListener('change', () => {
+      const n = i.value.trim() ? Number(i.value) : null;
+      p.corte ??= { ancho: desconocida(), alto: desconocida(), cantidad: 1 };
+      p.corte[d] = n === null || !(n > 0) ? desconocida() : { valorMm: Math.round(n), precision: 'exacta', origen: 'medicion', confirmada: true };
+    });
+    l.append(i);
+    return l;
+  }
+  function tarjetaPieza(m: ModuloBoceto, p: PiezaBoceto, soloLectura: boolean) {
+    const div = document.createElement('div');
+    div.className = 'st-pieza';
+    const cabeza = document.createElement('div');
+    cabeza.className = 'st-pieza-cabeza';
+    cabeza.append(selector(TIPOS_PIEZA, p.tipo, (v) => (p.tipo = v as TipoPieza), 'Pieza', soloLectura));
+    if (!soloLectura)
+      cabeza.append(
+        boton('Quitar pieza', () => {
+          m.piezas = m.piezas.filter((x) => x !== p);
+          dibujar();
+        }),
+      );
+    div.append(cabeza, selectorMaterial(p, soloLectura));
+    const det = document.createElement('details');
+    const sum = document.createElement('summary');
+    sum.textContent = 'Medidas de corte (para el despiece)';
+    const medidas = document.createElement('div');
+    medidas.className = 'st-medidas';
+    medidas.append(campoCorte(p, 'ancho', soloLectura), campoCorte(p, 'alto', soloLectura));
+    const l = document.createElement('label');
+    l.className = 'nv-campo';
+    l.append('Cantidad');
+    const c = document.createElement('input');
+    c.type = 'number';
+    c.inputMode = 'numeric';
+    c.min = '1';
+    c.max = '1000';
+    c.className = 'campo-panel';
+    c.disabled = soloLectura;
+    c.value = String(p.corte?.cantidad ?? 1);
+    c.addEventListener('change', () => {
+      p.corte ??= { ancho: desconocida(), alto: desconocida(), cantidad: 1 };
+      p.corte.cantidad = Math.min(1000, Math.max(1, Math.round(Number(c.value) || 1)));
+    });
+    l.append(c);
+    medidas.append(l);
+    det.append(sum, medidas);
+    div.append(det);
+    return div;
+  }
+  function dibujar() {
+    const zona = $('modulos');
+    zona.replaceChildren();
+    $('preguntas').replaceChildren();
+    $('plano').replaceChildren();
+    $('aviso-plano').textContent = '';
+    if (!interpretacion?.modulos.length) return;
+    const soloLectura = interpretacion.estado === 'validada';
+    redibujarPlano();
+    interpretacion.modulos.forEach((m, i) => {
+      const f = document.createElement('fieldset');
+      f.className = 'st-modulo';
+      const leyenda = document.createElement('legend');
+      const ponerLeyenda = () => (leyenda.textContent = `Módulo ${i + 1} · ${nombreTipo(TIPOS_MODULO, m.tipo)}`);
+      ponerLeyenda();
+      f.append(leyenda);
+      f.append(
+        selector(
+          TIPOS_MODULO,
+          m.tipo,
+          (v) => {
+            m.tipo = v as TipoModulo;
+            ponerLeyenda();
+            redibujarPlano();
+          },
+          'Tipo',
+          soloLectura,
+        ),
+      );
+      const medidas = document.createElement('div');
+      medidas.className = 'st-medidas';
+      for (const d of ['ancho', 'alto', 'fondo'] as const) medidas.append(campoMedida(m, d, soloLectura));
+      f.append(medidas);
+      if (m.notas) {
+        const n = document.createElement('p');
+        n.className = 'nv-nota';
+        n.textContent = 'Nota de la IA: ' + m.notas;
+        f.append(n);
+      }
+      for (const p of m.piezas) f.append(tarjetaPieza(m, p, soloLectura));
+      if (!soloLectura) {
+        const acciones = document.createElement('div');
+        acciones.className = 'st-acciones';
+        acciones.append(
+          boton('Añadir una pieza', () => {
+            m.piezas.push({ id: `pieza-${Date.now().toString(36)}`, tipo: 'puerta', catalogoVarianteId: null, acabadoId: null });
+            dibujar();
+          }),
+          boton('Quitar el módulo', () => {
+            if (!interpretacion) return;
+            interpretacion.modulos = interpretacion.modulos.filter((x) => x !== m).map((x, orden) => ({ ...x, orden }));
+            dibujar();
+            actualizarVista();
+          }),
+        );
+        f.append(acciones);
+      }
+      zona.append(f);
+    });
+    for (const q of interpretacion.preguntas || []) {
+      const li = document.createElement('li');
+      li.textContent = q;
+      $('preguntas').append(li);
+    }
+    $('anadir-modulo').hidden = soloLectura;
+    for (const b of ['guardar-boceto', 'confirmar-boceto']) $(b).hidden = soloLectura;
+  }
+
+  $('anadir-modulo')?.addEventListener('click', () => {
+    interpretacion ??= base();
+    interpretacion.modulos.push(moduloVacio(interpretacion.modulos.length));
+    dibujar();
+    actualizarVista();
+  });
+  $('guardar-boceto')?.addEventListener('click', async () => {
+    const b = $<HTMLButtonElement>('guardar-boceto');
+    b.disabled = true;
+    try {
+      await guardar();
+      void cargarLista().catch(() => undefined);
+    } catch (e) {
+      error(e);
+    } finally {
+      b.disabled = false;
+    }
+  });
+  $('confirmar-boceto')?.addEventListener('click', async () => {
+    if (!id || !interpretacion?.modulos.length) return;
+    if (!fotos.espacio || !fotos.boceto) return estado('Faltan fotos: sube la del espacio y la del boceto antes de aprobar.', 'error');
+    const sinMedida = interpretacion.modulos.filter((m) => [m.ancho, m.alto, m.fondo].some((c) => c.valorMm === null)).length;
+    const pregunta = sinMedida
+      ? `Hay ${sinMedida} ${sinMedida === 1 ? 'módulo' : 'módulos'} con medidas sin poner: no servirán para fabricar. ¿Apruebas el diseño igualmente?`
+      : '¿Has revisado todas las medidas y materiales? Después no se podrá cambiar (se hace una revisión nueva).';
+    if (!window.confirm(pregunta)) return;
+    const b = $<HTMLButtonElement>('confirmar-boceto');
+    b.disabled = true;
+    try {
+      const validada: InterpretacionBoceto = { ...conFotos(interpretacion), estado: 'validada' };
+      const j = await pedir<{ revision: number }>('/api/panel/studio-bocetos', json('PATCH', { id, revision, interpretacion: validada }));
+      revision = j.revision;
+      interpretacion = validada;
+      dibujar();
+      actualizarVista();
+      estado('Diseño aprobado. Ya puedes generar la imagen.', 'bien');
+      $('paso-4').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      void cargarLista().catch(() => undefined);
+    } catch (e) {
+      error(e);
+    } finally {
+      b.disabled = false;
+    }
+  });
+
+  // ---------- Paso 4: imagen y despiece ----------
+  async function cargarGeneraciones() {
+    if (!id) return;
+    const j = await pedir<{ generaciones?: { estado: string; resultado_archivo_id?: string }[] }>('/api/panel/studio-generar?id=' + encodeURIComponent(id));
+    const ultima = (j.generaciones || []).find((g) => g.estado === 'completada' && g.resultado_archivo_id);
+    $('comparador-boceto').hidden = !ultima;
+    if (!ultima) return;
+    $<HTMLImageElement>('imagen-antes').src = '/api/panel/studio-archivos?id=' + encodeURIComponent(fotos.espacio);
+    $<HTMLImageElement>('imagen-despues').src = '/api/panel/studio-archivos?id=' + encodeURIComponent(ultima.resultado_archivo_id!);
+  }
+  $('deslizador-boceto')?.addEventListener('input', () => {
+    const v = Number($<HTMLInputElement>('deslizador-boceto').value);
+    $('recorte-despues').style.clipPath = `inset(0 ${100 - v}% 0 0)`;
+  });
+  $('generar-boceto')?.addEventListener('click', async () => {
+    if (!id || interpretacion?.estado !== 'validada') return estado('Aprueba primero el diseño.', 'error');
+    const b = $<HTMLButtonElement>('generar-boceto');
+    b.disabled = true;
+    estado('Generando la imagen… puede tardar hasta un minuto.');
+    try {
+      claveGeneracion ||= crypto.randomUUID();
+      const r = await fetch('/api/panel/studio-generar', json('POST', { id, clave: claveGeneracion }));
+      const j = (await r.json().catch(() => ({}))) as { estado?: string; error?: string };
+      if (j.estado === 'fallida') {
+        claveGeneracion = '';
+        throw new Error(j.error || 'La generación ha fallado. Vuelve a intentarlo.');
+      }
+      if (!r.ok) throw new Error(j.error || `Error ${r.status} al generar la imagen.`);
+      if (j.estado === 'procesando' || r.status === 202) return estado('La imagen se sigue generando. Vuelve en un momento y mira «Ver generaciones».');
+      claveGeneracion = '';
+      await cargarGeneraciones();
+      estado('Imagen generada. Desliza para comparar antes y después.', 'bien');
+    } catch (e) {
+      error(e);
+    } finally {
+      b.disabled = false;
+    }
+  });
+  $('consultar-despiece')?.addEventListener('click', async () => {
+    if (!id) return;
+    try {
+      type Despiece = { despiece: { partidas: { tipo: string; varianteId: string; cantidad: number; metrosCuadrados: number | null }[]; despieceCompleto: boolean; bloqueos: string[] }; valoracion?: { subtotalSinIva: number | null; bloqueos: string[] } };
+      const j = await pedir<Despiece>('/api/panel/studio-despiece?id=' + encodeURIComponent(id));
+      const d = j.despiece;
+      const zona = $('resultado-despiece');
+      zona.replaceChildren();
+      const linea = (t: string, fuerte = false) => {
+        const p = document.createElement('p');
+        p.textContent = t;
+        if (fuerte) p.style.fontWeight = '600';
+        zona.append(p);
+      };
+      const eur = (n: number) => n.toFixed(2).replace('.', ',');
+      linea(`${d.partidas.length} ${d.partidas.length === 1 ? 'pieza' : 'piezas'} · ${d.despieceCompleto ? 'despiece con medidas' : 'faltan medidas de corte'}`, true);
+      for (const p of d.partidas) {
+        const m = conocidos.get(p.varianteId);
+        linea(`${nombreTipo(TIPOS_PIEZA, p.tipo)} · ${m ? m.nombre : 'material elegido'} · ${p.cantidad} ud · ${p.metrosCuadrados === null ? 'superficie sin medir' : eur(p.metrosCuadrados) + ' m²'}`);
+      }
+      if (j.valoracion) {
+        linea(`Materiales (estimación sin IVA): ${j.valoracion.subtotalSinIva === null ? 'faltan datos' : eur(j.valoracion.subtotalSinIva) + ' €'}`, true);
+        linea('No es un presupuesto: no incluye mano de obra, herrajes, cantos ni mecanizados.');
+        for (const b of j.valoracion.bloqueos) linea('Pendiente: ' + b);
+      }
+      for (const b of d.bloqueos) linea('Pendiente: ' + b);
+    } catch (e) {
+      error(e);
+    }
+  });
+  $('revisar-generaciones')?.addEventListener('click', async () => {
+    if (!id) return;
+    try {
+      const j = await pedir<{ generaciones?: { id: string; estado: string; requiereRevision?: boolean; creado: string }[] }>('/api/panel/studio-generar?id=' + encodeURIComponent(id));
+      const zona = $('estado-generaciones');
+      zona.replaceChildren();
+      if (!(j.generaciones || []).length) zona.textContent = 'Todavía no hay generaciones.';
+      for (const g of j.generaciones || []) {
+        const fila = document.createElement('p');
+        fila.textContent = `${new Date(g.creado).toLocaleString('es-ES')} · ${g.estado}`;
+        if (g.requiereRevision) {
+          const b = boton('Cerrar la generación bloqueada', async () => {
+            if (!window.confirm('Cierra solo generaciones que llevan más de 15 minutos sin terminar. Puede que Google ya la haya cobrado. ¿Continuar?')) return;
+            try {
+              await pedir('/api/panel/studio-recuperar', json('POST', { id: g.id }));
+              claveGeneracion = '';
+              b.disabled = true;
+              estado('Generación cerrada. Ya puedes volver a generar.', 'bien');
+            } catch (e) {
+              error(e);
+            }
+          });
+          fila.append(' ', b);
         }
         zona.append(fila);
       }
-    }catch(e){estado(e instanceof Error?e.message:String(e));}
+    } catch (e) {
+      error(e);
+    }
   });
-  $('generar-boceto')?.addEventListener('click',async()=>{
-    if(!id||!interpretacion||interpretacion.estado!=='validada'){estado('Valida primero el boceto y los materiales.');return;}
-    const boton=$('generar-boceto') as HTMLButtonElement;boton.disabled=true;estado('Generando imagen…');
-    try{
-      claveGeneracion ||= crypto.randomUUID();
-      const r=await fetch('/api/panel/studio-generar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,clave:claveGeneracion})});
-      const j=await r.json();
-      if(j.estado==='fallida'){claveGeneracion='';throw Error(j.error||'La generación anterior falló; vuelve a intentarlo.');}
-      if(!r.ok)throw Error(j.error||'Error al generar');
-      if(j.estado==='procesando'||r.status===202){estado('La generación sigue procesándose. Consulta el historial antes de reintentar.');return;}
-      if(j.estado==='fallida'){claveGeneracion='';throw Error('La generación anterior falló; vuelve a intentarlo.');}
-      await cargarGeneraciones();claveGeneracion='';estado('Imagen guardada en R2 privado.');
-    }catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
+  $('duplicar-boceto')?.addEventListener('click', async () => {
+    if (!id || interpretacion?.estado !== 'validada') return;
+    if (!window.confirm('Se creará una revisión nueva y editable de este diseño. Tendrás que subir las fotos otra vez.')) return;
+    try {
+      const j = await pedir<{ id: string }>('/api/panel/studio-duplicar', json('POST', { id }));
+      await abrir(j.id);
+      await cargarLista();
+      estado('Revisión nueva creada. Sube las dos fotos otra vez.', 'bien');
+    } catch (e) {
+      error(e);
+    }
   });
-  if(document.getElementById('nuevo-boceto')){
-    estado('Turia Studio listo. Introduce un nombre y pulsa Crear borrador.');
-    void cargarMateriales().catch(e=>estado('Catálogo no disponible: '+String(e)));
-    void cargar().catch(e=>estado('No se pudieron cargar los borradores: '+String(e)));
+
+  // ---------- Inicio ----------
+  if (document.querySelector('[data-studio]')) {
+    actualizarVista();
+    cargarLista()
+      .then(() => estado('Turia Studio listo. Crea un proyecto o sigue con uno anterior.'))
+      .catch((e) => estado('Turia Studio listo, pero no se ha podido cargar la lista de proyectos: ' + (e instanceof Error ? e.message : String(e)), 'error'));
   }
 </script>

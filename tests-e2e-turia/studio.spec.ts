@@ -1,33 +1,47 @@
 import { expect, test } from '@playwright/test';
+import { auditar } from '../tests-e2e/ayudas';
 
-// Turia Studio: el script se inicializa, «Crear borrador» funciona, se suben las fotos,
-// la interpretación (simulada: no se llama a Gemini) pinta el alzado 2D, una cota editada
-// lo redibuja y, al recargar, el borrador se recupera.
+// Turia Studio por pasos: proyecto, fotos (se suben al elegirlas), leer el boceto (IA simulada:
+// no se llama a Gemini), revisar medidas con el alzado que se redibuja, guardar y recuperar.
 const cota = (valorMm: number | null) => ({ valorMm, precision: valorMm === null ? 'desconocida' : 'aproximada', origen: 'boceto', confirmada: false });
-const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
 
-test('Studio: crear borrador, subir fotos, ver y editar el boceto 2D, y recuperarlo', async ({ page }) => {
+async function foto(page: import('@playwright/test').Page) {
+  const b64 = await page.evaluate(() => {
+    const c = document.createElement('canvas');
+    c.width = 400;
+    c.height = 300;
+    const k = c.getContext('2d')!;
+    k.fillStyle = '#ccc';
+    k.fillRect(0, 0, 400, 300);
+    return c.toDataURL('image/png').split(',')[1]!;
+  });
+  return Buffer.from(b64, 'base64');
+}
+
+test('Studio: crear, subir fotos, leer el boceto, revisar medidas y recuperar el proyecto', async ({ page }) => {
   const errores: string[] = [];
   page.on('pageerror', (e) => errores.push(e.message));
   await page.goto('/panel/studio-bocetos');
   await expect(page.locator('#estado-boceto')).toHaveText(/Turia Studio listo/);
   await expect(page.locator('[data-version-codigo]')).toContainText('Versión del código');
+  await auditar(page);
 
   const titulo = `Lavadero ${Date.now()}`;
-  await page.fill('#titulo-boceto', titulo);
-  const creado = page.waitForResponse((r) => r.url().endsWith('/api/panel/studio-bocetos') && r.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Crear borrador' }).click();
-  expect((await creado).status()).toBe(201);
-  await expect(page.locator('#editor-boceto')).toBeVisible();
-  await expect(page.locator('#estado-boceto')).toHaveText(/Borrador creado/);
-  await expect(page.locator('#resultado-boceto svg')).toHaveCount(1);
+  await page.getByLabel('Nombre del proyecto').fill(titulo);
+  await page.getByRole('button', { name: 'Crear proyecto' }).click();
+  await expect(page.locator('#estado-boceto')).toHaveText('Proyecto creado. Ahora sube las dos fotos.');
+  await expect(page.locator('#nombre-proyecto')).toHaveText(titulo);
+  const leer = page.getByRole('button', { name: 'Leer el boceto con IA' });
+  await expect(leer).toBeDisabled();
 
-  await page.setInputFiles('#foto-espacio', { name: 'espacio.png', mimeType: 'image/png', buffer: png });
-  await page.setInputFiles('#foto-dibujo', { name: 'boceto.png', mimeType: 'image/png', buffer: png });
-  await page.getByRole('button', { name: 'Guardar interpretación manual' }).click();
-  await expect(page.locator('#estado-boceto')).toHaveText('Fotografías e interpretación guardadas.');
+  const png = await foto(page);
+  await page.locator('#foto-espacio').setInputFiles({ name: 'espacio.png', mimeType: 'image/png', buffer: png });
+  await expect(page.locator('#estado-boceto')).toHaveText('Foto guardada. Falta la otra.');
+  await page.locator('#foto-dibujo').setInputFiles({ name: 'boceto.png', mimeType: 'image/png', buffer: png });
+  await expect(page.locator('#estado-boceto')).toHaveText('Fotos guardadas. Ya puedes leer el boceto.');
+  await expect(leer).toBeEnabled();
+  await auditar(page);
 
-  // Interpretación simulada con dos módulos (el servidor real necesita Gemini y R2).
   await page.route('**/api/panel/studio-interpretar', async (ruta) => {
     const { id } = ruta.request().postDataJSON();
     const bocetos = await (await page.request.get('/api/panel/studio-bocetos')).json();
@@ -35,31 +49,61 @@ test('Studio: crear borrador, subir fotos, ver y editar el boceto 2D, y recupera
     await ruta.fulfill({
       json: {
         revision: b.revision,
-        interpretacion: { version: 1, estado: 'pendiente', categoria: 'lavadero', fotoEspacioId: 'x', fotoBocetoId: 'y', obstaculos: [], preguntas: [], modulos: [
-          { id: 'bajo-1', tipo: 'bajo', orden: 0, ancho: cota(800), alto: cota(850), fondo: cota(600), piezas: [] },
-          { id: 'columna-1', tipo: 'columna', orden: 1, ancho: cota(600), alto: cota(null), fondo: cota(600), piezas: [] },
+        interpretacion: { version: 1, estado: 'requiere-revision', categoria: 'mueble', fotoEspacioId: 'x', fotoBocetoId: 'y', obstaculos: [], preguntas: ['¿Altura del zócalo?'], modulos: [
+          { id: 'modulo-0', tipo: 'cajonera', orden: 0, ancho: cota(800), alto: cota(850), fondo: cota(600), piezas: [{ id: 'pieza-0-0', tipo: 'cajon', catalogoVarianteId: null, acabadoId: null }] },
+          { id: 'modulo-1', tipo: 'armario', orden: 1, ancho: cota(600), alto: cota(null), fondo: cota(600), piezas: [] },
         ] },
       },
     });
   });
-  await page.getByRole('button', { name: 'Interpretar dibujo con IA' }).click();
-  await expect(page.locator('#resultado-boceto h3')).toHaveText('Distribución: 2 módulos');
-  const svgAntes = await page.locator('#resultado-boceto [data-plano]').innerHTML();
-  expect(svgAntes).toContain('<svg');
-  await expect(page.locator('#resultado-boceto')).toContainText('Altura desconocida');
+  await leer.click();
+  await expect(page.locator('#estado-boceto')).toHaveText(/He encontrado 2 módulos/);
+  await expect(page.getByRole('heading', { name: '3. Revisar medidas y materiales' })).toBeVisible();
+  await expect(page.locator('#plano svg')).toHaveCount(1);
+  await expect(page.locator('#aviso-plano')).toContainText('alto del módulo 2');
+  await expect(page.locator('#modulos fieldset').first().getByText('Aproximada (IA)').first()).toBeVisible();
+  await expect(page.locator('#preguntas')).toContainText('¿Altura del zócalo?');
+  await auditar(page);
 
-  // Editar una cota redibuja el alzado (y quita su aviso).
-  const alto = page.locator('#resultado-boceto fieldset').nth(1).getByLabel('alto (mm)');
+  // Escribir una medida la confirma y redibuja el alzado.
+  const svgAntes = await page.locator('#plano').innerHTML();
+  const alto = page.locator('#modulos fieldset').nth(1).getByLabel('Alto (mm)');
   await alto.fill('2100');
   await alto.dispatchEvent('change');
-  await expect(page.locator('#resultado-boceto')).not.toContainText('Altura desconocida');
-  expect(await page.locator('#resultado-boceto [data-plano]').innerHTML()).not.toBe(svgAntes);
+  await expect(page.locator('#aviso-plano')).toHaveText('Alzado con todas las medidas.');
+  await expect(page.locator('#modulos fieldset').nth(1).getByText('Confirmada')).toBeVisible();
+  expect(await page.locator('#plano').innerHTML()).not.toBe(svgAntes);
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
+  await expect(page.locator('#estado-boceto')).toHaveText('Cambios guardados.');
 
-  // Al recargar, el borrador sigue en la lista y se puede abrir.
+  // Al recargar, el proyecto sigue en la lista con sus fotos y medidas.
   await page.reload();
   await expect(page.locator('#estado-boceto')).toHaveText(/Turia Studio listo/);
   await page.locator('#lista-bocetos button', { hasText: titulo }).click();
-  await expect(page.locator('#editor-boceto')).toBeVisible();
-  await expect(page.locator('#resultado-boceto svg')).toHaveCount(1);
+  await expect(page.locator('#nombre-proyecto')).toHaveText(titulo);
+  await expect(page.locator('#vista-espacio')).toBeVisible();
+  await expect(page.locator('#modulos fieldset')).toHaveCount(2);
+  await expect(page.locator('#modulos fieldset').nth(1).getByLabel('Alto (mm)')).toHaveValue('2100');
   expect(errores).toEqual([]);
+});
+
+test('Studio: sin IA, se ponen las medidas a mano', async ({ page }) => {
+  await page.goto('/panel/studio-bocetos');
+  await expect(page.locator('#estado-boceto')).toHaveText(/Turia Studio listo/);
+  await page.getByLabel('Nombre del proyecto').fill(`Armario ${Date.now()}`);
+  await page.getByRole('button', { name: 'Crear proyecto' }).click();
+  await expect(page.locator('#editor-boceto')).toBeVisible();
+  await page.getByRole('button', { name: 'Poner yo las medidas' }).click();
+  await expect(page.locator('#modulos fieldset')).toHaveCount(1);
+  for (const [d, v] of [['Ancho (mm)', '1200'], ['Alto (mm)', '2400'], ['Fondo (mm)', '600']]) {
+    const campo = page.locator('#modulos fieldset').first().getByLabel(d);
+    await campo.fill(v);
+    await campo.dispatchEvent('change');
+  }
+  await expect(page.locator('#aviso-plano')).toHaveText('Alzado con todas las medidas.');
+  await page.getByRole('button', { name: 'Añadir una pieza' }).click();
+  await expect(page.locator('#modulos .st-pieza')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
+  await expect(page.locator('#estado-boceto')).toHaveText('Cambios guardados.');
+  await auditar(page);
 });

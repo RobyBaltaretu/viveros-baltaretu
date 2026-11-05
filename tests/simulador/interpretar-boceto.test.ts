@@ -27,3 +27,23 @@ describe('interpretación multimodal Turia',()=>{
     expect(r.ok).toBe(true);expect(r.interpretacion?.modulos[0].ancho.confirmada).toBe(false);
   });
 });
+
+describe('interpretación: respuesta real de Gemini y errores claros', () => {
+  it('acepta cotas como número (salida estructurada) y las deja aproximadas', () => {
+    const b = normalizarInterpretacion({ modulos: [{ tipo: 'cajonera', ancho: 600, alto: 850, fondo: null, piezas: ['cajon', 'cajon'] }], obstaculos: [], preguntas: ['¿Altura del zócalo?'] }, 'e', 'd');
+    expect(b?.modulos[0]).toMatchObject({ tipo: 'cajonera', ancho: { valorMm: 600, precision: 'aproximada', confirmada: false }, fondo: { valorMm: null, precision: 'desconocida' } });
+    expect(b?.modulos[0]?.piezas).toHaveLength(2);
+  });
+  it('pide salida con esquema y explica cada error del proveedor', async () => {
+    let cuerpo: { generationConfig?: { responseSchema?: unknown } } = {};
+    const pedir = (async (_u: string, init: RequestInit) => {
+      cuerpo = JSON.parse(String(init.body));
+      return new Response(JSON.stringify({ error: { message: 'models/x is not found' } }), { status: 404 });
+    }) as unknown as typeof fetch;
+    const r = await interpretarBoceto({ mime: 'image/png', base64: 'AA' }, { mime: 'image/png', base64: 'AA' }, { espacio: 'e', dibujo: 'd' }, 'k', 'x', pedir);
+    expect(cuerpo.generationConfig?.responseSchema).toBeTruthy();
+    expect(r).toMatchObject({ ok: false, estado: 404 });
+    expect(r.error).toContain('no existe');
+    expect(r.error).toContain('models/x is not found');
+  });
+});
