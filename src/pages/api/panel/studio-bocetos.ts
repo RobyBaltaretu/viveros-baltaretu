@@ -8,7 +8,7 @@ import type { BaseD1 } from '../../../server/data/d1/base.ts';
 import { compatibilidadPieza } from '../../../server/simulador/compatibilidad-materiales.ts';
 import { validarInterpretacion, type InterpretacionBoceto } from '../../../server/simulador/boceto.ts';
 import { sentenciasStudio } from '../../../server/data/d1/studio.ts';
-import { variantesStudio } from '../../../server/simulador/materiales-studio.ts';
+import { materialesStudioPorId } from '../../../server/simulador/materiales-studio.ts';
 
 export const prerender = false;
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), {
@@ -82,8 +82,7 @@ export const PATCH: APIRoute = async ({locals,request}) => {
   if(seleccionadas.length){
     const [variantesCatalogo,articulos]=await Promise.all([sesion.repos.catalogo.variantes?.()??Promise.resolve([]),sesion.repos.catalogo.articulos()]);
     // Las mismas que ofrece el selector: variantes y artículos sin variantes.
-    const variantes=variantesStudio(articulos,variantesCatalogo);
-    const porId=new Map(variantes.map(v=>[v.id,v]));
+    const porId=materialesStudioPorId(articulos,variantesCatalogo);
     const porArticulo=new Map(articulos.map(a=>[a.id,a]));
     for(const pieza of seleccionadas){
       const variante=porId.get(pieza.catalogoVarianteId!);

@@ -6,6 +6,7 @@ import { aplicarMigraciones, crearRepositoriosD1, type Repositorios } from '../.
 import { clienteVacio } from '../../src/server/facturas/facturas.ts';
 import { cargarCliente } from '../../src/plataforma/cargar.ts';
 import { d1DePrueba } from '../panel/d1.ts';
+import { anotarLimitesGroq, quedanParaGubia } from '../../src/server/asistente/estado-ia.ts';
 
 // Gubia (Turia) lleva el panel de la carpintería: presupuestos, catálogo, proveedores y pedidos.
 let repos: Repositorios;
@@ -80,5 +81,25 @@ describe('Gubia: herramientas de la carpintería', () => {
     expect(pe.texto).toMatch(/^Pedido PE2026-0001 preparado/);
     await conSi('gestionar_pedido', { pedido: 'PE2026-0001', estado: 'enviado' });
     expect((await consultar('ver_pedidos', { estado: 'enviado' })).pedidos).toEqual([expect.objectContaining({ codigo: 'PE2026-0001', proveedor: 'Tableros Levante', coste: 140 })]);
+  });
+
+  it('estado_ia: el modelo que atiende ahora y el límite aproximado que queda', async () => {
+    comoTuria();
+    expect(herramientasPara(herramientasDe('propietario'), 'Dime modelo de IA interno que usas y el límite aproximado que queda').map((h) => h.nombre)).toContain('estado_ia');
+    const dia = '2026-11-01';
+    for (let i = 0; i < 3; i++) await repos.usoAsistente.reservarGroq(dia, 'asistente', 1000);
+    anotarLimitesGroq('groq llama-4-scout-17b-16e-instruct', { 'x-ratelimit-remaining-requests': '987', 'x-ratelimit-limit-requests': '1000', 'x-ratelimit-remaining-tokens': '29000', 'x-ratelimit-limit-tokens': '30000' });
+    const h = herramienta('estado_ia') as unknown as Consulta<unknown>;
+    const r = (await h.consultar({ ...ctx(), modeloActual: 'groq llama-4-scout-17b-16e-instruct' }, {})) as { modeloActual: string; respaldo: string[]; panelHoy: unknown; segunGroq: unknown; aviso: string };
+    expect(r.modeloActual).toBe('groq llama-4-scout-17b-16e-instruct');
+    expect(r.respaldo).toEqual(['groq gpt-oss-120b', 'groq llama-3.3-70b-versatile']);
+    expect(r.panelHoy).toMatchObject({ peticionesGroqUsadas: 3, quedanParaGubia: 997 });
+    expect(r.segunGroq).toMatchObject({ peticionesRestantesHoy: 987, tokensRestantesEsteMinuto: 29000 });
+    expect(r.aviso).toMatch(/aproximadas/);
+    // Sin modelo en el contexto: el primero de la cadena.
+    expect(((await h.consultar(ctx(), {})) as Record<string, unknown>).modeloActual).toBe('groq gpt-oss-120b');
+    // Con el importador usado, Gubia solo tiene el 30 %.
+    expect(quedanParaGubia({ importador: 10, asistente: 100 })).toBe(200);
+    expect(quedanParaGubia({ importador: 700, asistente: 300 })).toBe(0);
   });
 });

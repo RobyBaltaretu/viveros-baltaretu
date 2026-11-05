@@ -17,6 +17,7 @@ import { vocabularioPanel } from '../../plataforma/vocabulario.ts';
 import { gastoDesdeTicket } from '../../server/panel/gastos.ts';
 import { crearLectorWorkersAI } from '../../server/gastos/lector.ts';
 import { dinero } from '../../server/facturas/importes.ts';
+import { PRESUPUESTO_GROQ_DIA } from '../../server/asistente/estado-ia.ts';
 
 export const prerender = false;
 
@@ -98,15 +99,19 @@ const iniciales =
     .map((p) => p[0]?.toUpperCase())
     .join('') || 'Tú';
 const hora = (iso: string) => new Date(iso.includes('T') ? iso : `${iso.replace(' ', 'T')}Z`).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
-const conIA = Boolean(entorno.AI || entorno.GROQ_API_KEY);
 // Qué IA contesta (fuera del vivero, se enseña para saber que va el modelo del cliente).
 const ia = iaDe(clienteActual());
+// Turia: solo Groq. Su medidor es el de peticiones de Groq del panel, no el de neuronas.
+const soloGroq = !ia.asistente.includes('workers-ai');
+const conIA = soloGroq ? Boolean(entorno.GROQ_API_KEY) : Boolean(entorno.AI || entorno.GROQ_API_KEY);
+const usoGroq = s && soloGroq ? await s.repos.usoAsistente.usoGroq(new Date().toISOString().slice(0, 10)) : null;
 const nombres = { groq: entorno.GROQ_API_KEY ? `Groq (${[ia.modelos.groq, ...(ia.modelos.groqRespaldo ?? [])].map((m) => m.replace(/^(openai|meta-llama)\//, '')).join(' → ')})` : '', 'workers-ai': entorno.AI ? 'Workers AI' : '', local: '' };
 const cadena = ia.asistente.map((p) => nombres[p]).filter(Boolean);
 const modeloActivo = cadena.length ? `IA: ${cadena[0]}${cadena.length > 1 ? `, con ${cadena.slice(1).join(' y ')} de respaldo` : ''}` : 'IA: sin configurar (modo básico)';
 const pct = (a: number, b: number) => Math.min(100, Math.round((a / Math.max(1, b)) * 100));
 const quedanMensajes = uso ? Math.max(0, uso.limiteMensajes - uso.mensajes) : 0;
-const iaGastada = uso ? pct(uso.neuronas, uso.limiteNeuronas) : 0;
+const groqUsadas = usoGroq ? usoGroq.importador + usoGroq.asistente : 0;
+const iaGastada = usoGroq ? pct(groqUsadas, PRESUPUESTO_GROQ_DIA) : uso ? pct(uso.neuronas, uso.limiteNeuronas) : 0;
 const miles = (n: number) => new Intl.NumberFormat('es-ES', { useGrouping: 'always' } as Intl.NumberFormatOptions).format(n);
 const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
 ---
@@ -195,7 +200,7 @@ const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
                   <span class="font-semibold">IA gratuita {vocabulario.asistenteDe} hoy (para todos):</span> <span class="tabular">{iaGastada} %</span> usado
                   <span class="text-gris">
                     {' '}
-                    ({miles(uso.neuronas)} de {miles(uso.limiteNeuronas)} neuronas)
+                    {usoGroq ? `(${miles(groqUsadas)} de ${miles(PRESUPUESTO_GROQ_DIA)} peticiones de Groq)` : <>({miles(uso.neuronas)} de {miles(uso.limiteNeuronas)} neuronas)</>}
                   </span>
                 </p>
                 <span class="barra" aria-hidden="true">
@@ -826,8 +831,10 @@ const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
     <script is:inline data-nombre={NOMBRE}>
       (() => {
         const nombre = document.currentScript.dataset.nombre;
-        const zona = document.getElementById('conversacion');
-        if (!zona || !nombre) return;
+        // Se vigila el contenedor del chat, no #conversacion: el script común sustituye
+        // la conversación entera al recibir cada respuesta y el observador se perdería.
+        const zona = document.querySelector('.chat-agricolai') || document.body;
+        if (!nombre) return;
         const cambiar = (n) => {
           if (n.nodeType === 3) {
             if (n.nodeValue.includes('AgricolAI')) n.nodeValue = n.nodeValue.replaceAll('AgricolAI', nombre);
@@ -839,6 +846,7 @@ const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
           n.childNodes.forEach(cambiar);
         };
         new MutationObserver((cambios) => cambios.forEach((c) => (c.type === 'characterData' ? cambiar(c.target) : c.addedNodes.forEach(cambiar)))).observe(zona, { childList: true, subtree: true, characterData: true });
+        cambiar(zona);
       })();
     </script>
   )

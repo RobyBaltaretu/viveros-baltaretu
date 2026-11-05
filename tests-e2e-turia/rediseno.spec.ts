@@ -95,3 +95,30 @@ test('Gubia: adjuntar la foto de un ticket la deja en Gastos por revisar', async
   await expect(page.locator('#conversacion')).toContainText(/Tickets por revisar/);
   await expect(page.locator('#conversacion')).toContainText('📎');
 });
+
+test('Gubia: el nombre no cambia a AgricolAI al enviar varios mensajes seguidos', async ({ page }) => {
+  await page.goto('/panel/asistente');
+  // La respuesta se retrasa para ver la burbuja de «pensando».
+  await page.route('**/panel/asistente', async (r) => {
+    if (r.request().method() === 'POST') await new Promise((x) => setTimeout(x, 1200));
+    await r.continue();
+  });
+  for (const t of ['hola', 'otra pregunta']) {
+    await page.getByLabel(/^Escribe a/).fill(t);
+    await page.getByRole('button', { name: 'Enviar' }).click();
+    await expect(page.locator('#conversacion')).toContainText('Gubia está pensando');
+    await expect(page.locator('#conversacion')).not.toContainText('AgricolAI');
+    await expect(page.locator('#conversacion')).not.toContainText('pensando', { timeout: 15_000 });
+  }
+  await expect(page.locator('body')).not.toContainText('AgricolAI');
+});
+
+test('Ayuda y datos de prueba hablan del taller, no del vivero', async ({ page }) => {
+  for (const r of ['/panel/ayuda', '/panel/pruebas']) {
+    await page.goto(r);
+    await expect(page.locator('main')).not.toContainText(/plantas?\b|vivero|AgricolAI/i);
+  }
+  await page.goto('/panel/ayuda');
+  await expect(page.getByText('Hacer un presupuesto', { exact: true })).toBeVisible();
+  await auditar(page);
+});

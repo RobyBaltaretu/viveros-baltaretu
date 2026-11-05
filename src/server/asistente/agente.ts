@@ -30,8 +30,8 @@ export interface ModeloAsistente {
 
 export { LIMITE_NEURONAS_DIA, LIMITE_NEURONAS_TURIA, limiteNeuronasCliente } from './cuotas.ts';
 import { limiteNeuronasCliente } from './cuotas.ts';
-/** Mensajes por persona y día. */
-export const LIMITE_MENSAJES_PERSONA = 80;
+export { LIMITE_MENSAJES_PERSONA } from './estado-ia.ts';
+import { anotarLimitesGroq, LIMITE_MENSAJES_PERSONA } from './estado-ia.ts';
 /** Mensajes anteriores que ve el modelo. */
 const MEMORIA = 12;
 /** Pasos de herramientas por mensaje. */
@@ -237,8 +237,10 @@ export async function conversar(ctx: Contexto, texto: string, modelos: ModeloAsi
       const esGroq = m.nombre.toLowerCase().startsWith('groq ');
       if (m.neuronas.entrada > 0 && !hayNeuronas) continue;
       const propuestas: Propuesta[] = [];
+      // Cada intento sabe qué modelo lo atiende (para «¿qué modelo usas?»).
+      const ctxModelo: Contexto = { ...ctx, modeloActual: m.nombre };
       try {
-        const herramientas = herramientasModelo(ctx, conversacion, propuestas, [...previos.slice(-3).map((x) => x.texto), mensaje].join(' '));
+        const herramientas = herramientasModelo(ctxModelo, conversacion, propuestas, [...previos.slice(-3).map((x) => x.texto), mensaje].join(' '));
         const mensajes: ModelMessage[] = [...historial(previos, conocidas), { role: 'user', content: mensaje }];
         const pedir = async (lista: ModelMessage[]) => {
           if (esGroq && clienteActual().id==='turia') {
@@ -247,7 +249,9 @@ export async function conversar(ctx: Contexto, texto: string, modelos: ModeloAsi
             if (!(await repos.usoAsistente.reservarGroq(dia(ahora),'asistente',1000)))
               throw new Error('Presupuesto Groq reservado para el importador');
           }
-          return generateText({ model: m.modelo, system: instruccionesDe(ctx), messages: lista, tools: herramientas, stopWhen: isStepCount(PASOS), temperature: 0.2, maxOutputTokens: 1600 });
+          const r = await generateText({ model: m.modelo, system: instruccionesDe(ctx), messages: lista, tools: herramientas, stopWhen: isStepCount(PASOS), temperature: 0.2, maxOutputTokens: 1600 });
+          if (esGroq) anotarLimitesGroq(m.nombre, r.response?.headers);
+          return r;
         };
         let r = await pedir(mensajes);
         let gastadas = r.totalUsage;

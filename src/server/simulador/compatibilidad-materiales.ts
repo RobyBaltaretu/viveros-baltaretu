@@ -1,5 +1,6 @@
 import type { PiezaBoceto, TipoPieza } from './boceto.ts';
 import type { ArticuloCatalogo, VarianteCatalogo } from '../data/tipos.ts';
+import { varianteUsable } from './materiales-studio.ts';
 
 /** Piezas que se hacen de tablero, madera o chapa (cuerpos y frentes). */
 const PIEZAS_TABLERO: TipoPieza[] = ['puerta', 'costado', 'interior', 'balda', 'cajon', 'trasera'];
@@ -26,7 +27,7 @@ export const materialCompatible = (tipo: TipoPieza, articulo: Pick<ArticuloCatal
 
 export function compatibilidadPieza(pieza: PiezaBoceto, articulo: ArticuloCatalogo, variante: VarianteCatalogo) {
   const errores: string[] = [], avisos: string[] = [];
-  if (articulo.archivado || variante.estado !== 'activo') errores.push('Variante no activa');
+  if (articulo.archivado || !varianteUsable(variante)) errores.push('Material archivado o descatalogado');
   const motivo = motivoIncompatible(pieza.tipo, articulo, variante);
   if (motivo) errores.push(motivo);
   if (variante.disponibilidad === 'sin-stock') avisos.push('Sin stock');
