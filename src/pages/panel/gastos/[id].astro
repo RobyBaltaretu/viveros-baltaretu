@@ -85,7 +85,7 @@ const volverLista = g ? `/panel/gastos?mes=${g.fecha.slice(0, 7)}&hecho=guardado
             </a>
           </details>
         )}
-        <form method="post" class="mt-6 grid gap-6" id={rapido ? 'corregir' : undefined}>
+        <form method="post" class="mt-6 grid gap-6" id={rapido ? 'corregir' : undefined} novalidate={nuevo ? true : undefined}>
           <button name="accion" value="guardar" class="sr-only" tabindex="-1" aria-hidden="true">
             Guardar
           </button>

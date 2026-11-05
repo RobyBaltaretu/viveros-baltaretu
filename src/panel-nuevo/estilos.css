@@ -3050,3 +3050,27 @@
   .ux-turia .nv-contenido .chat-agricolai .cabecera-chat .avatar-grande { width: 2.75rem; height: 2.75rem; }
   .ux-turia .nv-contenido .chat-agricolai .cabecera-chat p { font-size: .875rem; }
 }
+
+/* ---------- Revisar el gasto (pantalla compartida, con el diseño nuevo) ----------
+ * En el ordenador, la foto del ticket a la derecha y fija mientras se rellena el
+ * formulario a la izquierda; en el móvil, la foto no ocupa más de un tercio. */
+.nv #principal:has(> details img[src^='/api/panel/ticket']) > h1 { font-size: clamp(1.75rem, 1.35rem + 1.4vw, 2.5rem); letter-spacing: -0.035em; }
+.nv #principal > details:has(img[src^='/api/panel/ticket']) { border: 1px solid var(--nv-borde); border-radius: var(--nv-radio); background: var(--nv-superficie); }
+.nv #principal > details img[src^='/api/panel/ticket'] { max-height: 34vh; }
+.nv #principal:has(> details img[src^='/api/panel/ticket']) > form:not(.mt-8) {
+  padding: 1.25rem; border: 1px solid var(--nv-borde); border-radius: var(--nv-radio); background: var(--nv-superficie);
+}
+@media (min-width: 64rem) {
+  .nv #principal:has(> details img[src^='/api/panel/ticket']) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem); column-gap: 2rem; align-items: start; }
+  .nv #principal:has(> details img[src^='/api/panel/ticket']) > * { grid-column: 1; }
+  .nv #principal > details:has(img[src^='/api/panel/ticket']) { grid-column: 2; grid-row: 1 / span 12; position: sticky; top: 6rem; margin-top: 0; }
+  .nv #principal > details img[src^='/api/panel/ticket'] { max-height: 72vh; }
+}
+
+/* Datos de facturación: el formulario en una tarjeta, como el resto del panel. */
+.nv #principal:has(#formaPago) > form {
+  max-width: 44rem; padding: 1.5rem; border: 1px solid var(--nv-borde); border-radius: var(--nv-radio); background: var(--nv-superficie);
+  box-shadow: 0 1px 2px rgb(16 24 32 / .04), 0 8px 24px -18px rgb(16 24 32 / .18);
+}
+.nv #principal:has(#formaPago) > h1 { font-size: clamp(1.75rem, 1.35rem + 1.4vw, 2.5rem); letter-spacing: -0.035em; }
+.nv #principal:has(> details img[src^='/api/panel/ticket']) > form .grid { align-items: start; }

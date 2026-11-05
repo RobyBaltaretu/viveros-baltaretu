@@ -31,6 +31,14 @@ const lineas = f.lineas.length ? f.lineas : [{ concepto: '', cantidad: 1, precio
 const t = f.totales;
 ---
 
+{
+  !f.cliente.nif?.trim() && (
+    <p class="nv-caja-aviso">
+      <span>Para emitir esta factura falta el NIF de {f.cliente.nombre || 'el cliente'}. Puedes guardar el borrador y completarlo antes de emitir.</span>
+      <a class="nv-boton nv-boton-secundario" href={`/panel/facturas/clientes/${f.cliente.id}`}>Completar su ficha</a>
+    </p>
+  )
+}
 <form method="post" class="nv-editor" id="form-factura" data-pasos novalidate data-recargo={f.cliente.recargo ? JSON.stringify(RECARGO) : '{}'} data-iva-fijo={ivaFijo ?? ''}>
   <input type="hidden" name="lineas" value={lineas.length} data-filas />
   <!-- Pulsar Intro en un campo guarda (sin esto, haría lo del primer botón). -->
