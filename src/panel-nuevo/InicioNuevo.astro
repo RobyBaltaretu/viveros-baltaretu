@@ -6,6 +6,8 @@
  */
 import taller from './assets/taller.webp?inline';
 import Icono from '../components/panel/ui/Icono.astro';
+import Bienvenida from './Bienvenida.astro';
+import { vocabularioPanel } from '../plataforma/vocabulario.ts';
 import { dinero } from '../server/facturas/importes.ts';
 import { hoy } from '../server/gastos/gastos.ts';
 import { periodoAnterior, periodoDe, evolucionMensual } from '../server/informes/informes.ts';
@@ -79,6 +81,7 @@ const ahora = new Date();
 const hora = Number(ahora.toLocaleString('es-ES', { hour: 'numeric', hour12: false, timeZone: 'Europe/Madrid' }));
 ---
 
+{s && <Bienvenida nombre={clienteActual().nombre} asistente={vocabularioPanel().nombreAsistente} hayAsistente={acceso('/panel/asistente')} />}
 <div class="nv-inicio ux-inicio">
   <section class="ux-hero" aria-labelledby="ux-bienvenida">
     <div class="ux-saludo"><p>{saludo(hora)}</p><h1 id="ux-bienvenida">{clienteActual().nombre}</h1><p class="ux-lema">Carpintería a medida y proyectos singulares</p></div>

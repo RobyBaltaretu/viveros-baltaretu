@@ -7,6 +7,7 @@
 import Mensajes from '../../../components/panel/Mensajes.astro';
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
 import Icono from '../../../components/panel/ui/Icono.astro';
+import Explica from '../../../panel-nuevo/Explica.astro';
 import { CATEGORIAS, precioVenta, sinPrecio } from '../../../server/catalogo/catalogo.ts';
 import { cargarCatalogoDePartida } from '../../../server/catalogo/partida.ts';
 import { dinero } from '../../../server/facturas/importes.ts';
@@ -89,6 +90,12 @@ const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
       </details>
     </div>
   </div>
+  <Explica id="catalogo" titulo="¿Cómo funciona el catálogo?">
+    <p><strong>Artículos</strong>: lo que compras o cobras (un tablero, una bisagra, una hora de taller), con su coste, su merma y tu margen.</p>
+    <p><strong>Trabajos</strong>: la receta de un mueble (el escandallo). Pones las medidas y calcula las piezas, los cantos, los herrajes, las horas y el precio. «Calcular el precio» lo lleva a un presupuesto.</p>
+    <p><strong>Familias y variantes</strong>: un mismo material en varios acabados o grosores, como una melamina en blanco y en roble, de 16 o 19 mm.</p>
+    <p>Es privado: los costes y los márgenes nunca salen en un presupuesto ni en un pedido.</p>
+  </Explica>
   <Mensajes hecho={hecho} />
 
   {

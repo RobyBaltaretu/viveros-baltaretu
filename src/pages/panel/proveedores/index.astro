@@ -1,6 +1,7 @@
 ---
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
 import Icono from '../../../components/panel/ui/Icono.astro';
+import Vacio from '../../../panel-nuevo/Vacio.astro';
 import { sesionCon } from '../../../server/panel/pagina.ts';
 import { esDelProveedor, gastadoCon, nombresCategorias } from '../../../server/proveedores/proveedores.ts';
 import { dinero } from '../../../server/facturas/importes.ts';
@@ -43,7 +44,8 @@ const hecho = Astro.url.searchParams.has('hecho');
       Ocultos <span class="nv-chip">{nOcultos}</span>
     </a>
   </nav>
-  <form method="get" class="nv-filtros" role="search">
+  {todos.length > 0 && (
+<form method="get" class="nv-filtros" role="search">
     {ocultos && <input type="hidden" name="ver" value="ocultos" />}
     <label class="nv-campo">
       Buscar
@@ -51,8 +53,11 @@ const hecho = Astro.url.searchParams.has('hecho');
     </label>
     <button class="nv-boton nv-boton-secundario">Buscar</button>
   </form>
+)}
   {
-    lista.length === 0 ? (
+    todos.length === 0 ? (
+      <Vacio escena="clientes" titulo="A quién compras el material" texto="Añade quién te sirve los tableros, los herrajes o el barniz, con su contacto y sus plazos. Luego les pides el material desde «Pedidos»." accion={{ href: '/panel/proveedores/nuevo', texto: 'Añadir el primer proveedor' }} />
+    ) : lista.length === 0 ? (
       <div class="nv-tarjeta nv-vacio">
         <span class="nv-vacio-icono" aria-hidden="true">
           <Icono nombre="proveedores" />

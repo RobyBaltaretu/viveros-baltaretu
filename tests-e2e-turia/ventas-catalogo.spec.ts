@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { auditar, controlesGrandes } from '../tests-e2e/ayudas';
+import { paso } from './pasos';
 
 // Presupuestos y facturas enganchados al catálogo: buscando en la línea o en la ventana, y líneas a mano.
 test.describe.configure({ mode: 'serial' });
@@ -21,6 +22,7 @@ test.beforeAll(async ({ browser }) => {
 
 test('presupuesto: materiales y un trabajo desde la ventana del catálogo, y una línea a mano', async ({ page }) => {
   await page.goto('/panel/presupuestos-cliente/nuevo');
+  await paso(page, 'Trabajos|Conceptos');
   await page.getByRole('button', { name: 'Añadir del catálogo' }).click();
   const d = page.getByRole('dialog', { name: 'Añadir del catálogo' });
   await expect(d).toBeVisible();
@@ -66,6 +68,7 @@ test('presupuesto: buscar en la propia línea, materiales sin precio y un trabaj
   await expect(page).toHaveURL(/ver=articulos/);
 
   await page.goto('/panel/presupuestos-cliente/nuevo');
+  await paso(page, 'Trabajos');
   const concepto = page.getByLabel('Concepto de la línea 1');
   await concepto.fill('bisagra');
   const sug = page.getByRole('listbox', { name: 'Del catálogo' });
@@ -114,9 +117,11 @@ test('factura: editor nuevo con el catálogo, IVA fijo y total al escribir', asy
   await page.getByRole('button', { name: new RegExp(`^Cliente factura ${p}`) }).click();
   await expect(page).toHaveURL(/\/panel\/facturas\/[^/]+$/);
   await expect(page.locator('input[name="l0.iva"]')).toHaveValue('21');
+  await paso(page, 'Conceptos');
   await page.getByLabel('Concepto de la línea 1').fill('Montaje en obra');
   await page.getByLabel('Precio de la línea 1, en euros sin IVA').fill('100');
   await expect(page.locator('[data-total]')).toHaveText(/^121,00/);
+  await paso(page, 'Trabajos|Conceptos');
   await page.getByRole('button', { name: 'Añadir del catálogo' }).click();
   const d = page.getByRole('dialog', { name: 'Añadir del catálogo' });
   await d.getByRole('searchbox').fill('transporte');
@@ -128,6 +133,7 @@ test('factura: editor nuevo con el catálogo, IVA fijo y total al escribir', asy
   await page.getByRole('button', { name: 'Quitar la línea 3' }).click();
   await auditar(page);
   await controlesGrandes(page);
+  await paso(page, 'Total y pago');
   await page.getByRole('button', { name: 'Guardar el borrador' }).click();
   await expect(page.getByRole('status').first()).toContainText('Borrador guardado');
   await expect(page.getByLabel('Concepto de la línea 2')).toHaveValue('Transporte y descarga');

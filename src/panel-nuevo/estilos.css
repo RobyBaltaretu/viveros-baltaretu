@@ -2777,3 +2777,127 @@
 .nv-mas-acciones-menu .icono { width: 1.25rem; height: 1.25rem; flex: none; color: var(--nv-acento); }
 @media (hover: hover) and (pointer: fine) { .nv-mas-acciones-menu a:hover, .nv-mas-acciones-menu button:hover { background: var(--nv-hover); } }
 @media (max-width: 40rem) { .nv-mas-acciones-menu { left: 0; right: auto; transform-origin: top left; min-width: min(18rem, calc(100vw - 2.5rem)); } }
+
+/* Lista vacía la primera vez: dibujo, qué es y el botón que la llena. */
+.nv-vacio-grande {
+  display: grid; justify-items: center; gap: .5rem; padding: 2.5rem 1.5rem; text-align: center;
+  @starting-style { opacity: 0; transform: translateY(6px); }
+  transition: opacity 300ms var(--nv-ease-out), transform 300ms var(--nv-ease-out);
+}
+.nv-vacio-grande .nv-vacio-dibujo { width: 8rem; height: auto; margin-bottom: .5rem; }
+.nv-vacio-grande h2 { margin: 0; font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; }
+.nv-vacio-grande p { max-width: 34rem; margin: 0; color: var(--nv-gris); line-height: 1.5; }
+.nv-vacio-acciones { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; margin-top: 1rem; }
+@media (max-width: 40rem) { .nv-vacio-acciones { flex-direction: column; align-self: stretch; } .nv-vacio-acciones .nv-boton { justify-content: center; } }
+
+/* Formularios por pasos (solo en el móvil). */
+.nv-pasos-guia, .nv-pasos-pie { display: none; }
+@media (max-width: 63.99rem) {
+  .nv-con-pasos .nv-paso-oculto { display: none; }
+  .nv-con-pasos .nv-precio-flotante { display: none; }
+  .nv-con-pasos { padding-bottom: 6.5rem; }
+  .nv-pasos-guia {
+    display: flex; gap: .25rem; margin: 0 0 1rem; padding: 0; list-style: none; grid-column: 1 / -1;
+  }
+  .nv-pasos-guia li { flex: 1; min-width: 0; }
+  .nv-pasos-guia button {
+    display: flex; flex-direction: column; align-items: center; gap: .25rem; width: 100%; min-height: 3.25rem; padding: .25rem;
+    border: 0; background: none; font: inherit; font-size: .8125rem; color: var(--nv-gris); cursor: pointer;
+    border-bottom: 3px solid var(--nv-borde); transition: color 150ms ease, border-color 150ms ease;
+  }
+  .nv-pasos-guia button span {
+    display: grid; place-items: center; width: 1.625rem; height: 1.625rem; border-radius: 999px;
+    border: 1.5px solid currentColor; font-weight: 600; font-variant-numeric: tabular-nums;
+  }
+  .nv-pasos-guia button[aria-current] { color: var(--nv-tinta); font-weight: 600; border-bottom-color: var(--nv-acento); }
+  .nv-pasos-guia button[aria-current] span { background: var(--nv-acento); border-color: var(--nv-acento); color: #fff; }
+  .nv-pasos-guia button.nv-paso-hecho { color: var(--nv-verde); border-bottom-color: var(--nv-verde); }
+  .nv-pasos-pie {
+    position: fixed; left: 0; right: 0; bottom: calc(4.5rem + env(safe-area-inset-bottom)); z-index: 26;
+    display: flex; align-items: center; gap: .75rem; padding: .625rem 1rem;
+    background: color-mix(in oklab, var(--nv-superficie) 94%, transparent); backdrop-filter: blur(8px);
+    border-top: 1px solid var(--nv-borde); box-shadow: 0 -8px 24px -16px rgb(16 24 32 / .3);
+  }
+  .nv-pasos-pie .nv-boton { min-height: 3rem; }
+  .nv-pasos-pie [data-siguiente] { margin-left: auto; }
+  .nv-pasos-total { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+  .nv-pasos-total small { font-size: .75rem; color: var(--nv-gris); }
+  .nv-pasos-total strong { font-size: 1.125rem; }
+  .nv-con-pasos [data-paso]:not(.nv-paso-oculto) {
+    animation: nv-paso-entra 220ms var(--nv-ease-out);
+  }
+}
+@keyframes nv-paso-entra { from { opacity: 0; transform: translateX(12px); } }
+@media (prefers-reduced-motion: reduce) { @keyframes nv-paso-entra { from { opacity: 0; } } }
+
+/* Avisos flotantes: entran desde abajo y salen más rápido de lo que entran. */
+.nv-avisos {
+  position: fixed; left: 50%; bottom: calc(1.5rem + env(safe-area-inset-bottom)); z-index: 60;
+  display: grid; gap: .5rem; width: min(28rem, calc(100vw - 2rem)); transform: translateX(-50%); pointer-events: none;
+}
+@media (max-width: 63.99rem) { .nv-avisos { bottom: calc(5.5rem + env(safe-area-inset-bottom)); } }
+.nv-aviso-flotante {
+  display: flex; align-items: center; gap: .75rem; padding: .75rem .5rem .75rem 1rem; pointer-events: auto;
+  border-radius: var(--nv-radio); background: var(--nv-tinta); color: #fff; box-shadow: var(--nv-sombra-alta);
+  font-weight: 500;
+  transition: opacity 200ms var(--nv-ease-out), transform 200ms var(--nv-ease-out);
+  @starting-style { opacity: 0; transform: translateY(100%); }
+}
+.nv-aviso-flotante::before {
+  content: ''; flex: none; width: 1.25rem; height: 1.25rem; border-radius: 999px;
+  background: #7fbf8f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23102018' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 70% no-repeat;
+}
+.nv-aviso-flotante span { flex: 1; }
+.nv-aviso-flotante button {
+  display: grid; place-items: center; width: 2.75rem; height: 2.75rem; flex: none; border: 0; border-radius: var(--nv-radio-control);
+  background: transparent; color: #fff; font-size: 1.375rem; line-height: 1; cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) { .nv-aviso-flotante button:hover { background: rgb(255 255 255 / .12); } }
+.nv-aviso-sale { opacity: 0; transform: translateY(8px); transition-duration: 150ms; }
+@media (prefers-reduced-motion: reduce) { .nv-aviso-flotante { @starting-style { transform: none; } } .nv-aviso-sale { transform: none; } }
+
+/* «¿Cómo funciona…?» */
+.nv-explica { margin: 0 0 1rem; border: 1px solid var(--nv-borde); border-radius: var(--nv-radio); background: var(--nv-superficie); }
+.nv-explica > summary {
+  display: flex; align-items: center; gap: .625rem; min-height: 3rem; padding: .5rem 1rem; list-style: none; cursor: pointer;
+  font-weight: 600; color: var(--nv-tinta); border-radius: var(--nv-radio); transition: background-color 120ms ease;
+}
+.nv-explica > summary::-webkit-details-marker { display: none; }
+.nv-explica > summary::after { content: ''; width: 7px; height: 7px; margin-left: auto; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform 200ms var(--nv-ease-out); }
+.nv-explica[open] > summary::after { transform: translateY(2px) rotate(-135deg); }
+@media (hover: hover) and (pointer: fine) { .nv-explica > summary:hover { background: var(--nv-hover); } }
+.nv-explica-icono { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; flex: none; border-radius: 999px; background: var(--nv-acento-suave); color: var(--nv-acento-oscuro); font-size: .875rem; }
+.nv-explica-cuerpo { padding: 0 1rem 1rem 3.125rem; color: var(--nv-gris); line-height: 1.55; }
+.nv-explica-cuerpo p { margin: .5rem 0 0; }
+.nv-explica-cuerpo strong { color: var(--nv-tinta); }
+.nv-explica[open] .nv-explica-cuerpo { animation: nv-explica-abre 200ms var(--nv-ease-out); }
+@keyframes nv-explica-abre { from { opacity: 0; transform: translateY(-4px); } }
+@media (max-width: 40rem) { .nv-explica-cuerpo { padding-left: 1rem; } }
+
+/* Bienvenida (diálogo centrado: escala desde el centro). */
+.nv-bienvenida {
+  margin: auto; inset: 0; max-height: calc(100dvh - 2rem); overflow: auto;
+  width: min(26rem, calc(100vw - 2rem)); padding: 1.5rem; border: 0; border-radius: 1.25rem;
+  background: var(--nv-superficie); color: var(--nv-tinta); box-shadow: var(--nv-sombra-alta); text-align: center;
+  transition: opacity 220ms var(--nv-ease-out), transform 260ms var(--nv-ease-out), overlay 260ms allow-discrete, display 260ms allow-discrete;
+}
+.nv-bienvenida:not([open]) { opacity: 0; transform: scale(0.96); transition-duration: 150ms; }
+@starting-style { .nv-bienvenida[open] { opacity: 0; transform: scale(0.96); } }
+.nv-bienvenida::backdrop { background: rgb(16 24 32 / .45); transition: background-color 220ms ease, overlay 220ms allow-discrete, display 220ms allow-discrete; }
+@starting-style { .nv-bienvenida[open]::backdrop { background-color: rgb(16 24 32 / 0); } }
+.nv-bienvenida-saltar { display: flex; justify-content: flex-end; margin: -.5rem -.5rem 0 0; }
+.nv-enlace-boton { min-height: 2.75rem; padding: 0 .75rem; border: 0; border-radius: var(--nv-radio-control); background: none; font: inherit; color: var(--nv-gris); cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .nv-enlace-boton:hover { background: var(--nv-hover); color: var(--nv-tinta); } }
+.nv-bienvenida-pantalla { display: grid; justify-items: center; gap: .5rem; }
+.nv-bienvenida-pantalla:not([hidden]) { animation: nv-paso-entra 240ms var(--nv-ease-out); }
+.nv-bienvenida-dibujo { width: 9rem; height: auto; margin-bottom: .5rem; }
+.nv-bienvenida h2 { margin: 0; font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; outline: none; }
+.nv-bienvenida p { margin: 0; color: var(--nv-gris); line-height: 1.55; }
+.nv-bienvenida-pie { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.5rem; }
+.nv-bienvenida-puntos { display: flex; gap: .375rem; margin: 0; padding: 0; list-style: none; }
+.nv-bienvenida-puntos li { width: .5rem; height: .5rem; border-radius: 999px; background: var(--nv-borde-fuerte); transition: width 220ms var(--nv-ease-out), background-color 220ms ease; }
+.nv-bienvenida-puntos li.activo { width: 1.5rem; background: var(--nv-acento); }
+@media (prefers-reduced-motion: reduce) { .nv-bienvenida, .nv-bienvenida:not([open]) { transform: none; } }
+
+/* Encabezados que reciben el foco al cambiar de paso: el lector lo anuncia; sin marco. */
+.nv h2[tabindex="-1"]:focus { outline: none; }

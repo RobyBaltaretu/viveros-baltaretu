@@ -1,0 +1,32 @@
+---
+/**
+ * Primera vez en una lista vacía: un dibujo, qué es esto, para qué sirve y el
+ * botón que la llena. Así una persona nueva sabe qué hacer sin preguntar.
+ * (Las búsquedas sin resultados siguen con el aviso corto de cada lista.)
+ */
+import Icono from '../components/panel/ui/Icono.astro';
+import Ilustracion, { type Escena } from '../components/panel/ui/Ilustracion.astro';
+import type { NombreIcono } from '../server/panel/iconos.ts';
+
+interface Accion { href: string; texto: string; icono?: NombreIcono }
+interface Props {
+  escena: Escena;
+  titulo: string;
+  texto: string;
+  accion?: Accion;
+  secundaria?: Accion;
+}
+const { escena, titulo, texto, accion, secundaria } = Astro.props;
+---
+
+<section class="nv-tarjeta nv-vacio-grande" aria-label={titulo}>
+  <Ilustracion escena={escena} clase="nv-vacio-dibujo" />
+  <h2>{titulo}</h2>
+  <p>{texto}</p>
+  {(accion || secundaria) && (
+    <div class="nv-vacio-acciones">
+      {accion && <a class="nv-boton" href={accion.href}><Icono nombre={accion.icono ?? 'nuevo'} />{accion.texto}</a>}
+      {secundaria && <a class="nv-boton nv-boton-secundario" href={secundaria.href}>{secundaria.icono && <Icono nombre={secundaria.icono} />}{secundaria.texto}</a>}
+    </div>
+  )}
+</section>

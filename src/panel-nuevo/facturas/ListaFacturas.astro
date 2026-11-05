@@ -6,6 +6,7 @@
  * gestoría, al final como siempre.
  */
 import Icono from '../../components/panel/ui/Icono.astro';
+import Vacio from '../Vacio.astro';
 import type { Cliente, EstadoFactura, Factura } from '../../server/data/tipos.ts';
 import { hoy, vencida } from '../../server/facturas/facturas.ts';
 import { dinero } from '../../server/facturas/importes.ts';
@@ -115,6 +116,7 @@ const chip = (f: Factura) =>
     ))
   }
 </nav>
+{todas.length > 0 && (
 <form method="get" class="nv-filtros" role="search">
   <input type="hidden" name="estado" value={estado} />
   {cliente && <input type="hidden" name="cliente" value={cliente.id} />}
@@ -124,9 +126,12 @@ const chip = (f: Factura) =>
   </label>
   <button class="nv-boton nv-boton-secundario">Buscar</button>
 </form>
+)}
 
 {
-  lista.length === 0 ? (
+  todas.length === 0 ? (
+    <Vacio escena="facturas" titulo="Aquí verás lo que facturas y lo que te deben" texto="Haz una factura desde cero o pásala desde un presupuesto aceptado. Una vez emitida no se cambia: si hay un error, se corrige con una rectificativa." accion={{ href: '/panel/facturas/nueva', texto: 'Hacer una factura' }} secundaria={{ href: '/panel/presupuestos-cliente', texto: 'Ver presupuestos', icono: 'presupuestos' }} />
+  ) : lista.length === 0 ? (
     <div class="nv-tarjeta nv-vacio">
       <span class="nv-vacio-icono" aria-hidden="true">
         <Icono nombre="facturas" />

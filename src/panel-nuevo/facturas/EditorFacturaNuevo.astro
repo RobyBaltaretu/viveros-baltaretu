@@ -31,12 +31,12 @@ const lineas = f.lineas.length ? f.lineas : [{ concepto: '', cantidad: 1, precio
 const t = f.totales;
 ---
 
-<form method="post" class="nv-editor" id="form-factura" novalidate data-recargo={f.cliente.recargo ? JSON.stringify(RECARGO) : '{}'} data-iva-fijo={ivaFijo ?? ''}>
+<form method="post" class="nv-editor" id="form-factura" data-pasos novalidate data-recargo={f.cliente.recargo ? JSON.stringify(RECARGO) : '{}'} data-iva-fijo={ivaFijo ?? ''}>
   <input type="hidden" name="lineas" value={lineas.length} data-filas />
   <!-- Pulsar Intro en un campo guarda (sin esto, haría lo del primer botón). -->
   <button name="accion" value="guardar" class="sr-only" tabindex="-1" aria-hidden="true">Guardar</button>
   <div class="nv-editor-principal">
-    <section class="nv-tarjeta nv-seccion" aria-labelledby="datos-factura">
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="datos-factura" data-paso="Cliente">
       <h2 id="datos-factura">Para quién y cuándo</h2>
       <p class="nv-cliente-factura">
         <a class="enlace-panel" href={`/panel/facturas/clientes/${f.clienteId}`}>{f.cliente.nombre}</a>
@@ -65,7 +65,7 @@ const t = f.totales;
       </div>
     </section>
 
-    <section class="nv-tarjeta" aria-labelledby="lineas">
+    <section class="nv-tarjeta" aria-labelledby="lineas" data-paso="Conceptos">
       <div class="nv-cabeza-tarjeta">
         <h2 id="lineas">Qué se factura</h2>
         <span class="nv-gris">Precios sin IVA</span>
@@ -156,7 +156,7 @@ const t = f.totales;
     </section>
   </div>
 
-  <aside class="nv-tarjeta nv-resumen" aria-labelledby="total-factura">
+  <aside class="nv-tarjeta nv-resumen" aria-labelledby="total-factura" data-paso="Total y pago">
     <h2 id="total-factura">Total</h2>
     <dl class="nv-filas-resumen nv-sin-raya">
       <div>
