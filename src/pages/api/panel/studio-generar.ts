@@ -7,7 +7,7 @@ import { cuerpoLimitado } from '../../../server/panel/cuerpo.ts';
 import { asegurarEsquema } from '../../../server/data/d1/migraciones.ts';
 import type { BaseD1 } from '../../../server/data/d1/base.ts';
 import { claveGemini, mesDe, limitePresupuestado } from '../../../server/simulador/cuota.ts';
-import { instruccionesRender } from '../../../server/simulador/render-boceto.ts';
+import { instruccionesRender, promptRender, proporcionImagen, type MaterialRender } from '../../../server/simulador/render-boceto.ts';
 import type { InterpretacionBoceto } from '../../../server/simulador/boceto.ts';
 import { URL_GEMINI } from '../../../services/renovationAiService.ts';
 import { tipoDeImagen } from '../../../server/panel/fotos.ts';
@@ -54,15 +54,38 @@ export const POST:APIRoute=async({locals,request})=>{
   try{especificacion=instruccionesRender(interpretacion);}catch{return json(422,{ok:false,error:'Boceto no válido'});}
   const archivos=await sentenciasStudio(e.DB).leerArchivo3()
     .bind(id,tenant,interpretacion.fotoEspacioId,interpretacion.fotoBocetoId).all<{id:string;objeto_r2:string;mime:string;clase:string}>();
+  let proporcion:ReturnType<typeof proporcionImagen>=null;
   const cargar=async(fid:string,clase:'espacio'|'boceto')=>{
     const a=archivos.results.find(x=>x.id===fid);if(!a||a.clase!==clase)throw Error('Imagen ausente o clase incorrecta');
     const obj=await e.IMAGENES_PRIVADAS!.get(a.objeto_r2);if(!obj)throw Error('Imagen no disponible');
     const bytes=new Uint8Array(await obj.arrayBuffer());
     if(bytes.length>6_000_000||tipoDeImagen(bytes)?.tipo!==a.mime)throw Error('Imagen no válida');
+    // Misma proporción que la foto del espacio: así no cambia el encuadre.
+    if(clase==='espacio')proporcion=proporcionImagen(bytes);
     return {mimeType:a.mime,data:b64(bytes)};
   };
   let foto,boceto;try{[foto,boceto]=await Promise.all([cargar(interpretacion.fotoEspacioId,'espacio'),cargar(interpretacion.fotoBocetoId,'boceto')]);}
   catch{return json(422,{ok:false,error:'Faltan imágenes originales'});}
+  // Cada material, con su nombre, color y (si el catálogo la tiene) la muestra de su textura: hasta 4 muestras.
+  const materiales=new Map<string,MaterialRender>(),muestras:{mimeType:string;data:string}[]=[];
+  for(const x of acabados){
+    const v=x.variante!,a=x.articulo!;if(materiales.has(v.id))continue;
+    const m:MaterialRender={nombre:a.nombre,referencia:v.referencia||a.referencia,acabado:v.acabado||a.acabado,
+      colorHex:a.visual?.colorHex??null,brillo:a.visual?.brillo??null,veta:a.visual?.veta??null,muestra:null};
+    const ruta=/[?&]ruta=([^&]+)/.exec(a.visual?.textura||'')?.[1];
+    if(ruta&&muestras.length<4){
+      try{
+        const r=decodeURIComponent(ruta);
+        if(/^catalogo-materiales\/[a-z0-9-]+\/muestra\.webp$/i.test(r)){
+          const adj=await sesion.repos.adjuntos.obtener(r);
+          const bytes=adj?.ambito==='catalogo'?adj.bytes:(await sesion.repos.fotos.obtener(r))?.bytes;
+          const tipo=bytes&&bytes.length<=2_000_000?tipoDeImagen(bytes)?.tipo:undefined;
+          if(bytes&&tipo){muestras.push({mimeType:tipo,data:b64(bytes)});m.muestra=2+muestras.length;}
+        }
+      }catch{/* sin muestra: basta con el nombre y el color */}
+    }
+    materiales.set(v.id,m);
+  }
   const activa=await sentenciasStudio(e.DB).leerGeneracion2()
     .bind(id,tenant,row.revision,'procesando').first();
   if(activa)return json(409,{ok:false,error:'Ya hay una generación en curso. Consulta el historial antes de reintentar'});
@@ -78,12 +101,12 @@ export const POST:APIRoute=async({locals,request})=>{
     return json(409,{ok:false,error:'Ya existe una generación activa o no se pudo reservar el trabajo'});
   }
   const modelo=iaDe(clienteActual()).modelos.gemini;
-  const prompt='Render fotográfico de carpintería. PRIMERA imagen: espacio real, SEGUNDA: boceto. Preservar el espacio, las instalaciones y el encuadre. Respetar exactamente los módulos y los acabados del diseño validado. No añadir elementos. Diseño estructurado: '+JSON.stringify({especificacion,referencias});
+  const prompt=promptRender(interpretacion,materiales);
   let respuesta:Response;
   try{respuesta=await fetch(URL_GEMINI+'/'+encodeURIComponent(modelo)+':generateContent',{
     method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
-    body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt},{inlineData:foto},{inlineData:boceto}]}],
-      generationConfig:{responseModalities:['IMAGE'],imageConfig:{imageSize:'1K'}}})
+    body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt},{inlineData:foto},{inlineData:boceto},...muestras.map(inlineData=>({inlineData}))]}],
+      generationConfig:{responseModalities:['IMAGE'],imageConfig:{imageSize:'1K',...(proporcion?{aspectRatio:proporcion}:{})}}})
   });}catch{
     await sentenciasStudio(e.DB).actualizarGeneracion().bind('fallida','Conexión con proveedor',new Date().toISOString(),generacion).run();
     return json(502,{ok:false,error:'Error de conexión; revisa el historial antes de reintentar'});

@@ -2,10 +2,17 @@ import { URL_GEMINI } from '../../services/renovationAiService.ts';
 import { validarInterpretacion, type InterpretacionBoceto, type CotaBoceto } from './boceto.ts';
 export type ImagenBoceto = { mime: string; base64: string };
 const desconocida = (): CotaBoceto => ({valorMm:null,precision:'desconocida',origen:'boceto',confirmada:false});
-/** Cota leída del dibujo: siempre «aproximada» (la confirma la persona). Acepta un número o {valorMm}. */
-function cota(v:unknown):CotaBoceto {
-  const n=typeof v==='number'?v:v&&typeof v==='object'?(v as Record<string,unknown>).valorMm:null;
-  if(typeof n!=='number'||!Number.isFinite(n)||n<=0||n>100000)return desconocida();
+export type UnidadBoceto='cm'|'mm'|'m';
+const FACTOR:Record<UnidadBoceto,number>={mm:1,cm:10,m:1000};
+/** Unidad del dibujo; sin unidad escrita, un carpintero acota en centímetros. */
+export const unidadDe=(u:unknown):UnidadBoceto=>u==='mm'||u==='m'?u:'cm';
+/** Cota leída del dibujo, pasada a mm: siempre «aproximada» (la confirma la persona). Acepta un número o {valorMm}. */
+export function cota(v:unknown,unidad:UnidadBoceto='mm'):CotaBoceto {
+  const crudo=typeof v==='number'?v:v&&typeof v==='object'?(v as Record<string,unknown>).valorMm:null;
+  if(typeof crudo!=='number'||!Number.isFinite(crudo)||crudo<=0)return desconocida();
+  // {valorMm} ya viene en mm; un número va en la unidad del dibujo.
+  const n=typeof v==='number'?crudo*FACTOR[unidad]:crudo;
+  if(n>100000)return desconocida();
   return {valorMm:Math.round(n),precision:'aproximada',origen:'boceto',confirmada:false};
 }
 
@@ -18,18 +25,21 @@ const TIPOS_PIEZA=['puerta','costado','interior','balda','cajon','encimera','can
 export const ESQUEMA_RESPUESTA={
   type:'OBJECT',
   properties:{
-    modulos:{type:'ARRAY',items:{type:'OBJECT',properties:{
+    unidad:{type:'STRING',enum:['cm','mm','m'],description:'Unidad de las cotas del dibujo. Si no está escrita, cm.'},
+    modulos:{type:'ARRAY',description:'Módulos de izquierda a derecha, tal como se ven en el dibujo',items:{type:'OBJECT',properties:{
       tipo:{type:'STRING',enum:TIPOS_MODULO},
-      ancho:{type:'NUMBER',nullable:true,description:'Milímetros, solo si la cota está escrita en el dibujo'},
-      alto:{type:'NUMBER',nullable:true,description:'Milímetros, solo si la cota está escrita en el dibujo'},
-      fondo:{type:'NUMBER',nullable:true,description:'Milímetros, solo si la cota está escrita en el dibujo'},
+      ancho:{type:'NUMBER',nullable:true,description:'Cota escrita en el dibujo, en su unidad; null si no hay'},
+      alto:{type:'NUMBER',nullable:true,description:'Cota escrita en el dibujo, en su unidad; null si no hay'},
+      fondo:{type:'NUMBER',nullable:true,description:'Cota escrita en el dibujo, en su unidad; null si no hay. Si solo hay un fondo general, úsalo en todos'},
+      contenido:{type:'STRING',description:'Qué lleva: electrodomésticos, fregadero, encimera, barra de colgar, baldas, altillo, número de puertas…'},
       piezas:{type:'ARRAY',items:{type:'STRING',enum:TIPOS_PIEZA}},
       notas:{type:'STRING'},
-    },required:['tipo','ancho','alto','fondo','piezas']}},
+    },required:['tipo','ancho','alto','fondo','contenido','piezas']}},
+    conservar:{type:'ARRAY',description:'Elementos del espacio que no se tocan: pilar, termo, ventana, tuberías, enchufes…',items:{type:'STRING'}},
     obstaculos:{type:'ARRAY',items:{type:'STRING'}},
     preguntas:{type:'ARRAY',items:{type:'STRING'}},
   },
-  required:['modulos','obstaculos','preguntas'],
+  required:['unidad','modulos','conservar','obstaculos','preguntas'],
 };
 
 /** Mensaje claro según el código del proveedor (para saber qué arreglar). */
@@ -46,6 +56,7 @@ export function normalizarInterpretacion(raw:unknown,espacio:string,dibujo:strin
   const v=raw as Record<string,unknown>;
   const lista=Array.isArray(v.modulos)?v.modulos:Array.isArray(v.modules)?v.modules:null;
   if(!lista||lista.length<1||lista.length>30)return null;
+  const unidad=unidadDe(v.unidad);
   const modulos=lista.map((m:unknown,i:number)=>{
     const x=m&&typeof m==='object'?m as Record<string,unknown>:{};
     const tipo=(TIPOS_MODULO.find(t=>t===x.tipo)||'otro') as InterpretacionBoceto['modulos'][number]['tipo'];
@@ -55,20 +66,32 @@ export function normalizarInterpretacion(raw:unknown,espacio:string,dibujo:strin
       const tipo=(tiposPieza.find(t=>t===raw)||'otra') as InterpretacionBoceto['modulos'][number]['piezas'][number]['tipo'];
       return {id:'pieza-'+i+'-'+j,tipo,catalogoVarianteId:null,acabadoId:null};
     }):[];
-    return {id:'modulo-'+i,tipo,orden:i,ancho:cota(x.ancho),alto:cota(x.alto),fondo:cota(x.fondo),piezas,
-      notas:typeof x.notas==='string'?x.notas.slice(0,500):''};
+    const contenido=typeof x.contenido==='string'?x.contenido.trim().slice(0,300):'';
+    return {id:'modulo-'+i,tipo,orden:i,ancho:cota(x.ancho,unidad),alto:cota(x.alto,unidad),fondo:cota(x.fondo,unidad),piezas,
+      notas:typeof x.notas==='string'?x.notas.slice(0,500):'',...(contenido?{contenido}:{})};
   });
   const b:InterpretacionBoceto={version:1,estado:'requiere-revision',categoria:'mueble',modulos,
-    obstaculos:Array.isArray(v.obstaculos)?v.obstaculos.slice(0,20).map((x,i)=>({id:'obstaculo-'+i,descripcion:String(x).slice(0,200),conservar:true})):[],
+    obstaculos:[...new Set([...(Array.isArray(v.conservar)?v.conservar:[]),...(Array.isArray(v.obstaculos)?v.obstaculos:[])]
+      .map(x=>String(x).trim().slice(0,200)).filter(Boolean))].slice(0,20).map((descripcion,i)=>({id:'obstaculo-'+i,descripcion,conservar:true})),
     preguntas:Array.isArray(v.preguntas)?v.preguntas.slice(0,12).map(x=>String(x).slice(0,200)):[],
     fotoEspacioId:espacio,fotoBocetoId:dibujo};
   return validarInterpretacion(b).length?null:b;
 }
+export const PROMPT_INTERPRETACION=[
+  'Eres un carpintero que lee un encargo. Imagen 1: foto del espacio real (puede tener el diseño marcado encima con rotulador rojo u otro color). Imagen 2: boceto a mano con cotas.',
+  'El boceto manda en la distribución; la foto, en lo que hay en el espacio.',
+  'Devuelve los módulos de IZQUIERDA a DERECHA, tal como se ven de frente. Un pilar o un hueco que no se fabrica no es un módulo: va en «conservar».',
+  'Cotas: copia el número escrito en el dibujo e indica la unidad en «unidad». Los carpinteros acotan en centímetros sin escribir la unidad (233 = 233 cm; 86,5 = 86.5 cm): si no hay unidad escrita, «cm». Si una cota no está escrita, null; no la calcules ni la inventes. Si hay un solo fondo para todo, ponlo en cada módulo.',
+  'Si las cotas parciales no suman la total, dilo en «preguntas».',
+  'En «contenido» describe qué lleva cada módulo según el dibujo y las marcas de la foto: electrodomésticos (lavadora, secadora, apiladas o no), fregadero, encimera, barra de colgar, baldas, altillo, número de puertas y cajones.',
+  'En «conservar» pon lo que existe en el espacio y no se toca: pilares, termo, calentador, ventanas, tuberías, grifos, enchufes, radiadores.',
+  'Tipos de módulo: armario, cajonera, balda, hueco-electrodomestico, encimera, panel u otro. No inventes módulos, materiales ni medidas.',
+].join('\n');
 export async function interpretarBoceto(
   espacio:ImagenBoceto,dibujo:ImagenBoceto,ids:{espacio:string;dibujo:string},
   key:string,modelo:string,pedir:typeof fetch=fetch
 ):Promise<{ok:boolean;interpretacion?:InterpretacionBoceto;error?:string;estado?:number}> {
-  const prompt='Analiza estas dos imágenes para un carpintero. Primera: espacio vacío, segunda: dibujo en papel. El dibujo manda en la distribución. Devuelve solo JSON con modulos (tipo, ancho, alto, fondo, piezas, notas), obstaculos y preguntas. Medidas solo en milímetros cuando la unidad esté explícita. Para cotas sin unidad inequívoca usa null. No inventes módulos, materiales ni medidas. Los módulos pueden ser armario, cajonera, balda, hueco-electrodomestico, encimera, panel u otro. Mantén los elementos existentes del espacio.';
+  const prompt=PROMPT_INTERPRETACION;
   let respuesta:Response;
   try {
     respuesta=await pedir(URL_GEMINI+'/'+encodeURIComponent(modelo)+':generateContent',{
