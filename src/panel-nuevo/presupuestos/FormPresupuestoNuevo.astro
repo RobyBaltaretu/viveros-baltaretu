@@ -11,6 +11,7 @@
  * Sin JavaScript funciona igual, con «Añadir más líneas» y el total al guardar.
  */
 import Icono from '../../components/panel/ui/Icono.astro';
+import Explica from '../Explica.astro';
 import SelectorCatalogo from '../SelectorCatalogo.astro';
 import type { ArticuloCatalogo, Cliente, PlantillaCatalogo } from '../../server/data/tipos.ts';
 import { TIPOS_IVA } from '../../server/facturas/importes.ts';
@@ -41,10 +42,16 @@ const fila = (i: number) => {
 };
 ---
 
-<form method="post" id="form-presupuesto" class="nv-editor" novalidate data-iva={ivaFijo ?? v.iva ?? 21}>
+<Explica id="presupuesto" titulo="¿Cómo funciona un presupuesto?">
+  <p>Elige el cliente y escribe los trabajos, o tráelos del catálogo con su precio ya calculado. Los precios van <strong>sin IVA</strong>; el total con IVA sale solo.</p>
+  <p><strong>Extra</strong>: lo que ofreces aparte (por ejemplo, una iluminación). Sale en el presupuesto, pero no suma al total.</p>
+  <p><strong>Anticipo</strong>: la parte del total que el cliente paga al aceptar; el resto, al terminar.</p>
+  <p>Se numera al guardar y puedes cambiarlo hasta que lo envíes. Cuando el cliente lo acepta, lo pasas a factura con un clic.</p>
+</Explica>
+<form method="post" id="form-presupuesto" class="nv-editor" data-pasos novalidate data-iva={ivaFijo ?? v.iva ?? 21}>
   <input type="hidden" name="filas" value={filas} data-filas />
   <div class="nv-editor-principal">
-    <section class="nv-tarjeta nv-seccion" aria-labelledby="para-quien">
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="para-quien" data-paso="Cliente">
       <h2 id="para-quien">Para quién y qué</h2>
       <div class="nv-rejilla nv-rejilla-2">
         <div class="nv-campo">
@@ -88,7 +95,7 @@ const fila = (i: number) => {
       </div>
     </section>
 
-    <section class="nv-tarjeta" aria-labelledby="trabajos">
+    <section class="nv-tarjeta" aria-labelledby="trabajos" data-paso="Trabajos">
       <div class="nv-cabeza-tarjeta">
         <h2 id="trabajos">Trabajos y materiales</h2>
         <span class="nv-gris">Precios sin IVA</span>
@@ -164,7 +171,7 @@ const fila = (i: number) => {
     </section>
   </div>
 
-  <aside class="nv-tarjeta nv-resumen" aria-labelledby="resumen-presupuesto">
+  <aside class="nv-tarjeta nv-resumen" aria-labelledby="resumen-presupuesto" data-paso="Condiciones">
     <h2 id="resumen-presupuesto">Resumen</h2>
     <dl class="nv-filas-resumen nv-sin-raya">
       <div>

@@ -92,7 +92,15 @@ export const esquemaCliente = z
         /** IA de imágenes del simulador: «gemini» (de pago, con tope mensual) o «none». */
         simulador: z.enum(['gemini', 'none']),
         /** Modelos concretos (si faltan, los de MODELOS_POR_DEFECTO). */
-        modelos: z.object({ groq: z.string().min(1).optional(), gemini: z.string().min(1).optional() }).strict().optional(),
+        modelos: z
+          .object({
+            groq: z.string().min(1).optional(),
+            /** Modelos de Groq de respaldo, por orden: se usan cuando el principal agota su límite o falla (p. ej. Llama tras GPT-OSS). */
+            groqRespaldo: z.array(z.string().min(1)).max(4).optional(),
+            gemini: z.string().min(1).optional(),
+          })
+          .strict()
+          .optional(),
         /** Tope duro de simulaciones al mes (contador en D1). */
         simulacionesMes: z.number().int().min(0).max(5000).optional(),
       })

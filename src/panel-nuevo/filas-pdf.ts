@@ -28,6 +28,30 @@ export function reconstruirFilas(items: Array<{ str: string; transform: number[]
  * que aparecen junto a una familia de material; nunca inventa precios.
  * Esas fichas deben revisarse manualmente antes de guardarlas.
  */
+/**
+ * Separa una fila de tarifa («ML-1019 Melamina blanco mate 2850x2100 19 mm 12,40»)
+ * en nombre, formato, espesor, unidad y precio. Sin IA: lo que no se reconoce se
+ * queda en el nombre para que la persona lo revise.
+ */
+export function partesDeFila(linea: string, referencia = '') {
+  let resto = ' ' + linea + ' ';
+  if (referencia) resto = resto.replace(new RegExp('\\s' + referencia.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s'), ' ');
+  let precio: number | null = null;
+  const p = resto.match(/\s(\d{1,5}(?:\.\d{3})*,\d{2}|\d{1,5}\.\d{2})\s*(?:€|eur|euros)?(?:\s*\/\s*(?:ud|m2|m²|ml|par))?\s*$/i);
+  if (p) { precio = Number(p[1].replace(/\.(?=\d{3}\b)/g, '').replace(',', '.')); resto = resto.slice(0, p.index) + ' '; }
+  let unidad = '';
+  const u = resto.match(/\s(ud|uds|unidad|par|juego|m2|m²|ml|m\.l\.|kg|l)\s*$/i);
+  if (u) { const t = u[1].toLowerCase(); unidad = /m2|m²/.test(t) ? 'm²' : /ml|m\.l\./.test(t) ? 'ml' : t === 'kg' ? 'kg' : t === 'l' ? 'l' : 'ud'; resto = resto.slice(0, u.index) + ' '; }
+  let formato = '';
+  const f = resto.match(/\s(\d{2,4}(?:[,.]\d+)?\s*[x×]\s*\d{1,4}(?:[,.]\d+)?(?:\s*[x×]\s*\d{1,4})?)\s*(mm|cm)?(?=\s)/i);
+  if (f) { formato = f[1].replace(/\s+/g, '') + (f[2] ? ' ' + f[2] : ''); resto = resto.replace(f[0], ' '); }
+  let espesorMm: number | null = null;
+  const e = resto.match(/\s(\d{1,2}(?:[,.]\d)?)\s*mm(?=\s)/i);
+  if (e) { espesorMm = Number(e[1].replace(',', '.')); resto = resto.replace(e[0], ' '); }
+  const nombre = resto.replace(/\s+/g, ' ').replace(/^[\s·\-–|]+|[\s·\-–|]+$/g, '').trim();
+  return { nombre, formato, espesorMm, unidad, precio };
+}
+
 export function sugerirMaterialesLocales(paginas: Array<{pagina:number;texto:string}>): Array<Record<string,unknown>> {
   const claves: Array<[RegExp,string,string]> = [
     [/\b(melaminas?|tableros?|aglomerados?|mdf)\b/i,'tableros','m²'],
@@ -70,7 +94,10 @@ export function sugerirMaterialesLocales(paginas: Array<{pagina:number;texto:str
       const tecnico = /FORMATOS?\s*\(mm\)/i.test(lineas[i+1] || '') && !linea.includes('CATÁLOGO');
       if(!codigos?.length&&!formato&&!tecnico)continue;
       const referencia=(codigos?.find(x=>!['HPL','MDF'].includes(x))??(tecnico ? linea.match(/\b\d{4}\b/)?.[0] : '')??'').slice(0,60);
-      const nombre=linea.slice(0,120);
+      // Una fila de tarifa trae código, nombre, medidas, unidad y precio juntos:
+      // se separan para que el nombre sea solo el nombre.
+      const fila=partesDeFila(linea,referencia);
+      const nombre=(fila.nombre.length>=3?fila.nombre:linea).slice(0,120);
       const key=p.pagina+'|'+referencia+'|'+nombre;
       if(vistos.has(key))continue;
       vistos.add(key);
@@ -78,8 +105,9 @@ export function sugerirMaterialesLocales(paginas: Array<{pagina:number;texto:str
       salida.push({
         categoria:tipo[1],nombre,referencia,codigoDecor:'',acabado:tecnico ? (linea.match(/\b[A-Z]{2,3}\/[A-Z]{2,3}\b/)?.[0] || '') : '',
         soporte:tecnico ? (linea.match(/\b(?:MDF|aglomerado|contrachapado)\b/i)?.[0] || '') : '',
-        espesorMm:mm?Number(mm[1].replace(',','.')):null,
-        formato:formato?.[0]??'',unidad:tipo[2],colorHex:null,veta:null,brillo:null,pagina:p.pagina,
+        espesorMm:mm?Number(mm[1].replace(',','.')):fila.espesorMm,
+        formato:formato?.[0]??fila.formato,unidad:fila.unidad||tipo[2],colorHex:null,veta:null,brillo:null,pagina:p.pagina,
+        ...(fila.precio?{propiedades:{precioTarifa:fila.precio}}:{}),
       });
 
     }

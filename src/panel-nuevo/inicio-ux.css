@@ -229,3 +229,28 @@
 .ux-mas-tareas summary::after { content: ''; width: 8px; height: 8px; margin-left: 10px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1); }
 .ux-mas-tareas[open] summary::after { transform: translateY(2px) rotate(-135deg); }
 @media (max-width:700px) { .ux-paso-ir { font-size: 0; gap: 0; } .ux-paso { gap: 12px; padding: 10px; } .ux-paso-texto span { line-height: 1.35; } }
+
+/* ---------- Fase 3: barra lateral en madera oscura (escritorio) ----------
+ * La identidad del taller: el menú oscuro enmarca el trabajo claro. El
+ * elegido lleva una veta cobre a la izquierda. Sin animaciones: se usa
+ * decenas de veces al día. */
+@media (min-width: 64rem) {
+  .ux-turia .nv-lateral { background: linear-gradient(170deg, #2e241d, #241c16 60%, #1f1813); border-right: 0; color: #eadfd2; }
+  .ux-turia .nv-lateral .nv-marca, .ux-turia .nv-lateral .nv-marca-texto strong { color: #f5ece1; }
+  .ux-turia .nv-lateral .nv-monograma { color: #d9b38c; }
+  .ux-turia .nv-lateral .nv-grupo { color: #bba892; letter-spacing: .08em; }
+  .ux-turia .nv-lateral .nv-enlace { position: relative; color: #e0d4c6; }
+  .ux-turia .nv-lateral .nv-enlace .icono { color: #c7b39c; }
+  .ux-turia .nv-lateral .nv-enlace[aria-current='page'] { background: rgb(255 255 255 / .09); color: #fff; }
+  .ux-turia .nv-lateral .nv-enlace[aria-current='page'] .icono { color: #e2b98d; }
+  .ux-turia .nv-lateral .nv-enlace[aria-current='page']::before { content: ''; position: absolute; left: -1rem; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: #e2b98d; }
+  .ux-turia .nv-lateral .nv-lista + .nv-lista { border-top-color: rgb(255 255 255 / .1); }
+  .ux-turia .nv-lateral .nv-cuenta { border-top-color: rgb(255 255 255 / .1); color: #eadfd2; }
+  .ux-turia .nv-lateral .nv-cuenta-texto span:last-child { color: #bba892; }
+  .ux-turia .nv-lateral .boton-icono { color: #e0d4c6; }
+  .ux-turia .nv-lateral :focus-visible { outline-color: #e2b98d; }
+}
+@media (min-width: 64rem) and (hover: hover) and (pointer: fine) {
+  .ux-turia .nv-lateral .nv-enlace:hover { background: rgb(255 255 255 / .06); color: #fff; }
+  .ux-turia .nv-lateral .boton-icono:hover { background: rgb(255 255 255 / .08); }
+}

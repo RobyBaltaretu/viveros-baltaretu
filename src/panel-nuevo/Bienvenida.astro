@@ -1,0 +1,69 @@
+---
+/**
+ * Bienvenida de tres pantallas la primera vez que se entra al inicio: qué es
+ * esto, dónde se crea todo y quién ayuda. Se puede saltar y no vuelve a salir
+ * (se recuerda en este navegador). Con `?bienvenida=1` se vuelve a ver.
+ * Los navegadores automáticos (pruebas) no la ven salvo con ese parámetro.
+ */
+import Icono from '../components/panel/ui/Icono.astro';
+import Ilustracion from '../components/panel/ui/Ilustracion.astro';
+interface Props { nombre: string; asistente: string; hayAsistente: boolean }
+const { nombre, asistente, hayAsistente } = Astro.props;
+const pantallas = [
+  { escena: 'presupuestos' as const, titulo: `Bienvenido a ${nombre}`, texto: 'Presupuestos, facturas, gastos y pedidos de material en un solo sitio, en el móvil o en el ordenador.' },
+  { escena: 'facturas' as const, titulo: 'Todo empieza en «Crear»', texto: 'El botón «+» (abajo en el móvil, arriba en el ordenador) hace un presupuesto, una factura, apunta un ticket o pide material, estés donde estés.' },
+  hayAsistente
+    ? { escena: 'asistente' as const, titulo: `${asistente} te echa una mano`, texto: `Pídele las cosas con tus palabras: «¿quién me debe dinero?» o «haz un presupuesto para Marta». Nunca cambia nada sin que pulses «Sí».` }
+    : { escena: 'ayuda' as const, titulo: 'Empieza por los primeros pasos', texto: 'En el inicio tienes una lista con lo mínimo para hacer tu primer presupuesto. Cada paso te lleva a su pantalla.' },
+];
+---
+
+<dialog id="nv-bienvenida" class="nv-bienvenida" aria-labelledby="nv-bienvenida-titulo-0">
+  <form method="dialog" class="nv-bienvenida-saltar"><button class="nv-enlace-boton">Saltar</button></form>
+  {pantallas.map((p, i) => (
+    <section class="nv-bienvenida-pantalla" data-pantalla={i} hidden={i > 0}>
+      <Ilustracion escena={p.escena} clase="nv-bienvenida-dibujo" />
+      <h2 id={`nv-bienvenida-titulo-${i}`}>{p.titulo}</h2>
+      <p>{p.texto}</p>
+    </section>
+  ))}
+  <div class="nv-bienvenida-pie">
+    <ol class="nv-bienvenida-puntos" aria-hidden="true">{pantallas.map((_, i) => <li data-punto={i} class:list={[i === 0 && 'activo']} />)}</ol>
+    <p class="sr-only" aria-live="polite" data-posicion>Pantalla 1 de {pantallas.length}</p>
+    <button type="button" class="nv-boton" data-siguiente>Siguiente <Icono nombre="siguiente" /></button>
+  </div>
+</dialog>
+<script is:inline>
+  (() => {
+    const d = document.getElementById('nv-bienvenida');
+    if (!d || typeof d.showModal !== 'function') return;
+    const forzar = new URLSearchParams(location.search).get('bienvenida') === '1';
+    let vista;
+    try { vista = localStorage.getItem('turia-bienvenida') === 'vista'; } catch { vista = true; }
+    if (!forzar && (vista || navigator.webdriver)) return;
+    const pantallas = [...d.querySelectorAll('[data-pantalla]')];
+    const puntos = [...d.querySelectorAll('[data-punto]')];
+    const sig = d.querySelector('[data-siguiente]');
+    const pos = d.querySelector('[data-posicion]');
+    let i = 0;
+    const pintar = () => {
+      pantallas.forEach((p, j) => (p.hidden = j !== i));
+      puntos.forEach((p, j) => p.classList.toggle('activo', j === i));
+      d.setAttribute('aria-labelledby', 'nv-bienvenida-titulo-' + i);
+      pos.textContent = 'Pantalla ' + (i + 1) + ' de ' + pantallas.length;
+      const ultima = i === pantallas.length - 1;
+      sig.firstChild.textContent = ultima ? 'Empezar ' : 'Siguiente ';
+    };
+    sig.addEventListener('click', () => {
+      if (i === pantallas.length - 1) return d.close();
+      i++;
+      pintar();
+      pantallas[i].querySelector('h2')?.setAttribute('tabindex', '-1');
+      pantallas[i].querySelector('h2')?.focus();
+    });
+    d.addEventListener('close', () => { try { localStorage.setItem('turia-bienvenida', 'vista'); } catch { /* sin almacenamiento: no pasa nada */ } });
+    pintar();
+    d.showModal();
+    sig.focus();
+  })();
+</script>

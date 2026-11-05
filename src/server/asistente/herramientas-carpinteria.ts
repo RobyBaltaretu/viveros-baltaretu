@@ -1,6 +1,8 @@
 import { z } from 'astro/zod';
 import { clienteActual } from '../../plataforma/actual.ts';
 import { CATEGORIAS as CATEGORIAS_CATALOGO, guardarArticulo, precioVenta, sinPrecio, UNIDADES } from '../catalogo/catalogo.ts';
+import { calcularEscandallo } from '../catalogo/escandallo.ts';
+import { lineasDelTrabajo } from '../catalogo/al-presupuesto.ts';
 import type { ArticuloCatalogo, EstadoPedido, EstadoPresupuestoCliente, PedidoProveedor, PresupuestoCliente, Proveedor, Repositorios } from '../data/tipos.ts';
 import { ajustesFacturacion } from '../panel/facturacion.ts';
 import { dinero } from '../facturas/importes.ts';
@@ -210,7 +212,46 @@ export const HERRAMIENTAS_CARPINTERIA: Herramienta[] = [
     async consultar({ repos }, a: { texto?: string | null; categoria?: string | null; sinPrecio?: boolean | null }) {
       const articulos = (await repos.catalogo.articulos()).filter((x) => (!a.categoria || x.categoria === a.categoria) && contiene(`${x.nombre} ${x.referencia} ${x.proveedor} ${x.acabado}`, a.texto) && (!a.sinPrecio || sinPrecio(x)));
       const trabajos = a.categoria || a.sinPrecio ? [] : (await repos.catalogo.plantillas()).filter((p) => contiene(p.nombre, a.texto));
-      return { articulos: articulos.slice(0, 40).map(articuloCorto), totalArticulos: articulos.length, trabajos: trabajos.slice(0, 20).map((p) => ({ id: p.id, nombre: p.nombre })), aviso: 'El precio de un trabajo depende de sus medidas: se calcula en «Catálogo», en su calculadora.' };
+      return { articulos: articulos.slice(0, 40).map(articuloCorto), totalArticulos: articulos.length, trabajos: trabajos.slice(0, 20).map((p) => ({ id: p.id, nombre: p.nombre })), aviso: 'El precio de un trabajo depende de sus medidas: calcúlalo con calcular_trabajo.' };
+    },
+  }),
+  consulta({
+    nombre: 'calcular_trabajo',
+    descripcion: 'Calcula el precio de venta (sin IVA) de un trabajo del catálogo (armario, cocina, puerta…) con sus medidas en cm y, si se dice, los materiales elegidos. Devuelve también las líneas listas para un presupuesto. Sin medidas, devuelve qué medidas pide y sus valores por defecto.',
+    permiso: 'facturas',
+    esquema: z.object({
+      trabajo: z.string().min(1).describe('Nombre o id del trabajo'),
+      medidas: opcional(z.record(z.string(), z.number())).describe('Medidas en cm y cantidades, por nombre o id: {"ancho": 240, "alto": 250, "puertas": 3}'),
+      materiales: opcional(z.record(z.string(), z.string())).describe('Por opción (nombre o id), el artículo elegido (nombre o referencia)'),
+    }),
+    async consultar({ repos }, a: { trabajo: string; medidas?: Record<string, number> | null; materiales?: Record<string, string> | null }) {
+      const plantillas = (await repos.catalogo.plantillas()).filter((p) => !p.archivado);
+      const t = elegir(plantillas, a.trabajo, (p) => [p.id, p.nombre], 'trabajo', (p) => p.nombre);
+      if (!t.ok) return { error: t.error };
+      const p = t.uno;
+      const articulos = await repos.catalogo.articulos();
+      const clave = (x: { id: string; nombre: string }, k: string) => normalizar(k) === normalizar(x.id) || normalizar(k) === normalizar(x.nombre);
+      const valores: Record<string, number> = {};
+      for (const x of p.parametros) {
+        const dado = Object.entries(a.medidas ?? {}).find(([k]) => clave(x, k))?.[1];
+        valores[x.id] = typeof dado === 'number' && Number.isFinite(dado) ? Math.min(x.max, Math.max(x.min, dado)) : x.defecto;
+      }
+      const elegidos: Record<string, string> = {};
+      for (const o of p.opciones) {
+        const dado = Object.entries(a.materiales ?? {}).find(([k]) => clave(o, k))?.[1];
+        const art = dado ? articulos.find((x) => o.categorias.includes(x.categoria) && contiene(`${x.nombre} ${x.referencia}`, dado)) : null;
+        elegidos[o.id] = art?.id ?? o.defecto ?? '';
+      }
+      const e = calcularEscandallo(p, articulos, valores, elegidos);
+      return {
+        trabajo: p.nombre,
+        medidas: p.parametros.map((x) => ({ id: x.id, nombre: x.nombre, valor: valores[x.id], unidad: x.tipo === 'medida' ? 'cm' : 'ud', porDefecto: !Object.keys(a.medidas ?? {}).some((k) => clave(x, k)) })),
+        materiales: p.opciones.map((o) => ({ opcion: o.nombre, articulo: articulos.find((x) => x.id === elegidos[o.id])?.nombre ?? 'sin elegir' })),
+        precioSinIva: e.precio,
+        descripcion: e.descripcion,
+        avisos: e.avisos.slice(0, 8),
+        lineasPresupuesto: lineasDelTrabajo(p, e, 'una'),
+      };
     },
   }),
   cambio({

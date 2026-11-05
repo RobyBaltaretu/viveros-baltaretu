@@ -1,5 +1,6 @@
 ---
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
+import Vacio from '../../../panel-nuevo/Vacio.astro';
 import Icono from '../../../components/panel/ui/Icono.astro';
 import { sesionCon } from '../../../server/panel/pagina.ts';
 import { categorias } from '../../../server/portafolio/portafolio.ts';
@@ -37,7 +38,7 @@ const foto = (p: (typeof todos)[number]) => p.despues[0] ?? p.antes[0];
     )
   }
 
-  {todos.length === 0 && <p class="mt-6">Todavía no hay proyectos. Empieza por añadir uno con sus fotos de antes y después.</p>}
+  {todos.length === 0 && <div class="mt-6"><Vacio escena="fotos" titulo="Enseña tus mejores trabajos" texto="Guarda cada proyecto con sus fotos de antes y después. Te sirve para enseñárselo a un cliente desde el móvil y como referencia para nuevos presupuestos." accion={{ href: '/panel/portafolio/nuevo', texto: 'Añadir el primer proyecto', icono: 'anadirFoto' }} /></div>}
   <ul class="portafolio-lista mt-6 grid gap-4" role="list">
     {
       lista.map((p) => (

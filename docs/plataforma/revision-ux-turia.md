@@ -30,9 +30,37 @@ Método: capturas de las 17 pantallas principales en móvil (Pixel 7) y escritor
 
 Hover solo con ratón (`@media (hover: hover) and (pointer: fine)`), nunca `transition: all`, y solo `transform`, `opacity` y colores.
 
-## Fases siguientes (propuestas)
-1. **Formularios largos** (nuevo presupuesto y factura): dividir en pasos (cliente → trabajos → condiciones) en el móvil, con el total fijo abajo.
-2. **Estados vacíos** en todas las listas con un dibujo, una frase y la acción que los llena (hoy solo algunas).
-3. **Avisos al guardar** (toast) en lugar de recargar la página con un mensaje arriba.
-4. **Ayuda en contexto**: un «¿Cómo funciona?» plegable en las pantallas con conceptos de oficio (escandallo, variantes, rectificativa).
-5. **Recorrido de bienvenida** de 3 pantallas al entrar por primera vez (qué es cada zona), que se puede saltar.
+## Fase 2
+
+| Antes | Después | Por qué |
+| --- | --- | --- |
+| Nuevo presupuesto y factura en el móvil: un formulario larguísimo (cliente, líneas, anticipo, pago, notas) | Tres pasos (Cliente → Trabajos/Conceptos → Condiciones/Total y pago) con guía numerada arriba y una barra fija abajo con «Atrás», el total con IVA en vivo y «Siguiente: …». Si el servidor devuelve un error, se abre el paso del campo. En escritorio, todo junto como antes | Una cosa cada vez en una pantalla pequeña, y el total siempre a la vista |
+| Listas vacías: una línea de texto y, encima, un buscador que no busca nada | Dibujo, título, para qué sirve y el botón que la llena (presupuestos, facturas, clientes, pedidos y proveedores); sin buscador hasta que hay algo | Lo primero que ve una persona nueva le dice qué hacer |
+| «Guardado» como franja en lo alto de la página, que empuja el contenido | Aviso flotante abajo: entra desde abajo, se va solo a los 6 s, se para al pasar el ratón, con el foco o con la pestaña oculta, y se cierra con «×». Los errores siguen junto al formulario | La confirmación se ve sin mover la pantalla |
+| Conceptos de oficio sin explicar (escandallo, variantes, extra, anticipo, rectificativa) | «¿Cómo funciona…?» plegable en el catálogo, el presupuesto y la factura emitida; recuerda si lo dejaste abierto | Ayuda donde hace falta, sin estorbar a quien ya lo sabe |
+| Primera visita sin presentación | Bienvenida de tres pantallas (qué es, el botón «Crear», el asistente Gubia), con «Saltar», puntos de progreso y anuncio para lector de pantalla; sale una vez por navegador (`?bienvenida=1` la vuelve a enseñar) | Orientación de 20 segundos el primer día |
+
+Guardar sigue siendo un envío normal del formulario (la página se carga de nuevo con el aviso): hacerlo sin recargar exigiría reescribir cada guardado en el servidor y se deja para más adelante si hace falta.
+
+Detalles: la bienvenida escala desde el centro (diálogo, `scale(0.96)` y opacidad); los pasos entran con un desplazamiento corto (220 ms, ease-out); con «reducir movimiento», solo fundidos. Las pruebas de pantalla de presupuesto y factura recorren los pasos en el móvil (`tests-e2e-turia/pasos.ts`) y hay una nueva, `rediseno.spec.ts`.
+
+## Fase 3: más carácter y lo pendiente
+
+| Antes | Después | Por qué |
+| --- | --- | --- |
+| Barra lateral clara, casi igual que el fondo | Barra lateral en madera oscura (escritorio) con la sección elegida marcada por una veta cobre | Identidad de taller; el trabajo, claro, destaca sobre el marco |
+| Títulos de página pequeños | Títulos grandes y apretados (hasta 40 px) con la descripción a un ancho cómodo | Se sabe de un vistazo dónde estás |
+| Pestañas subrayadas | Píldoras: la elegida, blanca y con su número en cobre | Más fácil de ver y de tocar (48 px) |
+| Buscador sin icono | Lupa dentro del campo | Se reconoce sin leer |
+| Filas de listas con el enlace solo en el título | Toda la fila se pulsa; una franja del color del estado (enviado, aceptado, vencido…) a la izquierda | Objetivo grande y estado visible sin leer la etiqueta |
+| Gastos con el diseño antiguo | Pantalla nueva: cifras del mes, bandeja «Tickets por revisar» destacada con «Revisar», reparto por categorías en barras, lista con iniciales y tarjeta «Para la gestoría» | Era la única sección importante sin el diseño nuevo |
+| Pedido de material, formulario largo en el móvil | Por pasos: Proveedor → Material → Revisar, con el coste sin IVA abajo | Igual que presupuesto y factura |
+| Guardar recargaba siempre la página | Factura en borrador, ficha de cliente y ficha de proveedor se guardan sin recargar: botón «Guardando…», aviso flotante y lo escrito sigue en su sitio. Con errores o cambio de pantalla, se enseña la respuesta del servidor como siempre; sin conexión, aviso de error | Guardar a menudo no cuesta nada |
+| Familias, variantes, decorativos, configurables y portafolio vacíos con una frase | Estado vacío con dibujo, explicación y el botón para llenarlo | Igual que el resto de listas |
+
+Gastos sigue con su pantalla de siempre en Baltaretu (la nueva solo se usa con el diseño nuevo).
+
+## Pendiente (propuestas)
+1. Guardar sin recargar en presupuesto (hoy lleva a su ficha al guardar) y en ajustes.
+2. Ficha de presupuesto y de factura con el mismo lenguaje visual de la lista (franja de estado, acciones agrupadas).
+3. Modo oscuro del panel.

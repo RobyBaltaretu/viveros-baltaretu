@@ -105,12 +105,22 @@ const esquemaDe = (nombre: string, esquema: z.ZodType) => {
   return e;
 };
 
+/**
+ * En la carpintería, las herramientas comunes se describen sin restos del vivero
+ * (plantas, IVA del 10 %…): el modelo las usaría mal. Las descripciones de siempre
+ * siguen en herramientas.ts (son la línea base de Baltaretu).
+ */
+const DESCRIPCIONES_TALLER: Record<string, string> = {
+  resumen_vivero: 'Visión general de hoy: presupuestos, facturas por cobrar y vencidas, tickets por revisar y lo pendiente del taller.',
+  crear_factura: 'Prepara un BORRADOR de factura para un cliente existente con sus líneas (precio sin IVA; el IVA es el del negocio). No la emite.',
+};
+
 /** Herramientas del rol para el modelo. Las de cambio solo dejan propuestas. */
 function herramientasModelo(ctx: Contexto, conversacion: string, propuestas: Propuesta[], tema: string): ToolSet {
   const conjunto: ToolSet = {};
   for (const h of herramientasPara(herramientasDe(ctx.usuario.rol), tema)) {
     conjunto[h.nombre] = tool({
-      description: h.descripcion,
+      description: (clienteActual().sector === 'carpinteria' && DESCRIPCIONES_TALLER[h.nombre]) || h.descripcion,
       inputSchema: esquemaDe(h.nombre, h.esquema),
       async execute(entrada: unknown) {
         // La validación con zod (barata) se hace aquí: el esquema JSON solo informa al modelo.
@@ -270,7 +280,7 @@ export async function conversar(ctx: Contexto, texto: string, modelos: ModeloAsi
         let final = sinLlamadas(texto) || (propuestas.length ? '¿Lo hago? Pulsa «Sí» para aplicarlo.' : '');
         // Nunca se pide pulsar «Sí» si no hay nada que confirmar.
         if (!propuestas.length && /puls[ae][^.]{0,12}s[ií]|propuesta preparada|he preparado la propuesta|bot[oó]n «?s[ií]/i.test(final))
-          final = 'No he llegado a preparar el cambio, así que no hay nada que confirmar. ¿Me lo dices de otra forma, con las plantas o los datos concretos?';
+          final = `No he llegado a preparar el cambio, así que no hay nada que confirmar. ¿Me lo dices de otra forma, con ${clienteActual().sector === 'carpinteria' ? 'el cliente, el trabajo' : 'las plantas'} o los datos concretos?`;
         if (!final) throw new Error('respuesta vacía');
         respuesta = { texto: final, propuestas, modelo: m.nombre };
         break;
@@ -347,14 +357,18 @@ export async function modelosDe(env: { AI?: BindingAI; GROQ_API_KEY?: string }, 
     }
     if (proveedor === 'groq' && env.GROQ_API_KEY) {
       const { createGroq } = await import('@ai-sdk/groq');
-      const id = ia.modelos.groq;
-      modelos.push({
-        nombre: `groq ${id.replace(/^openai\//, '')}`,
-        modelo: createGroq({ apiKey: env.GROQ_API_KEY })(id),
-        neuronas: { entrada: 0, salida: 0 },
-        // Groq como principal: si da 429 y nadie más responde, se dice en el chat.
-        ...(i === 0 ? { avisoLimite: AVISO_LIMITE_GROQ } : {}),
-      });
+      const groq = createGroq({ apiKey: env.GROQ_API_KEY });
+      // El principal y, detrás, los de respaldo (cada modelo de Groq tiene su propio
+      // límite: cuando GPT-OSS se agota, contesta Llama). Si uno no existe o falla, se salta.
+      for (const id of [ia.modelos.groq, ...(ia.modelos.groqRespaldo ?? [])]) {
+        modelos.push({
+          nombre: `groq ${id.replace(/^(openai|meta-llama)\//, '')}`,
+          modelo: groq(id),
+          neuronas: { entrada: 0, salida: 0 },
+          // Groq como principal: si da 429 y nadie más responde, se dice en el chat.
+          ...(i === 0 ? { avisoLimite: AVISO_LIMITE_GROQ } : {}),
+        });
+      }
     }
     // «local» no es un modelo: las reglas locales responden siempre que ninguno lo haga.
   }

@@ -239,6 +239,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
       let groqDisponible=true;
       let errorGroq='';
       let fichasLocales=0;
+      let descartadasIA=0;
       const paginasLocales=new Set();
       const sinTexto=[];
       const revisar=[];
@@ -247,21 +248,45 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         const hasta=bloque[bloque.length-1].pagina;
         actualizarProgreso(hasta,documento.paginas,'Groq Free interpreta hasta la página '+hasta+' de '+documento.paginas);
         fase='interpretar lote hasta página '+hasta;
-        let interpretados=[];
+        const interpretados=[];
         if (groqDisponible) {
-          try {
-            const response=await jsonPost({accion:'interpretar',proveedor,paginas:bloque});
-            interpretados=response.articulos.filter(c=> !(c.espesorMm == null && !c.formato && articulos.some(a=>a.data.pagina===c.pagina && a.data.espesorMm != null && normal(a.data.nombre).startsWith(normal(c.nombre)))));
-            juntarCandidatos(interpretados);
-            const espera=Math.min(25_000,Math.max(0,Number(response.limites?.esperarMs)||0));
-            if(espera){
-              actualizarProgreso(hasta,documento.paginas,'Pausa breve para respetar el límite de tokens de Groq Free');
-              await esperar(espera);
+          // Un bloque que falla no apaga Groq para el resto del documento: solo los
+          // fallos de cuenta o de cupo diario (401, 403, 404, 429 sin espera corta).
+          // Si el bloque era grande (JSON cortado, 400/413/502/504), se reintenta
+          // página a página; cada catálogo es distinto y una página densa no debe
+          // tirar las demás.
+          const interpretar=async (paginas,intentos=1) => {
+            try {
+              const response=await jsonPost({accion:'interpretar',proveedor,paginas});
+              const lista=response.articulos.filter(c=> !(c.espesorMm == null && !c.formato && articulos.some(a=>a.data.pagina===c.pagina && a.data.espesorMm != null && normal(a.data.nombre).startsWith(normal(c.nombre)))));
+              interpretados.push(...lista);
+              juntarCandidatos(lista);
+              descartadasIA+=Number(response.descartadas)||0;
+              const espera=Math.min(25_000,Math.max(0,Number(response.limites?.esperarMs)||0));
+              if(espera){
+                actualizarProgreso(hasta,documento.paginas,'Pausa breve para respetar el límite de tokens de Groq Free');
+                await esperar(espera);
+              }
+            } catch(err) {
+              const estado=Number(err?.estado)||0, retraso=Number(err?.reintentarEnMs)||0;
+              if(estado===429 && retraso>0 && retraso<=25_000 && intentos>0){
+                actualizarProgreso(hasta,documento.paginas,'Groq pide esperar unos segundos; sigo después');
+                await esperar(retraso+300);
+                return interpretar(paginas,intentos-1);
+              }
+              if([401,403,404,429].includes(estado)){
+                groqDisponible=false;
+                errorGroq=err?.message||'No se ha podido procesar el lote en Groq';
+                return;
+              }
+              if(paginas.length>1){
+                for(const p of paginas){ if(groqDisponible) await interpretar([p],intentos); }
+                return;
+              }
+              errorGroq=err?.message||'Una página no se ha podido interpretar';
             }
-          } catch(err) {
-            groqDisponible=false;
-            errorGroq=err?.message||'No se ha podido procesar el lote en Groq';
-          }
+          };
+          await interpretar(bloque);
         }
         {
           // No consumir de nuevo cuotas Groq con 404/429 o fallos de red.
@@ -357,6 +382,7 @@ const sesion = sesionCon(Astro.locals, 'facturas');
         ? 'PDF leído: '+documento.paginas+' páginas. Groq no ha podido analizar el documento: '+errorGroq+'. Se han recuperado '+fichasLocales+' posibles fichas mediante lectura local; REVISA sus datos antes de crearlas. Puedes consultar el PDF, añadir fichas manualmente o reintentar mañana.'
         : 'PDF procesado localmente: '+documento.paginas+' páginas, '+articulos.length+' materiales; '+muestrasAsignadas+' fichas con muestra visual del PDF. Puedes utilizar la revisión visual para las páginas con muestras.');
       if (avisoVision) mensaje(estado.textContent+avisoVision);
+      if (descartadasIA) mensaje(estado.textContent+' · '+descartadasIA+' fichas de la IA no se han podido usar (sin nombre o sin categoría reconocible).');
       const pendientes=[...new Set([...sinTexto,...revisar])].filter(p=>!articulos.some(a=>a.data.pagina===p));
       if (pendientes.length) mensaje(estado.textContent+' · Páginas sin propuestas, disponibles en revisión visual: '+pendientes.join(', ')+'.');
       if (paginasFallidas.length) mensaje(estado.textContent+' · ATENCIÓN: páginas con texto no recuperado: '+paginasFallidas.map(p=>p.pagina).join(', ')+'. Se ha intentado revisión visual (máximo 8 páginas); comprueba las fichas y reanuda las restantes. Primer error: '+paginasFallidas[0].detalle+'.');

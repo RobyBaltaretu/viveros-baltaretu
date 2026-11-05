@@ -1,0 +1,22 @@
+---
+/**
+ * «¿Cómo funciona…?» plegable: explica un concepto del oficio o de la app
+ * (escandallo, variantes, anticipo, rectificativa) donde hace falta, sin
+ * ocupar sitio a quien ya lo sabe. Recuerda si estaba abierto.
+ */
+interface Props { titulo: string; id: string }
+const { titulo, id } = Astro.props;
+---
+
+<details class="nv-explica" data-explica={id}>
+  <summary><span class="nv-explica-icono" aria-hidden="true">?</span>{titulo}</summary>
+  <div class="nv-explica-cuerpo"><slot /></div>
+</details>
+<script is:inline>
+  document.querySelectorAll('details[data-explica]:not([data-listo])').forEach((d) => {
+    d.dataset.listo = '';
+    const clave = 'turia-explica-' + d.dataset.explica;
+    try { if (localStorage.getItem(clave) === 'abierto') d.open = true; } catch { /* sin almacenamiento: no pasa nada */ }
+    d.addEventListener('toggle', () => { try { localStorage.setItem(clave, d.open ? 'abierto' : 'cerrado'); } catch { /* sin almacenamiento: no pasa nada */ } });
+  });
+</script>

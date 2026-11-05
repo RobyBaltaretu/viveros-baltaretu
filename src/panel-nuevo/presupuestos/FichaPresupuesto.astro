@@ -68,6 +68,14 @@ const principalEstado = (e: EstadoPresupuestoCliente) => e === 'enviado' || e ==
   }
 </ol>
 
+{
+  p.estado === 'aceptado' && !p.facturaId && !p.cliente.nif?.trim() && (
+    <p class="nv-caja-aviso">
+      <span>Antes de facturar, completa el NIF de {p.cliente.nombre}: sin él, la factura no se puede emitir.</span>
+      <a class="nv-boton nv-boton-secundario" href={`/panel/facturas/clientes/${p.cliente.id}`}>Completar su ficha</a>
+    </p>
+  )
+}
 <section class:list={['nv-siguiente', paso.urgente && 'nv-siguiente-urgente']} aria-labelledby="siguiente">
   <div>
     <h2 id="siguiente">Ahora</h2>

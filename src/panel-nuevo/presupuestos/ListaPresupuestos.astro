@@ -5,6 +5,7 @@
  * o trabajo. En el móvil, cada presupuesto es una fila de dos líneas.
  */
 import Icono from '../../components/panel/ui/Icono.astro';
+import Vacio from '../Vacio.astro';
 import type { EstadoPresupuestoCliente, PresupuestoCliente } from '../../server/data/tipos.ts';
 import { dinero } from '../../server/facturas/importes.ts';
 import { NOMBRE_ESTADO } from '../../server/presupuestos-cliente/presupuestos.ts';
@@ -51,6 +52,7 @@ const enJuego = todos.filter((p) => p.efectivo === 'enviado').reduce((t, p) => t
     ))
   }
 </nav>
+{todos.length > 0 && (
 <form method="get" class="nv-filtros" role="search">
   <input type="hidden" name="ver" value={ver} />
   <label class="nv-campo">
@@ -59,9 +61,12 @@ const enJuego = todos.filter((p) => p.efectivo === 'enviado').reduce((t, p) => t
   </label>
   <button class="nv-boton nv-boton-secundario">Buscar</button>
 </form>
+)}
 
 {
-  lista.length === 0 ? (
+  todos.length === 0 ? (
+    <Vacio escena="presupuestos" titulo="Tu primer presupuesto" texto="Elige el cliente, escribe los trabajos o tráelos del catálogo, y el total con IVA sale solo. Cuando el cliente lo acepta, lo pasas a factura con un clic." accion={{ href: '/panel/presupuestos-cliente/nuevo', texto: 'Hacer un presupuesto' }} secundaria={{ href: '/panel/catalogo', texto: 'Ver el catálogo', icono: 'catalogo' }} />
+  ) : lista.length === 0 ? (
     <div class="nv-tarjeta nv-vacio">
       <span class="nv-vacio-icono" aria-hidden="true">
         <Icono nombre="presupuestos" />

@@ -5,6 +5,7 @@
  * emitidas sin cobrar), y buscador. En el móvil, cada cliente en dos líneas.
  */
 import Icono from '../../components/panel/ui/Icono.astro';
+import Vacio from '../Vacio.astro';
 import type { Cliente } from '../../server/data/tipos.ts';
 import { dinero } from '../../server/facturas/importes.ts';
 
@@ -36,6 +37,7 @@ const debenTotal = clientes.reduce((t, c) => t + c.debe, 0);
   </a>
 </div>
 {hecho && <p role="status" class="nv-caja-aviso nv-caja-bien"><span>Hecho.</span></p>}
+{clientes.length > 0 && (
 <form method="get" class="nv-filtros" role="search">
   <label class="nv-campo">
     Buscar
@@ -43,9 +45,12 @@ const debenTotal = clientes.reduce((t, c) => t + c.debe, 0);
   </label>
   <button class="nv-boton nv-boton-secundario">Buscar</button>
 </form>
+)}
 
 {
-  lista.length === 0 ? (
+  clientes.length === 0 ? (
+    <Vacio escena="clientes" titulo="Tus clientes, en un solo sitio" texto="Su contacto, la dirección de la obra y los datos para facturar. También puedes crearlo al hacer un presupuesto." accion={{ href: '/panel/facturas/clientes/nuevo', texto: 'Añadir el primer cliente' }} />
+  ) : lista.length === 0 ? (
     <div class="nv-tarjeta nv-vacio">
       <span class="nv-vacio-icono" aria-hidden="true">
         <Icono nombre="clientes" />

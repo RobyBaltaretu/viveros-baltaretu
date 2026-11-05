@@ -7,6 +7,7 @@
 import { moduloActivoAhora } from '../../plataforma/actual';
 import PdfEnNavegador from '../../components/panel/PdfEnNavegador.astro';
 import Icono from '../../components/panel/ui/Icono.astro';
+import Explica from '../Explica.astro';
 import type { Factura } from '../../server/data/tipos.ts';
 import { hoy, vencida } from '../../server/facturas/facturas.ts';
 import { dinero, importeLinea } from '../../server/facturas/importes.ts';
@@ -94,7 +95,10 @@ const lineas = f.lineas.filter((l) => l.concepto);
           )
         }
       </div>
-      <p class="nv-gris nv-nota-pie">Una factura emitida no se cambia ni se borra: los errores se corrigen con una rectificativa.</p>
+      <Explica id="rectificativa" titulo="¿Qué es una rectificativa?">
+        <p>Una factura emitida <strong>no se cambia ni se borra</strong>: queda tal cual se envió.</p>
+        <p>Si hay un error o el trabajo se anula, se hace una <strong>rectificativa</strong>: una factura nueva, con su propio número, que corrige o anula la original. Las dos quedan guardadas.</p>
+      </Explica>
   </div>
 </details>
 

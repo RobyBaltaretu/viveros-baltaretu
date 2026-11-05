@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { auditar, controlesGrandes } from '../tests-e2e/ayudas';
+import { paso } from './pasos';
 
 // Pedidos de material a proveedor: del catálogo (lo del proveedor primero) y de un trabajo con sus medidas,
 // mensaje y PDF sin precios, enviado → recibido y apuntado como gasto.
@@ -48,6 +49,7 @@ test('pedido: de un trabajo del catálogo, del catálogo y a mano; enviar sin pr
 
   // Proveedor: el nuestro; del catálogo sale primero lo suyo.
   await page.getByRole('combobox', { name: 'Proveedor', exact: true }).selectOption({ label: `Herrajes ${p}` });
+  await paso(page, 'Material');
   await page.getByRole('button', { name: 'Añadir del catálogo' }).click();
   const d = page.getByRole('dialog', { name: 'Añadir del catálogo' });
   await expect(d.locator('.nv-lista-grupo').first()).toHaveText(`De Herrajes ${p}`);
@@ -61,7 +63,9 @@ test('pedido: de un trabajo del catálogo, del catálogo y a mano; enviar sin pr
   const filas = await page.locator('[data-linea]:not([hidden])').count();
   await page.getByLabel(`Qué pides en la línea ${filas}`).fill('Tornillos de 4 × 30');
   await page.getByLabel(`Cantidad de la línea ${filas}`).fill('200');
+  await paso(page, 'Proveedor');
   await page.getByRole('button', { name: 'Mañana' }).click();
+  await paso(page, 'Revisar');
   await page.getByRole('button', { name: 'Guardar el pedido' }).click();
 
   await expect(page.getByRole('heading', { name: `Pedido a Herrajes ${p}` })).toBeVisible();

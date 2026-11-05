@@ -80,16 +80,151 @@ function idEstable(texto: string): string {
   return 'prov-' + (h >>> 0).toString(36);
 }
 export function depurarCandidatos(datos: unknown, inicio: number, fin: number): CandidatoProveedor[] {
+  return depurarConCuenta(datos, inicio, fin).lista;
+}
+
+/** Igual que depurarCandidatos, contando las fichas que no se han podido aprovechar. */
+export function depurarConCuenta(datos: unknown, inicio: number, fin: number): { lista: CandidatoProveedor[]; descartadas: number } {
   const lista = Array.isArray(datos) ? datos : [];
   const vistos = new Set<string>(), salida: CandidatoProveedor[] = [];
+  let descartadas = 0;
   for (const fila of lista.slice(0, MAX_CANDIDATOS_LOTE)) {
-    const r = candidatoProveedor.safeParse(fila);
-    if (!r.success || r.data.pagina < inicio || r.data.pagina > fin) continue;
+    const r = candidatoProveedor.safeParse(coaccionarCandidato(fila, inicio === fin ? inicio : null));
+    if (!r.success || r.data.pagina < inicio || r.data.pagina > fin) { descartadas++; continue; }
     const k = clave(r.data, '');
     if (!vistos.has(k)) { vistos.add(k); salida.push(r.data); }
   }
-  return salida;
+  return { lista: salida, descartadas };
 }
+
+// ---------- Fichas tolerantes ----------
+// Cada proveedor maqueta su catálogo a su manera y la IA devuelve lo que lee:
+// «Tableros», «m2», «19 mm», un campo «precio»… Antes, cualquier detalle así
+// tiraba la ficha entera sin avisar. Aquí se lleva cada valor a la forma que
+// espera el esquema (y lo que sobra va a «propiedades»); solo se descarta lo
+// que no tiene nombre o categoría reconocible.
+const sinAcentos = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+const SINONIMOS_CATEGORIA: [string, RegExp][] = [
+  ['cantos', /\bcanto/],
+  ['encimeras', /encimera|compacto de cocina/],
+  ['chapas', /\bchapa|laminad|\bhpl\b|formica|\bcpl\b/],
+  ['macizos', /maciz|liston|tablon|madera solida/],
+  ['tableros', /tabler|aglomerad|\bmdf\b|melamin|contrachap|\bosb\b|dm\b|panel|fibras/],
+  ['cristal', /cristal|vidrio|espejo/],
+  ['tiradores', /tirador|pomo|\bgola\b|uñero|unero/],
+  ['herrajes', /herraj|bisagra|corredera|\bguia|cerradura|amortigu|piston|pata|soporte de balda|cazoleta/],
+  ['iluminacion', /ilumin|\bled\b|\bluz|\bfoco|tira led/],
+  ['accesorios', /accesori|organizador|cubo|colgador|barra de colgar|zapatero|cesta|bandeja/],
+  ['consumibles', /consumibl|\bcola\b|adhesiv|tornill|silicon|lija|clavo|espiga/],
+  ['acabados', /barniz|\blaca|aceite|tinte|pintura|acabado/],
+];
+export function categoriaDe(valor: unknown, nombre = ''): string | null {
+  const ids = CATEGORIAS.map((c) => c.id);
+  const t = typeof valor === 'string' ? sinAcentos(valor) : '';
+  if (ids.includes(t)) return t;
+  for (const texto of [t, sinAcentos(nombre)]) for (const [id, re] of SINONIMOS_CATEGORIA) if (texto && re.test(texto)) return id;
+  return null;
+}
+export function unidadDe(valor: unknown): CandidatoProveedor['unidad'] | undefined {
+  const t = typeof valor === 'string' ? sinAcentos(valor).replace(/[.\s]/g, '') : '';
+  if (!t) return undefined;
+  if (/^(m2|m²|mc|metroscuadrados?|m\^2)$/.test(t)) return 'm²';
+  if (/^(ml|metroslineales?|metrolineal|mlineal|m)$/.test(t)) return 'ml';
+  if (/^(m3|m³|metroscubicos?)$/.test(t)) return 'm³';
+  if (/^(ud|uds|u|unidad(es)?|pieza|pza|pz|unid|und|pack|paquete|caja|juego)$/.test(t)) return 'ud';
+  if (/^(kg|kilo|kilos)$/.test(t)) return 'kg';
+  if (/^(l|lt|litros?)$/.test(t)) return 'l';
+  if (/^(h|hora|horas)$/.test(t)) return 'h';
+  return undefined;
+}
+export function numeroDe(valor: unknown): number | null {
+  if (typeof valor === 'number') return Number.isFinite(valor) ? valor : null;
+  if (typeof valor !== 'string') return null;
+  const m = valor.replace(/\s/g, '').match(/-?\d+(?:[.,]\d+)*(?:[.,]\d+)?/);
+  if (!m) return null;
+  let n = m[0];
+  // «1.234,56» (español) o «1,234.56»: el último separador es el decimal.
+  const ultimo = Math.max(n.lastIndexOf(','), n.lastIndexOf('.'));
+  if (ultimo >= 0 && n.length - ultimo - 1 !== 3) n = n.slice(0, ultimo).replace(/[.,]/g, '') + '.' + n.slice(ultimo + 1);
+  else n = n.replace(/[.,]/g, '');
+  const x = Number(n);
+  return Number.isFinite(x) ? x : null;
+}
+const LARGOS: Record<string, number> = { nombre: 120, referencia: 60, codigoDecor: 80, acabado: 80, soporte: 100, formato: 100, familia: 120,
+  codigoFamilia: 80, subcategoria: 80, coleccion: 100, codigoVariante: 80, tratamiento: 80, calidad: 80, unidadCompra: 30,
+  unidadConsumo: 30, unidadPresupuesto: 30, evidencia: 1000 };
+const ENUMS: Record<string, readonly string[]> = {
+  veta: ['sin-veta', 'vertical', 'horizontal', 'direccional'], brillo: ['mate', 'satinado', 'brillante'],
+  tipoProducto: ['material', 'producto-variantes', 'configurable', 'a-medida', 'servicio'],
+  formatoUnidad: ['mm', 'cm', 'm', ''], disponibilidad: ['disponible', 'bajo-pedido', 'sin-stock', 'desconocida'],
+  revision: ['pendiente', 'verificado', 'ambiguo', 'rechazado'], metodo: ['manual', 'pdfjs', 'groq-texto', 'groq-vision'],
+};
+const CONOCIDOS = new Set(Object.keys(candidatoProveedor.shape));
+const escalar = (v: unknown): string | number | boolean | null =>
+  v === null || ['string', 'number', 'boolean'].includes(typeof v) ? (typeof v === 'string' ? v.slice(0, 300) : (v as number | boolean | null)) : Array.isArray(v) ? v.map(String).join(', ').slice(0, 300) : JSON.stringify(v).slice(0, 300);
+
+export function coaccionarCandidato(fila: unknown, paginaPorDefecto: number | null): unknown {
+  if (!fila || typeof fila !== 'object' || Array.isArray(fila)) return fila;
+  const x: Record<string, unknown> = { ...(fila as Record<string, unknown>) };
+  const nombre = typeof x.nombre === 'string' ? x.nombre : typeof x.descripcion === 'string' ? x.descripcion : '';
+  if (!x.nombre && nombre) x.nombre = nombre;
+  const categoria = categoriaDe(x.categoria, nombre);
+  if (categoria) x.categoria = categoria;
+  const propiedades: Record<string, string | number | boolean | null> = {};
+  if (x.propiedades && typeof x.propiedades === 'object' && !Array.isArray(x.propiedades))
+    for (const [k, v] of Object.entries(x.propiedades as Record<string, unknown>)) propiedades[k.slice(0, 40)] = escalar(v);
+  // Lo que el esquema no conoce (precio, descripción, medidas…) no tira la ficha: va a propiedades.
+  for (const k of Object.keys(x)) {
+    if (CONOCIDOS.has(k)) continue;
+    const v = x[k];
+    delete x[k];
+    if (v === null || v === undefined || v === '') continue;
+    if (/precio|pvp|tarifa|importe|coste/i.test(k)) { const n = numeroDe(v); if (n !== null && n > 0) propiedades.precioTarifa = n; else propiedades[k.slice(0, 40)] = escalar(v); }
+    else propiedades[k.slice(0, 40)] = escalar(v);
+  }
+  if (typeof propiedades.precioTarifa === 'string') { const n = numeroDe(propiedades.precioTarifa); propiedades.precioTarifa = n !== null && n > 0 ? n : null; }
+  x.propiedades = propiedades;
+  for (const [k, max] of Object.entries(LARGOS)) {
+    if (x[k] === null || x[k] === undefined) { delete x[k]; continue; }
+    if (typeof x[k] === 'number') x[k] = String(x[k]);
+    if (typeof x[k] === 'string') x[k] = (x[k] as string).trim().slice(0, max);
+    else delete x[k];
+  }
+  for (const [k, valores] of Object.entries(ENUMS)) {
+    if (x[k] === undefined) continue;
+    const t = typeof x[k] === 'string' ? sinAcentos(x[k] as string).replace(/\s+/g, '-') : '';
+    if (valores.includes(t)) x[k] = t;
+    else if (k === 'veta' || k === 'brillo') x[k] = null;
+    else delete x[k];
+  }
+  const u = unidadDe(x.unidad);
+  if (u) x.unidad = u; else delete x.unidad;
+  const espesor = x.espesorMm === null ? null : numeroDe(x.espesorMm);
+  x.espesorMm = espesor !== null && espesor > 0 && espesor <= 1000 ? espesor : null;
+  const paq = numeroDe(x.unidadesPaquete);
+  x.unidadesPaquete = paq !== null && paq >= 1 && paq <= 10000 ? Math.round(paq) : null;
+  const factor = numeroDe(x.factorConversion);
+  if (factor !== null && factor > 0 && factor <= 1_000_000) x.factorConversion = factor; else delete x.factorConversion;
+  const confianza = numeroDe(x.confianza);
+  x.confianza = confianza !== null ? Math.min(1, Math.max(0, confianza > 1 ? confianza / 100 : confianza)) : null;
+  if (typeof x.colorHex === 'string') {
+    const c = x.colorHex.trim();
+    x.colorHex = /^#[a-f0-9]{6}$/i.test(c) ? c : /^#[a-f0-9]{3}$/i.test(c) ? '#' + [...c.slice(1)].map((d) => d + d).join('') : null;
+  } else x.colorHex = null;
+  const pagina = numeroDe(x.pagina);
+  x.pagina = pagina !== null && Number.isInteger(pagina) && pagina >= 1 ? pagina : paginaPorDefecto ?? x.pagina;
+  if (typeof x.aplicaciones === 'string') x.aplicaciones = [x.aplicaciones];
+  if (Array.isArray(x.aplicaciones)) x.aplicaciones = x.aplicaciones.map((a) => String(a).slice(0, 100)).slice(0, 30);
+  else delete x.aplicaciones;
+  if (x.configuracion !== undefined && x.configuracion !== null && (typeof x.configuracion !== 'object' || Array.isArray(x.configuracion))) x.configuracion = null;
+  return x;
+}
+
+/** Precio de tarifa declarado por el proveedor (si lo hay): es el coste del carpintero. */
+export const precioTarifa = (a: CandidatoProveedor): number => {
+  const p = a.propiedades.precioTarifa;
+  return typeof p === 'number' && p > 0 && p < 1_000_000 ? Math.round(p * 100) / 100 : 0;
+};
 
 /** Muestra real recortada en el navegador, máximo 24 KB WebP por material. */
 export function muestraWebp(valor: unknown): Uint8Array | null {
@@ -211,11 +346,11 @@ export async function importarCandidatos(
       ...(a.formato ? ['Formato: ' + a.formato] : []),
       ...(a.unidadesPaquete ? ['Unidades por paquete: ' + a.unidadesPaquete] : []),
       ...(a.colorHex ? ['Color digital aproximado; comprobar muestra física'] : []),
-      'Precio pendiente de confirmar',
+      precioTarifa(a) ? 'Coste tomado de la tarifa del PDF; compruébalo' : 'Precio pendiente de confirmar',
     ].join('; ').slice(0, 500);
     const validado = esquemaArticulo.safeParse({
       id, categoria: categoria.id, nombre: a.nombre, unidad: a.unidad,
-      coste: 0, merma: categoria.merma, margen: MARGEN_PROPUESTO, precioFijo: null,
+      coste: precioTarifa(a), merma: categoria.merma, margen: MARGEN_PROPUESTO, precioFijo: null,
       referencia: a.referencia, proveedor: nombreProveedor, espesor: a.espesorMm,
       acabado: a.acabado, notas, visual,
     });

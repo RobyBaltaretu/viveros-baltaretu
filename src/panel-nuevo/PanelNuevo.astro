@@ -262,6 +262,141 @@ const inicialUsuario = (usuario?.nombre || usuario?.email || '?').trim().slice(0
           if (buscar && buscar.getClientRects().length) { event.preventDefault(); buscar.focus(); }
         }
       });
+      // Avisos de «hecho» como notificación flotante abajo: no empujan la pantalla,
+      // se van solos a los 6 s (se paran si pasas el ratón, el foco o la pestaña
+      // está oculta) y se cierran con «×» (la dirección ya la limpia el bloque de «una vez»). Los errores se quedan en su sitio, junto al campo.
+      const avisar = (mensaje, tipo = 'bien') => {
+        let zona = document.querySelector('.nv-avisos-flotantes');
+        if (!zona) {
+          zona = document.createElement('div');
+          zona.className = 'nv-avisos-flotantes';
+          (document.getElementById('principal') || document.body).prepend(zona);
+        }
+        const aviso = document.createElement('div');
+        aviso.className = 'nv-aviso-flotante' + (tipo === 'error' ? ' nv-aviso-error' : '');
+        aviso.setAttribute('role', tipo === 'error' ? 'alert' : 'status');
+        const texto = document.createElement('span');
+        const cerrar = document.createElement('button');
+        cerrar.type = 'button';
+        cerrar.setAttribute('aria-label', 'Cerrar el aviso');
+        cerrar.textContent = '×';
+        aviso.append(texto, cerrar);
+        zona.append(aviso);
+        // El texto llega un instante después: así el lector de pantalla lo anuncia.
+        setTimeout(() => (texto.textContent = mensaje), 30);
+        let queda = 6000, desde = Date.now(), reloj;
+        const quitar = () => { aviso.classList.add('nv-aviso-sale'); setTimeout(() => aviso.remove(), 200); };
+        const seguir = () => { clearTimeout(reloj); desde = Date.now(); reloj = setTimeout(quitar, queda); };
+        const parar = () => { clearTimeout(reloj); queda = Math.max(1500, queda - (Date.now() - desde)); };
+        cerrar.addEventListener('click', quitar);
+        aviso.addEventListener('pointerenter', parar);
+        aviso.addEventListener('pointerleave', seguir);
+        aviso.addEventListener('focusin', parar);
+        aviso.addEventListener('focusout', seguir);
+        document.addEventListener('visibilitychange', () => (document.hidden ? parar() : seguir()));
+        seguir();
+      };
+      const EXITO = '#principal [role="status"].nv-caja-bien, #principal p[role="status"].bg-verdor';
+      for (const e of document.querySelectorAll(EXITO)) {
+        const t = e.textContent.trim();
+        if (!t) continue;
+        e.remove();
+        avisar(t);
+      }
+      // Guardar sin recargar: los botones con data-sin-recargar envían el formulario
+      // por detrás y, si el servidor vuelve a la misma pantalla sin errores, solo se
+      // ve el aviso (lo escrito sigue en su sitio). Si hay errores o cambia de
+      // pantalla, se enseña lo que devuelve el servidor, como sin JavaScript.
+      document.addEventListener('submit', async (ev) => {
+        const boton = ev.submitter;
+        if (!boton || !boton.hasAttribute('data-sin-recargar') || ev.defaultPrevented) return;
+        ev.preventDefault();
+        const form = ev.target;
+        const datos = new FormData(form, boton);
+        const contenido = boton.innerHTML;
+        boton.disabled = true;
+        boton.setAttribute('aria-busy', 'true');
+        boton.textContent = 'Guardando…';
+        try {
+          const r = await fetch(form.action || location.href, { method: 'POST', body: datos, credentials: 'same-origin' });
+          const html = await r.text();
+          const destino = new URL(r.url);
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          const errores = [...doc.querySelectorAll('#principal [role="alert"], #principal [aria-invalid="true"]')].some((e) => e.matches('[aria-invalid]') || e.textContent.trim());
+          if (!r.ok || destino.pathname !== location.pathname || errores) {
+            if (destino.pathname !== location.pathname && r.ok) return location.assign(destino.href);
+            // Errores: se enseña la respuesta del servidor tal cual (como sin JavaScript).
+            document.open();
+            document.write(html);
+            document.close();
+            history.replaceState(null, '', destino.href);
+            return;
+          }
+          avisar(doc.querySelector(EXITO)?.textContent.trim() || 'Guardado.');
+        } catch {
+          avisar('No se ha podido guardar. Revisa la conexión y vuelve a intentarlo.', 'error');
+        } finally {
+          boton.disabled = false;
+          boton.removeAttribute('aria-busy');
+          boton.innerHTML = contenido;
+        }
+      });
+      // Formularios largos por pasos en el móvil (presupuesto y factura): una parte
+      // cada vez, con el total siempre abajo. En escritorio se ve todo junto, como
+      // siempre; sin JavaScript también. Los datos son los mismos y se guardan igual.
+      document.querySelectorAll('form[data-pasos]').forEach((form) => {
+        const pasos = [...form.querySelectorAll('[data-paso]')];
+        if (pasos.length < 2) return;
+        const total = form.querySelector('[data-total]');
+        const movil = matchMedia('(max-width: 63.99rem)');
+        const guia = document.createElement('ol');
+        guia.className = 'nv-pasos-guia';
+        guia.setAttribute('aria-label', 'Pasos');
+        const pie = document.createElement('div');
+        pie.className = 'nv-pasos-pie';
+        pie.innerHTML = '<button type="button" class="nv-boton nv-boton-secundario" data-atras>Atrás</button><span class="nv-pasos-total"><small></small><strong class="nv-cifra" data-total-pie></strong></span><button type="button" class="nv-boton" data-siguiente></button>';
+        const atras = pie.querySelector('[data-atras]'), sig = pie.querySelector('[data-siguiente]'), totalPie = pie.querySelector('[data-total-pie]');
+        pie.querySelector('.nv-pasos-total small').textContent = form.dataset.pasosTotal || 'Total con IVA';
+        let actual = 0;
+        const errorEn = pasos.findIndex((p) => p.querySelector('[aria-invalid="true"]'));
+        if (errorEn > 0) actual = errorEn;
+        pasos.forEach((p, i) => {
+          const li = document.createElement('li');
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.innerHTML = '<span aria-hidden="true">' + (i + 1) + '</span>' + p.dataset.paso;
+          b.addEventListener('click', () => ir(i));
+          li.append(b);
+          guia.append(li);
+        });
+        form.prepend(guia);
+        form.append(pie);
+        const ir = (i, enfocar = true) => {
+          actual = Math.max(0, Math.min(pasos.length - 1, i));
+          pasos.forEach((p, j) => p.classList.toggle('nv-paso-oculto', j !== actual));
+          guia.querySelectorAll('button').forEach((b, j) => {
+            b.toggleAttribute('aria-current', j === actual);
+            if (j === actual) b.setAttribute('aria-current', 'step');
+            b.classList.toggle('nv-paso-hecho', j < actual);
+          });
+          atras.hidden = actual === 0;
+          const ultimo = actual === pasos.length - 1;
+          sig.hidden = ultimo;
+          sig.textContent = ultimo ? '' : 'Siguiente: ' + pasos[actual + 1].dataset.paso;
+          if (enfocar && movil.matches) {
+            form.scrollIntoView({ block: 'start' });
+            pasos[actual].querySelector('h2')?.setAttribute('tabindex', '-1');
+            pasos[actual].querySelector('h2')?.focus({ preventScroll: true });
+          }
+        };
+        atras.addEventListener('click', () => ir(actual - 1));
+        sig.addEventListener('click', () => ir(actual + 1));
+        const copiar = () => (totalPie.textContent = total?.textContent || '—');
+        copiar();
+        if (total) new MutationObserver(copiar).observe(total, { childList: true, characterData: true, subtree: true });
+        form.classList.add('nv-con-pasos');
+        ir(actual, false);
+      });
       // Búsquedas de las listas: filtran la tabla al escribir (sin pulsar «Buscar»).
       // El botón sigue funcionando sin JavaScript y para buscar en todas las pestañas.
       document.querySelectorAll('form.nv-filtros[role="search"]').forEach((form) => {

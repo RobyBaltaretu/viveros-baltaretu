@@ -1,6 +1,7 @@
 ---
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
 import Icono from '../../../components/panel/ui/Icono.astro';
+import Vacio from '../../../panel-nuevo/Vacio.astro';
 import { ESTADOS_PEDIDO, type EstadoPedido } from '../../../server/data/tipos.ts';
 import { dinero } from '../../../server/facturas/importes.ts';
 import { hoy } from '../../../server/gastos/gastos.ts';
@@ -59,7 +60,8 @@ const esperando = todos.filter((p) => p.estado === 'enviado');
       ))
     }
   </nav>
-  <form method="get" class="nv-filtros" role="search">
+  {todos.length > 0 && (
+<form method="get" class="nv-filtros" role="search">
     <input type="hidden" name="ver" value={ver} />
     <label class="nv-campo">
       Buscar
@@ -67,8 +69,11 @@ const esperando = todos.filter((p) => p.estado === 'enviado');
     </label>
     <button class="nv-boton nv-boton-secundario">Buscar</button>
   </form>
+)}
   {
-    lista.length === 0 ? (
+    todos.length === 0 ? (
+      <Vacio escena="presupuestos" titulo="Pide el material sin papeles" texto="Elige del catálogo lo que necesitas o, desde un trabajo, pulsa «Pedir el material» para pedir todo lo que lleva. El pedido se envía al proveedor." accion={{ href: '/panel/pedidos/nuevo', texto: 'Hacer un pedido' }} secundaria={{ href: '/panel/proveedores', texto: 'Ver proveedores', icono: 'proveedores' }} />
+    ) : lista.length === 0 ? (
       <div class="nv-tarjeta nv-vacio">
         <span class="nv-vacio-icono" aria-hidden="true">
           <Icono nombre="pedidos" />

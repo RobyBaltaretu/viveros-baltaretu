@@ -21,8 +21,8 @@ const b64=(bytes:Uint8Array)=>{let s='';for(let i=0;i<bytes.length;i+=8192)s+=St
 export const POST:APIRoute=async({locals,request})=>{
   const tenant=clienteActual().id;if(tenant!=='turia')return json(404,{ok:false});
   const sesion=sesionCon(locals,'editar');if(!sesion)return json(403,{ok:false});
-  if(!e.IMAGENES_PRIVADAS)return json(503,{ok:false,error:'R2 privado no configurado'});
-  const key=claveGemini(env as Record<string,unknown>);if(!key)return json(503,{ok:false,error:'Gemini no configurado'});
+  if(!e.IMAGENES_PRIVADAS)return json(503,{ok:false,error:'Falta el almacén privado de fotos (R2: IMAGENES_PRIVADAS) en el Worker.'});
+  const key=claveGemini(env as Record<string,unknown>);if(!key)return json(503,{ok:false,error:'Falta la clave de Google: añade el secreto GOOGLE_API_KEY en el Worker para generar la imagen.'});
   const body=await cuerpoLimitado(request,2048);if(!body)return json(413,{ok:false});
   let id:string,clave:string;try{const entrada=await body.json() as {id?:string;clave?:string};id=String(entrada.id||'');clave=String(entrada.clave||'');}catch{return json(400,{ok:false});}
   if(!/^[a-f0-9-]{36}$/.test(clave))return json(400,{ok:false,error:'Falta identificador de solicitud válido'});

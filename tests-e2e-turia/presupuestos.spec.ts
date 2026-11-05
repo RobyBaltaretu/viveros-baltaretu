@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { auditar, controlesGrandes } from '../tests-e2e/ayudas';
+import { paso } from './pasos';
 
 // Creaciones Turia: presupuestos a cliente con anticipo, IVA del 21 % fijo y paso a factura.
 test('presupuestos: alta con extra, anticipo, envío, aceptación y factura de anticipo', async ({ page }) => {
@@ -12,12 +13,15 @@ test('presupuestos: alta con extra, anticipo, envío, aceptación y factura de a
   await page.goto('/panel/presupuestos-cliente');
   await auditar(page);
   await page.getByRole('link', { name: 'Nuevo presupuesto' }).click();
+  await paso(page, 'Condiciones');
   await expect(page.getByText('IVA: 21 %')).toBeVisible();
   await expect(page.getByLabel('IVA', { exact: true })).toHaveCount(0);
   await auditar(page);
   await controlesGrandes(page);
+  await paso(page, 'Cliente');
   await page.getByRole('combobox', { name: /^Cliente/ }).selectOption({ label: `Cliente ${p}` });
   await page.getByLabel('Qué se presupuesta').fill(`Armario ${p}`);
+  await paso(page, 'Trabajos');
   await page.getByLabel('Concepto de la línea 1').fill('Armario de dos puertas');
   await page.getByLabel('Precio por unidad de la línea 1, en euros sin IVA').fill('1.250');
   await page.getByLabel('Concepto de la línea 2').fill('Montaje');
@@ -27,14 +31,17 @@ test('presupuestos: alta con extra, anticipo, envío, aceptación y factura de a
   await page.getByLabel('La línea 3 es un extra opcional (no suma)').check();
   // El total se ve al escribir, antes de guardar; el anticipo, con un toque.
   await expect(page.locator('[data-total]')).toHaveText(/^1\.730,30/);
+  await paso(page, 'Condiciones');
   await page.getByRole('button', { name: '30 %' }).click();
   await expect(page.getByLabel('Anticipo (% del total con IVA)')).toHaveValue('30');
   await page.getByRole('button', { name: '40 %' }).click();
   await expect(page.locator('[data-pago-anticipo]')).toHaveText(/^692,12/);
   // Una línea más sin recargar, y quitarla.
+  await paso(page, 'Trabajos');
   await page.getByRole('button', { name: 'Añadir una línea' }).click();
   await expect(page.getByLabel('Concepto de la línea 4')).toBeFocused();
   await page.getByRole('button', { name: 'Quitar la línea 4' }).click();
+  await paso(page, 'Condiciones');
   await page.getByRole('button', { name: 'Guardar el presupuesto' }).click();
 
   await expect(page.getByRole('status').first()).toContainText('Presupuesto guardado');
@@ -76,8 +83,10 @@ test('factura desde un presupuesto: primero aceptación explícita y después la
   await page.goto('/panel/presupuestos-cliente/nuevo');
   await page.getByRole('combobox', { name: /^Cliente/ }).selectOption({ label: `Cliente desde ${p}` });
   await page.getByLabel('Qué se presupuesta').fill(`Cocina ${p}`);
+  await paso(page, 'Trabajos');
   await page.getByLabel('Concepto de la línea 1').fill('Muebles de cocina');
   await page.getByLabel('Precio por unidad de la línea 1, en euros sin IVA').fill('1000');
+  await paso(page, 'Condiciones');
   await page.getByRole('button', { name: 'Guardar el presupuesto' }).click();
   await page.getByRole('button', { name: 'Marcar como enviado' }).click();
   await expect(page.getByRole('button', { name: 'El cliente lo acepta' })).toBeVisible();
