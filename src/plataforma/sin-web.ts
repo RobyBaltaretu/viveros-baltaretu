@@ -3,7 +3,7 @@ import { readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AstroIntegration } from 'astro';
-import type { ConfiguracionCliente } from './configuracion.ts';
+import { moduloActivo, type ConfiguracionCliente } from './configuracion.ts';
 
 /**
  * Clientes sin web pública (`webPublica: false`, como Creaciones Turia): del
@@ -47,11 +47,32 @@ export async function quitarWebPublica(salida: string): Promise<string[]> {
   return quitados.sort();
 }
 
+/**
+ * Scripts empaquetados de pantallas de un módulo que el cliente no tiene: se
+ * quitan del build (sus rutas dan 404 en ese cliente). Así Turia Studio no deja
+ * su JS en la web de Baltaretu (línea base).
+ */
+const SCRIPTS_DE_MODULO = [{ modulo: 'simulador', patron: /^studio-bocetos\.astro_astro_type_script_.*\.js$/ }] as const;
+export async function quitarScriptsDeModulos(salida: string, c: ConfiguracionCliente): Promise<string[]> {
+  const astro = existsSync(join(salida, 'client', '_astro')) ? join(salida, 'client', '_astro') : join(salida, '_astro');
+  if (!existsSync(astro)) return [];
+  const quitados: string[] = [];
+  for (const nombre of await readdir(astro)) {
+    if (SCRIPTS_DE_MODULO.some((x) => !moduloActivo(c, x.modulo) && x.patron.test(nombre))) {
+      await rm(join(astro, nombre), { force: true });
+      quitados.push(nombre);
+    }
+  }
+  return quitados;
+}
+
 /** Integración de Astro: al acabar el build, deja solo el panel si el cliente no tiene web pública. */
 export const sinWebPublica = (c: ConfiguracionCliente): AstroIntegration => ({
   name: 'plataforma-sin-web-publica',
   hooks: {
     'astro:build:done': async ({ dir, logger }) => {
+      const sinUso = await quitarScriptsDeModulos(fileURLToPath(dir), c);
+      if (sinUso.length) logger.info(`${c.nombre}: sin los scripts de módulos apagados (${sinUso.join(', ')})`);
       if (c.webPublica) return;
       const quitados = await quitarWebPublica(fileURLToPath(dir));
       logger.info(`${c.nombre}: sin web pública (quitado ${quitados.join(', ')})`);
