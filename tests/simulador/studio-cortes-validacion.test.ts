@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- datos de prueba a propósito incompletos o inválidos */
 import { describe,it,expect } from 'vitest';
 import { validarInterpretacion } from '../../src/server/simulador/boceto.ts';
 describe('Studio: validation against malformed piece cuts',()=>{

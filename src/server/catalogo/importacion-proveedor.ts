@@ -138,7 +138,8 @@ export async function importarCandidatos(
       return { creados: 0, actualizados: 0, duplicados: 0, rechazados: 0, validados: 0, pendientes: 0, loteDuplicado: true };
     if(anterior)await repos.catalogo.guardarImportacion({ ...anterior, estado: 'confirmando' },email);
   }
-  let creados = 0, actualizados = 0, duplicados = 0, rechazados = 0, validados = 0;
+  let creados = 0, duplicados = 0, rechazados = 0, validados = 0;
+  const actualizados = 0;
   const errores: Array<{ referencia: string; mensaje: string; pagina: number | null }> = [];
 
   const guardarEstructura = async (a: CandidatoProveedor, articuloId: string) => {

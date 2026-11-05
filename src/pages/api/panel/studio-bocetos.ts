@@ -7,6 +7,7 @@ import { asegurarEsquema } from '../../../server/data/d1/migraciones.ts';
 import type { BaseD1 } from '../../../server/data/d1/base.ts';
 import { compatibilidadPieza } from '../../../server/simulador/compatibilidad-materiales.ts';
 import { validarInterpretacion, type InterpretacionBoceto } from '../../../server/simulador/boceto.ts';
+import { sentenciasStudio } from '../../../server/data/d1/studio.ts';
 
 export const prerender = false;
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), {
@@ -33,10 +34,10 @@ export const GET: APIRoute = async ({locals,url}) => {
   const id=url.searchParams.get('id');
   if (id && !validoId(id)) return json(400,{ok:false,error:'ID inválido'});
   if (id) {
-    const f=await db().prepare('SELECT id,titulo,estado,interpretacion,revision,actualizado FROM studio_bocetos WHERE id=? AND cliente_id=?').bind(id,tenant()).first<Fila>();
+    const f=await sentenciasStudio(db()).leerBoceto2().bind(id,tenant()).first<Fila>();
     return f ? json(200,{ok:true,boceto:mapear(f)}) : json(404,{ok:false});
   }
-  const filas=await db().prepare('SELECT id,titulo,estado,revision,actualizado FROM studio_bocetos WHERE cliente_id=? ORDER BY actualizado DESC LIMIT 100').bind(tenant()).all<Omit<Fila,'interpretacion'>>();
+  const filas=await sentenciasStudio(db()).leerBoceto3().bind(tenant()).all<Omit<Fila,'interpretacion'>>();
   return json(200,{ok:true,bocetos:filas.results});
 };
 export const POST: APIRoute = async ({locals,request}) => {
@@ -55,9 +56,9 @@ export const POST: APIRoute = async ({locals,request}) => {
   await asegurarEsquema(db());
   const id='studio_'+crypto.randomUUID(),fecha=ahora(),texto=JSON.stringify(b),email=sesion.usuario.email;
   await db().batch([
-    db().prepare('INSERT INTO studio_bocetos(id,cliente_id,titulo,estado,interpretacion,revision,creado,actualizado,actualizado_por) VALUES (?,?,?,?,?,1,?,?,?)')
+    sentenciasStudio(db()).insertarBoceto()
       .bind(id,tenant(),titulo,'borrador',texto,fecha,fecha,email),
-    db().prepare('INSERT INTO studio_boceto_versiones(boceto_id,revision,interpretacion,creado,creado_por) VALUES (?,1,?,?,?)')
+    sentenciasStudio(db()).insertarVersion()
       .bind(id,texto,fecha,email)
   ]);
   return json(201,{ok:true,id,revision:1});
@@ -92,24 +93,24 @@ export const PATCH: APIRoute = async ({locals,request}) => {
   await asegurarEsquema(db());
   if(b.estado==='validada' && (b.fotoEspacioId.startsWith('pendiente-') || b.fotoBocetoId.startsWith('pendiente-')))return json(409,{ok:false,error:'Guarda las dos fotografías antes de validar'});
   if(b.estado==='validada'){
-    const fotos=await db().prepare('SELECT id,clase FROM studio_boceto_archivos WHERE boceto_id=? AND cliente_id=? AND id IN (?,?)')
+    const fotos=await sentenciasStudio(db()).leerArchivo2()
       .bind(entrada.id,tenant(),b.fotoEspacioId,b.fotoBocetoId).all<{id:string;clase:string}>();
     if(!fotos.results.some(f=>f.id===b.fotoEspacioId&&f.clase==='espacio')||
        !fotos.results.some(f=>f.id===b.fotoBocetoId&&f.clase==='boceto'))
       return json(409,{ok:false,error:'Las dos fotografías deben pertenecer al boceto y tener el tipo correcto'});
   }
-  const anterior=await db().prepare('SELECT revision,estado FROM studio_bocetos WHERE id=? AND cliente_id=?').bind(entrada.id,tenant()).first<{revision:number;estado:string}>();
+  const anterior=await sentenciasStudio(db()).leerBoceto4().bind(entrada.id,tenant()).first<{revision:number;estado:string}>();
   if(!anterior)return json(404,{ok:false});
   if(anterior.estado==='validada')return json(409,{ok:false,error:'El diseño validado es inmutable; crea una nueva versión de trabajo'});
   if(anterior.revision!==entrada.revision)return json(409,{ok:false,error:'Otro cambio ha actualizado el boceto. Recarga antes de guardar.',revision:anterior.revision});
   const revision=anterior.revision+1,fecha=ahora(),texto=JSON.stringify(b);
   const titulo=typeof entrada.titulo==='string' && entrada.titulo.trim()?entrada.titulo.trim().slice(0,120):null;
   // El historial y la actualización se confirman en un mismo lote transaccional.
-  // INSERT ... SELECT solo crea la versión si el UPDATE optimista tuvo éxito.
+  // La versión (inserción con selección) solo se crea si la actualización optimista tuvo éxito.
   const resultados=await db().batch([
-    db().prepare('UPDATE studio_bocetos SET interpretacion=?,estado=?,revision=?,titulo=COALESCE(?,titulo),actualizado=?,actualizado_por=? WHERE id=? AND cliente_id=? AND revision=? AND estado<>?')
+    sentenciasStudio(db()).actualizarBoceto()
       .bind(texto,b.estado==='validada'?'validada':'borrador',revision,titulo,fecha,sesion.usuario.email,entrada.id,tenant(),anterior.revision,'validada'),
-    db().prepare('INSERT INTO studio_boceto_versiones(boceto_id,revision,interpretacion,creado,creado_por) SELECT id,revision,interpretacion,?,? FROM studio_bocetos WHERE id=? AND cliente_id=? AND revision=?')
+    sentenciasStudio(db()).insertarVersion2()
       .bind(fecha,sesion.usuario.email,entrada.id,tenant(),revision)
   ]);
   if(!resultados[0]?.meta?.changes)return json(409,{ok:false,error:'Conflicto de edición'});

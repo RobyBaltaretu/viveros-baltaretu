@@ -7,6 +7,7 @@ import { prepararDespiece } from '../../../server/simulador/despiece-studio.ts';
 import { valorarDespiece } from '../../../server/simulador/valoracion-studio.ts';
 import type { InterpretacionBoceto } from '../../../server/simulador/boceto.ts';
 import type { BaseD1 } from '../../../server/data/d1/base.ts';
+import { sentenciasStudio } from '../../../server/data/d1/studio.ts';
 export const prerender=false;
 export const GET:APIRoute=async({locals,url})=>{
  if(clienteActual().id!=='turia')return new Response(null,{status:404});
@@ -15,7 +16,7 @@ export const GET:APIRoute=async({locals,url})=>{
  if(!/^studio_[a-f0-9-]{36}$/.test(id))return new Response(null,{status:400});
  const db=(env as unknown as {DB:BaseD1}).DB;
  await asegurarEsquema(db);
- const row=await db.prepare('SELECT revision,interpretacion FROM studio_bocetos WHERE id=? AND cliente_id=?')
+ const row=await sentenciasStudio(db).leerBoceto5()
   .bind(id,'turia').first<{revision:number;interpretacion:string}>();
  if(!row)return new Response(null,{status:404});
  const despiece=prepararDespiece(JSON.parse(row.interpretacion) as InterpretacionBoceto);

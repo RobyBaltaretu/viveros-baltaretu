@@ -6,15 +6,15 @@ describe('Turia Studio: reglas de seguridad del diseño',()=>{
  const articulo={categoria:'tableros',nombre:'Tablero melaminado',archivado:false,espesor:19};
  const variante={estado:'activo',soporte:'MDF',disponibilidad:'disponible',dimensiones:{espesorMm:19}};
  it('permite un tablero activo para una puerta',()=>{
-  expect(compatibilidadPieza(pieza as any,articulo as any,variante as any).compatible).toBe(true);
+  expect(compatibilidadPieza(pieza as never,articulo as never,variante as never).compatible).toBe(true);
  });
  it('rechaza una variante descatalogada',()=>{
-  expect(compatibilidadPieza(pieza as any,articulo as any,{...variante,estado:'descatalogado'} as any).compatible).toBe(false);
+  expect(compatibilidadPieza(pieza as never,articulo as never,{...variante,estado:'descatalogado'} as never).compatible).toBe(false);
  });
  it('rechaza un canto usado como tablero',()=>{
-  expect(compatibilidadPieza(pieza as any,{...articulo,categoria:'cantos',nombre:'Canto PVC'} as any,{...variante,soporte:'PVC'} as any).compatible).toBe(false);
+  expect(compatibilidadPieza(pieza as never,{...articulo,categoria:'cantos',nombre:'Canto PVC'} as never,{...variante,soporte:'PVC'} as never).compatible).toBe(false);
  });
  it('impide generar un render sin aprobación humana',()=>{
-  expect(()=>instruccionesRender({estado:'pendiente',modulos:[]} as any)).toThrow();
+  expect(()=>instruccionesRender({estado:'pendiente',modulos:[]} as never)).toThrow();
  });
 });

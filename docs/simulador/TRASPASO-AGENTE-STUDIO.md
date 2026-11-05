@@ -1,9 +1,9 @@
 # Turia Studio — traspaso técnico y matriz de requisitos
-Fecha de revisión: 2026-11-04
+Fecha de revisión: 2026-11-05 (sesión de Claude Code; ver «Sesión 2026-11-05» al final)
 Repositorio: RobyBaltaretu/viveros-baltaretu
 Rama: feature/turia-studio-boceto-multimodal
 PR: https://github.com/RobyBaltaretu/viveros-baltaretu/pull/133
-IMPORTANTE: no fusionar a main ni desplegar sin autorización. No se ha demostrado CI verde ni E2E real.
+IMPORTANTE: no fusionar a main ni desplegar sin autorización. En local, lint, tests, build, check:worker, equivalencia de Baltaretu y los e2e de Baltaretu y Turia pasan (2026-11-05). No hay E2E contra Cloudflare real ni contra Gemini real.
 
 ## Objetivo original
 En Creaciones Turia, permitir subir foto real del espacio y foto del boceto con cotas; interpretar mediante IA multimodal con validación humana, mostrar alzado 2D, seleccionar material por pieza desde catálogo, generar render fotorrealista conservando el espacio, comparar antes/después, guardar diseños/versiones, obtener despiece y crear presupuesto precargado, integrar en Proyectos/Simulaciones, con coste controlado, privacidad, aislamiento tenant y UX iPhone.
@@ -82,3 +82,29 @@ P3 — Pentest autorizado y validación de despliegue; presentar evidencia de ac
 
 ## Estado del traspaso
 Esta matriz es un inventario de implementación y riesgos; NO certifica funcionalidad ni ausencia de defectos. Verificar rama/HEAD y diferencias contra main antes de continuar.
+
+
+## Sesión 2026-11-05 — incidencia «botones que no responden / no sale el boceto»
+
+### Diagnóstico
+- **El código del HEAD `ae78932` funciona en local** (build `CLIENTE_ID=turia`, preview workerd, Chromium): el script se inicializa («Turia Studio listo»), «Crear borrador» responde 201, aparece el alzado 2D, se suben las dos fotos y se guarda. Interpretar devuelve 503 en local solo porque no hay clave de Gemini ni R2.
+- **Causa más probable en Cloudflare: la versión activa no es la del código.** `scripts/contenido/desplegar.ts:27` hace que en Turia el modo sea siempre `version` (`wrangler versions upload`): Workers Builds **sube la versión pero no la activa**; hay que publicarla a mano en *Workers & Pages → creacionesturia → Deployments*. Además, los builds de ramas que no son de producción no reciben las variables de build del panel (`CLIENTE_ID`, `SITE_URL`) y fallan: desplegar «la rama feature» desde Workers Builds no deja nada nuevo activo.
+- Para comprobarlo sin dudas, la página de Studio enseña ahora **«Versión del código: <commit> (rama …)»** (`WORKERS_CI_COMMIT_SHA` inyectado en `astro.config.mjs`). Si no coincide con el commit esperado, lo servido es otra versión.
+
+### Arreglos
+- **Boceto 2D que no se actualizaba al editar una cota** (bug real): el campo cambiaba el dato pero no redibujaba; ahora `redibujar()` recalcula `calcularPlano`/`svgPlano` y el aviso en cada cambio sin rehacer los campos.
+- **Aislamiento entre clientes (seguridad)**: la ruta `'/api/panel/studio-'` de `src/plataforma/modulos.ts` no casaba con ninguna API (la comparación es exacta o «ruta/…»), así que las API de Studio quedaban en el núcleo también en el Worker de Baltaretu. Ahora cada API está registrada con el módulo `simulador` y el sector carpintería (404 en Baltaretu).
+- **Baltaretu sin cambios**: la página de Studio usaba clases de Tailwind nuevas que cambiaban el CSS y el HTML de toda la web de Baltaretu; queda fuera del escaneo (`global.css`). Su JS empaquetado se quita del build de los clientes sin el módulo (`quitarScriptsDeModulos` en `src/plataforma/sin-web.ts`). `npm run contenido:equivalencia`: sin diferencias.
+- **Capa de datos**: el SQL de las 8 API de Studio pasa a `src/server/data/d1/studio.ts` (`sentenciasStudio(db)`, mismas sentencias, mismos `bind`/`batch`). Todas filtran por `cliente_id`.
+- **CI**: 0 errores de lint (los `any` de tests de datos inválidos quedan con un `eslint-disable` justificado); instantánea `tests/baseline/d1-esquema.json` actualizada (v17 → v21, solo tablas y columnas nuevas, comprobado que las migraciones 16–21 son aditivas); tests de navegación con «Studio · Bocetos» en el Taller; e2e `gubia-fallo-groq` con un localizador inequívoco (`#gubia-estado`: había dos `role=status`).
+
+### Pruebas (evidencia local)
+- `npm run lint`: 0 errores. `npm test`: 89 archivos, 465 tests en verde. `npm run build` y `npm run check:worker`: bien.
+- `npm run contenido:equivalencia`: `"diferencias":[]`, `"cambiosFrenteALaBase":[]`.
+- `npm run test:e2e` (Baltaretu): 154 en verde. `npm run test:e2e:turia`: todo en verde, con el nuevo `tests-e2e-turia/studio.spec.ts` (inicialización JS, Crear borrador real, subida de fotos, interpretación **simulada**, alzado 2D, edición de cota que lo redibuja, recarga y recuperación del borrador, sin errores de JS).
+
+### Pendiente (por prioridad)
+1. **En Cloudflare (propietario)**: publicar la versión del último commit de esta rama, comprobar en Studio «Versión del código», y repetir el flujo con Gemini y R2 reales. Desactivar «Builds for non-production branches» o poner las variables de build en esas ramas.
+2. R08 selector visual de materiales (tarjetas con color y textura) y R18/R19 presupuesto precargado e integración con Proyectos (sin empezar).
+3. R12/R13: trabajos asíncronos y conciliación de coste real de Gemini; pruebas de carrera de generación.
+4. Nombres descriptivos en `sentenciasStudio` (hoy `leerBoceto2`…) y tests de autorización cruzada entre clientes.

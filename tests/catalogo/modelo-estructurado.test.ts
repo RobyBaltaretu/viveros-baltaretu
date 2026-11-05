@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- datos de prueba a propósito incompletos o inválidos */
 import { describe, expect, it } from 'vitest';
 import { normalizarDimensiones, paquetesNecesarios, superficieM2, validarConfiguracion } from '../../src/server/catalogo/modelo';
 import { candidatosConfigurablesColomba, MODELOS_CAJONERA_COLOMBA } from '../../src/server/catalogo/configurables-colomba';

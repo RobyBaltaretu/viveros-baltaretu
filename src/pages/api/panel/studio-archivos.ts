@@ -6,6 +6,7 @@ import { asegurarEsquema } from '../../../server/data/d1/migraciones.ts';
 import type { BaseD1 } from '../../../server/data/d1/base.ts';
 import { tipoDeImagen } from '../../../server/panel/fotos.ts';
 import { respuestaImagenPrivada } from '../../../server/panel/imagen-privada.ts';
+import { sentenciasStudio } from '../../../server/data/d1/studio.ts';
 
 export const prerender = false;
 const MAX_BYTES=6_000_000;
@@ -24,7 +25,7 @@ export const POST:APIRoute=async({locals,request})=>{
   const url=new URL(request.url),bocetoId=url.searchParams.get('bocetoId'),clase=url.searchParams.get('clase');
   if(!idValido(bocetoId)||!['espacio','boceto','referencia'].includes(clase||''))return json(400,{ok:false,error:'Boceto o tipo de imagen inválido'});
   await asegurarEsquema(entorno.DB);
-  const existe=await entorno.DB.prepare('SELECT id,estado FROM studio_bocetos WHERE id=? AND cliente_id=?').bind(bocetoId,tenant()).first<{id:string;estado:string}>();
+  const existe=await sentenciasStudio(entorno.DB).leerBoceto().bind(bocetoId,tenant()).first<{id:string;estado:string}>();
   if(!existe)return json(404,{ok:false});
   if(existe.estado==='validada'||existe.estado==='archivada')return json(409,{ok:false,error:'Diseño inmutable; crea una revisión editable'});
   // Subida binaria, no multipart; límite real aun cuando no se informa Content-Length.
@@ -44,7 +45,7 @@ export const POST:APIRoute=async({locals,request})=>{
   const clave='privado/studio/'+tenant()+'/'+bocetoId+'/'+id;
   await bucket.put(clave,bytes);
   try {
-    await entorno.DB.prepare('INSERT INTO studio_boceto_archivos(id,boceto_id,cliente_id,clase,objeto_r2,mime,tamano,creado) VALUES (?,?,?,?,?,?,?,?)')
+    await sentenciasStudio(entorno.DB).insertarArchivo()
       .bind(id,bocetoId,tenant(),clase,clave,tipo.tipo,tamano,new Date().toISOString()).run();
   }catch(error){await bucket.delete(clave).catch(()=>{});throw error;}
   return json(201,{ok:true,id,clase,tamano});
@@ -54,7 +55,7 @@ export const GET:APIRoute=async({locals,url})=>{
   if(!sesionCon(locals))return json(403,{ok:false});
   const id=url.searchParams.get('id');if(!idValido(id))return json(400,{ok:false});
   await asegurarEsquema(entorno.DB);
-  const fila=await entorno.DB.prepare('SELECT objeto_r2 FROM studio_boceto_archivos WHERE id=? AND cliente_id=?').bind(id,tenant()).first<{objeto_r2:string}>();
+  const fila=await sentenciasStudio(entorno.DB).leerArchivo().bind(id,tenant()).first<{objeto_r2:string}>();
   if(!fila)return json(404,{ok:false});
   const objeto=await entorno.IMAGENES_PRIVADAS?.get(fila.objeto_r2);
   if(!objeto)return json(404,{ok:false});

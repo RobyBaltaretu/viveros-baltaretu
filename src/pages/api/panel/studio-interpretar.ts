@@ -9,6 +9,7 @@ import { tipoDeImagen } from '../../../server/panel/fotos.ts';
 import { claveGemini, mesDe, limitePresupuestado } from '../../../server/simulador/cuota.ts';
 import { iaDe } from '../../../plataforma/configuracion.ts';
 import { interpretarBoceto } from '../../../server/simulador/interpretar-boceto.ts';
+import { sentenciasStudio } from '../../../server/data/d1/studio.ts';
 export const prerender=false;
 type Bucket={get(key:string):Promise<{arrayBuffer():Promise<ArrayBuffer>}|null>};
 const e=env as unknown as {DB:BaseD1;IMAGENES_PRIVADAS?:Bucket};
@@ -21,14 +22,14 @@ export const POST:APIRoute=async({locals,request})=>{
   if(!key||!e.IMAGENES_PRIVADAS)return json(503,{ok:false,error:'Falta configurar Gemini o R2 privado'});
   if(Number(request.headers.get('content-length')||0)>2000)return json(413,{ok:false});
   const limitado=await cuerpoLimitado(request,2000);if(!limitado)return json(413,{ok:false});
-  let id='';try{id=String((await limitado.json() as {id?:string}).id||'');}catch{return json(400,{ok:false});}
+  let id:string;try{id=String((await limitado.json() as {id?:string}).id||'');}catch{return json(400,{ok:false});}
   if(!/^studio_[a-z0-9-]{36}$/.test(id))return json(400,{ok:false});
   await asegurarEsquema(e.DB);
-  const f=await e.DB.prepare('SELECT revision,interpretacion FROM studio_bocetos WHERE id=? AND cliente_id=?').bind(id,'turia').first<{revision:number;interpretacion:string}>();
+  const f=await sentenciasStudio(e.DB).leerBoceto5().bind(id,'turia').first<{revision:number;interpretacion:string}>();
   if(!f)return json(404,{ok:false});
   const actual=JSON.parse(f.interpretacion) as {fotoEspacioId:string;fotoBocetoId:string;estado:string};
   if(actual.estado==='validada')return json(409,{ok:false,error:'Boceto validado'});
-  const fotos=await e.DB.prepare('SELECT id,objeto_r2 FROM studio_boceto_archivos WHERE boceto_id=? AND cliente_id=? AND id IN (?,?)')
+  const fotos=await sentenciasStudio(e.DB).leerArchivo4()
     .bind(id,'turia',actual.fotoEspacioId,actual.fotoBocetoId).all<{id:string;objeto_r2:string}>();
   const leer=async(fid:string)=>{
     const foto=fotos.results.find(x=>x.id===fid);if(!foto)throw Error('Fotografía pendiente');
@@ -44,10 +45,10 @@ export const POST:APIRoute=async({locals,request})=>{
   if(!resultado.ok && [400,403,429].includes(resultado.estado||0))await s.repos.usoSimulador.devolver('turia',mes);
   if(!resultado.ok)return json(resultado.estado===429?429:502,{ok:false,error:resultado.error});
   const revision=f.revision+1,fecha=new Date().toISOString(),texto=JSON.stringify(resultado.interpretacion);
-  const cambio=await e.DB.prepare('UPDATE studio_bocetos SET interpretacion=?,estado=?,revision=?,actualizado=?,actualizado_por=? WHERE id=? AND cliente_id=? AND revision=?')
+  const cambio=await sentenciasStudio(e.DB).actualizarBoceto2()
     .bind(texto,'pendiente',revision,fecha,s.usuario.email,id,'turia',f.revision).run();
   if(!cambio.meta?.changes)return json(409,{ok:false,error:'Conflicto de revisión'});
-  await e.DB.prepare('INSERT INTO studio_boceto_versiones(boceto_id,revision,interpretacion,creado,creado_por) VALUES (?,?,?,?,?)')
+  await sentenciasStudio(e.DB).insertarVersion3()
     .bind(id,revision,texto,fecha,s.usuario.email).run();
   return json(200,{ok:true,revision,interpretacion:resultado.interpretacion});
 };
