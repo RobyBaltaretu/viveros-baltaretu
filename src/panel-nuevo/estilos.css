@@ -2613,3 +2613,167 @@
 .nv-doc-acciones summary { min-height:48px; padding:.75rem 1rem; cursor:pointer; font-weight:650 }
 .nv-doc-opciones { padding:0 1rem 1rem; max-width:40rem }
 .nv-doc-opciones > a { display:inline-flex; min-height:48px; align-items:center }
+
+/* ---------- Movimiento y respuesta (rediseño UX) ----------
+ * Todo lo que se pulsa responde al instante (scale 0.97 en :active) y vuelve
+ * rápido. Solo se animan transform, opacity y colores; nunca `all`. Curvas con
+ * fuerza (ease-out) para que el gesto se note desde el primer fotograma.
+ * Lo que se usa decenas de veces al día (pestañas, filas, menú lateral) solo
+ * cambia de color; los menús (ocasionales) entran desde su origen. */
+.nv {
+  --nv-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --nv-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+.nv-boton,
+.nv-crear,
+.nv-pestana-crear,
+.nv .boton-panel,
+.nv .tarjeta-accion,
+.nv-atajo,
+.nv-toque,
+.nv-kpi,
+.ux-accion,
+.ux-paso,
+.nv-tarea-fila,
+.nv-item-catalogo,
+.nv-sugerencia,
+.nv-destacado,
+.st-mini,
+.st-material {
+  transition:
+    transform 160ms var(--nv-ease-out),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.nv .boton-panel:active,
+.nv .tarjeta-accion:active,
+.nv-atajo:active,
+.nv-toque:active,
+.nv-kpi:active,
+.ux-accion:active,
+.ux-paso:active,
+.nv-tarea-fila:active,
+.nv-item-catalogo:active,
+.nv-sugerencia:active,
+.nv-destacado:active,
+.st-mini:active,
+.st-material:active {
+  transform: scale(0.97);
+}
+/* Botón deshabilitado: no simula que responde. */
+.nv-boton:disabled,
+.nv .boton-panel:disabled {
+  transform: none;
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.nv-enlace,
+.nv-pestanas a,
+.nv-tabla tbody tr,
+.nv-menu a {
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+/* Menús nativos (popover): en escritorio caen desde «Crear» (arriba a la
+ * derecha); en el móvil suben como una hoja desde abajo. Salida más rápida
+ * que la entrada. */
+.nv-menu {
+  transition:
+    opacity 180ms var(--nv-ease-out),
+    transform 220ms var(--nv-ease-out),
+    overlay 220ms allow-discrete,
+    display 220ms allow-discrete;
+}
+.nv-menu:not(:popover-open) {
+  opacity: 0;
+  transition-duration: 140ms;
+}
+@media (min-width: 64rem) {
+  .nv-menu {
+    transform-origin: top right;
+  }
+  .nv-menu:not(:popover-open) {
+    transform: scale(0.96) translateY(-4px);
+  }
+  @starting-style {
+    .nv-menu:popover-open {
+      opacity: 0;
+      transform: scale(0.96) translateY(-4px);
+    }
+  }
+}
+@media (max-width: 63.99rem) {
+  .nv-menu {
+    transition-timing-function: var(--nv-ease-drawer);
+    transition-duration: 180ms, 320ms, 320ms, 320ms;
+  }
+  .nv-menu:not(:popover-open) {
+    transform: translateY(100%);
+  }
+  @starting-style {
+    .nv-menu:popover-open {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+  }
+}
+.nv-menu::backdrop {
+  transition: background-color 220ms ease, overlay 220ms allow-discrete, display 220ms allow-discrete;
+}
+@starting-style {
+  .nv-menu:popover-open::backdrop {
+    background-color: rgb(16 24 32 / 0);
+  }
+}
+
+/* Avisos de estado: aparecen con un pequeño fundido, sin saltar. */
+.nv [role='status']:not(:empty),
+.nv [role='alert']:not(:empty) {
+  transition: opacity 200ms ease;
+  @starting-style {
+    opacity: 0;
+  }
+}
+
+/* Menos movimiento: sin desplazamientos ni escalas, pero los fundidos se
+ * quedan porque ayudan a entender qué ha cambiado. */
+@media (prefers-reduced-motion: reduce) {
+  .nv *,
+  .nv *::before,
+  .nv *::after {
+    transition-duration: 120ms !important;
+  }
+  .nv *:active,
+  .nv .nv-menu,
+  .nv .nv-menu:not(:popover-open) {
+    transform: none !important;
+  }
+}
+
+/* «Más acciones»: lo que se usa poco no compite con la acción principal. */
+.nv-mas-acciones { position: relative; }
+.nv-mas-acciones > summary { list-style: none; }
+.nv-mas-acciones > summary::-webkit-details-marker { display: none; }
+.nv-mas-acciones > summary::after { content: ''; width: 7px; height: 7px; margin-left: 4px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform 200ms var(--nv-ease-out); }
+.nv-mas-acciones[open] > summary::after { transform: translateY(2px) rotate(-135deg); }
+.nv-mas-acciones-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; display: grid; gap: 2px; min-width: 18rem; padding: .375rem;
+  border: 1px solid var(--nv-borde); border-radius: var(--nv-radio); background: var(--nv-superficie); box-shadow: var(--nv-sombra-alta);
+  transform-origin: top right; transition: opacity 160ms var(--nv-ease-out), transform 200ms var(--nv-ease-out);
+}
+@starting-style { .nv-mas-acciones[open] .nv-mas-acciones-menu { opacity: 0; transform: scale(0.96) translateY(-4px); } }
+.nv-mas-acciones-menu form { margin: 0; }
+.nv-mas-acciones-menu a,
+.nv-mas-acciones-menu button {
+  display: flex; align-items: center; gap: .75rem; width: 100%; min-height: 3.25rem; padding: .5rem .75rem; border: 0; border-radius: var(--nv-radio-control);
+  background: transparent; font: inherit; color: var(--nv-tinta); text-align: left; text-decoration: none; cursor: pointer;
+  transition: background-color 120ms ease;
+}
+.nv-mas-acciones-menu span { display: flex; flex-direction: column; }
+.nv-mas-acciones-menu small { color: var(--nv-gris); font-size: .8125rem; }
+.nv-mas-acciones-menu .icono { width: 1.25rem; height: 1.25rem; flex: none; color: var(--nv-acento); }
+@media (hover: hover) and (pointer: fine) { .nv-mas-acciones-menu a:hover, .nv-mas-acciones-menu button:hover { background: var(--nv-hover); } }
+@media (max-width: 40rem) { .nv-mas-acciones-menu { left: 0; right: auto; transform-origin: top left; min-width: min(18rem, calc(100vw - 2.5rem)); } }

@@ -65,23 +65,30 @@ const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
       <h1>Catálogo</h1>
       <p>Lo que haces, lo que usas y lo que cuesta. Es privado: los costes y márgenes nunca salen en los presupuestos.</p>
     </div>
-    {
-      articulos.length > 0 && (
-        <div class="nv-cabeza-acciones">
-          <a href="/panel/catalogo/plantillas/nueva/editar" class="nv-boton nv-boton-secundario">
-            <Icono nombre="nuevo" />
-            Nuevo trabajo
-          </a>
-          <a href="/panel/catalogo/articulos/nuevo" class="nv-boton nv-boton-secundario">
-            <Icono nombre="nuevo" />
-            Nuevo artículo
-          </a>
+    <div class="nv-cabeza-acciones">
+      {
+        articulos.length > 0 && (
+          <Fragment>
+            <a href="/panel/catalogo/plantillas/nueva/editar" class="nv-boton nv-boton-secundario">
+              <Icono nombre="nuevo" />
+              Nuevo trabajo
+            </a>
+            <a href="/panel/catalogo/articulos/nuevo" class="nv-boton">
+              <Icono nombre="nuevo" />
+              Nuevo artículo
+            </a>
+          </Fragment>
+        )
+      }
+      <details class="nv-mas-acciones">
+        <summary class="nv-boton nv-boton-secundario">Más acciones</summary>
+        <div class="nv-mas-acciones-menu">
+          <a href="/panel/catalogo/importar"><Icono nombre="catalogo" /><span><strong>Importar PDF con Gubia</strong><small>Tarifa de un proveedor en PDF</small></span></a>
+          {articulos.length>0 && familias.length===0 && <form method="post"><input type="hidden" name="accion" value="migrar-estructura"/><button><Icono nombre="nuevo" /><span><strong>Crear familias y variantes</strong><small>Agrupa los artículos actuales por familia</small></span></button></form>}
         </div>
-      )
-    }
+      </details>
+    </div>
   </div>
-  <div class="nv-acciones"><a href="/panel/catalogo/importar" class="nv-boton nv-boton-secundario"><Icono nombre="catalogo" /> Importar PDF con Gubia</a></div>
-  {articulos.length>0 && familias.length===0 && <form method="post" class="nv-acciones"><input type="hidden" name="accion" value="migrar-estructura"/><button class="nv-boton nv-boton-secundario">Crear familias y variantes de los artículos actuales</button></form>}
   <Mensajes hecho={hecho} />
 
   {
@@ -193,7 +200,7 @@ const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
                       <span class="nv-chip">{p.parametros.length} medidas</span>
                       {faltanEn(p) && <span class="nv-chip nv-chip-naranja">Faltan precios</span>}
                     </div>
-                    <a href={`/panel/catalogo/plantillas/${p.id}${para ? `?destino=${para}` : ''}`} class="nv-boton">
+                    <a href={`/panel/catalogo/plantillas/${p.id}${para ? `?destino=${para}` : ''}`} class="nv-boton nv-boton-secundario">
                       <Icono nombre="calcular" />
                       Calcular el precio
                       <span class="sr-only">: {p.nombre}</span>

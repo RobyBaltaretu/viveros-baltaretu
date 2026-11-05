@@ -13,7 +13,9 @@ import { menuDe } from '../server/panel/navegacion.ts';
 import { sesionCon } from '../server/panel/pagina.ts';
 import { puede } from '../server/panel/permisos.ts';
 import { clienteActual, rutaDisponible } from '../plataforma/actual.ts';
-import { porHacer, saludo, type DatosInicio } from './inicio.ts';
+import { porHacer, primerosPasos, saludo, type DatosInicio } from './inicio.ts';
+import { faltaEmisor } from '../server/facturas/facturas.ts';
+import { ajustesFacturacion } from '../server/panel/facturacion.ts';
 import { resumenNegocio, proyectosDe, trazado } from './resumen';
 
 const s = sesionCon(Astro.locals);
@@ -43,7 +45,7 @@ const idsFacturas = new Set(facturas.map(f => f.id));
 const todas = [...facturas, ...emitidas.filter(f => !idsFacturas.has(f.id))];
 const datos: DatosInicio = { hoy: dia, facturas: todas, gastosMes, ticketsPorRevisar: revisar, presupuestos, ver };
 const tareas = porHacer(datos);
-const VISIBLES = 8;
+const VISIBLES = 5;
 const menu = s ? menuDe(rol) : [];
 const acceso = (href: string) => menu.some(m => m.href === href);
 const resumen = resumenNegocio(todas, gastosMes, presupuestos, mes).filter(k => ver[k.permiso]);
@@ -58,6 +60,20 @@ const atajos = [
  { href: '/panel/proyectos/nuevo', seccion: '/panel/presupuestos-cliente', texto: 'Crear proyecto', corto: 'Proyecto', icono: 'inventario' as const },
 ].filter(a => acceso(a.seccion));
 const verSimulador = rutaDisponible('/panel/simulador');
+// Primeros pasos: solo quien puede montar el negocio (propietario o gerente) y mientras falte algo.
+const verCatalogo = acceso('/panel/catalogo');
+const guiar = !!s && rol !== 'editor';
+const [faltanEmpresa, clientes, articulos, gastos] = guiar && s
+  ? await Promise.all([
+      ver.facturas ? ajustesFacturacion(s.repos).then((a) => faltaEmisor(a).length > 0) : false,
+      ver.facturas ? s.repos.clientes.listar().then((l) => l.length) : 0,
+      verCatalogo ? s.repos.catalogo.articulos().then((l) => l.length) : 0,
+      ver.gastos ? s.repos.gastos.listar({ limite: 1 }).then((l) => l.length) : 0,
+    ])
+  : [false, 0, 0, 0];
+const pasos = guiar ? primerosPasos({ faltanDatosEmpresa: faltanEmpresa, clientes, articulos, presupuestos: presupuestos.length, gastos, ver: { ...ver, catalogo: verCatalogo } }) : [];
+const hechos = pasos.filter((p) => p.hecho).length;
+const siguiente = pasos.find((p) => !p.hecho);
 
 const ahora = new Date();
 const hora = Number(ahora.toLocaleString('es-ES', { hour: 'numeric', hour12: false, timeZone: 'Europe/Madrid' }));
@@ -71,11 +87,26 @@ const hora = Number(ahora.toLocaleString('es-ES', { hour: 'numeric', hour12: fal
   <nav aria-label="Acciones rápidas" class="ux-acciones">
     {atajos.map((a, i) => <a href={a.href} class:list={['ux-accion', i === 0 && 'ux-accion-principal']}><Icono nombre={a.icono}/><span class="ux-accion-larga">{a.texto}</span><span class="ux-accion-corta">{a.corto}</span></a>)}
   </nav>
+  {siguiente && <section class="ux-card ux-pasos" aria-labelledby="ux-pasos-titulo">
+    <div class="ux-card-cabecera"><h2 id="ux-pasos-titulo">Primeros pasos</h2><span class="nv-chip">{hechos} de {pasos.length}</span></div>
+    <p class="ux-periodo">Para tener listo tu primer presupuesto. Cada paso lleva a su pantalla y vuelves aquí.</p>
+    <progress class="ux-pasos-barra" max={pasos.length} value={hechos} aria-label={`Primeros pasos: ${hechos} de ${pasos.length} hechos`}></progress>
+    <ol role="list">{pasos.map((p, i) => <li><a href={p.href} class:list={['ux-paso', p.hecho && 'ux-paso-hecho', p === siguiente && 'ux-paso-siguiente']} aria-current={p === siguiente ? 'step' : undefined}>
+      <span class="ux-paso-numero" aria-hidden="true">{p.hecho ? <Icono nombre="hecho" clase="size-4"/> : i + 1}</span>
+      <span class="ux-paso-texto"><strong>{p.titulo}</strong><span>{p.hecho ? 'Hecho' : p.porQue}</span></span>
+      {p === siguiente ? <span class="ux-paso-ir">Empezar <Icono nombre="siguiente" clase="size-4"/></span> : <Icono nombre="siguiente" clase="size-4"/>}
+    </a></li>)}</ol>
+  </section>}
+  <section class="ux-card ux-pendientes" id="nv-por-hacer" aria-labelledby="nv-pendientes-titulo">
+    <div class="ux-card-cabecera"><h2 id="nv-pendientes-titulo">Por hacer</h2><span class="nv-chip">{tareas.length}</span></div>
+    {tareas.length ? <ul role="list">{tareas.slice(0,VISIBLES).map(t => <li class="nv-tarea"><a class="nv-tarea-fila" href={t.href}><span class:list={['nv-punto', `nv-punto-${t.color}`]} aria-hidden="true"/><span class="nv-tarea-texto"><strong>{t.titulo}</strong><span>{t.detalle}</span></span><span class="nv-tarea-accion">{t.accion}<Icono nombre="siguiente" clase="size-4"/></span></a></li>)}</ul> : <p class="ux-todo-dia"><Icono nombre="hecho"/>Todo al día. Aquí aparecerán tus próximos cobros y tareas pendientes.</p>}
+    {tareas.length > VISIBLES && <details class="ux-mas-tareas"><summary>Ver {tareas.length - VISIBLES} más</summary><ul role="list">{tareas.slice(VISIBLES).map(t => <li class="nv-tarea"><a class="nv-tarea-fila" href={t.href}><span class:list={['nv-punto', `nv-punto-${t.color}`]} aria-hidden="true"/><span class="nv-tarea-texto"><strong>{t.titulo}</strong><span>{t.detalle}</span></span><span class="nv-tarea-accion">{t.accion}<Icono nombre="siguiente" clase="size-4"/></span></a></li>)}</ul></details>}
+  </section>
   <div class="ux-cuadricula">
     {resumen.length > 0 && <section class="ux-card ux-resumen" aria-labelledby="ux-resumen-titulo">
       <div class="ux-card-cabecera"><h2 id="ux-resumen-titulo">Resumen del negocio</h2><form method="get"><label class="sr-only" for="ux-periodo">Periodo del resumen</label><select id="ux-periodo" name="periodo"><option value="mes" selected={seleccion === 'mes'}>Este mes</option><option value="anterior" selected={seleccion === 'anterior'}>Mes anterior</option></select><button type="submit" class="ux-aplicar">Ver</button></form></div>
       <p class="ux-periodo">{mes.etiqueta} · importes sin IVA, salvo cobros</p>
-      <ul class="ux-metricas" id="ux-metricas" role="list">{resumen.map(k => <li><a href={k.href}><span>{k.nombre}</span><strong class="nv-cifra">{k.euros ? dinero(k.valor) : k.valor}</strong><small class:list={[k.cambio !== null && (k.nombre === 'Gastos' ? k.cambio <= 0 : k.cambio >= 0) ? 'ux-positivo' : k.cambio !== null ? 'ux-negativo' : '']} >{k.cambio === null ? 'Sin comparación previa' : `${k.cambio >= 0 ? '↑ +' : '↓ '}${k.cambio.toLocaleString('es-ES')} %`}</small></a></li>)}</ul>
+      <ul class="ux-metricas" id="ux-metricas" role="list">{resumen.map(k => <li><a href={k.href}><span>{k.nombre}</span><strong class="nv-cifra">{k.euros ? dinero(k.valor) : k.valor}</strong><small class:list={[k.cambio !== null && (k.nombre === 'Gastos' ? k.cambio <= 0 : k.cambio >= 0) ? 'ux-positivo' : k.cambio !== null ? 'ux-negativo' : '']} >{k.cambio === null ? 'Sin comparación previa' : `${k.cambio >= 0 ? '↑ +' : '↓ '}${k.cambio.toLocaleString('es-ES')} % que el mes anterior`}</small></a></li>)}</ul>
       {ver.facturas && <figure class="ux-grafica"><svg viewBox="0 0 600 120" preserveAspectRatio="none" role="img" aria-label="Evolución de lo facturado sin IVA en los últimos seis meses"><defs><linearGradient id="ux-relleno" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#779561" stop-opacity=".3"/><stop offset="1" stop-color="#779561" stop-opacity="0"/></linearGradient></defs><polygon points={`0,120 ${puntos} 600,120`} fill="url(#ux-relleno)"/><polyline points={puntos} fill="none" stroke="#64804e" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><figcaption>Facturado · últimos 6 meses <a href="/panel/informes">Ver informes <span aria-hidden="true">→</span></a></figcaption><ul class="sr-only">{evolucion.map(m => <li>{m.nombre}: {dinero(m.ingresos)}</li>)}</ul></figure>}
       <button type="button" class="ux-expandir-cifras" aria-expanded="false" aria-controls="ux-metricas">Ver todas las cifras</button>
     </section>}
@@ -85,12 +116,7 @@ const hora = Number(ahora.toLocaleString('es-ES', { hour: 'numeric', hour12: fal
       {proyectos.length ? <ul role="list">{proyectos.map(p => <li><a class="ux-proyecto" href={`/panel/presupuestos-cliente/${p.id}`}><span class="ux-proyecto-icono"><Icono nombre="inventario"/></span><span class="ux-proyecto-datos"><strong>{p.concepto} · {p.cliente.nombre}</strong><span class="ux-progreso"><progress max="100" value={p.avance} aria-label={`Avance administrativo: ${p.concepto}`}/><span>{p.avance} %</span></span><small>{p.etapa}</small></span><Icono nombre="siguiente" clase="size-4"/></a></li>)}</ul> : <div class="ux-vacio"><Icono nombre="inventario"/><p><strong>Tu próximo proyecto empieza aquí</strong><span>Al aceptar un presupuesto, podrás seguir aquí su facturación y cobros.</span></p><a href="/panel/proyectos/nuevo" class="nv-boton nv-boton-secundario">Crear proyecto</a></div>}
     </section>}
   </div>
-  <section class="ux-card ux-pendientes" id="nv-por-hacer" aria-labelledby="nv-pendientes-titulo">
-    <div class="ux-card-cabecera"><h2 id="nv-pendientes-titulo">Por hacer</h2><span class="nv-chip">{tareas.length}</span></div>
-    {tareas.length ? <ul role="list">{tareas.slice(0,VISIBLES).map(t => <li class="nv-tarea"><span class:list={['nv-punto', `nv-punto-${t.color}`]} aria-hidden="true"/><span class="nv-tarea-texto"><strong>{t.titulo}</strong><span>{t.detalle}</span></span><a class="nv-boton nv-boton-secundario" href={t.href}>{t.accion}<span class="sr-only">: {t.titulo}</span></a></li>)}</ul> : <p class="ux-todo-dia"><Icono nombre="hecho"/>Todo al día. Aquí aparecerán tus próximos cobros y tareas pendientes.</p>}
-    {tareas.length > VISIBLES && <p class="nv-mas">Y {tareas.length - VISIBLES} más. Resuelve estas primero.</p>}
-  </section>
-  {verSimulador && <a href="/panel/simulador" class="ux-asistente-enlace"><Icono nombre="camara"/><span><strong>Da forma a la próxima idea</strong><span>Prueba acabados con el simulador de reformas</span></span><Icono nombre="siguiente"/></a>}
+  {verSimulador && <a href="/panel/simulador" class="ux-asistente-enlace"><Icono nombre="camara"/><span><strong>Probar acabados</strong><span>Haz una foto del espacio y prueba suelos, paredes y frentes</span></span><Icono nombre="siguiente"/></a>}
 </div>
 <script is:inline>
   const periodo = document.querySelector('#ux-periodo');

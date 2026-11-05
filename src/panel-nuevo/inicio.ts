@@ -169,3 +169,40 @@ export function porHacer(d: DatosInicio): Tarea[] {
 }
 
 export const saludo = (hora: number) => (hora < 6 ? 'Buenas noches' : hora < 14 ? 'Buenos días' : hora < 21 ? 'Buenas tardes' : 'Buenas noches');
+
+/** Un paso de la guía de «Primeros pasos» del inicio. */
+export interface PasoInicial {
+  id: 'empresa' | 'cliente' | 'catalogo' | 'presupuesto' | 'ticket';
+  titulo: string;
+  porQue: string;
+  href: string;
+  hecho: boolean;
+}
+export interface DatosPrimerosPasos {
+  faltanDatosEmpresa: boolean;
+  clientes: number;
+  articulos: number;
+  presupuestos: number;
+  gastos: number;
+  /** Qué secciones ve este rol (un paso que no puede hacer no se le enseña). */
+  ver: { facturas: boolean; presupuestos: boolean; gastos: boolean; catalogo: boolean };
+}
+/**
+ * Guía para el primer día: lo mínimo para hacer el primer presupuesto, en el
+ * orden en que hace falta. Desaparece del inicio cuando está todo hecho.
+ */
+export function primerosPasos(d: DatosPrimerosPasos): PasoInicial[] {
+  const pasos: (PasoInicial & { visible: boolean })[] = [
+    { id: 'empresa', visible: d.ver.facturas, hecho: !d.faltanDatosEmpresa, href: '/panel/facturas/datos',
+      titulo: 'Pon los datos de tu empresa', porQue: 'Salen en cada presupuesto y factura: nombre, NIF y dirección.' },
+    { id: 'cliente', visible: d.ver.facturas, hecho: d.clientes > 0, href: '/panel/facturas/clientes/nuevo',
+      titulo: 'Añade tu primer cliente', porQue: 'Con su contacto y la dirección de la obra.' },
+    { id: 'catalogo', visible: d.ver.catalogo, hecho: d.articulos > 0, href: '/panel/catalogo',
+      titulo: 'Carga tus materiales y precios', porQue: 'Empieza con el catálogo de partida y ajusta tus precios.' },
+    { id: 'presupuesto', visible: d.ver.presupuestos, hecho: d.presupuestos > 0, href: '/panel/presupuestos-cliente/nuevo',
+      titulo: 'Haz tu primer presupuesto', porQue: 'Elige el cliente, añade trabajos del catálogo y envíalo.' },
+    { id: 'ticket', visible: d.ver.gastos, hecho: d.gastos > 0, href: '/panel/gastos/nuevo',
+      titulo: 'Haz una foto a un ticket', porQue: 'Se apunta solo: tienda, fecha y total.' },
+  ];
+  return pasos.filter((p) => p.visible).map(({ visible: _v, ...p }) => p);
+}
