@@ -45,7 +45,7 @@ export const POST:APIRoute=async({locals,request})=>{
     const a=v?porArticulo.get(v.articuloId):undefined;
     return {modulo:m.id,pieza:p.id,tipo:p.tipo,variante:v,articulo:a};
   }));
-  if(acabados.some(x=>!x.variante||!x.articulo||x.variante.estado!=='activo'||x.articulo.archivado))
+  if(acabados.some(x=>!x.variante||!x.articulo||x.variante.estado==='descatalogado'||x.articulo.archivado))
     return json(409,{ok:false,error:'Hay materiales inexistentes, archivados o descatalogados'});
   const referencias=acabados.map(x=>({modulo:x.modulo,pieza:x.pieza,tipo:x.tipo,
     referencia:x.variante!.referencia,acabado:x.variante!.acabado||x.articulo!.acabado,

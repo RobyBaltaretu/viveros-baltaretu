@@ -56,7 +56,7 @@ export function sugerirMaterialesLocales(paginas: Array<{pagina:number;texto:str
   const claves: Array<[RegExp,string,string]> = [
     [/\b(melaminas?|tableros?|aglomerados?|mdf)\b/i,'tableros','m²'],
     [/\b(contrachapad[oa]s?|plywood)\b/i,'tableros','m²'],
-    [/\b(hpl|laminados?|compactos?)\b/i,'acabados','m²'],
+    [/\b(hpl|laminados?|compactos?)\b/i,'chapas','m²'],
     [/\b(enchapados?|chapas?)\b/i,'chapas','m²'],
     [/\b(cantos?|tapacantos?)\b/i,'cantos','ml'],
     [/\b(encimeras?|porcelanic[oa]|cuarzo)\b/i,'encimeras','m²'],

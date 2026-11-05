@@ -148,3 +148,29 @@ test('Studio: sin IA, se ponen las medidas a mano y se elige el material del cat
   for (const texto of await cantos.allInnerTexts()) expect(texto).toMatch(/canto/i);
   await auditar(page);
 });
+
+test('Studio: con variantes pendientes de revisar (importador o «Crear familias y variantes») se pueden elegir materiales', async ({ page }) => {
+  await page.goto('/panel/catalogo');
+  const cargar = page.getByRole('button', { name: 'Cargar el catálogo de partida' });
+  if (await cargar.isVisible()) await cargar.click();
+  await page.goto('/panel/catalogo');
+  await page.getByText('Más acciones').click();
+  const crear = page.getByRole('button', { name: /Crear familias y variantes/ });
+  if (await crear.isVisible()) {
+    await crear.click();
+    await expect(page.getByRole('status').first()).toContainText(/variantes pendientes de revisión/);
+  }
+  await page.goto('/panel/studio-bocetos');
+  await expect(page.locator('#estado-boceto')).toHaveText(/Turia Studio listo/);
+  await page.getByLabel('Nombre del proyecto').fill(`Cocina ${Date.now()}`);
+  await page.getByRole('button', { name: 'Crear proyecto' }).click();
+  await page.getByRole('button', { name: 'Poner yo las medidas' }).click();
+  await page.getByRole('button', { name: 'Añadir una pieza' }).click();
+  await page.getByRole('button', { name: 'Elegir material' }).click();
+  const materiales = page.getByRole('group', { name: 'Materiales del catálogo' }).locator('.st-material');
+  await expect(materiales.first()).toBeVisible();
+  expect(await materiales.count()).toBeGreaterThan(3);
+  await materiales.first().click();
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
+  await expect(page.locator('#estado-boceto')).toHaveText('Cambios guardados.');
+});

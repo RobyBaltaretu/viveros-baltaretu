@@ -16,7 +16,7 @@ export function valorarDespiece(
  const vPorId=new Map(variantes.map(v=>[v.id,v]));
  for(const p of despiece.partidas){
   const v=vPorId.get(p.varianteId),a=v?aPorId.get(v.articuloId):undefined;
-  if(!v||!a||a.archivado||v.estado!=='activo'){bloqueos.push('Pieza '+p.piezaId+': referencia no disponible');continue;}
+  if(!v||!a||a.archivado||v.estado==='descatalogado'){bloqueos.push('Pieza '+p.piezaId+': referencia no disponible');continue;}
   if(p.metrosCuadrados===null||!Number.isFinite(p.metrosCuadrados)||p.metrosCuadrados<=0){
    bloqueos.push('Pieza '+p.piezaId+': superficie no confirmada');continue;
   }

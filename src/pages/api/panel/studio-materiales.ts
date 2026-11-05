@@ -22,7 +22,7 @@ export const GET:APIRoute=async({locals,url})=>{
   const variantes=variantesStudio(articulos,await sesion.repos.catalogo.variantes?.()??[]);
   const disponibles=new Map(articulos.filter(a=>!a.archivado).map(a=>[a.id,a]));
   // Solo lo que vale para la pieza: así nunca se elige algo que luego se rechace al guardar.
-  const filtradas=variantes.filter(v=>v.estado==='activo'&&disponibles.has(v.articuloId))
+  const filtradas=variantes.filter(v=>disponibles.has(v.articuloId))
     .filter(v=>!tipo||materialCompatible(tipo,disponibles.get(v.articuloId)!,v))
     .filter(v=>{const a=disponibles.get(v.articuloId);return !q||[v.referencia,v.codigo,v.acabado,v.soporte,a?.nombre||'',a?.categoria||'',a?.proveedor||''].join(' ').toLocaleLowerCase('es').includes(q);})
     .sort((a,b)=>(disponibles.get(a.articuloId)?.nombre||'').localeCompare(disponibles.get(b.articuloId)?.nombre||'','es')||(a.referencia||'').localeCompare(b.referencia||'','es'));

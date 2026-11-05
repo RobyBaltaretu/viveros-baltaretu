@@ -8,11 +8,19 @@ import type { ArticuloCatalogo, VarianteCatalogo } from '../data/tipos.ts';
  * Lo usan el selector, la generación de la imagen y el despiece: así todos ven lo mismo.
  */
 export const PREFIJO_ARTICULO = 'articulo:';
+/**
+ * Una variante vale para Studio si no está descatalogada. Las «pendientes» son
+ * las que crean el importador de PDF y «Crear familias y variantes»: están en el
+ * catálogo y se usan en presupuestos, así que también se pueden elegir aquí
+ * (antes se ocultaban y, como el artículo ya tenía variante, no salía ningún material).
+ */
+export const varianteUsable = (v: Pick<VarianteCatalogo, 'estado'>) => v.estado !== 'descatalogado';
 const NO_MATERIAL = new Set(['mano-obra', 'servicios']);
 
 export function variantesStudio(articulos: ArticuloCatalogo[], variantes: VarianteCatalogo[]): VarianteCatalogo[] {
   const vivos = new Map(articulos.filter((a) => !a.archivado && !NO_MATERIAL.has(a.categoria)).map((a) => [a.id, a]));
-  const reales = variantes.filter((v) => vivos.has(v.articuloId));
+  const reales = variantes.filter((v) => vivos.has(v.articuloId) && varianteUsable(v));
+  // Un artículo cuyas variantes están todas descatalogadas sigue saliendo por sí mismo.
   const conVariante = new Set(reales.map((v) => v.articuloId));
   const sueltos = [...vivos.values()]
     .filter((a) => !conVariante.has(a.id))
