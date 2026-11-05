@@ -1,0 +1,144 @@
+---
+/**
+ * Gastos con el diseño nuevo (Turia): cifras del mes arriba, la bandeja de
+ * tickets por revisar destacada, el mes con su reparto por categorías en
+ * barras y la lista de gastos en tarjetas. Mismos datos y enlaces que la
+ * pantalla de siempre (src/pages/panel/gastos/index.astro), que sigue igual
+ * para el resto de clientes.
+ */
+import Icono from '../../components/panel/ui/Icono.astro';
+import Vacio from '../Vacio.astro';
+import { dinero } from '../../server/facturas/importes.ts';
+import { nombreCategoria } from '../../server/gastos/gastos.ts';
+import type { Gasto } from '../../server/data/tipos.ts';
+
+interface Props {
+  porRevisar: Gasto[];
+  delMes: Gasto[];
+  porCategoria: { id: string; nombre: string; total: number }[];
+  total: number;
+  nombreMes: string;
+  anterior: string;
+  siguiente: string | null;
+  anio: number;
+  aviso?: string;
+}
+const { porRevisar, delMes, porCategoria, total, nombreMes, anterior, siguiente, anio, aviso } = Astro.props;
+const fecha = (iso: string) => iso.split('-').reverse().join('/');
+const pendiente = porRevisar.reduce((t, g) => t + (g.total || 0), 0);
+const mayor = porCategoria[0]?.total || 1;
+const inicial = (t: string) => (t.trim()[0] || '?').toUpperCase();
+const nada = !porRevisar.length && !delMes.length;
+---
+
+<div class="nv-titulo">
+  <div>
+    <h1>Gastos</h1>
+    <p>Lo que compras para el taller. Haz una foto al ticket: la tienda, la fecha y el total se apuntan solos.</p>
+  </div>
+  <div class="nv-cabeza-acciones">
+    <form method="post"><button class="nv-boton nv-boton-secundario">Escribir a mano</button></form>
+    <a href="/panel/gastos/nuevo" class="nv-boton"><Icono nombre="camara" />Añadir un ticket</a>
+  </div>
+</div>
+{aviso && <p role="status" class="nv-caja-aviso nv-caja-bien"><span>{aviso}</span></p>}
+
+<ul class="nv-kpis" role="list">
+  <li>
+    <div class="nv-kpi nv-tarjeta">
+      <span class="nv-kpi-nombre">Gastado en {nombreMes}</span>
+      <span class="nv-kpi-valor nv-cifra">{dinero(total)}</span>
+      <span class="nv-kpi-nota">{delMes.length === 1 ? '1 gasto guardado' : `${delMes.length} gastos guardados`}</span>
+    </div>
+  </li>
+  <li>
+    <a href="#gastos-revisar" class="nv-kpi nv-tarjeta">
+      <span class="nv-kpi-nombre">Por revisar</span>
+      <span class="nv-kpi-valor nv-cifra">{porRevisar.length}</span>
+      <span class:list={['nv-kpi-nota', porRevisar.length ? 'nv-aviso' : 'nv-bien']}>{porRevisar.length ? `${dinero(pendiente)} sin contar aún` : 'Todo revisado'}</span>
+    </a>
+  </li>
+  <li>
+    <div class="nv-kpi nv-tarjeta">
+      <span class="nv-kpi-nombre">Lo que más</span>
+      <span class="nv-kpi-valor nv-kpi-texto">{porCategoria[0]?.nombre ?? '—'}</span>
+      <span class="nv-kpi-nota">{porCategoria[0] ? dinero(porCategoria[0].total) : 'Sin gastos este mes'}</span>
+    </div>
+  </li>
+</ul>
+
+{
+  nada ? (
+    <Vacio escena="gastos" titulo="Apunta tu primer ticket" texto="Haz una foto al ticket o a la factura en papel: la tienda, la fecha y el total se leen solos y tú solo lo compruebas. Luego, a fin de año, lo descargas para la gestoría." accion={{ href: '/panel/gastos/nuevo', texto: 'Hacer foto a un ticket', icono: 'camara' }} />
+  ) : (
+    <Fragment>
+      {porRevisar.length > 0 && (
+        <section class="nv-tarjeta nv-bandeja" id="gastos-revisar" aria-labelledby="revisar-titulo">
+          <header>
+            <h2 id="revisar-titulo">Tickets por revisar <span class="nv-chip nv-chip-naranja">{porRevisar.length}</span></h2>
+            <p>No cuentan en las cuentas hasta que los revisas y guardas.</p>
+          </header>
+          <ul role="list">
+            {porRevisar.map((g) => (
+              <li>
+                <a href={`/panel/gastos/${g.id}`} class="nv-fila-gasto">
+                  <span class="nv-avatar-ticket" aria-hidden="true"><Icono nombre="ticket" /></span>
+                  <span class="nv-fila-texto"><strong>{g.proveedor || 'Ticket sin leer'}</strong><small>{fecha(g.fecha)}</small></span>
+                  <span class="nv-cifra nv-fila-importe">{g.total ? dinero(g.total) : '—'}</span>
+                  <span class="nv-fila-ir">Revisar<Icono nombre="siguiente" clase="size-4" /></span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section class="nv-mes-gastos" aria-labelledby="mes-titulo">
+        <nav class="nv-mes-nav" aria-label="Mes">
+          <a class="nv-boton nv-boton-secundario nv-boton-icono" href={`/panel/gastos?mes=${anterior}`} aria-label="Mes anterior"><Icono nombre="volver" /></a>
+          <h2 id="mes-titulo">{nombreMes}</h2>
+          {siguiente ? <a class="nv-boton nv-boton-secundario nv-boton-icono" href={`/panel/gastos?mes=${siguiente}`} aria-label="Mes siguiente"><Icono nombre="siguiente" /></a> : <span class="nv-boton-icono" aria-hidden="true" />}
+        </nav>
+        <div class="nv-mes-cuerpo">
+          {porCategoria.length > 0 && (
+            <div class="nv-tarjeta nv-reparto">
+              <h3>En qué se va</h3>
+              <ul role="list">
+                {porCategoria.map((c) => (
+                  <li>
+                    <span class="nv-reparto-fila"><span>{c.nombre}</span><strong class="nv-cifra">{dinero(c.total)}</strong></span>
+                    <span class="nv-reparto-barra" aria-hidden="true"><span style={`--parte:${Math.max(4, Math.round((c.total / mayor) * 100))}%`} /></span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {delMes.length ? (
+            <ul class="nv-tarjeta nv-lista-gastos" role="list">
+              {delMes.map((g) => (
+                <li>
+                  <a href={`/panel/gastos/${g.id}`} class="nv-fila-gasto">
+                    <span class="nv-avatar" aria-hidden="true">{inicial(g.proveedor)}</span>
+                    <span class="nv-fila-texto"><strong>{g.proveedor}</strong><small>{fecha(g.fecha)} · {nombreCategoria(g.categoria)}</small></span>
+                    <span class="nv-cifra nv-fila-importe">{dinero(g.total)}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p class="nv-tarjeta nv-mes-vacio">Sin gastos guardados en {nombreMes}.</p>
+          )}
+        </div>
+      </section>
+    </Fragment>
+  )
+}
+
+<section class="nv-tarjeta nv-gestoria" aria-labelledby="gestoria">
+  <span class="nv-gestoria-icono" aria-hidden="true"><Icono nombre="descargar" /></span>
+  <div>
+    <h2 id="gestoria">Para la gestoría</h2>
+    <p>Todos los gastos guardados de {anio}, en una hoja de cálculo.</p>
+  </div>
+  <a class="nv-boton nv-boton-secundario" href={`/api/panel/gastos.csv?anio=${anio}`} download>Descargar {anio}</a>
+</section>

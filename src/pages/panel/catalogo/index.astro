@@ -8,6 +8,7 @@ import Mensajes from '../../../components/panel/Mensajes.astro';
 import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
 import Icono from '../../../components/panel/ui/Icono.astro';
 import Explica from '../../../panel-nuevo/Explica.astro';
+import Vacio from '../../../panel-nuevo/Vacio.astro';
 import { CATEGORIAS, precioVenta, sinPrecio } from '../../../server/catalogo/catalogo.ts';
 import { cargarCatalogoDePartida } from '../../../server/catalogo/partida.ts';
 import { dinero } from '../../../server/facturas/importes.ts';
@@ -163,7 +164,7 @@ const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
         </nav>
 
         {ver === 'familias' ? (
-          familias.length === 0 ? <p>Todavía no hay familias estructuradas. Impórtalas desde un PDF y valida las propuestas.</p> :
+          familias.length === 0 ? <Vacio escena="textos" titulo="Sin familias todavía" texto="Una familia agrupa un material con todos sus acabados y grosores. Se crean al importar la tarifa en PDF de un proveedor: Gubia propone y tú validas." accion={{ href: '/panel/catalogo/importar', texto: 'Importar una tarifa en PDF', icono: 'catalogo' }} /> :
           <ul class="nv-trabajos" role="list">{familias.map((f)=><li><article class="nv-tarjeta nv-trabajo">
             <span class="nv-tipo-trabajo">{f.categoria} · {f.tipo}</span><h3>{f.nombre}</h3>
             <p>{[f.fabricante || f.proveedor,f.coleccion,f.codigo && `Código ${f.codigo}`].filter(Boolean).join(' · ') || 'Sin fabricante declarado'}</p>
@@ -171,14 +172,14 @@ const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
             <a class="nv-boton" href={`/panel/catalogo/familias/${f.id}`}>Abrir ficha</a>
           </article></li>)}</ul>
         ) : ver === 'variantes' ? (
-          variantes.length === 0 ? <p>Todavía no hay variantes estructuradas.</p> :
+          variantes.length === 0 ? <Vacio escena="textos" titulo="Sin variantes todavía" texto="Cada variante es un acabado o grosor concreto de una familia (por ejemplo, melamina roble de 19 mm), con su formato y su unidad de compra." accion={{ href: '/panel/catalogo/importar', texto: 'Importar una tarifa en PDF', icono: 'catalogo' }} /> :
           <div class="nv-tarjeta nv-tabla-caja" tabindex="0" role="region" aria-label="Variantes comerciales"><table class="nv-tabla"><thead><tr><th>Variante</th><th>Soporte</th><th>Formato</th><th>Espesor</th><th>Compra</th><th>Estado</th></tr></thead><tbody>{variantes.map(v=><tr>
             <td><a href={`/panel/catalogo/articulos/${v.articuloId}`}>{v.referencia || v.codigo || 'Sin referencia'}</a><small>{familias.find(f=>f.id===v.familiaId)?.nombre}</small></td>
             <td>{v.soporte || '—'}</td><td>{v.dimensiones.textoOriginal || '—'}</td><td>{v.dimensiones.espesorMm == null ? '—' : `${v.dimensiones.espesorMm} mm`}</td>
             <td>{v.unidadesPaquete ? `${v.unidadesPaquete} ${v.unidadCompra}/paq` : v.unidadCompra}</td><td>{v.estado}</td>
           </tr>)}</tbody></table></div>
         ) : ver === 'decorativos' ? (
-          decorativos.length === 0 ? <p>Todavía no hay decorativos estructurados.</p> :
+          decorativos.length === 0 ? <Vacio escena="fotos" titulo="Sin decorativos todavía" texto="Los decorativos son los diseños de superficie de cada fabricante (colores y maderas), con su muestra. Salen al importar su catálogo." accion={{ href: '/panel/catalogo/importar', texto: 'Importar un catálogo', icono: 'catalogo' }} /> :
           <ul class="nv-trabajos" role="list">{decorativos.map(d=><li><article class="nv-tarjeta nv-trabajo">
             <div style={`width:100%;height:4rem;border-radius:12px;background:${d.colorDigital || '#e8e8e4'};border:1px solid #d7d7d0`} aria-label={d.colorDigital ? `Color digital aproximado ${d.colorDigital}` : 'Sin muestra verificada'}></div>
             <span class="nv-tipo-trabajo">{d.fabricante}{d.codigo ? ` · ${d.codigo}` : ''}</span><h3>{d.nombre}</h3>
@@ -186,7 +187,7 @@ const pct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
             <span class="nv-chip">{d.origen.revision}</span>
           </article></li>)}</ul>
         ) : ver === 'configurables' ? (
-          configurables.length === 0 ? <p>Todavía no hay productos configurables. El importador reconoce los modelos de cajonera y zapatero del catálogo de Colomba.</p> :
+          configurables.length === 0 ? <Vacio escena="presupuestos" titulo="Sin productos configurables" texto="Muebles terminados que se piden por medidas y opciones, como cajoneras o zapateros. El importador reconoce los modelos del catálogo de Colomba." accion={{ href: '/panel/catalogo/importar', texto: 'Importar un catálogo', icono: 'catalogo' }} /> :
           <ul class="nv-trabajos" role="list">{configurables.map(c=><li><article class="nv-tarjeta nv-trabajo">
             <span class="nv-tipo-trabajo">{c.bajoProyecto ? 'Bajo proyecto' : 'Configuración validada'}</span><h3>{c.nombre}</h3>
             <p>{c.parametros.map(p=>p.nombre).join(' · ')}</p><div class="nv-etiquetas"><span class="nv-chip">{c.parametros.length} parámetros</span><span class="nv-chip">{c.reglas.length} restricciones</span></div>

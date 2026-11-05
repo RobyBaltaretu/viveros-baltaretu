@@ -213,7 +213,7 @@ const t = f.totales;
     <p class="sr-only" aria-live="polite" data-anuncio></p>
     <button name="accion" value="emitir" class="nv-boton nv-boton-ancho">Emitir la factura</button>
     <div class="nv-botones-columna nv-arriba">
-      <button name="accion" value="guardar" class="nv-boton nv-boton-secundario">Guardar el borrador</button>
+      <button name="accion" value="guardar" class="nv-boton nv-boton-secundario" data-sin-recargar>Guardar el borrador</button>
       <a href={`/api/panel/factura-pdf?id=${f.id}`} class="nv-boton nv-boton-secundario">Ver el borrador en PDF</a>
     </div>
   </aside>

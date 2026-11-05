@@ -3,6 +3,8 @@ import PaginaPanel from '../../../components/panel/PaginaPanel.astro';
 import { CATEGORIAS, gastoVacio, hoy, nombreCategoria } from '../../../server/gastos/gastos.ts';
 import { dinero } from '../../../server/facturas/importes.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
+import { clienteActual } from '../../../plataforma/actual.ts';
+import ListaGastos from '../../../panel-nuevo/gastos/ListaGastos.astro';
 
 export const prerender = false;
 
@@ -30,9 +32,12 @@ const nombreMes = new Date(Date.UTC(a, m - 1, 15)).toLocaleDateString('es-ES', {
 const fechaEs = (iso: string) => iso.split('-').reverse().join('/');
 const hecho = Astro.url.searchParams.get('hecho');
 const MENSAJES: Record<string, string> = { borrado: 'Gasto borrado.', proveedor: 'Gasto y proveedor guardados.', guardado: 'Gasto guardado.' };
+// Diseño nuevo (Turia): la misma información, con otra pantalla (src/panel-nuevo/gastos/ListaGastos.astro).
+const nuevo = clienteActual().panel?.diseno === 'nuevo';
 ---
 
-<PaginaPanel titulo="Gastos" permiso="gastos">
+<PaginaPanel titulo="Gastos" permiso="gastos" ancho={nuevo ? 'amplio' : undefined}>
+  {nuevo ? <ListaGastos porRevisar={porRevisar} delMes={delMes} porCategoria={porCategoria} total={total} nombreMes={nombreMes} anterior={desplazar(-1)} siguiente={mes < hoy().slice(0, 7) ? desplazar(1) : null} anio={a} aviso={hecho ? MENSAJES[hecho] : undefined} /> : <Fragment>
   <h1 class="titular-grande">Gastos</h1>
   {hecho && MENSAJES[hecho] && <p role="status" class="mt-4 rounded-tarjeta bg-verdor p-3 font-semibold">{MENSAJES[hecho]}</p>}
   <p class="mt-4"><a href="/panel/gastos/nuevo" class="boton-panel">Añadir un ticket</a></p>
@@ -97,4 +102,5 @@ const MENSAJES: Record<string, string> = { borrado: 'Gasto borrado.', proveedor:
   <p class="mt-3 flex flex-wrap gap-3">
     <a class="boton-panel boton-panel-secundario" href={`/api/panel/gastos.csv?anio=${a}`} download>Descargar los gastos de {a}</a>
   </p>
+  </Fragment>}
 </PaginaPanel>

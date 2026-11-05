@@ -199,7 +199,7 @@ const campo = (k: keyof Cliente) => String(c[k] ?? '');
         </>
       )
     }
-    <button class="nv-boton nv-boton-ancho">{despues ? 'Guardar y seguir con la factura' : nuevo ? 'Guardar el cliente' : 'Guardar los cambios'}</button>
+    <button class="nv-boton nv-boton-ancho" data-sin-recargar={!nuevo && !despues ? '' : undefined}>{despues ? 'Guardar y seguir con la factura' : nuevo ? 'Guardar el cliente' : 'Guardar los cambios'}</button>
   </aside>
 </form>
 {

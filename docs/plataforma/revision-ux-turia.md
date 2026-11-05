@@ -44,7 +44,23 @@ Guardar sigue siendo un envío normal del formulario (la página se carga de nue
 
 Detalles: la bienvenida escala desde el centro (diálogo, `scale(0.96)` y opacidad); los pasos entran con un desplazamiento corto (220 ms, ease-out); con «reducir movimiento», solo fundidos. Las pruebas de pantalla de presupuesto y factura recorren los pasos en el móvil (`tests-e2e-turia/pasos.ts`) y hay una nueva, `rediseno.spec.ts`.
 
+## Fase 3: más carácter y lo pendiente
+
+| Antes | Después | Por qué |
+| --- | --- | --- |
+| Barra lateral clara, casi igual que el fondo | Barra lateral en madera oscura (escritorio) con la sección elegida marcada por una veta cobre | Identidad de taller; el trabajo, claro, destaca sobre el marco |
+| Títulos de página pequeños | Títulos grandes y apretados (hasta 40 px) con la descripción a un ancho cómodo | Se sabe de un vistazo dónde estás |
+| Pestañas subrayadas | Píldoras: la elegida, blanca y con su número en cobre | Más fácil de ver y de tocar (48 px) |
+| Buscador sin icono | Lupa dentro del campo | Se reconoce sin leer |
+| Filas de listas con el enlace solo en el título | Toda la fila se pulsa; una franja del color del estado (enviado, aceptado, vencido…) a la izquierda | Objetivo grande y estado visible sin leer la etiqueta |
+| Gastos con el diseño antiguo | Pantalla nueva: cifras del mes, bandeja «Tickets por revisar» destacada con «Revisar», reparto por categorías en barras, lista con iniciales y tarjeta «Para la gestoría» | Era la única sección importante sin el diseño nuevo |
+| Pedido de material, formulario largo en el móvil | Por pasos: Proveedor → Material → Revisar, con el coste sin IVA abajo | Igual que presupuesto y factura |
+| Guardar recargaba siempre la página | Factura en borrador, ficha de cliente y ficha de proveedor se guardan sin recargar: botón «Guardando…», aviso flotante y lo escrito sigue en su sitio. Con errores o cambio de pantalla, se enseña la respuesta del servidor como siempre; sin conexión, aviso de error | Guardar a menudo no cuesta nada |
+| Familias, variantes, decorativos, configurables y portafolio vacíos con una frase | Estado vacío con dibujo, explicación y el botón para llenarlo | Igual que el resto de listas |
+
+Gastos sigue con su pantalla de siempre en Baltaretu (la nueva solo se usa con el diseño nuevo).
+
 ## Pendiente (propuestas)
-1. Guardar sin recargar (presupuesto, factura, cliente) con el aviso flotante.
-2. Gastos, portafolio y catálogo (familias, variantes) con el estado vacío nuevo.
-3. Pedido de material por pasos en el móvil, como presupuesto y factura.
+1. Guardar sin recargar en presupuesto (hoy lleva a su ficha al guardar) y en ajustes.
+2. Ficha de presupuesto y de factura con el mismo lenguaje visual de la lista (franja de estado, acciones agrupadas).
+3. Modo oscuro del panel.

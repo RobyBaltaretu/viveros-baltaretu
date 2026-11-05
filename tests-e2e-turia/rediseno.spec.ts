@@ -44,3 +44,32 @@ test('«¿Cómo funciona?» se abre y explica el concepto', async ({ page }) => 
   await expect(page.getByText(/la receta de un mueble \(el escandallo\)/)).toBeVisible();
   await auditar(page);
 });
+
+test('guardar sin recargar: la ficha del cliente se guarda y la página sigue', async ({ page }, info) => {
+  const nombre = `Sin recargar ${info.project.name} ${Date.now()}`;
+  await page.goto('/panel/facturas/clientes/nuevo');
+  await page.getByLabel('Razón social o nombre completo').fill(nombre);
+  await page.getByRole('button', { name: 'Guardar el cliente' }).click();
+  await page.goto('/panel/facturas/clientes');
+  await page.getByRole('link', { name: nombre }).click();
+  await page.evaluate(() => ((window as unknown as { sigue: boolean }).sigue = true));
+  const url = page.url();
+  await page.getByLabel('Teléfono').fill('+34 600 000 123');
+  await page.getByRole('button', { name: 'Guardar los cambios' }).click();
+  await expect(page.locator('.nv-aviso-flotante')).toContainText('Guardado');
+  expect(await page.evaluate(() => (window as unknown as { sigue?: boolean }).sigue)).toBe(true);
+  expect(page.url()).toBe(url);
+  await expect(page.getByLabel('Teléfono')).toHaveValue('+34 600 000 123');
+  // Se ha guardado de verdad.
+  await page.reload();
+  await expect(page.getByLabel('Teléfono')).toHaveValue('+34 600 000 123');
+});
+
+test('gastos: cifras del mes, bandeja por revisar y descarga para la gestoría', async ({ page }) => {
+  await page.goto('/panel/gastos');
+  await expect(page.getByRole('heading', { level: 1, name: 'Gastos' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Añadir un ticket' }).first()).toBeVisible();
+  await expect(page.getByText(/^Gastado en /)).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Descargar \d{4}$/ })).toHaveAttribute('href', /\/api\/panel\/gastos\.csv\?anio=\d{4}/);
+  await auditar(page);
+});

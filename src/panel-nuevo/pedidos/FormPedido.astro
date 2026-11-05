@@ -44,10 +44,10 @@ const fila = (i: number) => {
     </div>
   )
 }
-<form method="post" id="form-pedido" class="nv-editor" novalidate>
+<form method="post" id="form-pedido" class="nv-editor" data-pasos data-pasos-total="Coste sin IVA" novalidate>
   <input type="hidden" name="filas" value={filas} data-filas />
   <div class="nv-editor-principal">
-    <section class="nv-tarjeta nv-seccion" aria-labelledby="a-quien">
+    <section class="nv-tarjeta nv-seccion" aria-labelledby="a-quien" data-paso="Proveedor">
       <h2 id="a-quien">A quién y para cuándo</h2>
       <div class="nv-rejilla nv-rejilla-2">
         <div class="nv-campo">
@@ -105,7 +105,7 @@ const fila = (i: number) => {
       </div>
     </section>
 
-    <section class="nv-tarjeta" aria-labelledby="que-pides">
+    <section class="nv-tarjeta" aria-labelledby="que-pides" data-paso="Material">
       <div class="nv-cabeza-tarjeta">
         <h2 id="que-pides">Qué pides</h2>
         <span class="nv-gris">El coste solo lo ves tú</span>
@@ -188,7 +188,7 @@ const fila = (i: number) => {
     </section>
   </div>
 
-  <aside class="nv-tarjeta nv-resumen" aria-labelledby="resumen-pedido">
+  <aside class="nv-tarjeta nv-resumen" aria-labelledby="resumen-pedido" data-paso="Revisar">
     <h2 id="resumen-pedido">Resumen</h2>
     <dl class="nv-filas-resumen nv-sin-raya">
       <div>

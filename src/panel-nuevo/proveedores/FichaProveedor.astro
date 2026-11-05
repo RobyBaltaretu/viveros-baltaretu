@@ -186,7 +186,7 @@ const describe = (k: string, ayuda?: string) => [error(k) && `p-${k}-error`, ayu
         </>
       )
     }
-    <button class="nv-boton nv-boton-ancho nv-arriba">
+    <button class="nv-boton nv-boton-ancho nv-arriba" data-sin-recargar={nuevo ? undefined : ''}>
       <Icono nombre="hecho" />
       {nuevo ? 'Guardar el proveedor' : 'Guardar los cambios'}
     </button>
