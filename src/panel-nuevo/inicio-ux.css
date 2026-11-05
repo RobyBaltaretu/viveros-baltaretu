@@ -190,3 +190,42 @@
 .ux-avisos a > span:first-child { width:auto; height:auto; display:block; flex:1; background:transparent; color:inherit; }
 .ux-avisos a small { margin-top:3px; }
 @media (max-width:700px) { .ux-hero { min-height:0; } }
+
+/* ---------- Rediseño UX: lo útil primero ----------
+ * El saludo ocupa menos: la foto acompaña, no empuja el trabajo hacia abajo. */
+.ux-hero { min-height: 168px; }
+@media (min-width:701px) { .ux-saludo { padding: 1.75rem 3rem; } }
+@media (min-width:1400px) { .ux-hero { min-height: 184px; } }
+@media (max-width:1023px) and (min-width:701px) { .ux-hero { min-height: 160px; } }
+@media (max-width:700px) { .ux-hero-foto { height: 88px; } }
+
+/* Primeros pasos: el siguiente paso destaca; los hechos se apagan. */
+.ux-pasos ol { margin: .25rem 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.ux-pasos-barra { width: 100%; height: 6px; margin: .25rem 0 .75rem; appearance: none; border: 0; border-radius: 999px; background: #ece6de; overflow: hidden; }
+.ux-pasos-barra::-webkit-progress-bar { background: #ece6de; border-radius: 999px; }
+.ux-pasos-barra::-webkit-progress-value { background: #64804e; border-radius: 999px; transition: width 400ms cubic-bezier(0.23, 1, 0.32, 1); }
+.ux-pasos-barra::-moz-progress-bar { background: #64804e; border-radius: 999px; }
+.ux-paso { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 10px 12px; border-radius: 14px; color: #282520; text-decoration: none; }
+.ux-paso-numero { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 999px; border: 1.5px solid #c9bcab; font-weight: 600; font-size: .875rem; color: #6b5a47; font-variant-numeric: tabular-nums; }
+.ux-paso-texto { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.ux-paso-texto strong { font-weight: 600; }
+.ux-paso-texto span { font-size: .875rem; color: #6f675d; }
+.ux-paso-hecho .ux-paso-numero { border-color: #64804e; background: #64804e; color: #fff; }
+.ux-paso-hecho .ux-paso-texto strong { color: #6f675d; font-weight: 500; }
+.ux-paso-siguiente { background: #f3ede6; }
+.ux-paso-siguiente .ux-paso-numero { border-color: #7a5230; background: #7a5230; color: #fff; }
+.ux-paso-ir { display: inline-flex; align-items: center; gap: 4px; flex: none; font-weight: 600; color: #7a5230; }
+@media (hover: hover) and (pointer: fine) { .ux-paso:hover { background: #f6f2ed; } .ux-paso-siguiente:hover { background: #ede5dc; } }
+
+/* Por hacer: la fila entera se pulsa (objetivo grande en el móvil), sin un botón por fila. */
+.ux-pendientes .nv-tarea { padding: 0; border-bottom: 1px solid #eee9e2; }
+.ux-pendientes .nv-tarea:last-child { border-bottom: 0; }
+.nv-tarea-fila { display: flex; align-items: center; gap: .875rem; width: 100%; min-height: 56px; padding: .75rem .5rem; border-radius: 12px; color: inherit; text-decoration: none; }
+.nv-tarea-accion { display: inline-flex; align-items: center; gap: 2px; flex: none; font-size: .875rem; font-weight: 600; color: #7a5230; }
+@media (hover: hover) and (pointer: fine) { .nv-tarea-fila:hover { background: #f6f2ed; } }
+@media (max-width:700px) { .nv-tarea-accion { font-size: 0; gap: 0; } .nv-tarea-texto strong { font-size: .95rem; line-height: 1.3; } }
+.ux-mas-tareas summary { min-height: 48px; display: flex; align-items: center; padding: 0 .5rem; font-weight: 600; color: #7a5230; cursor: pointer; list-style: none; }
+.ux-mas-tareas summary::-webkit-details-marker { display: none; }
+.ux-mas-tareas summary::after { content: ''; width: 8px; height: 8px; margin-left: 10px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1); }
+.ux-mas-tareas[open] summary::after { transform: translateY(2px) rotate(-135deg); }
+@media (max-width:700px) { .ux-paso-ir { font-size: 0; gap: 0; } .ux-paso { gap: 12px; padding: 10px; } .ux-paso-texto span { line-height: 1.35; } }

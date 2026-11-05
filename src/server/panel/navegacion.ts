@@ -219,22 +219,22 @@ export const MENU: SeccionMenu[] = [
   {
     // Carpintería: interpretación de bocetos, revisión de cotas y render.
     href: "/panel/studio-bocetos",
-    texto: "Studio · Bocetos",
+    texto: "Diseñar con boceto",
     permiso: "editar",
     zona: "plantas",
     icono: "camara",
     escena: "fotos",
-    descripcion: "Diseña a partir de un boceto y una fotografía del espacio",
+    descripcion: "Del boceto en papel a una imagen real del mueble en su sitio",
   },
   {
     // Carpintería: simulador de reformas en vivo con IA.
     href: "/panel/simulador",
-    texto: "Simulador IA",
+    texto: "Probar acabados",
     permiso: "editar",
     zona: "plantas",
     icono: "camara",
     escena: "fotos",
-    descripcion: "Simula reformas en vivo con IA fotorrealista",
+    descripcion: "Cambia suelos, paredes y frentes sobre una foto",
   },
   {
     href: "/panel/gastos",

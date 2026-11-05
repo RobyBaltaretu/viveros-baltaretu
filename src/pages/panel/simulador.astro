@@ -32,10 +32,10 @@ const generadas = s ? await s.repos.usoAsistente.obtener('studio:generadas',mesD
 const textoCuota = (c: typeof cuota) => `${c.usos} de ${c.limite} usadas · quedan ${c.quedan}`;
 ---
 
-<PaginaPanel titulo="Simulador de Reformas en Vivo (IA)" permiso="editar" ancho="amplio">
+<PaginaPanel titulo="Probar acabados" permiso="editar" ancho="amplio">
   <style is:inline set:html={estilosSimulador + studioCss}></style>
   <div class="simulador-wrapper studio space-y-6">
-    <header class="studio-bar"><div><h1>Turia Studio</h1><p>Diseña, visualiza y prepara tu reforma.</p></div><div class="studio-actions"><button type="button" id="studio-save" class="studio-button">Guardar borrador</button><button type="button" id="studio-reset" class="studio-button">Nueva simulación</button></div><p id="studio-status" role="status"></p></header>
+    <header class="studio-bar"><div><h1>Probar acabados</h1><p>Haz una foto y prueba suelos, paredes y frentes antes de decidir.</p></div><div class="studio-actions"><button type="button" id="studio-save" class="studio-button">Guardar borrador</button><button type="button" id="studio-reset" class="studio-button">Nueva simulación</button></div><p id="studio-status" role="status"></p></header>
     <nav class="studio-steps" aria-label="Pasos del diseño">{['Espacio','Materiales','Revisar'].map((t,i)=><button type="button" data-studio-step={i} aria-current={i===0?'step':undefined}>{i+1} · {t}</button>)}</nav>
     <!-- Simulaciones del mes: tope duro en D1 (aviso desde el 80 %, bloqueo al 100 %) -->
     <section

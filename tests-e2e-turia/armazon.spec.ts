@@ -17,11 +17,11 @@ test('«Crear» abre el menú y lleva a un presupuesto nuevo', async ({ page, is
 test('la sección actual se marca y todas están a mano', async ({ page, isMobile }) => {
   await page.goto('/panel/facturas');
   if (isMobile) {
-    await expect(page.locator('.nv-inferior').getByRole('link', { name: 'Documentos' })).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('.nv-inferior').getByRole('link', { name: 'Ventas' })).toHaveAttribute('aria-current', 'page');
   } else {
     const lateral = page.locator('.nv-lateral');
     await expect(lateral.getByRole('link', { name: 'Facturas' })).toHaveAttribute('aria-current', 'page');
-    for (const s of ['Presupuestos', 'Clientes', 'Portafolio', 'Compras y gastos', 'Informes']) await expect(lateral.getByRole('link', { name: s })).toBeVisible();
+    for (const s of ['Presupuestos', 'Clientes', 'Portafolio', 'Gastos', 'Informes']) await expect(lateral.getByRole('link', { name: s })).toBeVisible();
   }
   await auditar(page);
   await controlesGrandes(page);
