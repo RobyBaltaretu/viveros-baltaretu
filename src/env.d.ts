@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly PUBLIC_GA4_ID?: string;
   /** Inyectadas en astro.config.mjs (ver src/lib/catalogo/index.ts). */
   readonly WORKERS_CI_BRANCH: string;
+  readonly WORKERS_CI_COMMIT_SHA: string;
   readonly PRODUCTION_BRANCH: string;
   /** Cliente de la plataforma y su configuración en JSON (src/plataforma/actual.ts). */
   readonly CLIENTE_ID: string;

@@ -1,5 +1,5 @@
 {
-  "version": 17,
+  "version": 21,
   "tablas": {
     "adjuntos": {
       "columnas": [
@@ -1871,6 +1871,271 @@
       ],
       "sql": "CREATE TABLE publicaciones ( id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT NOT NULL, email TEXT NOT NULL, estado TEXT NOT NULL CHECK (estado IN ('lanzada', 'sin-cambios', 'error')), detalle TEXT NOT NULL DEFAULT '' , en_web TEXT)"
     },
+    "studio_boceto_archivos": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "boceto_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "cliente_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "clase",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "objeto_r2",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "mime",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "tamano",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE studio_boceto_archivos ( id TEXT PRIMARY KEY, boceto_id TEXT NOT NULL, cliente_id TEXT NOT NULL, clase TEXT NOT NULL CHECK (clase IN ('espacio','boceto','resultado','referencia')), objeto_r2 TEXT NOT NULL UNIQUE, mime TEXT NOT NULL CHECK (mime IN ('image/jpeg','image/png','image/webp')), tamano INTEGER NOT NULL CHECK (tamano > 0 AND tamano <= 6000000), creado TEXT NOT NULL, FOREIGN KEY (boceto_id) REFERENCES studio_bocetos(id) )"
+    },
+    "studio_boceto_versiones": {
+      "columnas": [
+        {
+          "nombre": "boceto_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "revision",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 2
+        },
+        {
+          "nombre": "interpretacion",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE studio_boceto_versiones ( boceto_id TEXT NOT NULL, revision INTEGER NOT NULL, interpretacion TEXT NOT NULL, creado TEXT NOT NULL, creado_por TEXT NOT NULL, PRIMARY KEY (boceto_id,revision), FOREIGN KEY (boceto_id) REFERENCES studio_bocetos(id) )"
+    },
+    "studio_bocetos": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "cliente_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "titulo",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "estado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "interpretacion",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "revision",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "1",
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado_por",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "origen_boceto_id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE studio_bocetos ( id TEXT PRIMARY KEY, cliente_id TEXT NOT NULL, titulo TEXT NOT NULL, estado TEXT NOT NULL CHECK (estado IN ('borrador','pendiente','validada','archivada')), interpretacion TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 1 CHECK (revision > 0), creado TEXT NOT NULL, actualizado TEXT NOT NULL, actualizado_por TEXT NOT NULL , origen_boceto_id TEXT)"
+    },
+    "studio_generaciones": {
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 1
+        },
+        {
+          "nombre": "boceto_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "cliente_id",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "revision",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "estado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "solicitud",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "resultado_archivo_id",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "coste_estimado_cent",
+          "tipo": "INTEGER",
+          "obligatoria": true,
+          "porDefecto": "0",
+          "clave": 0
+        },
+        {
+          "nombre": "error",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "creado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "actualizado",
+          "tipo": "TEXT",
+          "obligatoria": true,
+          "porDefecto": null,
+          "clave": 0
+        },
+        {
+          "nombre": "clave_idempotencia",
+          "tipo": "TEXT",
+          "obligatoria": false,
+          "porDefecto": null,
+          "clave": 0
+        }
+      ],
+      "sql": "CREATE TABLE studio_generaciones ( id TEXT PRIMARY KEY, boceto_id TEXT NOT NULL, cliente_id TEXT NOT NULL, revision INTEGER NOT NULL, estado TEXT NOT NULL CHECK (estado IN ('pendiente','procesando','completada','fallida')), solicitud TEXT NOT NULL, resultado_archivo_id TEXT, coste_estimado_cent INTEGER NOT NULL DEFAULT 0, error TEXT, creado TEXT NOT NULL, actualizado TEXT NOT NULL, clave_idempotencia TEXT, FOREIGN KEY (boceto_id) REFERENCES studio_bocetos(id) )"
+    },
     "tickets": {
       "columnas": [
         {
@@ -2085,6 +2350,36 @@
       "nombre": "presupuestos_estado",
       "tabla": "presupuestos",
       "sql": "CREATE INDEX presupuestos_estado ON presupuestos (estado, fecha)"
+    },
+    {
+      "nombre": "studio_boceto_archivos_ref",
+      "tabla": "studio_boceto_archivos",
+      "sql": "CREATE INDEX studio_boceto_archivos_ref ON studio_boceto_archivos(boceto_id,clase)"
+    },
+    {
+      "nombre": "studio_bocetos_cliente_fecha",
+      "tabla": "studio_bocetos",
+      "sql": "CREATE INDEX studio_bocetos_cliente_fecha ON studio_bocetos(cliente_id,actualizado DESC)"
+    },
+    {
+      "nombre": "studio_bocetos_origen",
+      "tabla": "studio_bocetos",
+      "sql": "CREATE INDEX studio_bocetos_origen ON studio_bocetos(cliente_id,origen_boceto_id)"
+    },
+    {
+      "nombre": "studio_generaciones_activa",
+      "tabla": "studio_generaciones",
+      "sql": "CREATE UNIQUE INDEX studio_generaciones_activa ON studio_generaciones(cliente_id,boceto_id,revision) WHERE estado IN ('pendiente','procesando')"
+    },
+    {
+      "nombre": "studio_generaciones_boceto",
+      "tabla": "studio_generaciones",
+      "sql": "CREATE INDEX studio_generaciones_boceto ON studio_generaciones(boceto_id,creado DESC)"
+    },
+    {
+      "nombre": "studio_generaciones_clave",
+      "tabla": "studio_generaciones",
+      "sql": "CREATE UNIQUE INDEX studio_generaciones_clave ON studio_generaciones(cliente_id,boceto_id,clave_idempotencia)"
     }
   ]
 }

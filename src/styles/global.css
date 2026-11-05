@@ -7,6 +7,8 @@
 @source not '../pages/api/panel/simulador.ts';
 @source not '../services';
 @source not '../server/simulador';
+/* Turia Studio (solo carpintería): sus clases no deben cambiar el CSS de Baltaretu. */
+@source not '../pages/panel/studio-bocetos.astro';
 @source not '../../docs/ui-ux-audit-proposal.md';
 
 /*

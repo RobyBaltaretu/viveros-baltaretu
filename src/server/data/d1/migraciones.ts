@@ -464,6 +464,71 @@ export const MIGRACIONES: { version: number; nombre: string; sql: string[] }[] =
       )`,
     ],
   },
+  {
+    version: 18,
+    nombre: 'Turia Studio bocetos multimodales y versiones',
+    sql: [
+      `CREATE TABLE studio_bocetos (
+        id TEXT PRIMARY KEY,
+        cliente_id TEXT NOT NULL,
+        titulo TEXT NOT NULL,
+        estado TEXT NOT NULL CHECK (estado IN ('borrador','pendiente','validada','archivada')),
+        interpretacion TEXT NOT NULL,
+        revision INTEGER NOT NULL DEFAULT 1 CHECK (revision > 0),
+        creado TEXT NOT NULL,
+        actualizado TEXT NOT NULL,
+        actualizado_por TEXT NOT NULL
+      )`,
+      `CREATE INDEX studio_bocetos_cliente_fecha ON studio_bocetos(cliente_id,actualizado DESC)`,
+      `CREATE TABLE studio_boceto_versiones (
+        boceto_id TEXT NOT NULL,
+        revision INTEGER NOT NULL,
+        interpretacion TEXT NOT NULL,
+        creado TEXT NOT NULL,
+        creado_por TEXT NOT NULL,
+        PRIMARY KEY (boceto_id,revision),
+        FOREIGN KEY (boceto_id) REFERENCES studio_bocetos(id)
+      )`,
+      `CREATE TABLE studio_boceto_archivos (
+        id TEXT PRIMARY KEY,
+        boceto_id TEXT NOT NULL,
+        cliente_id TEXT NOT NULL,
+        clase TEXT NOT NULL CHECK (clase IN ('espacio','boceto','resultado','referencia')),
+        objeto_r2 TEXT NOT NULL UNIQUE,
+        mime TEXT NOT NULL CHECK (mime IN ('image/jpeg','image/png','image/webp')),
+        tamano INTEGER NOT NULL CHECK (tamano > 0 AND tamano <= 6000000),
+        creado TEXT NOT NULL,
+        FOREIGN KEY (boceto_id) REFERENCES studio_bocetos(id)
+      )`,
+      `CREATE INDEX studio_boceto_archivos_ref ON studio_boceto_archivos(boceto_id,clase)`,
+      `CREATE TABLE studio_generaciones (
+        id TEXT PRIMARY KEY,
+        boceto_id TEXT NOT NULL,
+        cliente_id TEXT NOT NULL,
+        revision INTEGER NOT NULL,
+        estado TEXT NOT NULL CHECK (estado IN ('pendiente','procesando','completada','fallida')),
+        solicitud TEXT NOT NULL,
+        resultado_archivo_id TEXT,
+        coste_estimado_cent INTEGER NOT NULL DEFAULT 0,
+        error TEXT,
+        creado TEXT NOT NULL,
+        actualizado TEXT NOT NULL,
+        FOREIGN KEY (boceto_id) REFERENCES studio_bocetos(id)
+      )`,
+      `CREATE INDEX studio_generaciones_boceto ON studio_generaciones(boceto_id,creado DESC)`,
+    ],
+  },
+  { version: 19, nombre: 'Studio: exclusión de renders simultáneos', sql: [
+    `CREATE UNIQUE INDEX studio_generaciones_activa ON studio_generaciones(cliente_id,boceto_id,revision) WHERE estado IN ('pendiente','procesando')`,
+  ] },
+  { version: 20, nombre: 'Studio: identificador estable de solicitud', sql: [
+    `ALTER TABLE studio_generaciones ADD COLUMN clave_idempotencia TEXT`,
+    `CREATE UNIQUE INDEX studio_generaciones_clave ON studio_generaciones(cliente_id,boceto_id,clave_idempotencia)`,
+  ] },
+  { version: 21, nombre: 'Studio: trazabilidad de revisiones derivadas', sql: [
+    `ALTER TABLE studio_bocetos ADD COLUMN origen_boceto_id TEXT`,
+    `CREATE INDEX studio_bocetos_origen ON studio_bocetos(cliente_id,origen_boceto_id)`,
+  ] },
 ];
 
 export const VERSION_ESQUEMA = MIGRACIONES[MIGRACIONES.length - 1].version;

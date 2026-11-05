@@ -86,6 +86,7 @@ export default defineConfig({
       // Workers Builds solo expone estas variables al proceso de build (Node). El
       // prerender corre en workerd, así que se inyectan como constantes.
       'import.meta.env.WORKERS_CI_BRANCH': JSON.stringify(process.env.WORKERS_CI_BRANCH ?? ''),
+      'import.meta.env.WORKERS_CI_COMMIT_SHA': JSON.stringify(process.env.WORKERS_CI_COMMIT_SHA ?? ''),
       'import.meta.env.PRODUCTION_BRANCH': JSON.stringify(process.env.PRODUCTION_BRANCH ?? 'main'),
       // Cliente del build, ya validado (src/plataforma/actual.ts).
       'import.meta.env.CLIENTE_ID': JSON.stringify(cliente.id),

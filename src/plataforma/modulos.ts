@@ -38,6 +38,16 @@ const RUTAS: [prefijo: string, modulo: Modulo, sector?: Sector][] = [
   // Pedidos de material a proveedor.
   ['/panel/pedidos', 'pedidosProveedor', 'carpinteria'],
   // Simulador de reformas en vivo con IA.
+  ['/panel/studio-bocetos', 'simulador', 'carpinteria'],
+  // Una por una: la comparación es por ruta exacta o «ruta/…» (un prefijo «studio-» no casaba con ninguna y quedaban en el núcleo, también en Baltaretu).
+  ['/api/panel/studio-archivos', 'simulador', 'carpinteria'],
+  ['/api/panel/studio-bocetos', 'simulador', 'carpinteria'],
+  ['/api/panel/studio-despiece', 'simulador', 'carpinteria'],
+  ['/api/panel/studio-duplicar', 'simulador', 'carpinteria'],
+  ['/api/panel/studio-generar', 'simulador', 'carpinteria'],
+  ['/api/panel/studio-interpretar', 'simulador', 'carpinteria'],
+  ['/api/panel/studio-materiales', 'simulador', 'carpinteria'],
+  ['/api/panel/studio-recuperar', 'simulador', 'carpinteria'],
   ['/panel/simulador', 'simulador', 'carpinteria'],
   ['/api/panel/simulador', 'simulador', 'carpinteria'],
   ['/panel/gastos', 'gastos'],

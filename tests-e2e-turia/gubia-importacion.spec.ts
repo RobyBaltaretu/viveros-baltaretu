@@ -55,6 +55,6 @@ test('Gubia: PDF local se convierte en texto para Groq y no se envía el PDF com
   await auditar(page);
   page.once('dialog',d=>d.accept());
   await page.getByRole('button',{name:'Crear artículos seleccionados'}).click();
-  await expect(page.getByRole('status')).toContainText('1 nuevos');
+  await expect(page.locator('#gubia-estado')).toContainText('1 nuevos');
   expect(guardados).toBe(1);
 });

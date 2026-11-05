@@ -42,10 +42,11 @@ export async function abrirPDFLocal(file: File): Promise<DocumentoLocal> {
     async pagina(numero: number) {
       if (!Number.isInteger(numero) || numero < 1 || numero > doc.numPages) throw new Error('Página no válida.');
       const page = await doc.getPage(numero);
+      // eslint-disable-next-line no-useless-assignment -- valor por defecto si fallan todos los lectores de PDF
       let texto = '';
       let errorTexto: string | undefined;
       let variantes: Array<Record<string,unknown>> = [];
-      let muestras: MuestraPDF[] = [];
+      const muestras: MuestraPDF[] = [];
       try {
         // En Safari/iOS, los errores de un parser secundario no deben
         // invalidar el texto que PDF.js ya haya conseguido extraer.

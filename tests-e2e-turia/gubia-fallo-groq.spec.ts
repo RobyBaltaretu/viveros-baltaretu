@@ -22,8 +22,8 @@ test('Gubia: si Groq Free falla al inicio, conserva candidatos del PDF local sin
     name:'onesta.pdf',mimeType:'application/pdf',buffer:Buffer.from(await pdf.save()),
   });
   await page.getByRole('button',{name:'Analizar PDF con Gubia'}).click();
-  await expect(page.getByRole('status')).toContainText('Groq no ha podido analizar el documento',{timeout:30000});
-  await expect(page.getByRole('status')).toContainText('Groq Free ha alcanzado el límite');
+  await expect(page.locator('#gubia-estado')).toContainText('Groq no ha podido analizar el documento',{timeout:30000});
+  await expect(page.locator('#gubia-estado')).toContainText('Groq Free ha alcanzado el límite');
   await expect(page.locator('.gubia-item')).toHaveCount(4);
   expect(llamadas).toBe(1);
   await expect(page.getByRole('heading',{name:'2. Revisa los materiales'})).toBeVisible();
