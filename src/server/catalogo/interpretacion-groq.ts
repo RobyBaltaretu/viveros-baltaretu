@@ -1,6 +1,6 @@
 import { z } from 'astro/zod';
 import {
-  candidatoProveedor, depurarCandidatos, ErrorImportacion,
+  candidatoProveedor, depurarConCuenta, ErrorImportacion,
   type CandidatoProveedor, MAX_PAGINAS_PDF,
 } from './importacion-proveedor.ts';
 
@@ -36,7 +36,7 @@ export function validarPaginas(datos: unknown): Array<z.infer<typeof paginaExtra
   return lista;
 }
 
-const ficha = 'Campos obligatorios: categoria, nombre, referencia, codigoDecor, acabado, soporte, espesorMm (número o null), formato, unidad, colorHex (hex o null), veta, brillo y pagina. Añade cuando el documento lo declare: familia, codigoFamilia, subcategoria, tipoProducto, coleccion, codigoVariante, tratamiento, calidad, formatoUnidad, unidadesPaquete, unidadCompra, unidadConsumo, unidadPresupuesto, factorConversion, disponibilidad, propiedades tipadas, aplicaciones, confianza, revision, evidencia, metodo="groq-texto" y configuracion {parametros, reglas, bajoProyecto}. Datos desconocidos: cadena vacía, objeto vacío o null. No generes costes ni precios.';
+const ficha = 'Cada ficha lleva SIEMPRE categoria, nombre y pagina. Añade solo los campos que el documento declare (omite los vacíos para ahorrar espacio): referencia, codigoDecor, acabado, soporte, espesorMm (número en mm), formato (p. ej. "2440x1220"), unidad (ud, m², ml, m³, kg, l), unidadesPaquete, familia, codigoFamilia, subcategoria, tipoProducto, coleccion, codigoVariante, tratamiento, calidad, formatoUnidad, unidadCompra, disponibilidad, propiedades, aplicaciones, confianza (0-1), evidencia (el texto corto del que sale), colorHex, veta, brillo y configuracion {parametros, reglas, bajoProyecto}. Si el documento da un PRECIO de tarifa para ese artículo, ponlo en propiedades.precioTarifa (número, en euros, tal cual) y su unidad en propiedades.unidadPrecio; no calcules ni inventes precios.';
 const categorias = 'tableros, macizos, chapas, cantos, encimeras, cristal, herrajes, tiradores, accesorios, iluminacion, consumibles, acabados';
 const reglas = [
   'Eres Gubia: interpretas EXCLUSIVAMENTE fichas técnicas de productos de proveedores de carpintería.',
@@ -56,26 +56,37 @@ const reglas = [
   'Categorías admitidas: ' + categorias + '.',
   'No inventes códigos, precios, colores, imágenes o medidas no declaradas.',
   'Una muestra de color sin valor verificable tiene colorHex null. El color devuelto es solo aproximación digital.',
-  'No más de 90 fichas por bloque.',
+  'No más de 90 fichas por bloque. Si una tabla tiene muchas filas, cada fila con código es una ficha; no resumas.',
+  'Cada catálogo es distinto: lee cabeceras de tabla, leyendas y notas al pie para saber qué es cada columna (código, medida, espesor, acabado, precio, unidad).',
   ficha,
 ].join('\n');
 
-function normalizarGroq(body: unknown, paginas: number[]): CandidatoProveedor[] {
+/**
+ * Respuesta cortada por el límite de tokens (catálogos densos): se aprovechan
+ * las fichas completas hasta el último «}» cerrado de la lista.
+ */
+export function repararJsonCortado(texto: string): unknown {
+  const inicio = texto.indexOf('[');
+  if (inicio < 0) return null;
+  for (let fin = texto.lastIndexOf('}'); fin > inicio; fin = texto.lastIndexOf('}', fin - 1)) {
+    try { return { articulos: JSON.parse(texto.slice(inicio, fin + 1) + ']') }; } catch { /* sigue buscando un cierre válido */ }
+  }
+  return null;
+}
+
+function normalizarGroq(body: unknown, paginas: number[]): { lista: CandidatoProveedor[]; descartadas: number } {
   const contenido = (body as { choices?: Array<{message?:{content?:string|null}}> } | null)?.choices?.[0]?.message?.content;
   if (typeof contenido !== 'string') throw new ErrorImportacion('Groq no ha devuelto fichas interpretables.', 502);
   let obj: unknown;
   try { obj = JSON.parse(contenido); }
-  catch { throw new ErrorImportacion('Groq ha devuelto un resultado JSON incompleto. Reintenta este bloque.', 502); }
-  const parsed = salida.safeParse(obj);
-  if (!parsed.success) {
-    // Rechazar todo el bloque no debería ocultar productos válidos del resto.
-    if (!obj || typeof obj !== 'object' || !('articulos' in obj) || !Array.isArray(obj.articulos))
-      throw new ErrorImportacion('Groq no ha devuelto el formato de materiales esperado.', 502);
-    return depurarCandidatos(obj.articulos,Math.min(...paginas),Math.max(...paginas))
-      .filter(a=>paginas.includes(a.pagina));
-  }
-  return depurarCandidatos(parsed.data.articulos,Math.min(...paginas),Math.max(...paginas))
-    .filter(a=>paginas.includes(a.pagina));
+  catch { obj = repararJsonCortado(contenido); }
+  // Lista suelta o con otra clave («materiales», «productos»…): también vale.
+  const lista = Array.isArray(obj) ? obj : obj && typeof obj === 'object'
+    ? (salida.safeParse(obj).success ? (obj as { articulos: unknown[] }).articulos : Object.values(obj as Record<string, unknown>).find(Array.isArray))
+    : null;
+  if (!Array.isArray(lista)) throw new ErrorImportacion('Groq ha devuelto un resultado incompleto. Reintenta este bloque.', 502);
+  const r = depurarConCuenta(lista, Math.min(...paginas), Math.max(...paginas));
+  return { lista: r.lista.filter((a) => paginas.includes(a.pagina)), descartadas: r.descartadas };
 }
 
 const numeroCabecera = (valor: string | null): number | null => {
@@ -157,7 +168,7 @@ export async function interpretarTextoConGroq(
   proveedor: string,
   paginasDesconocidas: unknown,
   opciones: {apiKey:string; fetch?:typeof fetch},
-): Promise<{articulos:CandidatoProveedor[]; paginasProcesadas:number[]; limites:LimitesGroq}> {
+): Promise<{articulos:CandidatoProveedor[]; descartadas:number; paginasProcesadas:number[]; limites:LimitesGroq}> {
   const paginas=validarPaginas(paginasDesconocidas);
   if (!proveedor.trim() || proveedor.length>80) throw new ErrorImportacion('Indica un proveedor válido.');
   const datos=paginas.map(p=>({pagina:p.pagina,texto:p.texto})); // nunca llega el PDF al servidor
@@ -169,10 +180,11 @@ export async function interpretarTextoConGroq(
     ],
     response_format:{type:'json_object'},
     reasoning_effort:'low',
-    max_completion_tokens:3500,
+    max_completion_tokens:4000,
     temperature:0.1,
   },opciones.apiKey,opciones.fetch??fetch);
-  return {articulos:normalizarGroq(response.body,paginas.map(p=>p.pagina)),paginasProcesadas:paginas.map(p=>p.pagina),limites:response.limites};
+  const r=normalizarGroq(response.body,paginas.map(p=>p.pagina));
+  return {articulos:r.lista,descartadas:r.descartadas,paginasProcesadas:paginas.map(p=>p.pagina),limites:response.limites};
 }
 
 export async function interpretarMuestraConGroq(
@@ -199,5 +211,5 @@ export async function interpretarMuestraConGroq(
     reasoning_effort:'none',
     max_completion_tokens:3200,
   },opciones.apiKey,opciones.fetch??fetch);
-  return normalizarGroq(response.body,[numero]);
+  return normalizarGroq(response.body,[numero]).lista;
 }

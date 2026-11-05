@@ -96,6 +96,7 @@ const DE_LA_CARPINTERIA: Record<string, Modulo> = {
   crear_presupuesto_cliente: 'presupuestosCliente',
   gestionar_presupuesto_cliente: 'presupuestosCliente',
   buscar_catalogo: 'materiales',
+  calcular_trabajo: 'materiales',
   cambiar_articulos: 'materiales',
   ver_proveedores: 'proveedores',
   guardar_proveedor: 'proveedores',

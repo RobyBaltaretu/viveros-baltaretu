@@ -48,10 +48,10 @@ describe('IA por cliente: modelos del asistente', () => {
     expect((await modelosDe({ AI: ai, GROQ_API_KEY: 'k' })).map((m) => m.nombre)).toEqual(con.map((m) => m.nombre));
   });
 
-  it('Turia: Groq primero (con aviso de límite) y Workers AI de respaldo; sin clave, solo Workers AI', async () => {
+  it('Turia: Groq GPT-OSS primero, Llama de respaldo en Groq y Workers AI detrás; sin clave, solo Workers AI', async () => {
     const ia = iaDe(esquemaCliente.parse(turia));
     const con = await modelosDe({ AI: ai, GROQ_API_KEY: 'k' }, ia);
-    expect(con.map((m) => m.nombre)).toEqual(['groq gpt-oss-120b', 'glm-4.7-flash', 'gemma-4-26b']);
+    expect(con.map((m) => m.nombre)).toEqual(['groq gpt-oss-120b', 'groq llama-4-scout-17b-16e-instruct', 'groq llama-3.3-70b-versatile', 'glm-4.7-flash', 'gemma-4-26b']);
     expect(con[0]!.avisoLimite).toMatch(/demasiadas peticiones/);
     expect((await modelosDe({ AI: ai }, ia)).map((m) => m.nombre)).toEqual(['glm-4.7-flash', 'gemma-4-26b']);
     expect(await modelosDe({}, ia)).toEqual([]);

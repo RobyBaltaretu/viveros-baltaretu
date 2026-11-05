@@ -73,3 +73,25 @@ test('gastos: cifras del mes, bandeja por revisar y descarga para la gestoría',
   await expect(page.getByRole('link', { name: /^Descargar \d{4}$/ })).toHaveAttribute('href', /\/api\/panel\/gastos\.csv\?anio=\d{4}/);
   await auditar(page);
 });
+
+test('Gubia: adjuntar la foto de un ticket la deja en Gastos por revisar', async ({ page }) => {
+  await page.goto('/panel/asistente');
+  await auditar(page);
+  const png = Buffer.from(
+    await page.evaluate(() => {
+      const c = document.createElement('canvas');
+      c.width = 200;
+      c.height = 300;
+      const k = c.getContext('2d')!;
+      k.fillStyle = '#fff';
+      k.fillRect(0, 0, 200, 300);
+      return c.toDataURL('image/png').split(',')[1]!;
+    }),
+    'base64',
+  );
+  await page.locator('[data-adjunto]').setInputFiles({ name: 'ticket.png', mimeType: 'image/png', buffer: png });
+  await expect(page.locator('[data-adjunto-ficha]')).toContainText('se leerá como ticket');
+  await page.getByRole('button', { name: 'Enviar' }).click();
+  await expect(page.locator('#conversacion')).toContainText(/Tickets por revisar/);
+  await expect(page.locator('#conversacion')).toContainText('📎');
+});
