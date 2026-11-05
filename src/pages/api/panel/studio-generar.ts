@@ -12,6 +12,7 @@ import type { InterpretacionBoceto } from '../../../server/simulador/boceto.ts';
 import { URL_GEMINI } from '../../../services/renovationAiService.ts';
 import { tipoDeImagen } from '../../../server/panel/fotos.ts';
 import { sentenciasStudio } from '../../../server/data/d1/studio.ts';
+import { variantesStudio } from '../../../server/simulador/materiales-studio.ts';
 export const prerender=false;
 type Bucket={get(key:string):Promise<{arrayBuffer():Promise<ArrayBuffer>}|null>;put(key:string,data:Uint8Array):Promise<unknown>;delete(key:string):Promise<void>};
 const e=env as unknown as {DB:BaseD1;IMAGENES_PRIVADAS?:Bucket};
@@ -35,7 +36,8 @@ export const POST:APIRoute=async({locals,request})=>{
   if(!row)return json(409,{ok:false,error:'Valida el boceto antes de generar'});
   const interpretacion=JSON.parse(row.interpretacion) as InterpretacionBoceto;
   if(interpretacion.modulos.some(m=>m.piezas.some(p=>!p.catalogoVarianteId)))return json(409,{ok:false,error:'Asigna materiales a todas las piezas'});
-  const [variantes,articulos]=await Promise.all([sesion.repos.catalogo.variantes?.()??Promise.resolve([]),sesion.repos.catalogo.articulos()]);
+  const [variantesCatalogo,articulos]=await Promise.all([sesion.repos.catalogo.variantes?.()??Promise.resolve([]),sesion.repos.catalogo.articulos()]);
+  const variantes=variantesStudio(articulos,variantesCatalogo);
   const porVariante=new Map(variantes.map(v=>[v.id,v]));
   const porArticulo=new Map(articulos.map(a=>[a.id,a]));
   const acabados=interpretacion.modulos.flatMap(m=>m.piezas.map(p=>{

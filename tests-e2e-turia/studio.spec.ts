@@ -75,6 +75,14 @@ test('Studio: crear, subir fotos, leer el boceto, revisar medidas y recuperar el
   expect(await page.locator('#plano').innerHTML()).not.toBe(svgAntes);
   await page.getByRole('button', { name: 'Guardar cambios' }).click();
   await expect(page.locator('#estado-boceto')).toHaveText('Cambios guardados.');
+  // No se aprueba con medidas aproximadas sin confirmar; un botón las da por buenas.
+  await page.getByRole('button', { name: 'Aprobar el diseño' }).click();
+  await expect(page.locator('#estado-boceto')).toContainText('Aproximada (IA)');
+  page.once('dialog', (d) => d.accept());
+  await page.getByRole('button', { name: 'Dar por buenas las medidas de la IA' }).click();
+  await expect(page.getByRole('button', { name: 'Dar por buenas las medidas de la IA' })).toBeHidden();
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
+  await expect(page.locator('#estado-boceto')).toHaveText('Cambios guardados.');
 
   // Al recargar, el proyecto sigue en la lista con sus fotos y medidas.
   await page.reload();
@@ -87,7 +95,11 @@ test('Studio: crear, subir fotos, leer el boceto, revisar medidas y recuperar el
   expect(errores).toEqual([]);
 });
 
-test('Studio: sin IA, se ponen las medidas a mano', async ({ page }) => {
+test('Studio: sin IA, se ponen las medidas a mano y se elige el material del catálogo', async ({ page }) => {
+  // Catálogo de partida: artículos sin variantes, que también se pueden elegir.
+  await page.goto('/panel/catalogo');
+  const cargar = page.getByRole('button', { name: 'Cargar el catálogo de partida' });
+  if (await cargar.isVisible()) await cargar.click();
   await page.goto('/panel/studio-bocetos');
   await expect(page.locator('#estado-boceto')).toHaveText(/Turia Studio listo/);
   await page.getByLabel('Nombre del proyecto').fill(`Armario ${Date.now()}`);
@@ -103,6 +115,16 @@ test('Studio: sin IA, se ponen las medidas a mano', async ({ page }) => {
   await expect(page.locator('#aviso-plano')).toHaveText('Alzado con todas las medidas.');
   await page.getByRole('button', { name: 'Añadir una pieza' }).click();
   await expect(page.locator('#modulos .st-pieza')).toHaveCount(1);
+  // Elegir material: carga el catálogo al abrirlo, también los artículos sin variantes.
+  await page.getByRole('button', { name: 'Elegir material' }).click();
+  const materiales = page.getByRole('group', { name: 'Materiales del catálogo' }).locator('.st-material');
+  await expect(materiales.first()).toBeVisible();
+  expect(await materiales.count()).toBeGreaterThan(5);
+  await page.getByLabel('Buscar material').fill('melamina');
+  await expect(materiales.first()).toContainText(/melamina/i);
+  await materiales.first().click();
+  await expect(materiales.first()).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#modulos .st-elegido')).toContainText(/melamina/i);
   await page.getByRole('button', { name: 'Guardar cambios' }).click();
   await expect(page.locator('#estado-boceto')).toHaveText('Cambios guardados.');
   await auditar(page);

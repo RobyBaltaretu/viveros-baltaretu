@@ -101,6 +101,7 @@ const PASOS = ['Proyecto', 'Fotos', 'Revisar', 'Imagen'];
             <button id="anadir-modulo" type="button" class="nv-boton nv-boton-secundario">Añadir un módulo</button>
             <ul id="preguntas" class="st-preguntas" role="list"></ul>
             <div class="st-acciones">
+              <button id="confirmar-aproximadas" type="button" class="nv-boton nv-boton-secundario" hidden>Dar por buenas las medidas de la IA</button>
               <button id="guardar-boceto" type="button" class="nv-boton nv-boton-secundario">Guardar cambios</button>
               <button id="confirmar-boceto" type="button" class="nv-boton">Aprobar el diseño</button>
             </div>
@@ -281,8 +282,9 @@ const PASOS = ['Proyecto', 'Fotos', 'Revisar', 'Imagen'];
     const r = await fetch(url, init);
     const tipo = r.headers.get('content-type') || '';
     if (!tipo.includes('application/json')) throw new Error(`El servidor ha respondido ${r.status} sin datos. Comprueba que sigues dentro del panel (Cloudflare Access) y recarga.`);
-    const j = (await r.json()) as T & { error?: string; errores?: unknown };
-    if (!r.ok) throw new Error(j.error || (j.errores ? `Revisa los datos: ${JSON.stringify(j.errores)}` : `Error ${r.status}`));
+    const j = (await r.json()) as T & { error?: string; errores?: unknown; detalles?: unknown };
+    const detalle = Array.isArray(j.detalles) && j.detalles.length ? ': ' + j.detalles.join('; ') : '';
+    if (!r.ok) throw new Error(j.error ? j.error + detalle : j.errores ? `Revisa los datos: ${JSON.stringify(j.errores)}` : `Error ${r.status}`);
     return j;
   }
   const json = (method: string, body: unknown): RequestInit => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -750,9 +752,19 @@ const PASOS = ['Proyecto', 'Fotos', 'Revisar', 'Imagen'];
       $('preguntas').append(li);
     }
     $('anadir-modulo').hidden = soloLectura;
+    $('confirmar-aproximadas').hidden = soloLectura || !aproximadas().length;
     for (const b of ['guardar-boceto', 'confirmar-boceto']) $(b).hidden = soloLectura;
   }
 
+  /** Medidas leídas por la IA que nadie ha confirmado: no se puede aprobar con ellas. */
+  const aproximadas = () => (interpretacion?.modulos ?? []).flatMap((m) => (['ancho', 'alto', 'fondo'] as const).map((d) => ({ m, d })).filter(({ m, d }) => m[d].precision === 'aproximada' && !m[d].confirmada));
+  $('confirmar-aproximadas')?.addEventListener('click', () => {
+    const lista = aproximadas();
+    if (!lista.length || !window.confirm(`¿Das por buenas las ${lista.length} medidas leídas por la IA? Revísalas antes: se usarán para la imagen y el despiece.`)) return;
+    for (const { m, d } of lista) m[d] = { ...m[d], precision: 'exacta', origen: 'usuario', confirmada: true };
+    dibujar();
+    estado('Medidas confirmadas. Guarda o aprueba el diseño.', 'bien');
+  });
   $('anadir-modulo')?.addEventListener('click', () => {
     interpretacion ??= base();
     interpretacion.modulos.push(moduloVacio(interpretacion.modulos.length));
@@ -774,6 +786,7 @@ const PASOS = ['Proyecto', 'Fotos', 'Revisar', 'Imagen'];
   $('confirmar-boceto')?.addEventListener('click', async () => {
     if (!id || !interpretacion?.modulos.length) return;
     if (!fotos.espacio || !fotos.boceto) return estado('Faltan fotos: sube la del espacio y la del boceto antes de aprobar.', 'error');
+    if (aproximadas().length) return estado(`Hay ${aproximadas().length} medidas «Aproximada (IA)»: escríbelas tú o pulsa «Dar por buenas las medidas de la IA».`, 'error');
     const sinMedida = interpretacion.modulos.filter((m) => [m.ancho, m.alto, m.fondo].some((c) => c.valorMm === null)).length;
     const pregunta = sinMedida
       ? `Hay ${sinMedida} ${sinMedida === 1 ? 'módulo' : 'módulos'} con medidas sin poner: no servirán para fabricar. ¿Apruebas el diseño igualmente?`

@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { clienteActual } from '../../../plataforma/actual.ts';
 import { sesionCon } from '../../../server/panel/pagina.ts';
-import type { VarianteCatalogo } from '../../../server/data/tipos.ts';
+import { variantesStudio } from '../../../server/simulador/materiales-studio.ts';
 export const prerender=false;
 const json=(status:number,value:unknown)=>new Response(JSON.stringify(value),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
 export const GET:APIRoute=async({locals,url})=>{
@@ -11,12 +11,13 @@ export const GET:APIRoute=async({locals,url})=>{
   const paginaRaw=Number(url.searchParams.get('pagina')||'1');
   if(!Number.isSafeInteger(paginaRaw)||paginaRaw<1||paginaRaw>1000)return json(400,{ok:false,error:'Página inválida'});
   const tamano=40;
-  const variantes:VarianteCatalogo[]=await sesion.repos.catalogo.variantes?.()??[];
   const articulos=await sesion.repos.catalogo.articulos();
+  // Variantes activas y artículos sin variantes: todo el material del catálogo (sin mano de obra ni servicios).
+  const variantes=variantesStudio(articulos,await sesion.repos.catalogo.variantes?.()??[]);
   const disponibles=new Map(articulos.filter(a=>!a.archivado).map(a=>[a.id,a]));
   const filtradas=variantes.filter(v=>v.estado==='activo'&&disponibles.has(v.articuloId))
-    .filter(v=>!q||[v.referencia,v.codigo,v.acabado,v.soporte,disponibles.get(v.articuloId)?.nombre||''].join(' ').toLocaleLowerCase('es').includes(q))
-    .sort((a,b)=>(a.referencia||a.codigo||'').localeCompare(b.referencia||b.codigo||'','es'));
+    .filter(v=>{const a=disponibles.get(v.articuloId);return !q||[v.referencia,v.codigo,v.acabado,v.soporte,a?.nombre||'',a?.categoria||'',a?.proveedor||''].join(' ').toLocaleLowerCase('es').includes(q);})
+    .sort((a,b)=>(disponibles.get(a.articuloId)?.nombre||'').localeCompare(disponibles.get(b.articuloId)?.nombre||'','es')||(a.referencia||'').localeCompare(b.referencia||'','es'));
   const total=filtradas.length;
   const resultado=filtradas.slice((paginaRaw-1)*tamano,paginaRaw*tamano).map(v=>{
       const a=disponibles.get(v.articuloId)!;
