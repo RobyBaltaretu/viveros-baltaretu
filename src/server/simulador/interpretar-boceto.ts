@@ -10,7 +10,7 @@ function cota(v:unknown):CotaBoceto {
 }
 
 /** Modelo de Gemini para leer los bocetos (texto, barato). Se puede cambiar con GEMINI_MODELO_BOCETO. */
-export const MODELO_INTERPRETACION='gemini-2.5-flash';
+export const MODELO_INTERPRETACION='gemini-3.8-flash';
 
 const TIPOS_MODULO=['armario','cajonera','balda','hueco-electrodomestico','encimera','panel','otro'];
 const TIPOS_PIEZA=['puerta','costado','interior','balda','cajon','encimera','canto','trasera','otra'];
