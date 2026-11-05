@@ -5,6 +5,7 @@ import { hoy } from '../../server/gastos/gastos.ts';
 import { modoPruebas } from '../../server/panel/facturacion.ts';
 import { campo, sesionCon } from '../../server/panel/pagina.ts';
 import { cargarDatosPrueba, quitarDatosPrueba, type ResumenPruebas } from '../../server/panel/pruebas.ts';
+import { clienteActual } from '../../plataforma/actual.ts';
 
 export const prerender = false;
 
@@ -31,7 +32,7 @@ const cuenta = (r: ResumenPruebas) => `${r.clientes} clientes, ${r.presupuestos}
   <h1 class="titular-grande">Datos de prueba</h1>
   <Mensajes hecho={hecho && resumen ? (hecho === 'cargar' ? `Cargados: ${cuenta(resumen)}.` : `Quitados: ${cuenta(resumen)}.`) : undefined} />
   <div class="caja-panel mt-6 grid gap-3 p-5">
-    <p>Para probar el panel con algo dentro: unos 5 ejemplos inventados de clientes, presupuestos, facturas, gastos, proyectos y guías. Las plantas de ejemplo ya están.</p>
+    {clienteActual().sector === 'carpinteria' ? <p>Para probar el panel con algo dentro: clientes, presupuestos, facturas, gastos, materiales, pedidos y proyectos inventados.</p> : <p>Para probar el panel con algo dentro: unos 5 ejemplos inventados de clientes, presupuestos, facturas, gastos, proyectos y guías. Las plantas de ejemplo ya están.</p>}
     <ul class="grid list-disc gap-1 pl-6 text-base text-gris">
       <li>Nada de esto sale en la web pública: los proyectos y guías son fichas de ejemplo sin revisar.</li>
       <li>Las facturas de prueba van en una serie aparte (PRUEBA-F…), con la marca «PRUEBA · SIN VALIDEZ» en el PDF y fuera del libro para la gestoría. No gastan números de la serie real.</li>

@@ -826,8 +826,10 @@ const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
     <script is:inline data-nombre={NOMBRE}>
       (() => {
         const nombre = document.currentScript.dataset.nombre;
-        const zona = document.getElementById('conversacion');
-        if (!zona || !nombre) return;
+        // Se vigila el contenedor del chat, no #conversacion: el script común sustituye
+        // la conversación entera al recibir cada respuesta y el observador se perdería.
+        const zona = document.querySelector('.chat-agricolai') || document.body;
+        if (!nombre) return;
         const cambiar = (n) => {
           if (n.nodeType === 3) {
             if (n.nodeValue.includes('AgricolAI')) n.nodeValue = n.nodeValue.replaceAll('AgricolAI', nombre);
@@ -839,6 +841,7 @@ const sinCupo = !!uso && (quedanMensajes === 0 || iaGastada >= 100);
           n.childNodes.forEach(cambiar);
         };
         new MutationObserver((cambios) => cambios.forEach((c) => (c.type === 'characterData' ? cambiar(c.target) : c.addedNodes.forEach(cambiar)))).observe(zona, { childList: true, subtree: true, characterData: true });
+        cambiar(zona);
       })();
     </script>
   )
