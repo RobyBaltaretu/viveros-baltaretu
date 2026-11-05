@@ -41,7 +41,7 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
         </section>
         <p class="text-xs">Comprueba módulos y cotas antes de validar. El render utiliza IA generativa y requiere revisar visualmente las proporciones y acabados; no es un plano de fabricación.</p>
       </section>
-      <p id="estado-boceto" role="status" aria-live="polite"></p>
+      <p id="estado-boceto" role="status" aria-live="polite">Inicializando Turia Studio… Si este mensaje no cambia, el JavaScript de la página no se ha cargado.</p>
       <section><h2 class="font-bold">Borradores recientes</h2><ul id="lista-bocetos" class="space-y-2"></ul></section>
     </main>
   ) : <p>Esta herramienta solo está disponible para Creaciones Turia.</p>}
@@ -182,6 +182,11 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
     mostrar();await cargarGeneraciones();}
 
   const estado=(s:string)=>{$('estado-boceto').textContent=s;};
+  const leerRespuesta=async(r:Response)=>{
+    const tipo=r.headers.get('content-type')||'';
+    if(!tipo.includes('application/json'))throw Error('El servidor devolvió '+r.status+' sin JSON. Comprueba el Worker y el inicio de sesión.');
+    return r.json();
+  };
   const desconocida=()=>({valorMm:null,precision:'desconocida',origen:'usuario',confirmada:false});
   function modelo(){
     const ancho=Number(($('ancho-boceto') as HTMLInputElement).value);
@@ -198,14 +203,22 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
     for(const b of j.bocetos||[]){const li=document.createElement('li');const boton=document.createElement('button');boton.type='button';boton.className='rounded border p-2 text-left';boton.textContent=b.titulo+' · '+b.estado+' · revisión '+b.revision;boton.addEventListener('click',()=>{void abrir(b.id).catch(e=>estado(String(e)));});li.append(boton);ul.append(li);}
   }
   $('nuevo-boceto')?.addEventListener('submit',async ev=>{
-    ev.preventDefault();estado('Creando borrador…');
-    const titulo=($('titulo-boceto') as HTMLInputElement).value;
-    // IDs de archivo pendientes se asignan tras subir las imágenes; se usan marcadores internos válidos.
-    espacio='pendiente-espacio';dibujo='pendiente-boceto';
-    const r=await fetch('/api/panel/studio-bocetos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({titulo,interpretacion:modelo()})});
-    const j=await r.json();if(!r.ok){estado(j.error||JSON.stringify(j.errores));return;}
-    id=j.id;revision=j.revision;interpretacion=modelo();$('editor-boceto').hidden=false;$('identificador-boceto').textContent='Borrador '+id;
-    await cargarMateriales().catch(e=>estado(String(e)));mostrar();estado('Borrador creado. Sube ambas fotografías y guarda los cambios.');void cargar();
+    ev.preventDefault();
+    const boton=($('nuevo-boceto') as HTMLFormElement).querySelector('button[type="submit"]') as HTMLButtonElement;
+    boton.disabled=true;estado('Creando borrador…');
+    try{
+      const titulo=($('titulo-boceto') as HTMLInputElement).value;
+      espacio='pendiente-espacio';dibujo='pendiente-boceto';
+      const r=await fetch('/api/panel/studio-bocetos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({titulo,interpretacion:modelo()})});
+      const j=await leerRespuesta(r);
+      if(!r.ok)throw Error(j.error||JSON.stringify(j.errores)||'No se pudo crear el borrador');
+      id=j.id;revision=j.revision;interpretacion=modelo();
+      $('editor-boceto').hidden=false;$('identificador-boceto').textContent='Borrador '+id;
+      mostrar();estado('Borrador creado. Sube las fotografías y guarda los cambios.');
+      void cargarMateriales().then(()=>mostrar()).catch(e=>estado('Borrador creado, pero el catálogo no está disponible: '+String(e)));
+      void cargar().catch(e=>estado('Borrador creado; no se pudo actualizar la lista: '+String(e)));
+    }catch(e){estado('Error al crear borrador: '+(e instanceof Error?e.message:String(e)));}
+    finally{boton.disabled=false;}
   });
   async function subir(inputId:string,clase:'espacio'|'boceto'){
     const input=$(inputId) as HTMLInputElement;const archivo=input.files?.[0];
@@ -328,7 +341,8 @@ const permitido=clienteActual().id==='turia' && !!sesionCon(Astro.locals,'editar
     }catch(e){estado(e instanceof Error?e.message:String(e));}finally{boton.disabled=false;}
   });
   if(document.getElementById('nuevo-boceto')){
-    void cargarMateriales().catch(e=>estado(String(e)));
-    void cargar().catch(e=>estado(e instanceof Error?e.message:String(e)));
+    estado('Turia Studio listo. Introduce un nombre y pulsa Crear borrador.');
+    void cargarMateriales().catch(e=>estado('Catálogo no disponible: '+String(e)));
+    void cargar().catch(e=>estado('No se pudieron cargar los borradores: '+String(e)));
   }
 </script>
